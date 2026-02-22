@@ -5,25 +5,39 @@ import signal
 import struct
 import fcntl
 import termios
-from flask import Flask, render_template, request, Response
-from flask_socketio import SocketIO
+import re
+from functools import wraps
+from flask import Flask, render_template, request, Response, session
+from flask_socketio import SocketIO, disconnect
 import ldap3
 import eventlet
 
 eventlet.monkey_patch()
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+# VULNERABILITY FIX: Use environment variable for SECRET_KEY or generate a random one
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24).hex())
+
+# VULNERABILITY FIX: Restrict CORS
+allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*')
+if allowed_origins != '*':
+    allowed_origins = allowed_origins.split(',')
+socketio = SocketIO(app, cors_allowed_origins=allowed_origins, async_mode='eventlet')
 
 LDAP_SERVER = os.environ.get('LDAP_SERVER', 'ldaps://192.168.1.100')
 LDAP_BASE_DN = os.environ.get('LDAP_BASE_DN', 'CN=Users,DC=activedirectory,DC=adamoutler,DC=com')
 AD_BIND_USER_DN = os.environ.get('AD_BIND_USER_DN')
 AD_BIND_PASS = os.environ.get('AD_BIND_PASS')
 AUTHORIZED_GROUP = os.environ.get('AUTHORIZED_GROUP')
+FALLBACK_DOMAIN = os.environ.get('FALLBACK_DOMAIN', 'activedirectory.adamoutler.com')
+
+def sanitize_ldap_input(input_str):
+    # VULNERABILITY FIX: Sanitize input for LDAP search filters
+    return re.sub(r'[()\*\\\0]', '', input_str) if input_str else ""
 
 def check_auth(username, password):
     try:
+        username = sanitize_ldap_input(username)
         server = ldap3.Server(LDAP_SERVER, get_info=ldap3.ALL, connect_timeout=2)
         
         # If we have a bind user, we use it to search for the user DN
@@ -52,7 +66,7 @@ def check_auth(username, password):
             return True
         else:
             # Fallback to direct bind if no service account provided
-            user_dn = f"{username}@activedirectory.adamoutler.com"
+            user_dn = f"{username}@{FALLBACK_DOMAIN}"
             conn = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
             return True
             
@@ -67,11 +81,26 @@ def authenticate():
 
 @app.before_request
 def require_auth():
-    if not os.environ.get('LDAP_SERVER'):
-        return
-    auth = request.authorization
-    if not auth or not check_auth(auth.username, auth.password):
+    # VULNERABILITY FIX: Fail closed if LDAP_SERVER is not configured
+    if not LDAP_SERVER:
+        print("LDAP_SERVER is not configured. Denying all requests for security.")
         return authenticate()
+        
+    auth = request.authorization
+    if auth and check_auth(auth.username, auth.password):
+        session['authenticated'] = True
+    else:
+        return authenticate()
+
+# VULNERABILITY FIX: Socket.IO Authentication Decorator
+def authenticated_only(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        if not session.get('authenticated'):
+            disconnect()
+        else:
+            return f(*args, **kwargs)
+    return wrapped
 
 fd = None
 child_pid = None
@@ -121,6 +150,7 @@ def index():
     return render_template('index.html')
 
 @socketio.on('pty-input')
+@authenticated_only
 def pty_input(data):
     global fd
     if fd:
@@ -130,6 +160,7 @@ def pty_input(data):
             pass
 
 @socketio.on('resize')
+@authenticated_only
 def resize(data):
     global fd
     if fd:
@@ -139,6 +170,7 @@ def resize(data):
             pass
 
 @socketio.on('restart')
+@authenticated_only
 def handle_restart(data):
     resume = data.get('resume', False)
     start_gemini(resume)

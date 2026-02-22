@@ -15,5 +15,4 @@ services:
     volumes:
       - ~/Gemini:/app/Gemini
       - ~/.gemini:/home/node/.gemini
-      - ~/.ssh:/home/node/.ssh:ro
     restart: unless-stopped
