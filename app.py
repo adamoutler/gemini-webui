@@ -6,17 +6,52 @@ import struct
 import fcntl
 import termios
 import re
+import logging # Added for secure logging
 from functools import wraps
 from flask import Flask, render_template, request, Response, session
 from flask_socketio import SocketIO, disconnect
+from flask_talisman import Talisman # Added for security headers
 import ldap3
 import eventlet
 
 eventlet.monkey_patch()
 
+# SECURITY PARADIGM: Fail-Closed Logging
+# We use a proper logger and avoid printing raw exceptions to prevent data leaks.
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = Flask(__name__)
-# VULNERABILITY FIX: Use environment variable for SECRET_KEY or generate a random one
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', os.urandom(24).hex())
+
+# SECURITY PARADIGM: Defense in Depth (Secure Cookies)
+# Session cookies are locked down to prevent theft via XSS (HttpOnly) 
+# and ensure they are only sent over HTTPS (Secure).
+app.config.update(
+    SECRET_KEY=os.environ.get('SECRET_KEY', os.urandom(24).hex()),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+)
+
+# SECURITY PARADIGM: Secure Headers (CSP, HSTS, etc.)
+# Talisman automatically adds essential security headers.
+# We allow inline scripts for xterm.js but restrict origins.
+csp = {
+    'default-src': '\'self\'',
+    'script-src': [
+        '\'self\'',
+        'https://cdn.jsdelivr.net',
+        'https://cdnjs.cloudflare.com',
+        '\'unsafe-inline\'' # Required for xterm initialization in templates
+    ],
+    'style-src': [
+        '\'self\'',
+        'https://cdn.jsdelivr.net',
+        '\'unsafe-inline\''
+    ],
+    'connect-src': ['\'self\'', 'ws:', 'wss:'] # Allow WebSockets
+}
+Talisman(app, content_security_policy=csp)
 
 # VULNERABILITY FIX: Restrict CORS
 allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*')
@@ -32,7 +67,8 @@ AUTHORIZED_GROUP = os.environ.get('AUTHORIZED_GROUP')
 FALLBACK_DOMAIN = os.environ.get('FALLBACK_DOMAIN', 'activedirectory.adamoutler.com')
 
 def sanitize_ldap_input(input_str):
-    # VULNERABILITY FIX: Sanitize input for LDAP search filters
+    # SECURITY PARADIGM: Input Sanitization
+    # Prevents LDAP Injection by stripping special characters used in filters.
     return re.sub(r'[()\*\\\0]', '', input_str) if input_str else ""
 
 def check_auth(username, password):
@@ -40,38 +76,36 @@ def check_auth(username, password):
         username = sanitize_ldap_input(username)
         server = ldap3.Server(LDAP_SERVER, get_info=ldap3.ALL, connect_timeout=2)
         
-        # If we have a bind user, we use it to search for the user DN
         if AD_BIND_USER_DN and AD_BIND_PASS:
             conn = ldap3.Connection(server, user=AD_BIND_USER_DN, password=AD_BIND_PASS, auto_bind=True)
             search_filter = f"(&(objectClass=*)(sAMAccountName={username}))"
             conn.search(LDAP_BASE_DN, search_filter, attributes=['memberOf'])
             
             if not conn.entries:
-                print(f"User {username} not found in AD.")
+                logger.warning(f"Auth failure: User {username} not found.")
                 return False
                 
             user_entry = conn.entries[0]
             user_dn = user_entry.entry_dn
             
-            # Check group membership if required
             if AUTHORIZED_GROUP:
                 member_of = user_entry.memberOf.values if 'memberOf' in user_entry else []
                 group_match = any(AUTHORIZED_GROUP.lower() in group.lower() for group in member_of)
                 if not group_match:
-                    print(f"User {username} is not in the authorized group: {AUTHORIZED_GROUP}")
+                    logger.warning(f"Auth failure: User {username} not in group {AUTHORIZED_GROUP}")
                     return False
                     
-            # Finally, verify the user's password
             user_conn = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
             return True
         else:
-            # Fallback to direct bind if no service account provided
             user_dn = f"{username}@{FALLBACK_DOMAIN}"
             conn = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
             return True
             
-    except Exception as e:
-        print(f"LDAP auth failed for {username}: {e}")
+    except Exception:
+        # SECURITY PARADIGM: No Sensitive Data Leakage
+        # We log a generic message and avoid exposing LDAP server details.
+        logger.error("LDAP authentication process failed.")
         return False
 
 def authenticate():
@@ -81,9 +115,10 @@ def authenticate():
 
 @app.before_request
 def require_auth():
-    # VULNERABILITY FIX: Fail closed if LDAP_SERVER is not configured
+    # SECURITY PARADIGM: Fail-Closed
+    # If the environment is not properly configured, we deny all access.
     if not LDAP_SERVER:
-        print("LDAP_SERVER is not configured. Denying all requests for security.")
+        logger.critical("LDAP_SERVER not configured. Denying access.")
         return authenticate()
         
     auth = request.authorization
@@ -182,7 +217,7 @@ def monitor_gemini():
             try:
                 pid, status = os.waitpid(child_pid, os.WNOHANG)
                 if pid == child_pid:
-                    print("Gemini exited, restarting...")
+                    logger.info("Gemini exited, restarting...")
                     start_gemini(resume=True)
             except ChildProcessError:
                 start_gemini(resume=True)

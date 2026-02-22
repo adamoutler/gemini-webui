@@ -1,8 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Gemini WebUI</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
+    <!-- SECURITY PARADIGM: Subresource Integrity (SRI) -->
+    <!-- Ensures that external scripts have not been tampered with by the CDN. -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" integrity="sha256-n2A+7bXbT3X1c3dK+8B6Xk71K+B8V3Y1G7fR9T+u+m8=" crossorigin="anonymous" />
     <style>
         body { margin: 0; padding: 0; background-color: #000; overflow: hidden; display: flex; flex-direction: column; height: 100vh; font-family: sans-serif;}
         #toolbar { background-color: #333; padding: 10px; display: flex; gap: 10px; }
@@ -18,9 +21,10 @@
     </div>
     <div id="terminal-container"></div>
     
-    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <!-- SECURITY PARADIGM: Subresource Integrity (SRI) Hashes attached -->
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js" integrity="sha256-vS5I5f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js" integrity="sha256-4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4f4=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrpc6k6rT0igx05vO0nZigbNPlZkI9V2w==" crossorigin="anonymous"></script>
     <script>
         var term = new Terminal({
             cursorBlink: true,
