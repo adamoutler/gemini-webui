@@ -16,15 +16,46 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
-LDAP_SERVER = os.environ.get('LDAP_SERVER', 'ldap://192.168.1.101')
-LDAP_DOMAIN = os.environ.get('LDAP_DOMAIN', 'adamoutler.com')
+LDAP_SERVER = os.environ.get('LDAP_SERVER', 'ldaps://192.168.1.100')
+LDAP_BASE_DN = os.environ.get('LDAP_BASE_DN', 'CN=Users,DC=activedirectory,DC=adamoutler,DC=com')
+AD_BIND_USER_DN = os.environ.get('AD_BIND_USER_DN')
+AD_BIND_PASS = os.environ.get('AD_BIND_PASS')
+AUTHORIZED_GROUP = os.environ.get('AUTHORIZED_GROUP')
 
 def check_auth(username, password):
     try:
         server = ldap3.Server(LDAP_SERVER, get_info=ldap3.ALL, connect_timeout=2)
-        user_dn = f"{username}@{LDAP_DOMAIN}"
-        conn = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
-        return True
+        
+        # If we have a bind user, we use it to search for the user DN
+        if AD_BIND_USER_DN and AD_BIND_PASS:
+            conn = ldap3.Connection(server, user=AD_BIND_USER_DN, password=AD_BIND_PASS, auto_bind=True)
+            search_filter = f"(&(objectClass=*)(sAMAccountName={username}))"
+            conn.search(LDAP_BASE_DN, search_filter, attributes=['memberOf'])
+            
+            if not conn.entries:
+                print(f"User {username} not found in AD.")
+                return False
+                
+            user_entry = conn.entries[0]
+            user_dn = user_entry.entry_dn
+            
+            # Check group membership if required
+            if AUTHORIZED_GROUP:
+                member_of = user_entry.memberOf.values if 'memberOf' in user_entry else []
+                group_match = any(AUTHORIZED_GROUP.lower() in group.lower() for group in member_of)
+                if not group_match:
+                    print(f"User {username} is not in the authorized group: {AUTHORIZED_GROUP}")
+                    return False
+                    
+            # Finally, verify the user's password
+            user_conn = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
+            return True
+        else:
+            # Fallback to direct bind if no service account provided
+            user_dn = f"{username}@activedirectory.adamoutler.com"
+            conn = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
+            return True
+            
     except Exception as e:
         print(f"LDAP auth failed for {username}: {e}")
         return False
