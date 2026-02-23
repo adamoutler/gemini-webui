@@ -39,4 +39,4 @@ RUN chmod 600 /home/node/.ssh/id_ed25519 && \
 USER node
 
 # We need access to the mounted volume for the host
-CMD ["python", "app.py"]
+CMD ["python", "src/app.py"]

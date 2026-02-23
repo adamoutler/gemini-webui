@@ -15,7 +15,7 @@ To ensure successful deployments and environment consistency, follow these rules
 
 The custom alias `git p` is mandatory for all pushes. It performs two critical functions:
 1.  **Synchronous Push**: Pushes your current branch to `origin`.
-2.  **Deployment Monitoring**: Automatically executes `./scripts/wait-for-receipt.sh` to block until the Jenkins deployment is complete and verified.
+2.  **Deployment Monitoring**: Automatically executes `./jenkins/wait-for-receipt.sh` to block until the Jenkins deployment is complete and verified.
 
 ## ✅ Verification
 

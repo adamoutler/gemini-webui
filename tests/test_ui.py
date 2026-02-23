@@ -17,10 +17,11 @@ def server():
     
     # We use a random port to avoid conflicts
     port = "5005"
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     process = subprocess.Popen(
-        ["/home/node/.openclaw/workspace/skills/python-manager/venv/bin/python3", "app.py"],
+        ["python3", "src/app.py"],
         env=env,
-        cwd=os.path.dirname(os.path.abspath(__file__)),
+        cwd=project_root,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
@@ -68,8 +69,11 @@ def test_gemini_webui_flow(server):
         page.reload()
         page.wait_for_timeout(2000)
         
-        # Click "Restart (Resume)"
-        page.get_by_text("Restart (Resume)").click()
+        # Ensure Resume is checked
+        page.locator('#resume-toggle').set_checked(True)
+        
+        # Click "Restart Local"
+        page.get_by_text("Restart Local").click()
         page.wait_for_timeout(3000)
         
         # 5. Verify conversation resumes
@@ -80,8 +84,9 @@ def test_gemini_webui_flow(server):
         terminal_content_resumed = page.locator('.xterm-rows').inner_text()
         assert test_value in terminal_content_resumed, "Gemini did not remember the value after resume."
         
-        # 6. Start a new session
-        page.get_by_text("Restart (Fresh)").click()
+        # 6. Uncheck Resume and restart
+        page.locator('#resume-toggle').set_checked(False)
+        page.get_by_text("Restart Local").click()
         page.wait_for_timeout(3000)
         
         # 7. Ask if it remembers
