@@ -88,7 +88,7 @@ def log_request_info():
 
 @app.route('/favicon.ico')
 def favicon():
-    return Response(status=404)
+    return app.send_static_file('favicon.svg')
 
 def sanitize_ldap_input(input_str):
     return re.sub(r'[()\*\\\0]', '', input_str) if input_str else ""
