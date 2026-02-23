@@ -33,8 +33,9 @@ pipeline {
                         string(credentialsId: 'GOOGLE_API_KEY', variable: 'GEMINI_API_KEY'),
                         usernamePassword(credentialsId: 'ldap-bind-auth-user', passwordVariable: 'AD_BIND_PASS', usernameVariable: 'AD_BIND_USER_DN')
                     ]) {
-                        sh 'docker compose down || true'
-                        sh 'docker compose up --build -d'
+                        sh 'docker pull python:3.11-slim'
+                        sh 'docker buildx build --load -t gemini-webui .'
+                        sh 'docker compose up -d --force-recreate'
                     }
                 }
             }
