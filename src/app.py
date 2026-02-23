@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 import os
 import pty
 import select
@@ -8,15 +11,49 @@ import termios
 import re
 import logging
 import codecs
+import json
+import shutil
 from functools import wraps
-from flask import Flask, render_template, request, Response, session
+from flask import Flask, render_template, request, Response, session, jsonify
+from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, disconnect
 from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
 import ldap3
-import eventlet
 
-eventlet.monkey_patch()
+# Configuration Paths
+DATA_DIR = os.environ.get('DATA_DIR', "/data")
+CONFIG_FILE = os.path.join(DATA_DIR, "config.json")
+SSH_DIR = os.path.join(DATA_DIR, ".ssh")
+
+# Ensure directories exist
+os.makedirs(SSH_DIR, mode=0o700, exist_ok=True)
+
+def get_config():
+    config = {
+        "LDAP_SERVER": os.environ.get('LDAP_SERVER', 'ldaps://192.168.1.100'),
+        "LDAP_BASE_DN": os.environ.get('LDAP_BASE_DN', 'CN=Users,DC=activedirectory,DC=adamoutler,DC=com'),
+        "AD_BIND_USER_DN": os.environ.get('AD_BIND_USER_DN'),
+        "AD_BIND_PASS": os.environ.get('AD_BIND_PASS'),
+        "AUTHORIZED_GROUP": os.environ.get('AUTHORIZED_GROUP'),
+        "FALLBACK_DOMAIN": os.environ.get('FALLBACK_DOMAIN', 'activedirectory.adamoutler.com'),
+        "DEFAULT_SSH_TARGET": os.environ.get('DEFAULT_SSH_TARGET', 'adamoutler@192.168.1.101'),
+        "DEFAULT_SSH_DIR": os.environ.get('DEFAULT_SSH_DIR', '~/oc'),
+        "SECRET_KEY": os.environ.get('SECRET_KEY', 'stable-fallback-key-change-me'),
+        "ALLOWED_ORIGINS": os.environ.get('ALLOWED_ORIGINS', '*')
+    }
+    
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, 'r') as f:
+                file_config = json.load(f)
+                config.update(file_config)
+        except Exception as e:
+            logging.error(f"Error loading config file: {e}")
+            
+    return config
+
+config = get_config()
 
 # SECURITY PARADIGM: Fail-Closed Logging
 logging.basicConfig(level=logging.INFO)
@@ -29,7 +66,7 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_
 
 # SECURITY PARADIGM: Defense in Depth (Secure Cookies)
 app.config.update(
-    SECRET_KEY=os.environ.get('SECRET_KEY', 'stable-fallback-key-change-me'),
+    SECRET_KEY=config.get('SECRET_KEY'),
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_SAMESITE='Lax',
@@ -66,21 +103,21 @@ Talisman(app,
          session_cookie_secure=False)
 
 # VULNERABILITY FIX: Restrict CORS
-allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*')
+allowed_origins = config.get('ALLOWED_ORIGINS', '*')
 if allowed_origins != '*':
     allowed_origins = allowed_origins.split(',')
 socketio = SocketIO(app, cors_allowed_origins=allowed_origins, async_mode='eventlet')
 
-LDAP_SERVER = os.environ.get('LDAP_SERVER', 'ldaps://192.168.1.100')
-LDAP_BASE_DN = os.environ.get('LDAP_BASE_DN', 'CN=Users,DC=activedirectory,DC=adamoutler,DC=com')
-AD_BIND_USER_DN = os.environ.get('AD_BIND_USER_DN')
-AD_BIND_PASS = os.environ.get('AD_BIND_PASS')
-AUTHORIZED_GROUP = os.environ.get('AUTHORIZED_GROUP')
-FALLBACK_DOMAIN = os.environ.get('FALLBACK_DOMAIN', 'activedirectory.adamoutler.com')
+LDAP_SERVER = config.get('LDAP_SERVER')
+LDAP_BASE_DN = config.get('LDAP_BASE_DN')
+AD_BIND_USER_DN = config.get('AD_BIND_USER_DN')
+AD_BIND_PASS = config.get('AD_BIND_PASS')
+AUTHORIZED_GROUP = config.get('AUTHORIZED_GROUP')
+FALLBACK_DOMAIN = config.get('FALLBACK_DOMAIN')
 
 # SSH Defaults
-DEFAULT_SSH_TARGET = os.environ.get('DEFAULT_SSH_TARGET', 'adamoutler@192.168.1.101')
-DEFAULT_SSH_DIR = os.environ.get('DEFAULT_SSH_DIR', '~/oc')
+DEFAULT_SSH_TARGET = config.get('DEFAULT_SSH_TARGET')
+DEFAULT_SSH_DIR = config.get('DEFAULT_SSH_DIR')
 
 @app.before_request
 def log_request_info():
@@ -135,6 +172,10 @@ def authenticate():
 
 @app.before_request
 def require_auth():
+    if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true':
+        session['authenticated'] = True
+        return
+        
     if not LDAP_SERVER:
         logger.critical("LDAP_SERVER not configured. Denying access.")
         return authenticate()
@@ -205,7 +246,22 @@ def start_gemini(resume=False, rows=24, cols=80, ssh_target=None, ssh_dir=None):
             remote_cmd = f"{remote_env} cd {ssh_dir} && gemini" if ssh_dir else f"{remote_env} gemini"
             if resume:
                 remote_cmd += " -r"
-            cmd = ['ssh', '-t', ssh_target, remote_cmd]
+            
+            cmd = ['ssh', '-X', '-t']
+            
+            # Add identity files from /data/.ssh
+            if os.path.exists(SSH_DIR):
+                for f in os.listdir(SSH_DIR):
+                    if not f.endswith('.pub') and not f.startswith('config'):
+                        key_path = os.path.join(SSH_DIR, f)
+                        # Basic check if it's a file and not a directory
+                        if os.path.isfile(key_path):
+                            cmd.extend(['-i', key_path])
+            
+            # Disable strict host key checking to avoid interactive prompts
+            cmd.extend(['-o', 'StrictHostKeyChecking=no'])
+            
+            cmd.extend([ssh_target, remote_cmd])
         else:
             # Start local
             cmd = ['gemini']
@@ -225,6 +281,40 @@ def index():
     return render_template('index.html', 
                           default_target=DEFAULT_SSH_TARGET, 
                           default_dir=DEFAULT_SSH_DIR)
+
+@app.route('/api/config', methods=['GET'])
+@authenticated_only
+def get_current_config():
+    return jsonify(get_config())
+
+@app.route('/api/config', methods=['POST'])
+@authenticated_only
+def update_config():
+    new_config = request.json
+    current_config = get_config()
+    current_config.update(new_config)
+    
+    with open(CONFIG_FILE, 'w') as f:
+        json.dump(current_config, f, indent=4)
+    
+    return jsonify({"status": "success"})
+
+@app.route('/api/keys', methods=['POST'])
+@authenticated_only
+def add_ssh_key():
+    if 'key' not in request.files:
+        return jsonify({"status": "error", "message": "No key file provided"}), 400
+    
+    file = request.files['key']
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "No selected file"}), 400
+    
+    filename = secure_filename(file.filename)
+    save_path = os.path.join(SSH_DIR, filename)
+    file.save(save_path)
+    os.chmod(save_path, 0o600)
+    
+    return jsonify({"status": "success", "filename": filename})
 
 @socketio.on('pty-input')
 @authenticated_only
@@ -270,7 +360,8 @@ def monitor_gemini():
         socketio.sleep(1)
 
 if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 5000))
     start_gemini(resume=True, ssh_target=DEFAULT_SSH_TARGET, ssh_dir=DEFAULT_SSH_DIR)
     socketio.start_background_task(read_and_forward_pty_output)
     socketio.start_background_task(monitor_gemini)
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socketio.run(app, host='0.0.0.0', port=port)

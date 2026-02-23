@@ -3,31 +3,43 @@ import time
 import random
 import subprocess
 import pytest
+import json
 from playwright.sync_api import sync_playwright, expect
 
 @pytest.fixture(scope="session")
-def server():
+def server(tmp_path_factory):
+    # Create a temporary data directory
+    data_dir = tmp_path_factory.mktemp("data")
+    
     # Start the Flask app
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
     env["PORT"] = "5005"
+    env["DATA_DIR"] = str(data_dir)
+    env["DEFAULT_SSH_TARGET"] = ""
     mock_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mock")
     env["PATH"] = f"{mock_dir}:{env.get('PATH', '')}"
     
     # We use a random port to avoid conflicts
     port = "5005"
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    python_bin = os.path.join(project_root, ".venv", "bin", "python")
     process = subprocess.Popen(
-        ["python3", "src/app.py"],
+        [python_bin, "src/app.py"],
         env=env,
         cwd=project_root,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.PIPE,
+        text=True
     )
     
-    # Wait for server to start
-    time.sleep(3)
+    # Wait for server to start and check if it's still running
+    time.sleep(5)
+    if process.poll() is not None:
+        stdout, stderr = process.communicate()
+        print(f"Server failed to start. STDOUT: {stdout} STDERR: {stderr}")
+        pytest.fail("Server failed to start")
     
     yield f"http://127.0.0.1:{port}"
     

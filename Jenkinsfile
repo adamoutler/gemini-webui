@@ -26,6 +26,17 @@ pipeline {
             }
         }
         
+        stage('Test') {
+            steps {
+                sh '''
+                    # Setup virtual environment and install dependencies
+                    ./setup_dev.sh
+                    # Run tests
+                    .venv/bin/pytest -s tests/test_ui.py
+                '''
+            }
+        }
+        
         stage('Deploy Gemini WebUI') {
             steps {
                 script {

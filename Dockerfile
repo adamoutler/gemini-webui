@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     curl \
     nodejs \
     npm \
+    xclip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Gemini CLI via npm to ensure architecture compatibility (arm64/amd64)
@@ -22,8 +23,10 @@ ENV GEMINI_HOME=/home/node/.gemini
 # Expose the Flask port
 EXPOSE 5000
 
-# Create a non-root user
-RUN useradd -m -u 1000 node
+# Create a non-root user and data directory
+RUN useradd -m -u 1000 node && \
+    mkdir -p /data && \
+    chown -R node:node /data
 
 # Install SSH keys at build time
 ARG USERNAME

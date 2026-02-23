@@ -26,9 +26,32 @@
         <input type="text" id="ssh-dir" placeholder="/folder" value="{{ default_dir }}" style="background:#444; color:white; border:1px solid #666; padding:5px; width:150px;">
         <button onclick="updateStatus(document.getElementById('ssh-target').value); term.clear(); socket.emit('restart', {resume: document.getElementById('resume-toggle').checked, cols: term.cols, rows: term.rows, ssh_target: document.getElementById('ssh-target').value, ssh_dir: document.getElementById('ssh-dir').value})">Restart SSH</button>
         
+        <button onclick="openSettings()" style="background: #2472c8;">Settings</button>
+
         <div id="connection-status" style="margin-left: auto; color: #0dbc79; font-weight: bold; font-family: monospace; padding: 5px 10px;"></div>
     </div>
     <div id="terminal-container"></div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7);">
+        <div style="background-color: #333; color: white; margin: 10% auto; padding: 20px; border: 1px solid #888; width: 50%; border-radius: 5px;">
+            <span onclick="closeSettings()" style="float: right; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+            <h2>Settings</h2>
+            <hr>
+            <div style="margin-top: 20px;">
+                <h3>Default SSH Config</h3>
+                <label>Target: <input type="text" id="config-target" style="width: 100%; background: #444; color: white; border: 1px solid #666; padding: 5px; margin: 5px 0;"></label><br>
+                <label>Directory: <input type="text" id="config-dir" style="width: 100%; background: #444; color: white; border: 1px solid #666; padding: 5px; margin: 5px 0;"></label><br>
+                <button onclick="saveConfig()" style="margin-top: 10px; background: #0dbc79;">Save Config</button>
+            </div>
+            <hr style="margin-top: 20px;">
+            <div style="margin-top: 20px;">
+                <h3>Upload SSH Key</h3>
+                <input type="file" id="ssh-key-file" style="margin: 10px 0;">
+                <button onclick="uploadKey()" style="background: #2472c8;">Upload Key</button>
+            </div>
+        </div>
+    </div>
     
     <!-- SECURITY PARADIGM: Subresource Integrity (SRI) Hashes attached -->
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js" integrity="sha256-8K6g919IVZATrmZDwked1zfSbaQtVSTm0rcJFa5lI8c=" crossorigin="anonymous"></script>
@@ -125,6 +148,56 @@
             fitAddon.fit();
             socket.emit('resize', {cols: term.cols, rows: term.rows});
         });
+
+        async function openSettings() {
+            document.getElementById('settings-modal').style.display = 'block';
+            const response = await fetch('/api/config');
+            const config = await response.json();
+            document.getElementById('config-target').value = config.DEFAULT_SSH_TARGET || '';
+            document.getElementById('config-dir').value = config.DEFAULT_SSH_DIR || '';
+        }
+
+        function closeSettings() {
+            document.getElementById('settings-modal').style.display = 'none';
+        }
+
+        async function saveConfig() {
+            const target = document.getElementById('config-target').value;
+            const dir = document.getElementById('config-dir').value;
+            const response = await fetch('/api/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ DEFAULT_SSH_TARGET: target, DEFAULT_SSH_DIR: dir })
+            });
+            if (response.ok) {
+                alert('Config saved!');
+                // Update the main UI inputs as well
+                document.getElementById('ssh-target').value = target;
+                document.getElementById('ssh-dir').value = dir;
+            } else {
+                alert('Failed to save config.');
+            }
+        }
+
+        async function uploadKey() {
+            const fileInput = document.getElementById('ssh-key-file');
+            if (fileInput.files.length === 0) {
+                alert('Please select a key file.');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('key', fileInput.files[0]);
+            const response = await fetch('/api/keys', {
+                method: 'POST',
+                body: formData
+            });
+            if (response.ok) {
+                alert('Key uploaded successfully!');
+                fileInput.value = '';
+            } else {
+                alert('Failed to upload key.');
+            }
+        }
     </script>
 </body>
 </html>

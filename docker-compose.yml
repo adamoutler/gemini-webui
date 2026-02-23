@@ -16,6 +16,7 @@ services:
       - DEFAULT_SSH_DIR=${DEFAULT_SSH_DIR:-~/oc}
       - AUTHORIZED_GROUP=CN=gemini-webui,OU=Groups,dc=activedirectory,dc=adamoutler,dc=com
     volumes:
+      - ./data:/data
       - ~/Gemini:/app/Gemini
       - ~/.gemini:/home/node/.gemini
     restart: unless-stopped
