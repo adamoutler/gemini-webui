@@ -13,7 +13,7 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - DEFAULT_SSH_TARGET=${DEFAULT_SSH_TARGET:-adamoutler@192.168.1.101}
-      - DEFAULT_SSH_DIR=${DEFAULT_SSH_DIR:-/oc}
+      - DEFAULT_SSH_DIR=${DEFAULT_SSH_DIR:-~/oc}
       - AUTHORIZED_GROUP=CN=gemini-webui,OU=Groups,dc=activedirectory,dc=adamoutler,dc=com
     volumes:
       - ~/Gemini:/app/Gemini

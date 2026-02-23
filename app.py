@@ -74,7 +74,7 @@ FALLBACK_DOMAIN = os.environ.get('FALLBACK_DOMAIN', 'activedirectory.adamoutler.
 
 # SSH Defaults
 DEFAULT_SSH_TARGET = os.environ.get('DEFAULT_SSH_TARGET', 'adamoutler@192.168.1.101')
-DEFAULT_SSH_DIR = os.environ.get('DEFAULT_SSH_DIR', '/oc')
+DEFAULT_SSH_DIR = os.environ.get('DEFAULT_SSH_DIR', '~/oc')
 
 @app.route('/favicon.ico')
 def favicon():
