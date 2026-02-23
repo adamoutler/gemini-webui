@@ -26,12 +26,13 @@
         .tab-close { font-weight: bold; font-size: 16px; cursor: pointer; color: #888; }
         .tab-close:hover { color: #f14c4c; }
         
-        button { background-color: #555; color: white; border: none; padding: 5px 15px; cursor: pointer; border-radius: 3px; font-size: 13px;}
+        button { background-color: #555; color: white; border: none; padding: 5px 12px; cursor: pointer; border-radius: 3px; font-size: 12px;}
         button:hover { background-color: #777; }
         button.primary { background-color: #2472c8; }
         button.primary:hover { background-color: #3b8eea; }
         button.success { background-color: #0dbc79; }
         button.success:hover { background-color: #23d18b; }
+        button.small { padding: 2px 8px; font-size: 11px; }
         
         #terminal-container { flex-grow: 1; padding: 0; position: relative; }
         .tab-instance { position: absolute; top: 0; left: 0; width: 100%; height: 100%; visibility: hidden; box-sizing: border-box; background: #1e1e1e;}
@@ -39,20 +40,20 @@
         .terminal-instance { width: 100%; height: 100%; padding: 5px; box-sizing: border-box; }
         
         /* Launcher Styles */
-        .launcher { padding: 40px; color: #ccc; overflow-y: auto; height: 100%; max-width: 800px; margin: 0 auto;}
-        .launcher h2 { color: white; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px;}
-        .connection-card { background: #252526; border-radius: 8px; padding: 20px; margin-bottom: 20px; border: 1px solid #333; }
+        .launcher { padding: 30px; color: #ccc; overflow-y: auto; height: 100%; max-width: 900px; margin: 0 auto;}
+        .launcher h2 { color: white; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; font-weight: 500;}
+        .connection-card { background: #252526; border-radius: 6px; padding: 15px; margin-bottom: 15px; border: 1px solid #333; }
         .connection-card:hover { border-color: #444; }
-        .connection-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .connection-title { font-size: 18px; font-weight: bold; color: #fff; }
-        .connection-actions { display: flex; gap: 10px; }
+        .connection-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .connection-title { font-size: 16px; font-weight: bold; color: #fff; }
+        .connection-actions { display: flex; gap: 8px; }
         
-        .session-list-container { margin-top: 15px; background: #1e1e1e; border-radius: 4px; overflow: hidden;}
+        .session-list-container { margin-top: 10px; background: #1e1e1e; border-radius: 4px; overflow: hidden; border: 1px solid #2d2d2d;}
         .session-list { list-style: none; padding: 0; margin: 0; }
-        .session-item { padding: 10px 15px; border-bottom: 1px solid #2d2d2d; display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 13px;}
+        .session-item { padding: 6px 12px; border-bottom: 1px solid #2d2d2d; display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 12px;}
         .session-item:last-child { border-bottom: none; }
         .session-item:hover { background: #2a2d2e; }
-        .session-info { flex-grow: 1; margin-right: 20px; color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+        .session-info { flex-grow: 1; margin-right: 15px; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
         .session-name { color: #3b8eea; font-weight: bold; }
         
         #new-tab-btn { background-color: #2472c8; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-weight: bold; margin-right: 10px;}
@@ -114,6 +115,7 @@
     <script>
         let tabs = [];
         let activeTabId = null;
+        let sessionCache = {}; // Cache for session lists: key -> {timestamp, data}
 
         const terminalTheme = {
             background: '#1e1e1e',
@@ -177,6 +179,9 @@
             renderTabs();
             switchTab(id);
             renderLauncher(id);
+            
+            // Trigger background session pre-loading
+            standardConnections.forEach(conn => prefetchSessions(conn));
         }
 
         function renderLauncher(id) {
@@ -212,45 +217,86 @@
             });
         }
 
-        async function fetchSessions(tabId, conn, targetId) {
+        function getCacheKey(conn) {
+            return `${conn.type}:${conn.target || 'local'}:${conn.dir || ''}`;
+        }
+
+        async function prefetchSessions(conn) {
+            const key = getCacheKey(conn);
             const query = new URLSearchParams();
             if (conn.type === 'ssh') {
                 query.set('ssh_target', conn.target);
                 if (conn.dir) query.set('ssh_dir', conn.dir);
             }
-            
             try {
                 const response = await fetch('/api/sessions?' + query.toString());
                 const data = await response.json();
-                const listEl = document.getElementById(targetId);
-                if (!listEl) return;
-                
-                if (data.error) {
-                    listEl.innerHTML = `<div style="padding: 10px; color: #f14c4c;">Error: ${data.error}</div>`;
-                    return;
-                }
+                sessionCache[key] = { timestamp: Date.now(), data: data };
+            } catch (e) { console.error("Prefetch failed", e); }
+        }
 
-                const sessions = parseSessions(data.output || "");
-                if (sessions.length === 0) {
-                    listEl.innerHTML = `<div style="padding: 10px; color: #666;">No active sessions found.</div>`;
-                } else {
-                    let html = '<div class="session-list">';
-                    sessions.forEach(s => {
-                        html += `
-                            <div class="session-item">
-                                <div class="session-info">
-                                    <span class="session-name">#${s.id}: ${s.name}</span><br>
-                                    <small>${s.meta}</small>
-                                </div>
-                                <button onclick="startSession('${tabId}', '${conn.type}', '${conn.target || ''}', '${conn.dir || ''}', '${s.id}')">Resume #${s.id}</button>
-                            </div>
-                        `;
-                    });
-                    html += '</div>';
-                    listEl.innerHTML = html;
+        async function fetchSessions(tabId, conn, targetId, forceAll = false) {
+            const key = getCacheKey(conn);
+            let data;
+            
+            // Use cache if fresh (under 10s)
+            if (sessionCache[key] && (Date.now() - sessionCache[key].timestamp < 10000)) {
+                data = sessionCache[key].data;
+            } else {
+                const query = new URLSearchParams();
+                if (conn.type === 'ssh') {
+                    query.set('ssh_target', conn.target);
+                    if (conn.dir) query.set('ssh_dir', conn.dir);
                 }
-            } catch (e) {
-                console.error(e);
+                try {
+                    const response = await fetch('/api/sessions?' + query.toString());
+                    data = await response.json();
+                    sessionCache[key] = { timestamp: Date.now(), data: data };
+                } catch (e) {
+                    console.error(e);
+                    data = { error: "Network error" };
+                }
+            }
+
+            const listEl = document.getElementById(targetId);
+            if (!listEl) return;
+            
+            if (data.error) {
+                listEl.innerHTML = `<div style="padding: 10px; color: #f14c4c; font-size: 11px;">Error: ${data.error}</div>`;
+                return;
+            }
+
+            const sessions = parseSessions(data.output || "");
+            if (sessions.length === 0) {
+                listEl.innerHTML = `<div style="padding: 10px; color: #666; font-size: 11px;">No active sessions found.</div>`;
+            } else {
+                // Reverse to newest first
+                const sorted = sessions.reverse();
+                const displayCount = forceAll ? sorted.length : 3;
+                
+                let html = '<div class="session-list">';
+                sorted.slice(0, displayCount).forEach(s => {
+                    html += `
+                        <div class="session-item">
+                            <div class="session-info">
+                                <span class="session-name">#${s.id}: ${s.name}</span>
+                                <span style="font-size: 10px; opacity: 0.7; margin-left: 10px;">(${s.meta})</span>
+                            </div>
+                            <button class="small" onclick="startSession('${tabId}', '${conn.type}', '${conn.target || ''}', '${conn.dir || ''}', '${s.id}')">Resume</button>
+                        </div>
+                    `;
+                });
+                
+                if (!forceAll && sorted.length > 3) {
+                    html += `
+                        <div class="session-item" style="justify-content: center; background: #252526; cursor: pointer;" onclick="fetchSessions('${tabId}', ${JSON.stringify(conn).replace(/"/g, '&quot;')}, '${targetId}', true)">
+                            <div style="font-size: 11px; color: #2472c8; font-weight: bold;">... Show ${sorted.length - 3} more</div>
+                        </div>
+                    `;
+                }
+                
+                html += '</div>';
+                listEl.innerHTML = html;
             }
         }
 
@@ -258,7 +304,6 @@
             const sessions = [];
             const lines = output.split('\n');
             lines.forEach(line => {
-                // Match "  1. some name (meta) [uuid]"
                 const match = line.match(/^\s+(\d+)\.\s+(.*)\s+\((.*)\)\s+\[(.*)\]/);
                 if (match) {
                     sessions.push({
@@ -318,10 +363,6 @@
                     }
                     tab.term.focus();
                 }, 100);
-            });
-
-            tab.socket.on('disconnect', () => {
-                if (tab.term) tab.term.write('\r\n*** Disconnected from backend ***\r\n');
             });
 
             tab.socket.on('pty-output', (data) => {
@@ -384,10 +425,8 @@
                 tab.term.clear();
                 tab.socket.emit('restart', {
                     resume: true,
-                    cols: tab.term.cols,
-                    rows: tab.term.rows,
-                    ssh_target: target,
-                    ssh_dir: dir
+                    cols: tab.term.cols, rows: tab.term.rows,
+                    ssh_target: target, ssh_dir: dir
                 });
                 updateStatus(target, dir);
             }
@@ -408,9 +447,10 @@
             
             if (tabs.length === 0) {
                 addNewTab();
-            } else if (activeTabId === id) {
-                switchTab(tabs[Math.max(0, index - 1)].id);
             } else {
+                if (activeTabId === id) {
+                    switchTab(tabs[Math.max(0, index - 1)].id);
+                }
                 renderTabs();
             }
         }
@@ -445,7 +485,6 @@
         });
         resizeObserver.observe(document.getElementById('terminal-container'));
 
-        // Initial tab
         addNewTab();
 
         async function openSettings() {
