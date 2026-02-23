@@ -1,7 +1,8 @@
-import eventlet
-eventlet.monkey_patch()
-
 import os
+if os.environ.get('SKIP_MONKEY_PATCH') != 'true':
+    import eventlet
+    eventlet.monkey_patch()
+
 import pty
 import select
 import signal
@@ -21,39 +22,16 @@ from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
 import ldap3
 
-# Configuration Paths
-DATA_DIR = os.environ.get('DATA_DIR', "/data")
-CONFIG_FILE = os.path.join(DATA_DIR, "config.json")
-SSH_DIR = os.path.join(DATA_DIR, ".ssh")
-
-# Ensure directories exist
-os.makedirs(SSH_DIR, mode=0o700, exist_ok=True)
-
-def get_config():
-    config = {
-        "LDAP_SERVER": os.environ.get('LDAP_SERVER', 'ldaps://192.168.1.100'),
-        "LDAP_BASE_DN": os.environ.get('LDAP_BASE_DN', 'CN=Users,DC=activedirectory,DC=adamoutler,DC=com'),
-        "AD_BIND_USER_DN": os.environ.get('AD_BIND_USER_DN'),
-        "AD_BIND_PASS": os.environ.get('AD_BIND_PASS'),
-        "AUTHORIZED_GROUP": os.environ.get('AUTHORIZED_GROUP'),
-        "FALLBACK_DOMAIN": os.environ.get('FALLBACK_DOMAIN', 'activedirectory.adamoutler.com'),
-        "DEFAULT_SSH_TARGET": os.environ.get('DEFAULT_SSH_TARGET', 'adamoutler@192.168.1.101'),
-        "DEFAULT_SSH_DIR": os.environ.get('DEFAULT_SSH_DIR', '~/oc'),
-        "SECRET_KEY": os.environ.get('SECRET_KEY', 'stable-fallback-key-change-me'),
-        "ALLOWED_ORIGINS": os.environ.get('ALLOWED_ORIGINS', '*')
-    }
-    
-    if os.path.exists(CONFIG_FILE):
-        try:
-            with open(CONFIG_FILE, 'r') as f:
-                file_config = json.load(f)
-                config.update(file_config)
-        except Exception as e:
-            logging.error(f"Error loading config file: {e}")
-            
-    return config
-
-config = get_config()
+# Global config holder and defaults
+config = {}
+LDAP_SERVER = os.environ.get('LDAP_SERVER', 'ldaps://192.168.1.100')
+LDAP_BASE_DN = os.environ.get('LDAP_BASE_DN', 'CN=Users,DC=activedirectory,DC=adamoutler,DC=com')
+AD_BIND_USER_DN = os.environ.get('AD_BIND_USER_DN')
+AD_BIND_PASS = os.environ.get('AD_BIND_PASS')
+AUTHORIZED_GROUP = os.environ.get('AUTHORIZED_GROUP')
+FALLBACK_DOMAIN = os.environ.get('FALLBACK_DOMAIN', 'activedirectory.adamoutler.com')
+DEFAULT_SSH_TARGET = os.environ.get('DEFAULT_SSH_TARGET', 'adamoutler@192.168.1.101')
+DEFAULT_SSH_DIR = os.environ.get('DEFAULT_SSH_DIR', '~/oc')
 
 # SECURITY PARADIGM: Fail-Closed Logging
 logging.basicConfig(level=logging.INFO)
@@ -64,13 +42,60 @@ app = Flask(__name__)
 # Handle proxy headers (X-Forwarded-For, X-Forwarded-Proto, etc.)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
-# SECURITY PARADIGM: Defense in Depth (Secure Cookies)
-app.config.update(
-    SECRET_KEY=config.get('SECRET_KEY'),
-    SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SECURE=True,
-    SESSION_COOKIE_SAMESITE='Lax',
-)
+def get_config_paths():
+    data_dir = app.config.get('DATA_DIR', os.environ.get('DATA_DIR', "/data"))
+    config_file = os.path.join(data_dir, "config.json")
+    ssh_dir = os.path.join(data_dir, ".ssh")
+    return data_dir, config_file, ssh_dir
+
+def get_config():
+    data_dir, config_file, ssh_dir = get_config_paths()
+    conf = {
+        "LDAP_SERVER": LDAP_SERVER,
+        "LDAP_BASE_DN": LDAP_BASE_DN,
+        "AD_BIND_USER_DN": AD_BIND_USER_DN,
+        "AD_BIND_PASS": AD_BIND_PASS,
+        "AUTHORIZED_GROUP": AUTHORIZED_GROUP,
+        "FALLBACK_DOMAIN": FALLBACK_DOMAIN,
+        "DEFAULT_SSH_TARGET": DEFAULT_SSH_TARGET,
+        "DEFAULT_SSH_DIR": DEFAULT_SSH_DIR,
+        "SECRET_KEY": os.environ.get('SECRET_KEY', 'stable-fallback-key-change-me'),
+        "ALLOWED_ORIGINS": os.environ.get('ALLOWED_ORIGINS', '*')
+    }
+    
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r') as f:
+                file_config = json.load(f)
+                conf.update(file_config)
+        except Exception as e:
+            logger.error(f"Error loading config file: {e}")
+            
+    return conf
+
+def init_app():
+    global config, LDAP_SERVER, LDAP_BASE_DN, AD_BIND_USER_DN, AD_BIND_PASS, AUTHORIZED_GROUP, FALLBACK_DOMAIN, DEFAULT_SSH_TARGET, DEFAULT_SSH_DIR
+    data_dir, config_file, ssh_dir = get_config_paths()
+    logger.info(f"Initializing app with DATA_DIR: {data_dir}")
+    os.makedirs(ssh_dir, mode=0o700, exist_ok=True)
+    
+    config = get_config()
+    LDAP_SERVER = config.get('LDAP_SERVER')
+    LDAP_BASE_DN = config.get('LDAP_BASE_DN')
+    AD_BIND_USER_DN = config.get('AD_BIND_USER_DN')
+    AD_BIND_PASS = config.get('AD_BIND_PASS')
+    AUTHORIZED_GROUP = config.get('AUTHORIZED_GROUP')
+    FALLBACK_DOMAIN = config.get('FALLBACK_DOMAIN')
+    DEFAULT_SSH_TARGET = config.get('DEFAULT_SSH_TARGET')
+    DEFAULT_SSH_DIR = config.get('DEFAULT_SSH_DIR')
+
+    app.config.update(
+        SECRET_KEY=config.get('SECRET_KEY'),
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SECURE=True,
+        SESSION_COOKIE_SAMESITE='Lax',
+    )
+    return config
 
 # SECURITY PARADIGM: Secure Headers (CSP, HSTS, etc.)
 csp = {
@@ -94,30 +119,14 @@ csp = {
         'https://cdnjs.cloudflare.com'
     ]
 }
-# force_https and strict_transport_security are disabled because the reverse proxy handles SSL.
-# session_cookie_secure is disabled to prevent issues if the proxy-app link is HTTP.
+
 Talisman(app, 
          content_security_policy=csp, 
          force_https=False, 
          strict_transport_security=False,
          session_cookie_secure=False)
 
-# VULNERABILITY FIX: Restrict CORS
-allowed_origins = config.get('ALLOWED_ORIGINS', '*')
-if allowed_origins != '*':
-    allowed_origins = allowed_origins.split(',')
-socketio = SocketIO(app, cors_allowed_origins=allowed_origins, async_mode='eventlet')
-
-LDAP_SERVER = config.get('LDAP_SERVER')
-LDAP_BASE_DN = config.get('LDAP_BASE_DN')
-AD_BIND_USER_DN = config.get('AD_BIND_USER_DN')
-AD_BIND_PASS = config.get('AD_BIND_PASS')
-AUTHORIZED_GROUP = config.get('AUTHORIZED_GROUP')
-FALLBACK_DOMAIN = config.get('FALLBACK_DOMAIN')
-
-# SSH Defaults
-DEFAULT_SSH_TARGET = config.get('DEFAULT_SSH_TARGET')
-DEFAULT_SSH_DIR = config.get('DEFAULT_SSH_DIR')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 @app.before_request
 def log_request_info():
@@ -172,10 +181,13 @@ def authenticate():
 
 @app.before_request
 def require_auth():
-    if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true':
+    if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true' or app.config.get('BYPASS_AUTH_FOR_TESTING') == 'true':
         session['authenticated'] = True
         return
         
+    if request.path == '/api/health':
+        return
+
     if not LDAP_SERVER:
         logger.critical("LDAP_SERVER not configured. Denying access.")
         return authenticate()
@@ -197,8 +209,7 @@ def authenticated_only(f):
 
 fd = None
 child_pid = None
-# Store current session config for automatic restarts
-current_config = {"resume": True, "rows": 24, "cols": 80, "ssh_target": DEFAULT_SSH_TARGET, "ssh_dir": DEFAULT_SSH_DIR}
+current_config = {"resume": True, "rows": 24, "cols": 80, "ssh_target": None, "ssh_dir": None}
 
 def set_winsize(fd, row, col, xpix=0, ypix=0):
     winsize = struct.pack("HHHH", row, col, xpix, ypix)
@@ -240,34 +251,26 @@ def start_gemini(resume=False, rows=24, cols=80, ssh_target=None, ssh_dir=None):
         os.environ['COLORTERM'] = 'truecolor'
         
         if ssh_target:
-            # Start via SSH. -t forces pty allocation for the remote process.
-            # Explicitly export TERM and COLORTERM to ensure the remote session supports colors.
             remote_env = "export TERM=xterm-256color; export COLORTERM=truecolor;"
             remote_cmd = f"{remote_env} cd {ssh_dir} && gemini" if ssh_dir else f"{remote_env} gemini"
             if resume:
                 remote_cmd += " -r"
             
             cmd = ['ssh', '-X', '-t']
-            
-            # Add identity files from /data/.ssh and the default /home/node/.ssh
-            search_dirs = [SSH_DIR, "/home/node/.ssh"]
+            _, _, ssh_dir_path = get_config_paths()
+            search_dirs = [ssh_dir_path, "/home/node/.ssh"]
             for sdir in search_dirs:
                 if os.path.exists(sdir):
                     for f in os.listdir(sdir):
-                        # Avoid pub keys and config files
                         if not f.endswith('.pub') and not f.startswith('config') and not f.startswith('known_hosts'):
                             key_path = os.path.join(sdir, f)
                             if os.path.isfile(key_path):
                                 cmd.extend(['-i', key_path])
             
-            # Try keys first, then password
             cmd.extend(['-o', 'PreferredAuthentications=publickey,password'])
-            # Disable strict host key checking to avoid interactive prompts
             cmd.extend(['-o', 'StrictHostKeyChecking=no'])
-            
             cmd.extend([ssh_target, remote_cmd])
         else:
-            # Start local
             cmd = ['gemini']
             if resume:
                 cmd.append('-r')
@@ -294,12 +297,13 @@ def get_current_config():
 @app.route('/api/config', methods=['POST'])
 @authenticated_only
 def update_config():
-    new_config = request.json
-    current_config = get_config()
-    current_config.update(new_config)
+    new_conf = request.json
+    curr_conf = get_config()
+    curr_conf.update(new_conf)
     
-    with open(CONFIG_FILE, 'w') as f:
-        json.dump(current_config, f, indent=4)
+    _, config_file, _ = get_config_paths()
+    with open(config_file, 'w') as f:
+        json.dump(curr_conf, f, indent=4)
     
     return jsonify({"status": "success"})
 
@@ -314,6 +318,13 @@ def add_ssh_key():
         return jsonify({"status": "error", "message": "No selected file"}), 400
     
     filename = secure_filename(file.filename)
+    _, _, ssh_dir = get_config_paths()
+    save_path = os.path.join(ssh_dir, filename)
+    file.save(save_path)
+    os.chmod(save_path, 0o600)
+    
+    return jsonify({"status": "success", "filename": filename})
+
 @app.route('/api/keys/text', methods=['POST'])
 @authenticated_only
 def add_ssh_key_text():
@@ -324,11 +335,11 @@ def add_ssh_key_text():
     if not name or not key_text:
         return jsonify({"status": "error", "message": "Name and key are required"}), 400
     
-    # Ensure it ends with a newline
     if not key_text.endswith('\n'):
         key_text += '\n'
         
-    save_path = os.path.join(SSH_DIR, name)
+    _, _, ssh_dir = get_config_paths()
+    save_path = os.path.join(ssh_dir, name)
     with open(save_path, 'w', encoding='utf-8') as f:
         f.write(key_text)
     os.chmod(save_path, 0o600)
@@ -368,7 +379,6 @@ def handle_restart(data):
     ssh_target = data.get('ssh_target')
     ssh_dir = data.get('ssh_dir')
     
-    # If already running with same config, just resize
     global current_config, child_pid
     if child_pid and \
        current_config.get('ssh_target') == ssh_target and \
@@ -394,6 +404,7 @@ def monitor_gemini():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
+    init_app()
     start_gemini(resume=True, ssh_target=DEFAULT_SSH_TARGET, ssh_dir=DEFAULT_SSH_DIR)
     socketio.start_background_task(read_and_forward_pty_output)
     socketio.start_background_task(monitor_gemini)

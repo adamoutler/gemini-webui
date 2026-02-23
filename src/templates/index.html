@@ -24,7 +24,7 @@
         
         <input type="text" id="ssh-target" placeholder="user@host" value="{{ default_target }}" style="background:#444; color:white; border:1px solid #666; padding:5px; width:200px; margin-left: 20px;">
         <input type="text" id="ssh-dir" placeholder="/folder" value="{{ default_dir }}" style="background:#444; color:white; border:1px solid #666; padding:5px; width:150px;">
-        <button onclick="const target=document.getElementById('ssh-target').value; const dir=document.getElementById('ssh-dir').value; localStorage.setItem('gemini-session', JSON.stringify({type: 'ssh', ssh_target: target, ssh_dir: dir})); updateStatus(target); term.clear(); socket.emit('restart', {resume: document.getElementById('resume-toggle').checked, cols: term.cols, rows: term.rows, ssh_target: target, ssh_dir: dir})">Restart SSH</button>
+        <button onclick="const target=document.getElementById('ssh-target').value; const dir=document.getElementById('ssh-dir').value; localStorage.setItem('gemini-session', JSON.stringify({type: 'ssh', ssh_target: target, ssh_dir: dir})); updateStatus(target, dir); term.clear(); socket.emit('restart', {resume: document.getElementById('resume-toggle').checked, cols: term.cols, rows: term.rows, ssh_target: target, ssh_dir: dir})">Restart SSH</button>
         
         <button onclick="openSettings()" style="background: #2472c8;">Settings</button>
 
@@ -65,7 +65,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js" integrity="sha256-EPMZTF8XwXhvt9XbhlweyFObZzajGAY/04var3xGhI8=" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha256-y6ZcVexS2AE/5ykFy1hqui8oXHHkKXk1CDE4x43QsDs=" crossorigin="anonymous"></script>
     <script>
-        function updateStatus(target) {
+        function updateStatus(target, dir) {
             const statusEl = document.getElementById('connection-status');
             if (target === 'local' || !target) {
                 statusEl.innerText = 'local';
@@ -73,7 +73,7 @@
             } else {
                 // Extract hostname from user@host
                 const host = target.split('@').pop();
-                statusEl.innerText = 'ssh: ' + host;
+                statusEl.innerText = 'ssh: ' + host + (dir ? ':' + dir : '');
                 statusEl.style.color = '#0dbc79';
             }
         }
@@ -135,7 +135,7 @@
             const resume = document.getElementById('resume-toggle').checked;
             
             if (lastSession.type === 'ssh') {
-                updateStatus(lastSession.ssh_target);
+                updateStatus(lastSession.ssh_target, lastSession.ssh_dir);
                 document.getElementById('ssh-target').value = lastSession.ssh_target || '{{ default_target }}';
                 document.getElementById('ssh-dir').value = lastSession.ssh_dir || '{{ default_dir }}';
                 socket.emit('restart', {

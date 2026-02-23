@@ -28,16 +28,5 @@ RUN useradd -m -u 1000 node && \
     mkdir -p /data && \
     chown -R node:node /data
 
-# Install SSH keys at build time
-ARG USERNAME
-RUN mkdir -p /home/node/.ssh && \
-    chmod 700 /home/node/.ssh && \
-    echo "Host *\n  StrictHostKeyChecking no\n  User $USERNAME" > /home/node/.ssh/config
-
-COPY id_ed25519 /home/node/.ssh/id_ed25519
-
-RUN chmod 600 /home/node/.ssh/id_ed25519 && \
-    chown -R node:node /home/node/.ssh
-
 # We need access to the mounted volume for the host
 CMD ["python", "src/app.py"]

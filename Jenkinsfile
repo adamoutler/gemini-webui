@@ -46,19 +46,11 @@ pipeline {
 
                     withCredentials([
                         string(credentialsId: 'GOOGLE_API_KEY', variable: 'GEMINI_API_KEY'),
-                        sshUserPrivateKey(credentialsId: 'adamoutler-inferrence1-login-key', keyFileVariable: 'PRIVATE_KEY', usernameVariable: 'USERNAME'),
                         usernamePassword(credentialsId: 'ldap-bind-auth-user', passwordVariable: 'AD_BIND_PASS', usernameVariable: 'AD_BIND_USER_DN')
                     ]) {
-                        sh '''
-                            # Copy the key and strip terminal box characters if present
-                            cat "$PRIVATE_KEY" | sed 's/^[│ ]*//;s/[│ ]*$//' > id_ed25519
-                            # Ensure there is exactly one trailing newline
-                            echo "" >> id_ed25519
-                        '''
-                        sh "sed -i 's/\\\${USERNAME}/$USERNAME/g' src/GEMINI.md"
+                        sh "sed -i 's/\\\${USERNAME}/jenkins/g' src/GEMINI.md"
                         sh 'docker pull python:3.11-slim'
-                        sh "docker buildx build --load -t gemini-webui --build-arg USERNAME=$USERNAME ."
-                        sh 'rm id_ed25519'
+                        sh "docker buildx build --load -t gemini-webui ."
                         sh 'docker compose down --remove-orphans || true'
                         sh 'docker compose up -d --force-recreate'
                     }
