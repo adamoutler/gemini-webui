@@ -41,21 +41,28 @@ app.config.update(
 # Talisman automatically adds essential security headers.
 # We allow inline scripts for xterm.js but restrict origins.
 csp = {
-    'default-src': '\'self\'',
+    'default-src': "'self'",
     'script-src': [
-        '\'self\'',
+        "'self'",
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com',
-        '\'unsafe-inline\'' # Required for xterm initialization in templates
+        "'unsafe-inline'" # Required for xterm initialization in templates
     ],
     'style-src': [
-        '\'self\'',
+        "'self'",
         'https://cdn.jsdelivr.net',
-        '\'unsafe-inline\''
+        "'unsafe-inline'"
     ],
-    'connect-src': ['\'self\'', 'ws:', 'wss:'] # Allow WebSockets
+    'connect-src': [
+        "'self'", 
+        'ws:', 
+        'wss:',
+        'https://cdn.jsdelivr.net',
+        'https://cdnjs.cloudflare.com'
+    ] # Allow WebSockets and CDN source maps
 }
-Talisman(app, content_security_policy=csp)
+# force_https is disabled because the reverse proxy handles SSL termination.
+Talisman(app, content_security_policy=csp, force_https=False)
 
 # VULNERABILITY FIX: Restrict CORS
 allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*')
@@ -69,6 +76,10 @@ AD_BIND_USER_DN = os.environ.get('AD_BIND_USER_DN')
 AD_BIND_PASS = os.environ.get('AD_BIND_PASS')
 AUTHORIZED_GROUP = os.environ.get('AUTHORIZED_GROUP')
 FALLBACK_DOMAIN = os.environ.get('FALLBACK_DOMAIN', 'activedirectory.adamoutler.com')
+
+@app.route('/favicon.ico')
+def favicon():
+    return Response(status=204)
 
 def sanitize_ldap_input(input_str):
     # SECURITY PARADIGM: Input Sanitization

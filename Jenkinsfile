@@ -2,6 +2,10 @@ pipeline {
     agent {
         label 'aitop'
     }
+
+    options {
+        disableConcurrentBuilds()
+    }
     
     stages {
         stage('Initialize Build') {
@@ -35,6 +39,7 @@ pipeline {
                     ]) {
                         sh 'docker pull python:3.11-slim'
                         sh 'docker buildx build --load -t gemini-webui .'
+                        sh 'docker compose down --remove-orphans || true'
                         sh 'docker compose up -d --force-recreate'
                     }
                 }
