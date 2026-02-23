@@ -16,11 +16,11 @@
 </head>
 <body>
     <div id="toolbar">
-        <input type="text" id="ssh-target" placeholder="user@host" value="{{ default_target }}" style="background:#444; color:white; border:1px solid #666; padding:5px; width:200px;">
-        <input type="text" id="ssh-dir" placeholder="/folder" value="{{ default_dir }}" style="background:#444; color:white; border:1px solid #666; padding:5px; width:150px;">
-        <button onclick="term.clear(); socket.emit('restart', {resume: true, cols: term.cols, rows: term.rows, ssh_target: document.getElementById('ssh-target').value, ssh_dir: document.getElementById('ssh-dir').value})">Restart (SSH)</button>
         <button onclick="term.clear(); socket.emit('restart', {resume: true, cols: term.cols, rows: term.rows})">Restart (Resume Local)</button>
         <button onclick="term.clear(); socket.emit('restart', {resume: false, cols: term.cols, rows: term.rows})">Restart (Fresh Local)</button>
+        <input type="text" id="ssh-target" placeholder="user@host" value="{{ default_target }}" style="background:#444; color:white; border:1px solid #666; padding:5px; width:200px; margin-left: 20px;">
+        <input type="text" id="ssh-dir" placeholder="/folder" value="{{ default_dir }}" style="background:#444; color:white; border:1px solid #666; padding:5px; width:150px;">
+        <button onclick="term.clear(); socket.emit('restart', {resume: true, cols: term.cols, rows: term.rows, ssh_target: document.getElementById('ssh-target').value, ssh_dir: document.getElementById('ssh-dir').value})">Restart (SSH)</button>
     </div>
     <div id="terminal-container"></div>
     
