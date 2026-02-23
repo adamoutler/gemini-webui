@@ -11,6 +11,8 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - AD_BIND_USER_DN=${AD_BIND_USER_DN}
       - AD_BIND_PASS=${AD_BIND_PASS}
+      - SECRET_KEY=${SECRET_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - AUTHORIZED_GROUP=CN=gemini-webui,OU=Groups,dc=activedirectory,dc=adamoutler,dc=com
     volumes:
       - ~/Gemini:/app/Gemini

@@ -11,6 +11,7 @@ from functools import wraps
 from flask import Flask, render_template, request, Response, session
 from flask_socketio import SocketIO, disconnect
 from flask_talisman import Talisman # Added for security headers
+from werkzeug.middleware.proxy_fix import ProxyFix
 import ldap3
 import eventlet
 
@@ -22,6 +23,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Handle proxy headers (X-Forwarded-For, X-Forwarded-Proto, etc.)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
 # SECURITY PARADIGM: Defense in Depth (Secure Cookies)
 # Session cookies are locked down to prevent theft via XSS (HttpOnly) 

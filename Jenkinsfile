@@ -26,8 +26,12 @@ pipeline {
             steps {
                 withCredentials([
                     string(credentialsId: 'GOOGLE_API_KEY', variable: 'GEMINI_API_KEY'),
+                    string(credentialsId: 'GEMINI_WEBUI_SECRET_KEY', variable: 'SECRET_KEY'),
                     usernamePassword(credentialsId: 'ldap-bind-auth-user', passwordVariable: 'AD_BIND_PASS', usernameVariable: 'AD_BIND_USER_DN')
                 ]) {
+                    script {
+                        env.ALLOWED_ORIGINS = "https://gemini.hackedyour.info"
+                    }
                     sh 'docker compose down || true'
                     sh 'docker compose up --build -d'
                 }
