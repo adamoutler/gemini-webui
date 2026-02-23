@@ -8,6 +8,7 @@ import select
 import signal
 import subprocess
 import struct
+import time
 import fcntl
 import termios
 import re
@@ -46,6 +47,8 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_
 
 # Multi-tab support: sid -> {'fd': fd, 'pid': pid, 'decoder': decoder}
 active_ptys = {}
+# Background session cache: key -> {"output": str, "error": str, "timestamp": float}
+session_results_cache = {}
 
 def get_config_paths():
     data_dir = app.config.get('DATA_DIR', os.environ.get('DATA_DIR', "/data"))
@@ -78,7 +81,6 @@ def get_config():
             with open(config_file, 'r') as f:
                 file_config = json.load(f)
                 conf.update(file_config)
-                # Ensure env var takes precedence if explicitly set
                 if os.environ.get('SECRET_KEY'):
                     conf['SECRET_KEY'] = os.environ.get('SECRET_KEY')
         except Exception as e:
@@ -92,7 +94,6 @@ def init_app():
     logger.info(f"Initializing app with DATA_DIR: {data_dir}")
     os.makedirs(ssh_dir, mode=0o700, exist_ok=True)
     
-    # Ensure permanent storage for gemini CLI state
     gemini_data = os.path.join(data_dir, ".gemini")
     os.makedirs(gemini_data, mode=0o700, exist_ok=True)
     home_gemini = os.path.expanduser("~/.gemini")
@@ -102,8 +103,6 @@ def init_app():
             logger.info(f"Linked {home_gemini} to {gemini_data}")
         except Exception as e:
             logger.error(f"Failed to symlink .gemini: {e}")
-    elif not os.path.islink(home_gemini) and os.path.isdir(home_gemini):
-        logger.warning(f"{home_gemini} exists and is not a link. Permanent storage in /data might not be active.")
     
     config = get_config()
     LDAP_SERVER = config.get('LDAP_SERVER')
@@ -120,6 +119,7 @@ def init_app():
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SECURE=False, 
         SESSION_COOKIE_SAMESITE='Lax',
+        DATA_DIR=data_dir
     )
     return config
 
@@ -191,49 +191,6 @@ def handle_disconnect():
             pass
 
 @app.before_request
-def log_request_info():
-    logger.debug('Request: %s %s [Scheme: %s]', request.method, request.url, request.scheme)
-
-@app.route('/favicon.ico')
-def favicon():
-    return app.send_static_file('favicon.svg')
-
-def sanitize_ldap_input(input_str):
-    return re.sub(r'[()\*\\\0]', '', input_str) if input_str else ""
-
-def check_auth(username, password):
-    try:
-        username = sanitize_ldap_input(username)
-        server = ldap3.Server(LDAP_SERVER, get_info=ldap3.ALL, connect_timeout=2)
-        
-        if AD_BIND_USER_DN and AD_BIND_PASS:
-            conn = ldap3.Connection(server, user=AD_BIND_USER_DN, password=AD_BIND_PASS, auto_bind=True)
-            search_filter = f"(&(objectClass=*)(sAMAccountName={username}))"
-            conn.search(LDAP_BASE_DN, search_filter, attributes=['memberOf'])
-            
-            if not conn.entries:
-                return False
-                
-            user_entry = conn.entries[0]
-            user_dn = user_entry.entry_dn
-            
-            if AUTHORIZED_GROUP:
-                member_of = user_entry.memberOf.values if 'memberOf' in user_entry else []
-                group_match = any(AUTHORIZED_GROUP.lower() in group.lower() for group in member_of)
-                if not group_match:
-                    return False
-                    
-            ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
-            return True
-        else:
-            user_dn = f"{username}@{FALLBACK_DOMAIN}"
-            ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
-            return True
-            
-    except Exception:
-        return False
-
-@app.before_request
 def require_auth():
     if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true' or app.config.get('BYPASS_AUTH_FOR_TESTING') == 'true':
         session['authenticated'] = True
@@ -275,6 +232,50 @@ def read_and_forward_pty_output():
             except (OSError, IOError, EOFError):
                 active_ptys.pop(sid, None)
 
+def fetch_sessions_for_host(host):
+    """Internal helper to fetch sessions for a host config."""
+    ssh_target = host.get('target')
+    ssh_dir = host.get('dir')
+    cmd = []
+    if ssh_target:
+        remote_cmd = "gemini --list-sessions"
+        if ssh_dir:
+            remote_cmd = f"cd {ssh_dir} && {remote_cmd}"
+        cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5', '-o', 'StrictHostKeyChecking=no']
+        data_dir, _, ssh_dir_path = get_config_paths()
+        if os.path.exists(ssh_dir_path):
+            for f in os.listdir(ssh_dir_path):
+                if os.path.isfile(os.path.join(ssh_dir_path, f)) and f not in ['config', 'known_hosts'] and not f.endswith('.pub'):
+                    cmd.extend(['-i', os.path.join(ssh_dir_path, f)])
+        cmd.extend([ssh_target, remote_cmd])
+    else:
+        cmd = ['gemini', '--list-sessions']
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        return {
+            "output": result.stdout,
+            "error": result.stderr if result.returncode != 0 else None,
+            "timestamp": time.time()
+        }
+    except Exception as e:
+        return {"error": str(e), "timestamp": time.time()}
+
+def background_session_preloader():
+    """Warms the session cache on startup."""
+    while True:
+        try:
+            hosts = get_config().get('HOSTS', [])
+            for host in hosts:
+                key = f"{host.get('type')}:{host.get('target', 'local')}:{host.get('dir', '')}"
+                logger.info(f"Background preloading sessions for: {host.get('label')}")
+                session_results_cache[key] = fetch_sessions_for_host(host)
+        except Exception as e:
+            logger.error(f"Preloader error: {e}")
+        # Only run once at startup, then sleep for a long time or until manually triggered
+        # For simplicity, we just do it once then sleep for an hour.
+        socketio.sleep(3600)
+
 @socketio.on('pty-input')
 def pty_input(data):
     sid = request.sid
@@ -293,8 +294,6 @@ def pty_resize(data):
 @socketio.on('restart')
 def pty_restart(data):
     sid = request.sid
-    
-    # Kill existing for this session
     if sid in active_ptys:
         pty_info = active_ptys.pop(sid)
         try:
@@ -311,60 +310,35 @@ def pty_restart(data):
     
     (child_pid, fd) = pty.fork()
     if child_pid == 0:
-        # Child process
         os.environ['TERM'] = 'xterm-256color'
         os.environ['COLORTERM'] = 'truecolor'
-        
         if ssh_target:
             remote_cmd = "gemini"
-            if resume is True:
-                remote_cmd += " -r"
-            elif resume and str(resume).isdigit():
-                remote_cmd += f" -r {resume}"
-
-            if ssh_dir:
-                remote_cmd = f"cd {ssh_dir} && {remote_cmd}"
-            
+            if resume is True: remote_cmd += " -r"
+            elif resume and str(resume).isdigit(): remote_cmd += f" -r {resume}"
+            if ssh_dir: remote_cmd = f"cd {ssh_dir} && {remote_cmd}"
             cmd = ['ssh', '-t']
-            
             _, _, ssh_dir_path = get_config_paths()
             if os.path.exists(ssh_dir_path):
                 for f in os.listdir(ssh_dir_path):
-                    if os.path.isfile(os.path.join(ssh_dir_path, f)):
-                        if f not in ['config', 'known_hosts'] and not f.endswith('.pub'):
-                            key_path = os.path.join(ssh_dir_path, f)
-                            if os.path.isfile(key_path):
-                                cmd.extend(['-i', key_path])
-            
-            cmd.extend(['-o', 'PreferredAuthentications=publickey,password'])
-            cmd.extend(['-o', 'StrictHostKeyChecking=no'])
-            cmd.extend([ssh_target, remote_cmd])
+                    if os.path.isfile(os.path.join(ssh_dir_path, f)) and f not in ['config', 'known_hosts'] and not f.endswith('.pub'):
+                        cmd.extend(['-i', os.path.join(ssh_dir_path, f)])
+            cmd.extend(['-o', 'PreferredAuthentications=publickey,password', '-o', 'StrictHostKeyChecking=no', ssh_target, remote_cmd])
         else:
             cmd = ['gemini']
-            if resume is True:
-                cmd.append('-r')
-            elif resume and str(resume).isdigit():
-                cmd.extend(['-r', str(resume)])
-                
+            if resume is True: cmd.append('-r')
+            elif resume and str(resume).isdigit(): cmd.extend(['-r', str(resume)])
         os.execvp(cmd[0], cmd)
         os._exit(0)
     else:
-        active_ptys[sid] = {
-            'fd': fd, 
-            'pid': child_pid,
-            'decoder': codecs.getincrementaldecoder('utf-8')()
-        }
-        try:
-            set_winsize(fd, rows, cols)
-        except Exception:
-            pass
+        active_ptys[sid] = {'fd': fd, 'pid': child_pid, 'decoder': codecs.getincrementaldecoder('utf-8')()}
+        try: set_winsize(fd, rows, cols)
+        except Exception: pass
         socketio.emit('pty-output', {'output': '\r\n*** Process started ***\r\n'}, room=sid)
 
 @app.route('/')
 def index():
-    return render_template('index.html', 
-                          default_target=DEFAULT_SSH_TARGET, 
-                          default_dir=DEFAULT_SSH_DIR)
+    return render_template('index.html', default_target=DEFAULT_SSH_TARGET, default_dir=DEFAULT_SSH_DIR)
 
 @app.route('/api/hosts', methods=['GET'])
 @authenticated_only
@@ -379,23 +353,21 @@ def add_host():
     hosts = curr_conf.get('HOSTS', [])
     hosts.append(new_host)
     curr_conf['HOSTS'] = hosts
-    
     _, config_file, _ = get_config_paths()
-    with open(config_file, 'w') as f:
-        json.dump(curr_conf, f, indent=4)
+    with open(config_file, 'w') as f: json.dump(curr_conf, f, indent=4)
     return jsonify({"status": "success"})
 
 @app.route('/api/hosts/<label>', methods=['DELETE'])
 @authenticated_only
 def remove_host(label):
+    if label == "Local Box":
+        return jsonify({"status": "error", "message": "Cannot delete Local Box"}), 403
     curr_conf = get_config()
     hosts = curr_conf.get('HOSTS', [])
     hosts = [h for h in hosts if h['label'] != label]
     curr_conf['HOSTS'] = hosts
-    
     _, config_file, _ = get_config_paths()
-    with open(config_file, 'w') as f:
-        json.dump(curr_conf, f, indent=4)
+    with open(config_file, 'w') as f: json.dump(curr_conf, f, indent=4)
     return jsonify({"status": "success"})
 
 @app.route('/api/config', methods=['GET'])
@@ -409,51 +381,9 @@ def update_config():
     new_conf = request.json
     curr_conf = get_config()
     curr_conf.update(new_conf)
-    
     _, config_file, _ = get_config_paths()
-    with open(config_file, 'w') as f:
-        json.dump(curr_conf, f, indent=4)
-    
+    with open(config_file, 'w') as f: json.dump(curr_conf, f, indent=4)
     return jsonify({"status": "success"})
-
-@app.route('/api/keys', methods=['POST'])
-@authenticated_only
-def add_ssh_key():
-    if 'key' not in request.files:
-        return jsonify({"status": "error", "message": "No key file provided"}), 400
-    
-    file = request.files['key']
-    if file.filename == '':
-        return jsonify({"status": "error", "message": "No selected file"}), 400
-    
-    filename = secure_filename(file.filename)
-    _, _, ssh_dir = get_config_paths()
-    save_path = os.path.join(ssh_dir, filename)
-    file.save(save_path)
-    os.chmod(save_path, 0o600)
-    
-    return jsonify({"status": "success", "filename": filename})
-
-@app.route('/api/keys/text', methods=['POST'])
-@authenticated_only
-def add_ssh_key_text():
-    data = request.json
-    name = secure_filename(data.get('name'))
-    key_text = data.get('key')
-    
-    if not name or not key_text:
-        return jsonify({"status": "error", "message": "Name and key are required"}), 400
-    
-    if not key_text.endswith('\n'):
-        key_text += '\n'
-        
-    _, _, ssh_dir = get_config_paths()
-    save_path = os.path.join(ssh_dir, name)
-    with open(save_path, 'w', encoding='utf-8') as f:
-        f.write(key_text)
-    os.chmod(save_path, 0o600)
-    
-    return jsonify({"status": "success", "filename": name})
 
 @app.route('/api/keys', methods=['GET'])
 @authenticated_only
@@ -465,6 +395,20 @@ def list_ssh_keys():
             if os.path.isfile(os.path.join(ssh_dir, f)) and f not in ['config', 'known_hosts'] and not f.endswith('.pub'):
                 keys.append(f)
     return jsonify(keys)
+
+@app.route('/api/keys/text', methods=['POST'])
+@authenticated_only
+def add_ssh_key_text():
+    data = request.json
+    name = secure_filename(data.get('name'))
+    key_text = data.get('key')
+    if not name or not key_text: return jsonify({"status": "error", "message": "Name and key are required"}), 400
+    if not key_text.endswith('\n'): key_text += '\n'
+    _, _, ssh_dir = get_config_paths()
+    save_path = os.path.join(ssh_dir, name)
+    with open(save_path, 'w', encoding='utf-8') as f: f.write(key_text)
+    os.chmod(save_path, 0o600)
+    return jsonify({"status": "success", "filename": name})
 
 @app.route('/api/keys/<filename>', methods=['DELETE'])
 @authenticated_only
@@ -482,36 +426,16 @@ def remove_ssh_key(filename):
 def list_gemini_sessions():
     ssh_target = request.args.get('ssh_target')
     ssh_dir = request.args.get('ssh_dir')
+    cache_key = f"{'ssh' if ssh_target else 'local'}:{ssh_target or 'local'}:{ssh_dir or ''}"
     
-    cmd = []
-    if ssh_target:
-        remote_cmd = "gemini --list-sessions"
-        if ssh_dir:
-            remote_cmd = f"cd {ssh_dir} && {remote_cmd}"
-        cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5', '-o', 'StrictHostKeyChecking=no']
-        
-        _, _, ssh_dir_path = get_config_paths()
-        if os.path.exists(ssh_dir_path):
-            for f in os.listdir(ssh_dir_path):
-                if os.path.isfile(os.path.join(ssh_dir_path, f)):
-                    if f not in ['config', 'known_hosts'] and not f.endswith('.pub'):
-                        key_path = os.path.join(ssh_dir_path, f)
-                        cmd.extend(['-i', key_path])
-        
-        cmd.extend([ssh_target, remote_cmd])
-    else:
-        cmd = ['gemini', '--list-sessions']
-
-    try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-        return jsonify({
-            "output": result.stdout, 
-            "error": result.stderr if result.returncode != 0 else None
-        })
-    except subprocess.TimeoutExpired:
-        return jsonify({"error": "Timeout listing sessions"}), 504
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # Check if we should update or use cache
+    use_cache = request.args.get('cache') == 'true'
+    if use_cache and cache_key in session_results_cache:
+        return jsonify(session_results_cache[cache_key])
+    
+    result = fetch_sessions_for_host({'target': ssh_target, 'dir': ssh_dir, 'type': 'ssh' if ssh_target else 'local'})
+    session_results_cache[cache_key] = result
+    return jsonify(result)
 
 @app.route('/api/health')
 def health_check():
@@ -520,4 +444,5 @@ def health_check():
 if __name__ == '__main__':
     init_app()
     socketio.start_background_task(read_and_forward_pty_output)
+    socketio.start_background_task(background_session_preloader)
     socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)

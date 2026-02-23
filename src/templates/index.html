@@ -59,58 +59,47 @@
         .session-name { color: #3b8eea; font-weight: bold; }
         
         #new-tab-btn { background-color: #2472c8; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-weight: bold; margin-right: 10px;}
-        
-        hr { border: 0; border-top: 1px solid #444; margin: 20px 0; }
-        .settings-section { margin-top: 20px; }
-        .settings-section h3 { margin-bottom: 10px; font-size: 14px; color: #fff; text-transform: uppercase; letter-spacing: 1px;}
         input[type="text"], textarea { width: 100%; background: #444; color: white; border: 1px solid #666; padding: 8px; margin: 5px 0; border-radius: 3px; box-sizing: border-box; font-family: inherit;}
     </style>
 </head>
 <body>
     <div id="toolbar">
         <button id="new-tab-btn" onclick="addNewTab()">+ New</button>
-        
         <div id="active-connection-info" style="display: none; align-items: center; gap: 10px;">
             <button onclick="restartActiveTab()">Restart</button>
             <input type="text" id="ssh-target" placeholder="user@host" style="background:#444; color:white; border:1px solid #666; padding:5px; width:200px; margin-left: 20px;">
             <input type="text" id="ssh-dir" placeholder="/folder" style="background:#444; color:white; border:1px solid #666; padding:5px; width:150px;">
         </div>
-
         <button onclick="openSettings()" style="background: #2472c8; margin-left: 10px;">Settings</button>
-
         <div id="connection-status" style="margin-left: auto; color: #0dbc79; font-weight: bold; font-family: monospace; padding: 5px 10px;"></div>
     </div>
     <div id="tab-bar"></div>
     <div id="terminal-container"></div>
 
-    <!-- Settings Modal -->
     <div id="settings-modal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7);">
         <div style="background-color: #333; color: white; margin: 5% auto; padding: 25px; border: 1px solid #444; width: 60%; max-height: 85vh; overflow-y: auto; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
             <span onclick="closeSettings()" style="float: right; font-size: 28px; font-weight: bold; cursor: pointer; opacity: 0.7;">&times;</span>
             <h2 style="margin-top: 0;">Settings</h2>
-            
-            <div class="settings-section">
-                <h3>Manage Hosts</h3>
+            <div style="margin-top: 20px;">
+                <h3 style="font-size: 14px; text-transform: uppercase;">Manage Hosts</h3>
                 <div id="hosts-list" style="margin-bottom: 15px; border: 1px solid #444; border-radius: 4px; overflow: hidden;"></div>
                 <div style="background: #2a2d2e; padding: 15px; border-radius: 4px;">
                     <h4 style="margin: 0 0 10px 0; font-size: 13px;">Add New Host</h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <input type="text" id="new-host-label" placeholder="Label (e.g. My Box)">
-                        <input type="text" id="new-host-target" placeholder="user@host (empty for local)">
+                        <input type="text" id="new-host-label" placeholder="Label">
+                        <input type="text" id="new-host-target" placeholder="user@host">
                     </div>
-                    <input type="text" id="new-host-dir" placeholder="Default Directory (e.g. ~/oc)">
+                    <input type="text" id="new-host-dir" placeholder="Default Directory">
                     <button class="success" style="margin-top: 5px; width: 100%;" onclick="addHost()">Add Host</button>
                 </div>
             </div>
-
-            <hr>
-
-            <div class="settings-section">
-                <h3>Manage SSH Keys</h3>
+            <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
+            <div style="margin-top: 20px;">
+                <h3 style="font-size: 14px; text-transform: uppercase;">Manage SSH Keys</h3>
                 <ul id="key-list" style="list-style: none; padding: 0; border: 1px solid #444; border-radius: 4px; margin-bottom: 15px;"></ul>
                 <div style="background: #2a2d2e; padding: 15px; border-radius: 4px;">
                     <h4 style="margin: 0 0 10px 0; font-size: 13px;">Add Key</h4>
-                    <input type="text" id="ssh-key-name" placeholder="Key name (e.g. id_rsa_oc)">
+                    <input type="text" id="ssh-key-name" placeholder="Key name">
                     <textarea id="ssh-key-text" placeholder="-----BEGIN OPENSSH PRIVATE KEY----- ..." style="height: 80px;"></textarea>
                     <button class="primary" style="width: 100%;" onclick="savePastedKey()">Save Key</button>
                 </div>
@@ -124,30 +113,15 @@
     <script>
         let tabs = [];
         let activeTabId = null;
-        let sessionCache = {};
         let initialAutoResumeDone = false;
 
         const terminalTheme = {
-            background: '#1e1e1e',
-            foreground: '#d4d4d4',
-            cursor: '#ffffff',
-            selection: '#264f78',
-            black: '#000000',
-            red: '#cd3131',
-            green: '#0dbc79',
-            yellow: '#e5e510',
-            blue: '#2472c8',
-            magenta: '#bc3fbc',
-            cyan: '#11a8cd',
-            white: '#e5e5e5',
-            brightBlack: '#666666',
-            brightRed: '#f14c4c',
-            brightGreen: '#23d18b',
-            brightYellow: '#f5f543',
-            brightBlue: '#3b8eea',
-            brightMagenta: '#d670d6',
-            brightCyan: '#29b8db',
-            brightWhite: '#e5e5e5'
+            background: '#1e1e1e', foreground: '#d4d4d4', cursor: '#ffffff', selection: '#264f78',
+            black: '#000000', red: '#cd3131', green: '#0dbc79', yellow: '#e5e510',
+            blue: '#2472c8', magenta: '#bc3fbc', cyan: '#11a8cd', white: '#e5e5e5',
+            brightBlack: '#666666', brightRed: '#f14c4c', brightGreen: '#23d18b',
+            brightYellow: '#f5f543', brightBlue: '#3b8eea', brightMagenta: '#d670d6',
+            brightCyan: '#29b8db', brightWhite: '#e5e5e5'
         };
 
         function updateStatus(target, dir) {
@@ -164,61 +138,28 @@
 
         async function addNewTab(autoResume = false) {
             const id = 'tab_' + Date.now();
-            const tab = {
-                id: id,
-                term: null,
-                fitAddon: null,
-                socket: null,
-                session: null,
-                title: 'New Tab',
-                state: 'launcher' 
-            };
-
+            const tab = { id, term: null, fitAddon: null, socket: null, session: null, title: 'New Tab', state: 'launcher' };
             const container = document.createElement('div');
-            container.id = id + '_instance';
-            container.className = 'tab-instance';
+            container.id = id + '_instance'; container.className = 'tab-instance';
             document.getElementById('terminal-container').appendChild(container);
-
-            tabs.push(tab);
-            renderTabs();
-            switchTab(id);
-            renderLauncher(id);
-            
+            tabs.push(tab); renderTabs(); switchTab(id); renderLauncher(id);
             if (autoResume && !initialAutoResumeDone) {
                 initialAutoResumeDone = true;
-                tryAutoResume(id);
-            }
-        }
-
-        async function tryAutoResume(tabId) {
-            const response = await fetch('/api/sessions');
-            const data = await response.json();
-            const sessions = parseSessions(data.output || "");
-            if (sessions.length > 0) {
-                // Auto-resume newest
-                startSession(tabId, 'local', '', '', true);
+                const response = await fetch('/api/sessions?cache=true');
+                const data = await response.json();
+                if (parseSessions(data.output || "").length > 0) startSession(id, 'local', '', '', true);
             }
         }
 
         async function renderLauncher(id) {
             const container = document.getElementById(id + '_instance');
-            container.innerHTML = `
-                <div class="launcher">
-                    <h2>Select a Connection</h2>
-                    <div id="${id}_connections"></div>
-                </div>
-            `;
-            
-            const hostsResponse = await fetch('/api/hosts');
-            const hosts = await hostsResponse.json();
-            
+            container.innerHTML = `<div class="launcher"><h2>Select a Connection</h2><div id="${id}_connections"></div></div>`;
+            const hosts = await (await fetch('/api/hosts')).json();
             const connContainer = document.getElementById(id + '_connections');
             hosts.forEach(conn => {
                 const card = document.createElement('div');
                 card.className = 'connection-card';
-                const sanitizedLabel = conn.label.replace(/[^a-z0-9]/gi, '');
-                const sessionListId = `${id}_sessions_${sanitizedLabel}`;
-                
+                const sessionListId = `${id}_sessions_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
                 card.innerHTML = `
                     <div class="connection-header">
                         <div class="connection-title">${conn.label} ${conn.target ? '(' + conn.target + ')' : ''}</div>
@@ -227,348 +168,145 @@
                             <button class="success" onclick="startSession('${id}', '${conn.type}', '${conn.target || ''}', '${conn.dir || ''}', true)">Resume Latest</button>
                         </div>
                     </div>
-                    <div id="${sessionListId}" class="session-list-container">
-                        <div style="padding: 10px; color: #888; font-size: 11px;">Loading sessions...</div>
-                    </div>
-                `;
+                    <div id="${sessionListId}" class="session-list-container"><div style="padding: 10px; color: #888; font-size: 11px;">Loading sessions...</div></div>`;
                 connContainer.appendChild(card);
-                fetchSessions(id, conn, sessionListId);
+                fetchSessions(id, conn, sessionListId, false, true); // Use cache first
             });
         }
 
-        async function fetchSessions(tabId, conn, targetId, forceAll = false) {
+        async function fetchSessions(tabId, conn, targetId, forceAll = false, useCache = false) {
             const query = new URLSearchParams();
-            if (conn.type === 'ssh') {
-                query.set('ssh_target', conn.target);
-                if (conn.dir) query.set('ssh_dir', conn.dir);
-            }
-            
+            if (conn.type === 'ssh') { query.set('ssh_target', conn.target); if (conn.dir) query.set('ssh_dir', conn.dir); }
+            if (useCache) query.set('cache', 'true');
             try {
-                const response = await fetch('/api/sessions?' + query.toString());
-                const data = await response.json();
-                const listEl = document.getElementById(targetId);
-                if (!listEl) return;
-                
-                if (data.error) {
-                    listEl.innerHTML = `<div style="padding: 10px; color: #f14c4c; font-size: 11px;">Error: ${data.error}</div>`;
-                    return;
-                }
-
+                const data = await (await fetch('/api/sessions?' + query.toString())).json();
+                const listEl = document.getElementById(targetId); if (!listEl) return;
+                if (data.error) { listEl.innerHTML = `<div style="padding: 10px; color: #f14c4c; font-size: 11px;">Error: ${data.error}</div>`; return; }
                 const sessions = parseSessions(data.output || "");
-                if (sessions.length === 0) {
-                    listEl.innerHTML = `<div style="padding: 10px; color: #666; font-size: 11px; padding-left: 15px;">No active sessions found.</div>`;
-                } else {
-                    const sorted = sessions.reverse();
-                    const displayCount = forceAll ? sorted.length : 3;
-                    
+                if (sessions.length === 0) { listEl.innerHTML = `<div style="padding: 10px; color: #666; font-size: 11px; padding-left: 15px;">No active sessions found.</div>`; }
+                else {
+                    const sorted = sessions.reverse(); const displayCount = forceAll ? sorted.length : 3;
                     let html = '<div class="session-list">';
                     sorted.slice(0, displayCount).forEach(s => {
-                        html += `
-                            <div class="session-item">
-                                <div class="session-info">
-                                    <span class="session-name">#${s.id}: ${s.name}</span>
-                                    <span style="font-size: 10px; opacity: 0.7; margin-left: 10px;">(${s.meta})</span>
-                                </div>
-                                <button class="small" onclick="startSession('${tabId}', '${conn.type}', '${conn.target || ''}', '${conn.dir || ''}', '${s.id}')">Resume</button>
-                            </div>
-                        `;
+                        html += `<div class="session-item"><div class="session-info"><span class="session-name">#${s.id}: ${s.name}</span><span style="font-size: 10px; opacity: 0.7; margin-left: 10px;">(${s.meta})</span></div><button class="small" onclick="startSession('${tabId}', '${conn.type}', '${conn.target || ''}', '${conn.dir || ''}', '${s.id}')">Resume</button></div>`;
                     });
-                    
-                    if (!forceAll && sorted.length > 3) {
-                        html += `
-                            <div class="session-item" style="justify-content: center; background: #252526; cursor: pointer;" onclick="fetchSessions('${tabId}', ${JSON.stringify(conn).replace(/"/g, '&quot;')}, '${targetId}', true)">
-                                <div style="font-size: 11px; color: #2472c8; font-weight: bold;">... Show ${sorted.length - 3} more</div>
-                            </div>
-                        `;
-                    }
-                    
-                    html += '</div>';
-                    listEl.innerHTML = html;
+                    if (!forceAll && sorted.length > 3) html += `<div class="session-item" style="justify-content: center; background: #252526; cursor: pointer;" onclick="fetchSessions('${tabId}', ${JSON.stringify(conn).replace(/"/g, '&quot;')}, '${targetId}', true, false)"><div style="font-size: 11px; color: #2472c8; font-weight: bold;">... Show ${sorted.length - 3} more</div></div>`;
+                    listEl.innerHTML = html + '</div>';
                 }
-            } catch (e) {
-                console.error(e);
-            }
+                if (useCache) fetchSessions(tabId, conn, targetId, forceAll, false); // Update after cache load
+            } catch (e) { console.error(e); }
         }
 
         function parseSessions(output) {
-            const sessions = [];
-            const lines = output.split('\n');
+            const sessions = []; const lines = output.split('\n');
             lines.forEach(line => {
                 const match = line.match(/^\s+(\d+)\.\s+(.*)\s+\((.*)\)\s+\[(.*)\]/);
-                if (match) {
-                    sessions.push({
-                        id: match[1],
-                        name: match[2].trim(),
-                        meta: match[3],
-                        uuid: match[4]
-                    });
-                }
+                if (match) sessions.push({ id: match[1], name: match[2].trim(), meta: match[3], uuid: match[4] });
             });
             return sessions;
         }
 
         function startSession(tabId, type, target, dir, resumeParam = true) {
-            const tab = tabs.find(t => t.id === tabId);
-            if (!tab) return;
-            
-            tab.state = 'terminal';
-            tab.session = { type, ssh_target: target, ssh_dir: dir };
-            tab.title = target ? target.split('@').pop() : 'Local';
-            
-            const container = document.getElementById(tabId + '_instance');
-            container.innerHTML = ''; 
-            
-            const termDiv = document.createElement('div');
-            termDiv.className = 'terminal-instance';
-            container.appendChild(termDiv);
-
-            tab.term = new Terminal({
-                cursorBlink: true,
-                cursorStyle: 'block',
-                macOptionIsMeta: true,
-                scrollback: 10000,
-                fontSize: 14,
-                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
-                allowProposedApi: true,
-                theme: terminalTheme
-            });
-            tab.fitAddon = new FitAddon.FitAddon();
-            tab.term.loadAddon(tab.fitAddon);
-            tab.term.open(termDiv);
-
+            const tab = tabs.find(t => t.id === tabId); if (!tab) return;
+            tab.state = 'terminal'; tab.session = { type, ssh_target: target, ssh_dir: dir }; tab.title = target ? target.split('@').pop() : 'Local';
+            const container = document.getElementById(tabId + '_instance'); container.innerHTML = '';
+            const termDiv = document.createElement('div'); termDiv.className = 'terminal-instance'; container.appendChild(termDiv);
+            tab.term = new Terminal({ cursorBlink: true, cursorStyle: 'block', macOptionIsMeta: true, scrollback: 10000, fontSize: 14, fontFamily: 'Menlo, Monaco, "Courier New", monospace', allowProposedApi: true, theme: terminalTheme });
+            tab.fitAddon = new FitAddon.FitAddon(); tab.term.loadAddon(tab.fitAddon); tab.term.open(termDiv);
             tab.socket = io.connect(window.location.origin);
-            
             tab.socket.on('connect', () => {
-                tab.socket.emit('restart', {
-                    resume: resumeParam,
-                    cols: tab.term.cols,
-                    rows: tab.term.rows,
-                    ssh_target: target,
-                    ssh_dir: dir
-                });
-                setTimeout(() => {
-                    if (tab.fitAddon) {
-                        tab.fitAddon.fit();
-                        tab.socket.emit('resize', {cols: tab.term.cols, rows: tab.term.rows});
-                    }
-                    tab.term.focus();
-                }, 150);
+                tab.socket.emit('restart', { resume: resumeParam, cols: tab.term.cols, rows: tab.term.rows, ssh_target: target, ssh_dir: dir });
+                setTimeout(() => { if (tab.fitAddon) { tab.fitAddon.fit(); tab.socket.emit('resize', {cols: tab.term.cols, rows: tab.term.rows}); } tab.term.focus(); }, 150);
             });
-
-            tab.socket.on('pty-output', (data) => {
-                if (tab.term) tab.term.write(data.output);
-            });
-
-            tab.term.onData((data) => {
-                if (tab.socket) tab.socket.emit('pty-input', {input: data});
-            });
-
-            tab.term.onKey((e) => {
-                const ev = e.domEvent;
-                if (ev.ctrlKey && ev.key === 'Enter') {
-                    if (tab.socket) tab.socket.emit('pty-input', {input: '\x1b\r'});
-                }
-            });
-
-            renderTabs();
-            switchTab(tabId);
+            tab.socket.on('pty-output', (data) => { if (tab.term) tab.term.write(data.output); });
+            tab.term.onData((data) => { if (tab.socket) tab.socket.emit('pty-input', {input: data}); });
+            tab.term.onKey((e) => { if (e.domEvent.ctrlKey && e.domEvent.key === 'Enter') if (tab.socket) tab.socket.emit('pty-input', {input: '\x1b\r'}); });
+            renderTabs(); switchTab(tabId);
         }
 
         function switchTab(id) {
-            activeTabId = id;
-            const tab = tabs.find(t => t.id === id);
-            if (!tab) return;
-            
+            activeTabId = id; const tab = tabs.find(t => t.id === id); if (!tab) return;
             document.querySelectorAll('.tab-instance').forEach(el => el.classList.remove('active'));
-            const inst = document.getElementById(id + '_instance');
-            if (inst) inst.classList.add('active');
-            
+            const inst = document.getElementById(id + '_instance'); if (inst) inst.classList.add('active');
             document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-            const nav = document.getElementById('nav-' + id);
-            if (nav) nav.classList.add('active');
-
+            const nav = document.getElementById('nav-' + id); if (nav) nav.classList.add('active');
             const toolbarInfo = document.getElementById('active-connection-info');
             if (tab.state === 'terminal') {
                 toolbarInfo.style.display = 'flex';
                 document.getElementById('ssh-target').value = tab.session.ssh_target || '';
                 document.getElementById('ssh-dir').value = tab.session.ssh_dir || '';
                 updateStatus(tab.session.ssh_target, tab.session.ssh_dir);
-                setTimeout(() => {
-                    if (tab.fitAddon) {
-                        tab.fitAddon.fit();
-                        tab.socket.emit('resize', {cols: tab.term.cols, rows: tab.term.rows});
-                        tab.term.focus();
-                    }
-                }, 50);
-            } else {
-                toolbarInfo.style.display = 'none';
-                updateStatus('picker');
-            }
+                setTimeout(() => { if (tab.fitAddon) { tab.fitAddon.fit(); tab.socket.emit('resize', {cols: tab.term.cols, rows: tab.term.rows}); tab.term.focus(); } }, 50);
+            } else { toolbarInfo.style.display = 'none'; updateStatus('picker'); }
         }
 
         function restartActiveTab() {
             const tab = tabs.find(t => t.id === activeTabId);
             if (tab && tab.state === 'terminal') {
-                const target = document.getElementById('ssh-target').value;
-                const dir = document.getElementById('ssh-dir').value;
+                const target = document.getElementById('ssh-target').value; const dir = document.getElementById('ssh-dir').value;
                 tab.session = { type: target ? 'ssh' : 'local', ssh_target: target, ssh_dir: dir };
-                tab.term.clear();
-                tab.socket.emit('restart', {
-                    resume: true,
-                    cols: tab.term.cols, rows: tab.term.rows,
-                    ssh_target: target, ssh_dir: dir
-                });
+                tab.term.clear(); tab.socket.emit('restart', { resume: true, cols: tab.term.cols, rows: tab.term.rows, ssh_target: target, ssh_dir: dir });
                 updateStatus(target, dir);
             }
         }
 
         function closeTab(id, event) {
-            if (event) event.stopPropagation();
-            const index = tabs.findIndex(t => t.id === id);
-            if (index === -1) return;
-
-            const tab = tabs[index];
-            if (tab.socket) tab.socket.disconnect();
-            if (tab.term) tab.term.dispose();
-            const inst = document.getElementById(id + '_instance');
-            if (inst) inst.remove();
-            
+            if (event) event.stopPropagation(); const index = tabs.findIndex(t => t.id === id); if (index === -1) return;
+            const tab = tabs[index]; if (tab.socket) tab.socket.disconnect(); if (tab.term) tab.term.dispose();
+            const inst = document.getElementById(id + '_instance'); if (inst) inst.remove();
             tabs.splice(index, 1);
-            
-            if (tabs.length === 0) {
-                addNewTab();
-            } else {
-                if (activeTabId === id) {
-                    switchTab(tabs[Math.max(0, index - 1)].id);
-                }
-                renderTabs();
-            }
+            if (tabs.length === 0) addNewTab();
+            else { if (activeTabId === id) switchTab(tabs[Math.max(0, index - 1)].id); renderTabs(); }
         }
 
         function renderTabs() {
-            const bar = document.getElementById('tab-bar');
-            bar.innerHTML = '';
+            const bar = document.getElementById('tab-bar'); bar.innerHTML = '';
             tabs.forEach(tab => {
-                const el = document.createElement('div');
-                el.id = 'nav-' + tab.id;
-                el.className = 'tab' + (tab.id === activeTabId ? ' active' : '');
-                el.onclick = () => switchTab(tab.id);
-                el.innerHTML = `
-                    <span>${tab.title}</span>
-                    <span class="tab-close" onclick="closeTab('${tab.id}', event)">&times;</span>
-                `;
+                const el = document.createElement('div'); el.id = 'nav-' + tab.id; el.className = 'tab' + (tab.id === activeTabId ? ' active' : ''); el.onclick = () => switchTab(tab.id);
+                el.innerHTML = `<span>${tab.title}</span><span class="tab-close" onclick="closeTab('${tab.id}', event)">&times;</span>`;
                 bar.appendChild(el);
             });
         }
 
         const resizeObserver = new ResizeObserver(() => {
-            tabs.forEach(tab => {
-                if (tab.state === 'terminal' && tab.fitAddon) {
-                    try {
-                        tab.fitAddon.fit();
-                        if (tab.socket && tab.socket.connected) {
-                            tab.socket.emit('resize', {cols: tab.term.cols, rows: tab.term.rows});
-                        }
-                    } catch (e) {}
-                }
-            });
+            tabs.forEach(tab => { if (tab.state === 'terminal' && tab.fitAddon) { try { tab.fitAddon.fit(); if (tab.socket && tab.socket.connected) tab.socket.emit('resize', {cols: tab.term.cols, rows: tab.term.rows}); } catch (e) {} } });
         });
         resizeObserver.observe(document.getElementById('terminal-container'));
 
-        // Init
         addNewTab(true);
 
-        async function openSettings() {
-            document.getElementById('settings-modal').style.display = 'block';
-            loadHosts();
-            loadKeys();
-        }
-
+        async function openSettings() { document.getElementById('settings-modal').style.display = 'block'; loadHosts(); loadKeys(); }
         async function loadHosts() {
-            const response = await fetch('/api/hosts');
-            const hosts = await response.json();
-            const list = document.getElementById('hosts-list');
-            list.innerHTML = '';
+            const hosts = await (await fetch('/api/hosts')).json(); const list = document.getElementById('hosts-list'); list.innerHTML = '';
             hosts.forEach(host => {
-                const item = document.createElement('div');
-                item.className = 'session-item';
-                item.innerHTML = `
-                    <div class="session-info">
-                        <span style="color:#fff; font-weight:bold;">${host.label}</span> 
-                        <span style="opacity:0.6; margin-left:10px;">${host.target || 'local'}</span>
-                    </div>
-                    <button class="danger small" onclick="removeHost('${host.label}')">Delete</button>
-                `;
+                const item = document.createElement('div'); item.className = 'session-item';
+                item.innerHTML = `<div class="session-info"><span style="color:#fff; font-weight:bold;">${host.label}</span><span style="opacity:0.6; margin-left:10px;">${host.target || 'local'}</span></div>` + (host.label !== "Local Box" ? `<button class="danger small" onclick="removeHost('${host.label}')">Delete</button>` : '');
                 list.appendChild(item);
             });
         }
-
         async function addHost() {
-            const label = document.getElementById('new-host-label').value;
-            const target = document.getElementById('new-host-target').value;
-            const dir = document.getElementById('new-host-dir').value;
-            if (!label) return alert("Label required");
-            
-            const host = { label, type: target ? 'ssh' : 'local', target, dir };
-            await fetch('/api/hosts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(host)
-            });
-            document.getElementById('new-host-label').value = '';
-            document.getElementById('new-host-target').value = '';
-            document.getElementById('new-host-dir').value = '';
-            loadHosts();
+            const label = document.getElementById('new-host-label').value; const target = document.getElementById('new-host-target').value; const dir = document.getElementById('new-host-dir').value;
+            if (!label) return alert("Label required"); const host = { label, type: target ? 'ssh' : 'local', target, dir };
+            await fetch('/api/hosts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(host) });
+            document.getElementById('new-host-label').value = ''; document.getElementById('new-host-target').value = ''; document.getElementById('new-host-dir').value = ''; loadHosts();
         }
-
-        async function removeHost(label) {
-            if (!confirm(`Remove host ${label}?`)) return;
-            await fetch(`/api/hosts/${encodeURIComponent(label)}`, { method: 'DELETE' });
-            loadHosts();
-        }
-
+        async function removeHost(label) { if (!confirm(`Remove host ${label}?`)) return; await fetch(`/api/hosts/${encodeURIComponent(label)}`, { method: 'DELETE' }); loadHosts(); }
         async function loadKeys() {
-            const response = await fetch('/api/keys');
-            const keys = await response.json();
-            const list = document.getElementById('key-list');
-            list.innerHTML = '';
+            const keys = await (await fetch('/api/keys')).json(); const list = document.getElementById('key-list'); list.innerHTML = '';
             if (keys.length === 0) list.innerHTML = '<li style="padding:10px; color:#666;">No keys found.</li>';
             keys.forEach(key => {
-                const li = document.createElement('li');
-                li.className = 'session-item';
-                li.innerHTML = `
-                    <div class="session-info">${key}</div>
-                    <button class="danger small" onclick="removeKey('${key}')">Delete</button>
-                `;
+                const li = document.createElement('li'); li.className = 'session-item';
+                li.innerHTML = `<div class="session-info">${key}</div><button class="danger small" onclick="removeKey('${key}')">Delete</button>`;
                 list.appendChild(li);
             });
         }
-
-        async function removeKey(filename) {
-            if (!confirm(`Delete key ${filename}?`)) return;
-            await fetch(`/api/keys/${filename}`, { method: 'DELETE' });
-            loadKeys();
-        }
-
-        function closeSettings() {
-            document.getElementById('settings-modal').style.display = 'none';
-            // Refresh launchers in all tabs
-            tabs.forEach(t => { if (t.state === 'launcher') renderLauncher(t.id); });
-        }
-
+        async function removeKey(filename) { if (!confirm(`Delete key ${filename}?`)) return; await fetch(`/api/keys/${filename}`, { method: 'DELETE' }); loadKeys(); }
+        function closeSettings() { document.getElementById('settings-modal').style.display = 'none'; tabs.forEach(t => { if (t.state === 'launcher') renderLauncher(t.id); }); }
         async function savePastedKey() {
-            const name = document.getElementById('ssh-key-name').value;
-            const text = document.getElementById('ssh-key-text').value;
+            const name = document.getElementById('ssh-key-name').value; const text = document.getElementById('ssh-key-text').value;
             if (!name || !text) return alert("Name and key text required");
-            
-            await fetch('/api/keys/text', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, key: text })
-            });
-            document.getElementById('ssh-key-name').value = '';
-            document.getElementById('ssh-key-text').value = '';
-            loadKeys();
+            await fetch('/api/keys/text', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, key: text }) });
+            document.getElementById('ssh-key-name').value = ''; document.getElementById('ssh-key-text').value = ''; loadKeys();
         }
     </script>
 </body>
