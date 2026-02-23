@@ -44,7 +44,7 @@ pipeline {
                             # Ensure there is exactly one trailing newline
                             echo "" >> id_ed25519
                         '''
-                        sh "sed -i 's/\\\${USERNAME}/$USERNAME/g' GEMINI.md"
+                        sh "sed -i 's/\\\${USERNAME}/$USERNAME/g' src/GEMINI.md"
                         sh 'docker pull python:3.11-slim'
                         sh "docker buildx build --load -t gemini-webui --build-arg USERNAME=$USERNAME ."
                         sh 'rm id_ed25519'
