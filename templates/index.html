@@ -16,8 +16,8 @@
 </head>
 <body>
     <div id="toolbar">
-        <button onclick="term.clear(); socket.emit('restart', {resume: true})">Restart (Resume)</button>
-        <button onclick="term.clear(); socket.emit('restart', {resume: false})">Restart (Fresh)</button>
+        <button onclick="term.clear(); socket.emit('restart', {resume: true, cols: term.cols, rows: term.rows})">Restart (Resume)</button>
+        <button onclick="term.clear(); socket.emit('restart', {resume: false, cols: term.cols, rows: term.rows})">Restart (Fresh)</button>
     </div>
     <div id="terminal-container"></div>
     

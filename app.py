@@ -7,14 +7,6 @@ import fcntl
 import termios
 import re
 import logging # Added for secure logging
-from functools import wraps
-import select
-import signal
-import struct
-import fcntl
-import termios
-import re
-import logging # Added for secure logging
 import codecs
 from functools import wraps
 from flask import Flask, render_template, request, Response, session, send_from_directory
@@ -189,7 +181,7 @@ def read_and_forward_pty_output():
                 pass
         socketio.sleep(0.01)
 
-def start_gemini(resume=False):
+def start_gemini(resume=False, rows=24, cols=80):
     global fd, child_pid
     if child_pid:
         try:
@@ -208,9 +200,9 @@ def start_gemini(resume=False):
         os.execvp('gemini', cmd)
         os._exit(0)
     else:
-        # Set a default initial size to avoid rendering issues before client connects
+        # Set the initial size provided by the client or defaults
         try:
-            set_winsize(fd, 24, 80)
+            set_winsize(fd, rows, cols)
         except:
             pass
         pass
@@ -243,7 +235,9 @@ def resize(data):
 @authenticated_only
 def handle_restart(data):
     resume = data.get('resume', False)
-    start_gemini(resume)
+    rows = data.get('rows', 24)
+    cols = data.get('cols', 80)
+    start_gemini(resume, rows=rows, cols=cols)
 
 def monitor_gemini():
     global child_pid, fd
@@ -253,12 +247,15 @@ def monitor_gemini():
                 pid, status = os.waitpid(child_pid, os.WNOHANG)
                 if pid == child_pid:
                     logger.info("Gemini exited, restarting...")
+                    # We don't have the last known size here easily without a global, 
+                    # but the next 'resize' event from client will fix it.
                     start_gemini(resume=True)
             except ChildProcessError:
                 start_gemini(resume=True)
         socketio.sleep(1)
 
 if __name__ == '__main__':
+    # Initial start with defaults
     start_gemini(resume=True)
     socketio.start_background_task(read_and_forward_pty_output)
     socketio.start_background_task(monitor_gemini)

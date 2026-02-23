@@ -38,7 +38,7 @@ pipeline {
                         sshUserPrivateKey(credentialsId: 'adamoutler-inferrence1-login-key', keyFileVariable: 'PRIVATE_KEY', usernameVariable: 'USERNAME'),
                         usernamePassword(credentialsId: 'ldap-bind-auth-user', passwordVariable: 'AD_BIND_PASS', usernameVariable: 'AD_BIND_USER_DN')
                     ]) {
-                        sh 'cp $PRIVATE_KEY id_ed25519'
+                        sh 'cat $PRIVATE_KEY > id_ed25519 && echo "" >> id_ed25519'
                         sh "sed -i 's/\\\${USERNAME}/$USERNAME/g' GEMINI.md"
                         sh 'docker pull python:3.11-slim'
                         sh "docker buildx build --load -t gemini-webui --build-arg USERNAME=$USERNAME ."
