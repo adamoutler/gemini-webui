@@ -1,6 +1,6 @@
 #!/bin/bash
 # wait-for-receipt.sh
-RECEIPT="/tmp/jenkins-receipt.log"
+RECEIPT="/tmp/jenkins-receipt-gemini-webui.log"
 TIMEOUT=300
 
 echo "Waiting for deployment receipt at $RECEIPT (max ${TIMEOUT}s)..."

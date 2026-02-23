@@ -11,7 +11,7 @@ pipeline {
                     echo '--- DEPLOYMENT STARTING #${env.BUILD_NUMBER} ---' > deployment.log
                     echo 'Build Number: ${env.BUILD_NUMBER}' >> deployment.log
                     echo "Deployment Started: \$(date)" >> deployment.log
-                    cp deployment.log /tmp/jenkins-receipt.log
+                    cp deployment.log /tmp/jenkins-receipt-gemini-webui.log
                     sync
                 """
             }
@@ -35,8 +35,8 @@ pipeline {
             sh 'docker-compose ps'
             withCredentials([string(credentialsId: 'Adam-Jenkins-Token', variable: 'ADAM_TOKEN')]) {
                 sh """
-                    curl -sL -u "adamoutler@gmail.com:${ADAM_TOKEN}" "${env.BUILD_URL}consoleText" > /tmp/jenkins-receipt.log
-                    echo "Finished: ${currentBuild.currentResult} #${env.BUILD_NUMBER}" >> /tmp/jenkins-receipt.log
+                    curl -sL -u "adamoutler@gmail.com:${ADAM_TOKEN}" "${env.BUILD_URL}consoleText" > /tmp/jenkins-receipt-gemini-webui.log
+                    echo "Finished: ${currentBuild.currentResult} #${env.BUILD_NUMBER}" >> /tmp/jenkins-receipt-gemini-webui.log
                 """
             }
         }
