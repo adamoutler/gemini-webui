@@ -24,8 +24,13 @@ pipeline {
         
         stage('Deploy Gemini WebUI') {
             steps {
-                sh 'docker compose down || true'
-                sh 'docker compose up --build -d'
+                withCredentials([
+                    string(credentialsId: 'GOOGLE_API_KEY', variable: 'GEMINI_API_KEY'),
+                    usernamePassword(credentialsId: 'ldap-bind-auth-user', passwordVariable: 'AD_BIND_PASS', usernameVariable: 'AD_BIND_USER_DN')
+                ]) {
+                    sh 'docker compose down || true'
+                    sh 'docker compose up --build -d'
+                }
             }
         }
     }
