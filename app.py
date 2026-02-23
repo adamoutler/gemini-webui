@@ -6,12 +6,12 @@ import struct
 import fcntl
 import termios
 import re
-import logging # Added for secure logging
+import logging
 import codecs
 from functools import wraps
-from flask import Flask, render_template, request, Response, session, send_from_directory
+from flask import Flask, render_template, request, Response, session
 from flask_socketio import SocketIO, disconnect
-from flask_talisman import Talisman # Added for security headers
+from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
 import ldap3
 import eventlet
@@ -19,19 +19,15 @@ import eventlet
 eventlet.monkey_patch()
 
 # SECURITY PARADIGM: Fail-Closed Logging
-# We use a proper logger and avoid printing raw exceptions to prevent data leaks.
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
 # Handle proxy headers (X-Forwarded-For, X-Forwarded-Proto, etc.)
-# We trust one level of proxy (x_proto=1, x_for=1)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
 # SECURITY PARADIGM: Defense in Depth (Secure Cookies)
-# Session cookies are locked down to prevent theft via XSS (HttpOnly) 
-# and ensure they are only sent over HTTPS (Secure).
 app.config.update(
     SECRET_KEY=os.environ.get('SECRET_KEY', 'stable-fallback-key-change-me'),
     SESSION_COOKIE_HTTPONLY=True,
@@ -40,15 +36,13 @@ app.config.update(
 )
 
 # SECURITY PARADIGM: Secure Headers (CSP, HSTS, etc.)
-# Talisman automatically adds essential security headers.
-# We allow inline scripts for xterm.js but restrict origins.
 csp = {
     'default-src': "'self'",
     'script-src': [
         "'self'",
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com',
-        "'unsafe-inline'" # Required for xterm initialization in templates
+        "'unsafe-inline'"
     ],
     'style-src': [
         "'self'",
@@ -61,9 +55,8 @@ csp = {
         'wss:',
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com'
-    ] # Allow WebSockets and CDN source maps
+    ]
 }
-# force_https is disabled because the reverse proxy handles SSL termination.
 Talisman(app, content_security_policy=csp, force_https=False)
 
 # VULNERABILITY FIX: Restrict CORS
@@ -79,14 +72,15 @@ AD_BIND_PASS = os.environ.get('AD_BIND_PASS')
 AUTHORIZED_GROUP = os.environ.get('AUTHORIZED_GROUP')
 FALLBACK_DOMAIN = os.environ.get('FALLBACK_DOMAIN', 'activedirectory.adamoutler.com')
 
+# SSH Defaults
+DEFAULT_SSH_TARGET = os.environ.get('DEFAULT_SSH_TARGET', 'adamoutler@192.168.1.101')
+DEFAULT_SSH_DIR = os.environ.get('DEFAULT_SSH_DIR', '/oc')
+
 @app.route('/favicon.ico')
 def favicon():
-    # Return 404 for favicon to stop redirect loops in some proxy configs
     return Response(status=404)
 
 def sanitize_ldap_input(input_str):
-    # SECURITY PARADIGM: Input Sanitization
-    # Prevents LDAP Injection by stripping special characters used in filters.
     return re.sub(r'[()\*\\\0]', '', input_str) if input_str else ""
 
 def check_auth(username, password):
@@ -113,16 +107,14 @@ def check_auth(username, password):
                     logger.warning(f"Auth failure: User {username} not in group {AUTHORIZED_GROUP}")
                     return False
                     
-            user_conn = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
+            ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
             return True
         else:
             user_dn = f"{username}@{FALLBACK_DOMAIN}"
-            conn = ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
+            ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
             return True
             
     except Exception:
-        # SECURITY PARADIGM: No Sensitive Data Leakage
-        # We log a generic message and avoid exposing LDAP server details.
         logger.error("LDAP authentication process failed.")
         return False
 
@@ -133,8 +125,6 @@ def authenticate():
 
 @app.before_request
 def require_auth():
-    # SECURITY PARADIGM: Fail-Closed
-    # If the environment is not properly configured, we deny all access.
     if not LDAP_SERVER:
         logger.critical("LDAP_SERVER not configured. Denying access.")
         return authenticate()
@@ -145,7 +135,6 @@ def require_auth():
     else:
         return authenticate()
 
-# VULNERABILITY FIX: Socket.IO Authentication Decorator
 def authenticated_only(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
@@ -157,6 +146,8 @@ def authenticated_only(f):
 
 fd = None
 child_pid = None
+# Store current session config for automatic restarts
+current_config = {"resume": True, "rows": 24, "cols": 80, "ssh_target": DEFAULT_SSH_TARGET, "ssh_dir": DEFAULT_SSH_DIR}
 
 def set_winsize(fd, row, col, xpix=0, ypix=0):
     winsize = struct.pack("HHHH", row, col, xpix, ypix)
@@ -177,39 +168,51 @@ def read_and_forward_pty_output():
                         output = decoder.decode(raw_data)
                         if output:
                             socketio.emit("pty-output", {"output": output})
-            except Exception as e:
+            except Exception:
                 pass
         socketio.sleep(0.01)
 
-def start_gemini(resume=False, rows=24, cols=80):
-    global fd, child_pid
+def start_gemini(resume=False, rows=24, cols=80, ssh_target=None, ssh_dir=None):
+    global fd, child_pid, current_config
+    current_config = {"resume": resume, "rows": rows, "cols": cols, "ssh_target": ssh_target, "ssh_dir": ssh_dir}
+    
     if child_pid:
         try:
             os.kill(child_pid, signal.SIGKILL)
             os.waitpid(child_pid, 0)
-        except:
+        except Exception:
             pass
     
     child_pid, fd = pty.fork()
     if child_pid == 0:
         os.environ['TERM'] = 'xterm-256color'
         os.environ['COLORTERM'] = 'truecolor'
-        cmd = ['gemini']
-        if resume:
-            cmd.append('-r')
-        os.execvp('gemini', cmd)
+        
+        if ssh_target:
+            # Start via SSH. -t forces pty allocation for the remote process.
+            remote_cmd = f"cd {ssh_dir} && gemini" if ssh_dir else "gemini"
+            if resume:
+                remote_cmd += " -r"
+            cmd = ['ssh', '-t', ssh_target, remote_cmd]
+        else:
+            # Start local
+            cmd = ['gemini']
+            if resume:
+                cmd.append('-r')
+                
+        os.execvp(cmd[0], cmd)
         os._exit(0)
     else:
-        # Set the initial size provided by the client or defaults
         try:
             set_winsize(fd, rows, cols)
-        except:
+        except Exception:
             pass
-        pass
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', 
+                          default_target=DEFAULT_SSH_TARGET, 
+                          default_dir=DEFAULT_SSH_DIR)
 
 @socketio.on('pty-input')
 @authenticated_only
@@ -218,7 +221,7 @@ def pty_input(data):
     if fd:
         try:
             os.write(fd, data['input'].encode('utf-8'))
-        except:
+        except Exception:
             pass
 
 @socketio.on('resize')
@@ -228,7 +231,7 @@ def resize(data):
     if fd:
         try:
             set_winsize(fd, data['rows'], data['cols'])
-        except:
+        except Exception:
             pass
 
 @socketio.on('restart')
@@ -237,26 +240,25 @@ def handle_restart(data):
     resume = data.get('resume', False)
     rows = data.get('rows', 24)
     cols = data.get('cols', 80)
-    start_gemini(resume, rows=rows, cols=cols)
+    ssh_target = data.get('ssh_target')
+    ssh_dir = data.get('ssh_dir')
+    start_gemini(resume, rows=rows, cols=cols, ssh_target=ssh_target, ssh_dir=ssh_dir)
 
 def monitor_gemini():
-    global child_pid, fd
+    global child_pid, fd, current_config
     while True:
         if child_pid:
             try:
                 pid, status = os.waitpid(child_pid, os.WNOHANG)
                 if pid == child_pid:
-                    logger.info("Gemini exited, restarting...")
-                    # We don't have the last known size here easily without a global, 
-                    # but the next 'resize' event from client will fix it.
-                    start_gemini(resume=True)
+                    logger.info("Gemini process exited, restarting with current config...")
+                    start_gemini(**current_config)
             except ChildProcessError:
-                start_gemini(resume=True)
+                start_gemini(**current_config)
         socketio.sleep(1)
 
 if __name__ == '__main__':
-    # Initial start with defaults
-    start_gemini(resume=True)
+    start_gemini(resume=True, ssh_target=DEFAULT_SSH_TARGET, ssh_dir=DEFAULT_SSH_DIR)
     socketio.start_background_task(read_and_forward_pty_output)
     socketio.start_background_task(monitor_gemini)
     socketio.run(app, host='0.0.0.0', port=5000)
