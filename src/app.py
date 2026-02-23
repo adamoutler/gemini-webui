@@ -190,6 +190,41 @@ def handle_disconnect():
         except Exception:
             pass
 
+def sanitize_ldap_input(input_str):
+    return re.sub(r'[()\*\\\0]', '', input_str) if input_str else ""
+
+def check_auth(username, password):
+    try:
+        username = sanitize_ldap_input(username)
+        server = ldap3.Server(LDAP_SERVER, get_info=ldap3.ALL, connect_timeout=2)
+        
+        if AD_BIND_USER_DN and AD_BIND_PASS:
+            conn = ldap3.Connection(server, user=AD_BIND_USER_DN, password=AD_BIND_PASS, auto_bind=True)
+            search_filter = f"(&(objectClass=*)(sAMAccountName={username}))"
+            conn.search(LDAP_BASE_DN, search_filter, attributes=['memberOf'])
+            
+            if not conn.entries:
+                return False
+                
+            user_entry = conn.entries[0]
+            user_dn = user_entry.entry_dn
+            
+            if AUTHORIZED_GROUP:
+                member_of = user_entry.memberOf.values if 'memberOf' in user_entry else []
+                group_match = any(AUTHORIZED_GROUP.lower() in group.lower() for group in member_of)
+                if not group_match:
+                    return False
+                    
+            ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
+            return True
+        else:
+            user_dn = f"{username}@{FALLBACK_DOMAIN}"
+            ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
+            return True
+            
+    except Exception:
+        return False
+
 @app.before_request
 def require_auth():
     if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true' or app.config.get('BYPASS_AUTH_FOR_TESTING') == 'true':
