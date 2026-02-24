@@ -22,7 +22,10 @@ from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, disconnect
 from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
-from src.auth_ldap import check_auth
+try:
+    from auth_ldap import check_auth
+except ImportError:
+    from src.auth_ldap import check_auth
 
 # Global config holder and defaults
 config = {}
