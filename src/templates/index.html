@@ -111,13 +111,13 @@
     <div id="tab-bar"></div>
     <div id="terminal-container"></div>
     <div id="mobile-controls" style="display: none;">
-        <div class="control-btn" onclick="sendToTerminal('\x1b[A')">▲</div>
-        <div class="control-btn" onclick="sendToTerminal('\x1b[B')">▼</div>
-        <div class="control-btn" onclick="sendToTerminal('\x1b[D')">◀</div>
-        <div class="control-btn" onclick="sendToTerminal('\x1b[C')">▶</div>
+        <div id="ctrl-toggle" class="control-btn" onclick="toggleCtrl()">Ctrl</div>
         <div class="control-btn" onclick="adjustFontSize(1)">A+</div>
         <div class="control-btn" onclick="adjustFontSize(-1)">A-</div>
-        <div id="ctrl-toggle" class="control-btn" onclick="toggleCtrl()">Ctrl</div>
+        <div class="control-btn" onclick="sendToTerminal('\x1b[D')">◀</div>
+        <div class="control-btn" onclick="sendToTerminal('\x1b[C')">▶</div>
+        <div class="control-btn" onclick="sendToTerminal('\x1b[A')">▲</div>
+        <div class="control-btn" onclick="sendToTerminal('\x1b[B')">▼</div>
     </div>
 
     <div id="settings-modal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7);">
@@ -267,10 +267,17 @@
             const tab = tabs.find(t => t.id === tabId); if (!tab) return;
             tab.state = 'terminal'; tab.session = { type, ssh_target: target, ssh_dir: dir }; tab.title = target ? target.split('@').pop() : 'Local';
             const container = document.getElementById(tabId + '_instance'); container.innerHTML = '';
-            const termDiv = document.createElement('div'); termDiv.className = 'terminal-instance'; container.appendChild(termDiv);
+            
+            const termDiv = document.createElement('div'); 
+            termDiv.className = 'terminal-instance'; 
+            termDiv.id = 'rolling-log-' + tabId;
+            termDiv.setAttribute('role', 'log');
+            termDiv.setAttribute('aria-live', 'polite');
+            termDiv.setAttribute('aria-relevant', 'additions');
+            container.appendChild(termDiv);
             
             const isMobile = window.innerWidth <= 768;
-            const fontSize = isMobile ? 13 : 14;
+            const fontSize = isMobile ? 11 : 14;
 
             tab.term = new Terminal({ 
                 cursorBlink: true, 
@@ -286,14 +293,17 @@
             });
             tab.fitAddon = new FitAddon.FitAddon(); tab.term.loadAddon(tab.fitAddon); tab.term.open(termDiv);
             
-            // Disable Android/Chrome autocomplete/autocorrect on terminal textarea
+            // Enable autocomplete options and ARIA attributes on terminal textarea
             const textarea = tab.term.textarea;
             if (textarea) {
-                textarea.setAttribute('autocomplete', 'off');
-                textarea.setAttribute('autocorrect', 'off');
-                textarea.setAttribute('autocapitalize', 'off');
-                textarea.setAttribute('spellcheck', 'false');
-                textarea.setAttribute('type', 'text'); // Some mobile browsers respect this more
+                textarea.id = 'terminal-input-' + tabId;
+                textarea.setAttribute('type', 'text');
+                textarea.setAttribute('aria-autocomplete', 'list');
+                textarea.setAttribute('aria-controls', 'rolling-log-' + tabId);
+                textarea.setAttribute('autocomplete', 'on');
+                textarea.setAttribute('autocorrect', 'on');
+                textarea.setAttribute('autocapitalize', 'sentences');
+                textarea.setAttribute('spellcheck', 'true');
             }
 
             tab.socket = io.connect(window.location.origin);
