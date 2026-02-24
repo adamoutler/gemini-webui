@@ -66,7 +66,19 @@ def server(test_data_dir):
     process.wait()
 
 @pytest.fixture
+def app_obj(test_data_dir):
+    from src.app import app as flask_app
+    flask_app.config['DATA_DIR'] = str(test_data_dir)
+    return flask_app
+
+@pytest.fixture
 def client(test_data_dir):
+    import sys
+    if 'src.app' in sys.modules:
+        import importlib
+        importlib.reload(sys.modules['src.app'])
+    from src.app import app, init_app
+    
     app.config['TESTING'] = True
     app.config['BYPASS_AUTH_FOR_TESTING'] = 'true'
     app.config['DATA_DIR'] = str(test_data_dir)

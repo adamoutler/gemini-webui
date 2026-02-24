@@ -22,7 +22,7 @@ from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, disconnect
 from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
-import ldap3
+from src.auth_ldap import check_auth
 
 # Global config holder and defaults
 config = {}
@@ -190,55 +190,8 @@ def handle_disconnect():
         except Exception:
             pass
 
-def sanitize_ldap_input(input_str):
-    return re.sub(r'[()\*\\\0]', '', input_str) if input_str else ""
-
-def check_auth(username, password):
-    try:
-        username = sanitize_ldap_input(username)
-        server = ldap3.Server(LDAP_SERVER, get_info=ldap3.ALL, connect_timeout=2)
-        
-        if AD_BIND_USER_DN and AD_BIND_PASS:
-            conn = ldap3.Connection(server, user=AD_BIND_USER_DN, password=AD_BIND_PASS, auto_bind=True)
-            search_filter = f"(&(objectClass=*)(sAMAccountName={username}))"
-            conn.search(LDAP_BASE_DN, search_filter, attributes=['memberOf'])
-            
-            if not conn.entries:
-                return False
-                
-            user_entry = conn.entries[0]
-            user_dn = user_entry.entry_dn
-            
-            if AUTHORIZED_GROUP:
-                member_of = user_entry.memberOf.values if 'memberOf' in user_entry else []
-                group_match = any(AUTHORIZED_GROUP.lower() in group.lower() for group in member_of)
-                if not group_match:
-                    return False
-                    
-            ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
-            return True
-        else:
-            user_dn = f"{username}@{FALLBACK_DOMAIN}"
-            ldap3.Connection(server, user=user_dn, password=password, auto_bind=True)
-            return True
-            
-    except Exception:
-        return False
-
-@app.before_request
-def require_auth():
-    if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true' or app.config.get('BYPASS_AUTH_FOR_TESTING') == 'true':
-        session['authenticated'] = True
-        return
-        
-    if request.path == '/api/health':
-        return
-
-    if not LDAP_SERVER:
-        return authenticate()
-        
     auth = request.authorization
-    if auth and check_auth(auth.username, auth.password):
+    if auth and check_auth(auth.username, auth.password, LDAP_SERVER, LDAP_BASE_DN, AD_BIND_USER_DN, AD_BIND_PASS, AUTHORIZED_GROUP, FALLBACK_DOMAIN):
         session['authenticated'] = True
         return
 
@@ -431,6 +384,15 @@ def list_ssh_keys():
                 keys.append(f)
     return jsonify(keys)
 
+@app.route('/api/keys/public', methods=['GET'])
+@authenticated_only
+def get_public_key():
+    pub_key_path = os.path.expanduser("~/.ssh/id_ed25519.pub")
+    if os.path.exists(pub_key_path):
+        with open(pub_key_path, 'r') as f:
+            return jsonify({"key": f.read().strip()})
+    return jsonify({"error": "Public key not found"}), 404
+
 @app.route('/api/keys/text', methods=['POST'])
 @authenticated_only
 def add_ssh_key_text():
@@ -469,6 +431,9 @@ def list_gemini_sessions():
         return jsonify(session_results_cache[cache_key])
     
     result = fetch_sessions_for_host({'target': ssh_target, 'dir': ssh_dir, 'type': 'ssh' if ssh_target else 'local'})
+    err = result.get('error')
+    if err and 'timeout' in err.lower():
+        return jsonify(result), 504
     session_results_cache[cache_key] = result
     return jsonify(result)
 
@@ -479,5 +444,6 @@ def health_check():
 if __name__ == '__main__':
     init_app()
     socketio.start_background_task(read_and_forward_pty_output)
-    socketio.start_background_task(background_session_preloader)
+    if os.environ.get('SKIP_PRELOADER') != 'true':
+        socketio.start_background_task(background_session_preloader)
     socketio.run(app, host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=True)

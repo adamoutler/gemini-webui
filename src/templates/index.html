@@ -60,6 +60,36 @@
         
         #new-tab-btn { background-color: #2472c8; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-weight: bold; margin-right: 10px;}
         input[type="text"], textarea { width: 100%; background: #444; color: white; border: 1px solid #666; padding: 8px; margin: 5px 0; border-radius: 3px; box-sizing: border-box; font-family: inherit;}
+
+        /* Mobile Controls */
+        #mobile-controls { 
+            display: none; 
+            background: #333; 
+            padding: 5px; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 5px; 
+            border-top: 1px solid #444;
+        }
+        .control-btn { 
+            background: #444; 
+            color: white; 
+            border: 1px solid #555; 
+            border-radius: 4px; 
+            padding: 15px 5px; 
+            text-align: center; 
+            font-weight: bold; 
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .control-btn:active { background: #666; }
+        .control-btn.danger { background: #cd3131; }
+        .control-btn.danger:active { background: #f14c4c; }
+
+        @media (max-width: 768px) {
+            #mobile-controls { display: grid; }
+            #ssh-target, #ssh-dir { width: 100px !important; }
+        }
     </style>
 </head>
 <body>
@@ -75,6 +105,15 @@
     </div>
     <div id="tab-bar"></div>
     <div id="terminal-container"></div>
+    <div id="mobile-controls">
+        <div class="control-btn" onclick="sendToTerminal('\x1b[A')">▲</div>
+        <div class="control-btn" onclick="sendToTerminal('\x1b[B')">▼</div>
+        <div class="control-btn" onclick="sendToTerminal('\x1b[D')">◀</div>
+        <div class="control-btn" onclick="sendToTerminal('\x1b[C')">▶</div>
+        <div class="control-btn" onclick="adjustFontSize(1)">A+</div>
+        <div class="control-btn" onclick="adjustFontSize(-1)">A-</div>
+        <div class="control-btn danger" onclick="sendToTerminal('\x03')">Ctrl-C</div>
+    </div>
 
     <div id="settings-modal" style="display:none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7);">
         <div style="background-color: #333; color: white; margin: 5% auto; padding: 25px; border: 1px solid #444; width: 60%; max-height: 85vh; overflow-y: auto; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
@@ -96,6 +135,11 @@
             <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
             <div style="margin-top: 20px;">
                 <h3 style="font-size: 14px; text-transform: uppercase;">Manage SSH Keys</h3>
+                <div id="public-key-container" style="background: #1e1e1e; padding: 10px; border: 1px solid #444; border-radius: 4px; margin-bottom: 15px; display: none;">
+                    <h4 style="margin: 0 0 5px 0; font-size: 11px; color: #888;">DEFAULT PUBLIC KEY (id_ed25519.pub)</h4>
+                    <code id="public-key-text" style="font-size: 10px; word-break: break-all; color: #0dbc79;"></code>
+                    <button class="small" style="margin-top: 5px; width: 100%;" onclick="copyPublicKey()">Copy Public Key</button>
+                </div>
                 <ul id="key-list" style="list-style: none; padding: 0; border: 1px solid #444; border-radius: 4px; margin-bottom: 15px;"></ul>
                 <div style="background: #2a2d2e; padding: 15px; border-radius: 4px;">
                     <h4 style="margin: 0 0 10px 0; font-size: 13px;">Add Key</h4>
@@ -181,7 +225,14 @@
             try {
                 const data = await (await fetch('/api/sessions?' + query.toString())).json();
                 const listEl = document.getElementById(targetId); if (!listEl) return;
-                if (data.error) { listEl.innerHTML = `<div style="padding: 10px; color: #f14c4c; font-size: 11px;">Error: ${data.error}</div>`; return; }
+                if (data.error) { 
+                    let errorHtml = `<div style="padding: 10px; color: #f14c4c; font-size: 11px;">Error: ${data.error}</div>`;
+                    if (data.error.toLowerCase().includes('permission denied') || data.error.toLowerCase().includes('publickey')) {
+                        errorHtml += `<div style="padding: 0 10px 10px 10px;"><button class="small primary" onclick="openSettings()">Setup Keys</button></div>`;
+                    }
+                    listEl.innerHTML = errorHtml; 
+                    return; 
+                }
                 const sessions = parseSessions(data.output || "");
                 if (sessions.length === 0) { listEl.innerHTML = `<div style="padding: 10px; color: #666; font-size: 11px; padding-left: 15px;">No active sessions found.</div>`; }
                 else {
@@ -211,8 +262,31 @@
             tab.state = 'terminal'; tab.session = { type, ssh_target: target, ssh_dir: dir }; tab.title = target ? target.split('@').pop() : 'Local';
             const container = document.getElementById(tabId + '_instance'); container.innerHTML = '';
             const termDiv = document.createElement('div'); termDiv.className = 'terminal-instance'; container.appendChild(termDiv);
-            tab.term = new Terminal({ cursorBlink: true, cursorStyle: 'block', macOptionIsMeta: true, scrollback: 10000, fontSize: 14, fontFamily: 'Menlo, Monaco, "Courier New", monospace', allowProposedApi: true, theme: terminalTheme });
+            
+            const isMobile = window.innerWidth <= 768;
+            const fontSize = isMobile ? 16 : 14;
+
+            tab.term = new Terminal({ 
+                cursorBlink: true, 
+                cursorStyle: 'block', 
+                macOptionIsMeta: true, 
+                scrollback: 10000, 
+                fontSize: fontSize, 
+                fontFamily: 'Menlo, Monaco, "Courier New", monospace', 
+                allowProposedApi: true, 
+                theme: terminalTheme 
+            });
             tab.fitAddon = new FitAddon.FitAddon(); tab.term.loadAddon(tab.fitAddon); tab.term.open(termDiv);
+            
+            // Disable Android/Chrome autocomplete/autocorrect on terminal textarea
+            const textarea = tab.term.textarea;
+            if (textarea) {
+                textarea.setAttribute('autocomplete', 'off');
+                textarea.setAttribute('autocorrect', 'off');
+                textarea.setAttribute('autocapitalize', 'off');
+                textarea.setAttribute('spellcheck', 'false');
+            }
+
             tab.socket = io.connect(window.location.origin);
             tab.socket.on('connect', () => {
                 tab.socket.emit('restart', { resume: resumeParam, cols: tab.term.cols, rows: tab.term.rows, ssh_target: target, ssh_dir: dir });
@@ -224,6 +298,30 @@
             renderTabs(); switchTab(tabId);
         }
 
+        function sendToTerminal(data) {
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (tab && tab.socket && tab.state === 'terminal') {
+                tab.socket.emit('pty-input', {input: data});
+                tab.term.focus();
+            }
+        }
+
+        function adjustFontSize(delta) {
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (tab && tab.term) {
+                const newSize = Math.max(8, Math.min(40, tab.term.options.fontSize + delta));
+                tab.term.options.fontSize = newSize;
+                setTimeout(() => {
+                    if (tab.fitAddon) {
+                        tab.fitAddon.fit();
+                        if (tab.socket && tab.socket.connected) {
+                            tab.socket.emit('resize', {cols: tab.term.cols, rows: tab.term.rows});
+                        }
+                    }
+                }, 50);
+            }
+        }
+
         function switchTab(id) {
             activeTabId = id; const tab = tabs.find(t => t.id === id); if (!tab) return;
             document.querySelectorAll('.tab-instance').forEach(el => el.classList.remove('active'));
@@ -231,13 +329,20 @@
             document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
             const nav = document.getElementById('nav-' + id); if (nav) nav.classList.add('active');
             const toolbarInfo = document.getElementById('active-connection-info');
+            const mobileControls = document.getElementById('mobile-controls');
+
             if (tab.state === 'terminal') {
                 toolbarInfo.style.display = 'flex';
+                if (window.innerWidth <= 768) mobileControls.style.display = 'grid';
                 document.getElementById('ssh-target').value = tab.session.ssh_target || '';
                 document.getElementById('ssh-dir').value = tab.session.ssh_dir || '';
                 updateStatus(tab.session.ssh_target, tab.session.ssh_dir);
                 setTimeout(() => { if (tab.fitAddon) { tab.fitAddon.fit(); tab.socket.emit('resize', {cols: tab.term.cols, rows: tab.term.rows}); tab.term.focus(); } }, 50);
-            } else { toolbarInfo.style.display = 'none'; updateStatus('picker'); }
+            } else { 
+                toolbarInfo.style.display = 'none'; 
+                mobileControls.style.display = 'none';
+                updateStatus('picker'); 
+            }
         }
 
         function restartActiveTab() {
@@ -275,7 +380,21 @@
 
         addNewTab(true);
 
-        async function openSettings() { document.getElementById('settings-modal').style.display = 'block'; loadHosts(); loadKeys(); }
+        async function openSettings() { document.getElementById('settings-modal').style.display = 'block'; loadHosts(); loadKeys(); loadPublicKey(); }
+        async function loadPublicKey() {
+            try {
+                const response = await fetch('/api/keys/public');
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('public-key-text').innerText = data.key;
+                    document.getElementById('public-key-container').style.display = 'block';
+                }
+            } catch (e) { console.error("Could not load public key", e); }
+        }
+        function copyPublicKey() {
+            const text = document.getElementById('public-key-text').innerText;
+            navigator.clipboard.writeText(text).then(() => alert("Public key copied to clipboard"));
+        }
         async function loadHosts() {
             const hosts = await (await fetch('/api/hosts')).json(); const list = document.getElementById('hosts-list'); list.innerHTML = '';
             hosts.forEach(host => {
