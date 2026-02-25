@@ -61,8 +61,12 @@ session_results_cache = {}
 
 def cleanup_orphaned_ptys():
     """Periodically kills PTYs that have been orphaned for too long."""
+    run_once = False
     while True:
-        socketio.sleep(10)
+        if app.config.get('TESTING') and run_once:
+            break
+        run_once = True
+        socketio.sleep(10 if not app.config.get('TESTING') else 0.1)
         now = time.time()
         for tab_id, ts in list(orphaned_ptys.items()):
             if now - ts > 60:  # 60 second grace period
@@ -301,11 +305,17 @@ def require_auth():
 
 def set_winsize(fd, row, col, xpix=0, ypix=0):
     winsize = struct.pack("HHHH", row, col, xpix, ypix)
-    fcntl.ioctl(fd, termios.TIOCSWINSZ, winsize)
+    try:
+        fcntl.ioctl(fd, termios.TIOCSWINSZ, winsize)
+    except Exception as e:
+        logger.error(f"Failed to set winsize on fd {fd}: {e}")
 
 def read_and_forward_pty_output():
     max_read_bytes = 1024 * 20
     while True:
+        if app.config.get('TESTING') and not persistent_ptys:
+            socketio.sleep(0.1)
+            if not persistent_ptys: break
         socketio.sleep(0.01)
         for tab_id, pty_info in list(persistent_ptys.items()):
             fd = pty_info['fd']
@@ -327,11 +337,11 @@ def read_and_forward_pty_output():
                     tabid_to_sid.pop(tab_id, None)
 
 def validate_ssh_target(target):
-    """Ensure SSH target is in a safe format (user@host or host)."""
+    """Ensure SSH target is in a safe format (user@host, host, or host:port)."""
     if not target:
         return False
-    # Only allow alphanumeric, dots, hyphens, and one @
-    return bool(re.match(r'^[a-zA-Z0-9.-]+(@[a-zA-Z0-9.-]+)?$', target))
+    # Allow alphanumeric, dots, hyphens, optional user@, and optional :port
+    return bool(re.match(r'^([a-zA-Z0-9.-]+@)?[a-zA-Z0-9.-]+(:[0-9]+)?$', target))
 
 def fetch_sessions_for_host(host):
     """Internal helper to fetch sessions for a host config."""
@@ -399,7 +409,11 @@ def fetch_sessions_for_host(host):
 
 def background_session_preloader():
     """Warms the session cache on startup."""
+    run_once = False
     while True:
+        if app.config.get('TESTING') and run_once:
+            break
+        run_once = True
         try:
             hosts = get_config().get('HOSTS', [])
             for host in hosts:
@@ -431,7 +445,7 @@ def pty_resize(data):
 
 @socketio.on('restart')
 def pty_restart(data):
-    sid = request.sid
+    sid = data.get('sid') or getattr(request, 'sid', None)
     tab_id = data.get('tab_id')
     if not tab_id:
         return
@@ -706,8 +720,11 @@ def rotate_instance_key():
         
         logger.info("Rotating instance SSH key...")
         subprocess.run(['ssh-keygen', '-t', 'ed25519', '-N', '', '-f', key_path, '-C', 'gemini-webui-instance'], check=True)
-        shutil.chown(key_path, user='node', group='node')
-        shutil.chown(key_path + '.pub', user='node', group='node')
+        try:
+            shutil.chown(key_path, user='node', group='node')
+            shutil.chown(key_path + '.pub', user='node', group='node')
+        except (LookupError, PermissionError):
+            pass
         os.chmod(key_path, 0o600)
         
         with open(key_path + '.pub', 'r') as f:
@@ -766,10 +783,11 @@ def health_check():
 
 if __name__ == '__main__':
     init_app()
-    socketio.start_background_task(read_and_forward_pty_output)
-    socketio.start_background_task(cleanup_orphaned_ptys)
-    if os.environ.get('SKIP_PRELOADER') != 'true':
-        socketio.start_background_task(background_session_preloader)
+    if not app.config.get('TESTING'):
+        socketio.start_background_task(read_and_forward_pty_output)
+        socketio.start_background_task(cleanup_orphaned_ptys)
+        if os.environ.get('SKIP_PRELOADER') != 'true':
+            socketio.start_background_task(background_session_preloader)
     
     debug_mode = os.environ.get('FLASK_DEBUG', 'true').lower() == 'true'
     use_reloader = os.environ.get('FLASK_USE_RELOADER', 'true').lower() == 'true'

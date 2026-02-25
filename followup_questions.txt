@@ -1,0 +1,5 @@
+1. **SSH Host Verification Bypass:** The SSH fallback mechanism uses `/dev/null` for `UserKnownHostsFile` when the configuration directory is read-only. How does the application mitigate the resulting severe risk of Man-in-the-Middle (MitM) attacks when host key checking is effectively disabled?
+
+2. **Automated Permission Management:** The startup sequence recursively executes `chown` to UID 1000 on mounted volumes. What safeguards are in place to prevent symlink-based privilege escalation or the unintended modification of shared host files during this automated process?
+
+3. **Authentication Bypass Risk:** An undocumented `BYPASS_AUTH_FOR_TESTING` environment variable is present in the codebase. What specific deployment or architectural controls ensure this flag cannot be inadvertently enabled in a production environment, which would result in a complete authentication bypass?
