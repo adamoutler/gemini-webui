@@ -43,6 +43,44 @@
         .terminal-instance { width: 100%; height: 100%; padding: 5px; box-sizing: border-box; }
         .xterm-link { text-decoration: underline !important; cursor: pointer !important; }
         
+        /* Quick Connect Bar */
+        .quick-connect-bar {
+            background: #2d2d2d;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border: 1px solid #444;
+        }
+        .quick-connect-label { color: #3b8eea; font-weight: bold; font-size: 14px; }
+        .quick-connect-input { flex-grow: 1; margin: 0 !important; }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        .modal-content {
+            background-color: #333;
+            color: white;
+            margin: 5% auto;
+            padding: 25px;
+            border: 1px solid #444;
+            width: 60%;
+            max-height: 85vh;
+            overflow-y: auto;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        
         /* Launcher Styles */
         .launcher { padding: 30px; color: #ccc; overflow-y: auto; height: 100%; max-width: 900px; margin: 0 auto;}
         .launcher h2 { color: white; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; font-weight: 500;}
@@ -157,6 +195,20 @@
             </div>
         </div>
     </div>
+
+    <div id="quick-add-key-modal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeQuickAddKey()" style="float: right; font-size: 28px; font-weight: bold; cursor: pointer; opacity: 0.7;">&times;</span>
+            <h2 style="margin-top: 0;">Add SSH Key & Connect</h2>
+            <p id="quick-add-host-info" style="color: #3b8eea; font-family: monospace;"></p>
+            <div style="background: #2a2d2e; padding: 15px; border-radius: 4px; margin-top: 15px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 13px;">Paste Private Key</h4>
+                <input type="text" id="quick-key-name" placeholder="Key name (e.g. id_rsa_prod)">
+                <textarea id="quick-key-text" placeholder="-----BEGIN OPENSSH PRIVATE KEY----- ..." style="height: 150px;"></textarea>
+                <button class="primary" style="width: 100%; margin-top: 10px;" onclick="submitQuickAddKey()">Save Key & Connect</button>
+            </div>
+        </div>
+    </div>
     
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js" integrity="sha256-8K6g919IVZATrmZDwked1zfSbaQtVSTm0rcJFa5lI8c=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js" integrity="sha256-EPMZTF8XwXhvt9XbhlweyFObZzajGAY/04var3xGhI8=" crossorigin="anonymous"></script>
@@ -206,7 +258,20 @@
 
         async function renderLauncher(id) {
             const container = document.getElementById(id + '_instance');
-            container.innerHTML = `<div class="launcher"><h2>Select a Connection</h2><div id="${id}_connections"></div></div>`;
+            container.innerHTML = `
+                <div class="launcher">
+                    <h2>Select a Connection</h2>
+                    
+                    <!-- Quick Connect Bar -->
+                    <div class="quick-connect-bar">
+                        <span class="quick-connect-label">ssh</span>
+                        <input type="text" id="${id}_quick_input" class="quick-connect-input" placeholder="user@host:port/folder or user@host/folder" onkeydown="if(event.key === 'Enter') quickConnectAction('${id}', 'connect')">
+                        <button class="primary" onclick="quickConnectAction('${id}', 'key')">Add Key</button>
+                        <button class="success" onclick="quickConnectAction('${id}', 'connect')">Connect</button>
+                    </div>
+
+                    <div id="${id}_connections"></div>
+                </div>`;
             const hosts = await (await fetch('/api/hosts')).json();
             const connContainer = document.getElementById(id + '_connections');
             hosts.forEach(conn => {
@@ -525,6 +590,105 @@
         }
 
         addNewTab(true);
+
+        // --- Quick Connect Logic ---
+        let currentQuickTabId = null;
+        let currentQuickHost = null;
+
+        function parseQuickInput(val) {
+            if (!val) return null;
+            // Format: user@host[:port][/folder]
+            // We want to be lenient.
+            
+            let user = "";
+            let host = "";
+            let port = "";
+            let folder = "~";
+
+            // 1. Split for folder
+            const parts = val.split('/');
+            if (parts.length > 1) {
+                folder = '/' + parts.slice(1).join('/');
+                val = parts[0];
+            }
+
+            // 2. Split for user/host
+            const userParts = val.split('@');
+            if (userParts.length > 1) {
+                user = userParts[0];
+                val = userParts[1];
+            } else {
+                return null; // User is required
+            }
+
+            // 3. Split for host/port
+            const hostParts = val.split(':');
+            host = hostParts[0];
+            if (hostParts.length > 1) {
+                port = hostParts[1];
+            }
+
+            if (!host) return null;
+
+            return {
+                label: host,
+                type: 'ssh',
+                target: port ? `${user}@${host} -p ${port}` : `${user}@${host}`,
+                dir: folder
+            };
+        }
+
+        async function saveHost(host) {
+            await fetch('/api/hosts', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(host) 
+            });
+        }
+
+        function quickConnectAction(tabId, action) {
+            const input = document.getElementById(tabId + '_quick_input');
+            const host = parseQuickInput(input.value);
+            if (!host) return alert("Invalid format. Use user@host, user@host:port, or user@host/folder");
+
+            currentQuickTabId = tabId;
+            currentQuickHost = host;
+
+            if (action === 'key') {
+                document.getElementById('quick-add-host-info').innerText = `Connecting to: ${host.target}`;
+                document.getElementById('quick-add-key-modal').style.display = 'block';
+            } else {
+                // Just connect
+                saveHost(host).then(() => {
+                    startSession(tabId, host.type, host.target, host.dir, false);
+                });
+            }
+        }
+
+        function closeQuickAddKey() {
+            document.getElementById('quick-add-key-modal').style.display = 'none';
+        }
+
+        async function submitQuickAddKey() {
+            const name = document.getElementById('quick-key-name').value;
+            const text = document.getElementById('quick-key-text').value;
+            if (!name || !text) return alert("Key name and text required");
+
+            // 1. Save Key
+            await fetch('/api/keys/text', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ name, key: text }) 
+            });
+
+            // 2. Save Host
+            await saveHost(currentQuickHost);
+
+            // 3. Close and Connect
+            closeQuickAddKey();
+            startSession(currentQuickTabId, currentQuickHost.type, currentQuickHost.target, currentQuickHost.dir, false);
+        }
+        // --- End Quick Connect Logic ---
 
         async function openSettings() { document.getElementById('settings-modal').style.display = 'block'; loadHosts(); loadKeys(); loadPublicKey(); }
         async function loadPublicKey() {
