@@ -171,12 +171,14 @@
                         <button id="edit-mode-btn" class="small primary" onclick="setHostMode('edit')" style="opacity: 0.5; font-weight: normal;">[EDIT]</button>
                         <span style="font-size: 13px; margin-left: 5px; color: #ccc;">Host Configuration</span>
                     </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <input type="text" id="new-host-label" placeholder="Label">
-                        <input type="text" id="new-host-target" placeholder="user@host (blank for local)">
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <input type="text" id="new-host-label" placeholder="Label eg. My Server">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <input type="text" id="new-host-target" placeholder="user@host (blank for local)">
+                            <input type="text" id="new-host-dir" placeholder="Path on host eg. ~/project">
+                        </div>
                     </div>
-                    <input type="text" id="new-host-dir" placeholder="Default Directory">
-                    <button id="add-host-btn" class="success" style="margin-top: 5px; width: 100%;" onclick="submitHostForm()">Add Host</button>
+                    <button id="add-host-btn" class="success" style="margin-top: 10px; width: 100%;" onclick="submitHostForm()">Add Host</button>
                 </div>
             </div>
             <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
@@ -185,7 +187,7 @@
                 <ul id="key-list" style="list-style: none; padding: 0; border: 1px solid #444; border-radius: 4px; margin-bottom: 15px;"></ul>
                 <div style="background: #2a2d2e; padding: 15px; border-radius: 4px;">
                     <h4 style="margin: 0 0 10px 0; font-size: 13px;">Add Key</h4>
-                    <input type="text" id="ssh-key-name" placeholder="Key name">
+                    <input type="text" id="ssh-key-name" placeholder="Label eg. Personal Key">
                     <textarea id="ssh-key-text" placeholder="-----BEGIN OPENSSH PRIVATE KEY----- ..." style="height: 80px;"></textarea>
                     <button class="primary" style="width: 100%;" onclick="savePastedKey()">Save Key</button>
                 </div>
@@ -195,14 +197,14 @@
             <div id="public-key-container" style="background: #1e1e1e; padding: 15px; border: 1px solid #444; border-radius: 4px; display: none;">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                     <div style="flex-grow: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
-                        <span style="font-size: 11px; color: #888; margin-right: 10px;">INSTANCE KEY:</span>
+                        <span style="font-size: 11px; color: #888; margin-right: 10px;" title="SSH key managed by this instance.">INSTANCE KEY:</span>
                         <code id="public-key-text" style="font-size: 10px; color: #0dbc79; cursor: pointer;" onclick="copyPublicKey()"></code>
                         <code id="instance-key-snippet" style="display: none;"></code>
                     </div>
                     <div style="display: flex; gap: 5px; flex-shrink: 0;">
-                        <button class="small" onclick="copyPublicKey()">Copy Key</button>
-                        <button class="small" onclick="copyInstanceSnippet()">Copy Snippet</button>
-                        <button class="small danger" onclick="rotateInstanceKey()">Rotate</button>
+                        <button class="small" onclick="copyPublicKey()" title="Copy the SSH public key displayed in the box.">Copy Key</button>
+                        <button class="small" onclick="copyInstanceSnippet()" title="In Gemini CLI press ! to enter command mode then paste the snippet.">Copy Snippet</button>
+                        <button class="small danger" onclick="rotateInstanceKey()" title="Change the SSH key.">Rotate</button>
                     </div>
                 </div>
             </div>
