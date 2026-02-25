@@ -362,18 +362,28 @@
                     e.preventDefault();
                     const draggedLabel = e.dataTransfer.getData('text/plain');
                     if (draggedLabel && draggedLabel !== conn.label) {
-                        const labels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
+                        const allCards = Array.from(connContainer.querySelectorAll('.connection-card'));
+                        const draggedCard = allCards.find(c => c.dataset.label === draggedLabel);
+                        if (!draggedCard) return;
+
+                        // OPTIMISTIC UI: Move the element immediately
+                        const labels = allCards.map(c => c.dataset.label);
                         const fromIdx = labels.indexOf(draggedLabel);
                         const toIdx = labels.indexOf(conn.label);
-                        if (fromIdx !== -1 && toIdx !== -1) {
-                            labels.splice(toIdx, 0, labels.splice(fromIdx, 1)[0]);
-                            await fetch('/api/hosts/reorder', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(labels)
-                            });
-                            renderLauncher(id); // Refresh
+                        
+                        if (fromIdx < toIdx) {
+                            card.after(draggedCard);
+                        } else {
+                            card.before(draggedCard);
                         }
+
+                        // Background update - don't await/refresh unless needed
+                        const newLabels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
+                        fetch('/api/hosts/reorder', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(newLabels)
+                        });
                     }
                 });
 
