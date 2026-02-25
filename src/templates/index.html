@@ -180,6 +180,18 @@
                 </div>
             </div>
             <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
+            <div style="margin-top: 20px;">
+                <h3 style="font-size: 14px; text-transform: uppercase;">Manage SSH Keys</h3>
+                <ul id="key-list" style="list-style: none; padding: 0; border: 1px solid #444; border-radius: 4px; margin-bottom: 15px;"></ul>
+                <div style="background: #2a2d2e; padding: 15px; border-radius: 4px;">
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px;">Add Key</h4>
+                    <input type="text" id="ssh-key-name" placeholder="Key name">
+                    <textarea id="ssh-key-text" placeholder="-----BEGIN OPENSSH PRIVATE KEY----- ..." style="height: 80px;"></textarea>
+                    <button class="primary" style="width: 100%;" onclick="savePastedKey()">Save Key</button>
+                </div>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
             <div id="public-key-container" style="background: #1e1e1e; padding: 15px; border: 1px solid #444; border-radius: 4px; display: none;">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                     <div style="flex-grow: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;">
