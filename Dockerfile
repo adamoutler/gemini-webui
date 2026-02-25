@@ -14,7 +14,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Gemini CLI via npm to ensure architecture compatibility (arm64/amd64)
-RUN npm install -g @google/gemini-cli
+RUN npm install -g npm@latest && \
+    npm install -g @google/gemini-cli --unsafe-perm && \
+    npm cache clean --force
 
 COPY . .
 

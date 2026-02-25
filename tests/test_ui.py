@@ -43,17 +43,39 @@ def test_gemini_ui_final(server):
             log_progress("Checking for pre-loaded mock sessions")
             expect(page.get_by_text("Mock Session").last).to_be_visible(timeout=10000)
             
-            # 3. Verify Local Box protection
-            log_progress("Checking Local Box protection in settings")
+            # 3. Verify local protection
+            log_progress("Checking local protection in settings")
             page.locator('button:has-text("Settings")').click()
-            expect(page.locator('#hosts-list')).to_contain_text("Local Box")
-            # Delete button should NOT exist for Local Box
-            local_box_delete = page.locator("#hosts-list .session-item:has-text('Local Box')").last.locator("button:has-text('Delete')")
-            expect(local_box_delete).to_have_count(0)
+            expect(page.locator('#hosts-list')).to_contain_text("local")
+            # Delete button should NOT exist for local
+            import re
+            local_host_item = page.locator("#hosts-list .session-item").filter(has=page.locator("span", has_text=re.compile(r"^local$"))).first
+            expect(local_host_item.locator("button:has-text('Delete')")).to_have_count(0)
             
-            # 4. Verify Tab Closing
+            # Close settings
+            page.locator('#settings-modal span').first.click()
+            
+            # 4. Verify Toolbar and Input Removal
+            log_progress("Verifying toolbar state and input removal")
+            # Click "Start New" on local (first card) in the ACTIVE tab
+            btns = page.locator('.tab-instance.active button:has-text("Start New")')
+            expect(btns.first).to_be_visible(timeout=5000)
+            
+            log_progress("Attempting to click Start New in active tab")
+            btns.first.click(timeout=5000)
+            log_progress("Clicked Start New, waiting for terminal initialization")
+            # Wait for terminal to appear (indicated by active-connection-info being visible)
+            expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+            log_progress("Toolbar is visible, checking inputs")
+            # Verify Restart button is there
+            expect(page.locator('button:has-text("Restart")')).to_be_visible()
+            # Verify ssh-target and ssh-dir are NOT there
+            expect(page.locator('#ssh-target')).to_have_count(0)
+            expect(page.locator('#ssh-dir')).to_have_count(0)
+            log_progress("Toolbar verification successful")
+
+            # 5. Verify Tab Closing
             log_progress("Verifying tab closing works")
-            page.locator('#settings-modal span').first.click() # close settings
             initial_tabs = page.locator('.tab').count()
             page.locator('.tab-close').last.click()
             expect(page.locator('.tab')).to_have_count(initial_tabs - 1)

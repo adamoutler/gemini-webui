@@ -94,7 +94,7 @@ def get_config():
         "SECRET_KEY": os.environ.get('SECRET_KEY', 'stable-fallback-key-change-me'),
         "ALLOWED_ORIGINS": os.environ.get('ALLOWED_ORIGINS', '*'),
         "HOSTS": [
-            { "label": 'Local Box', "type": 'local' },
+            { "label": 'local', "type": 'local' },
             { "label": 'OC Box (101)', "type": 'ssh', "target": 'adamoutler@192.168.1.101', "dir": '~/oc' },
             { "label": 'WebUI Dev (101)', "type": 'ssh', "target": 'adamoutler@192.168.1.101', "dir": '~/gemini-webui' }
         ]
@@ -398,9 +398,24 @@ def list_hosts():
 @authenticated_only
 def add_host():
     new_host = request.json
+    label = new_host.get('label')
+    if not label:
+        return jsonify({"status": "error", "message": "Label is required"}), 400
+        
     curr_conf = get_config()
     hosts = curr_conf.get('HOSTS', [])
-    hosts.append(new_host)
+    
+    # Check if we are updating an existing host
+    found = False
+    for i, h in enumerate(hosts):
+        if h['label'] == label:
+            hosts[i] = new_host
+            found = True
+            break
+    
+    if not found:
+        hosts.append(new_host)
+        
     curr_conf['HOSTS'] = hosts
     _, config_file, _ = get_config_paths()
     with open(config_file, 'w') as f: json.dump(curr_conf, f, indent=4)
@@ -409,8 +424,8 @@ def add_host():
 @app.route('/api/hosts/<label>', methods=['DELETE'])
 @authenticated_only
 def remove_host(label):
-    if label == "Local Box":
-        return jsonify({"status": "error", "message": "Cannot delete Local Box"}), 403
+    if label == "local":
+        return jsonify({"status": "error", "message": "Cannot delete local box"}), 403
     curr_conf = get_config()
     hosts = curr_conf.get('HOSTS', [])
     hosts = [h for h in hosts if h['label'] != label]

@@ -90,7 +90,6 @@
 
         @media (max-width: 768px) {
             #mobile-controls { display: grid !important; }
-            #ssh-target, #ssh-dir { width: 100px !important; }
             #toolbar { padding: 5px; gap: 5px; flex-wrap: wrap; }
             #active-connection-info { gap: 5px; }
             body { height: 100vh; height: -webkit-fill-available; position: fixed; width: 100%; }
@@ -102,8 +101,6 @@
         <button id="new-tab-btn" onclick="addNewTab()">+ New</button>
         <div id="active-connection-info" style="display: none; align-items: center; gap: 10px;">
             <button onclick="restartActiveTab()">Restart</button>
-            <input type="text" id="ssh-target" placeholder="user@host" style="background:#444; color:white; border:1px solid #666; padding:5px; width:150px;">
-            <input type="text" id="ssh-dir" placeholder="/folder" style="background:#444; color:white; border:1px solid #666; padding:5px; width:100px;">
         </div>
         <button onclick="openSettings()" style="background: #2472c8; margin-left: 10px;">Settings</button>
         <div id="connection-status" style="margin-left: auto; color: #0dbc79; font-weight: bold; font-family: monospace; padding: 5px 10px;"></div>
@@ -128,13 +125,16 @@
                 <h3 style="font-size: 14px; text-transform: uppercase;">Manage Hosts</h3>
                 <div id="hosts-list" style="margin-bottom: 15px; border: 1px solid #444; border-radius: 4px; overflow: hidden;"></div>
                 <div style="background: #2a2d2e; padding: 15px; border-radius: 4px;">
-                    <h4 style="margin: 0 0 10px 0; font-size: 13px;">Add New Host</h4>
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px;">
+                        <span id="add-host-mode" style="cursor:pointer; color:#3b8eea; font-weight:bold;" onclick="clearHostForm()">[add]</span> 
+                        <span id="edit-host-mode" style="color:#888;">[edit]</span> Hosts
+                    </h4>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                         <input type="text" id="new-host-label" placeholder="Label">
                         <input type="text" id="new-host-target" placeholder="user@host">
                     </div>
                     <input type="text" id="new-host-dir" placeholder="Default Directory">
-                    <button class="success" style="margin-top: 5px; width: 100%;" onclick="addHost()">Add Host</button>
+                    <button id="add-host-btn" class="success" style="margin-top: 5px; width: 100%;" onclick="addHost()">Add Host</button>
                 </div>
             </div>
             <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
@@ -158,6 +158,7 @@
     
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js" integrity="sha256-8K6g919IVZATrmZDwked1zfSbaQtVSTm0rcJFa5lI8c=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js" integrity="sha256-EPMZTF8XwXhvt9XbhlweyFObZzajGAY/04var3xGhI8=" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha256-y6ZcVexS2AE/5ykFy1hqui8oXHHkKXk1CDE4x43QsDs=" crossorigin="anonymous"></script>
     <script>
         let tabs = [];
@@ -212,7 +213,10 @@
                 const sessionListId = `${id}_sessions_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
                 card.innerHTML = `
                     <div class="connection-header">
-                        <div class="connection-title">${conn.label} ${conn.target ? '(' + conn.target + ')' : ''}</div>
+                        <div class="connection-title">
+                            <div style="font-size: 11px; color: #888; margin-bottom: 2px;">${conn.label}</div>
+                            <div style="font-size: 14px; font-family: monospace;">${conn.target || 'local'} ${conn.dir || ''}</div>
+                        </div>
                         <div class="connection-actions">
                             <button class="primary" onclick="startSession('${id}', '${conn.type}', '${conn.target || ''}', '${conn.dir || ''}', false)">Start New</button>
                             <button class="success" onclick="startSession('${id}', '${conn.type}', '${conn.target || ''}', '${conn.dir || ''}', true)">Resume Latest</button>
@@ -291,7 +295,17 @@
                 scrollOnUserInput: true,
                 scrollOnData: true
             });
-            tab.fitAddon = new FitAddon.FitAddon(); tab.term.loadAddon(tab.fitAddon); tab.term.open(termDiv);
+            tab.fitAddon = new FitAddon.FitAddon(); tab.term.loadAddon(tab.fitAddon);
+            try {
+                if (typeof WebLinksAddon !== 'undefined') {
+                    tab.term.loadAddon(new WebLinksAddon.WebLinksAddon());
+                } else {
+                    console.warn("WebLinksAddon not loaded");
+                }
+            } catch (e) {
+                console.error("Failed to load WebLinksAddon", e);
+            }
+            tab.term.open(termDiv);
             
             // The "Single Character Buffer Hack" for Android keyboards
             // We disable autocorrect and clear the buffer after each input to prevent the OS from "seeing" words to correct.
@@ -395,8 +409,6 @@
             if (tab.state === 'terminal') {
                 toolbarInfo.style.display = 'flex';
                 if (window.innerWidth <= 768) mobileControls.style.display = 'grid';
-                document.getElementById('ssh-target').value = tab.session.ssh_target || '';
-                document.getElementById('ssh-dir').value = tab.session.ssh_dir || '';
                 updateStatus(tab.session.ssh_target, tab.session.ssh_dir);
                 setTimeout(() => { fitTerminal(tab); tab.term.focus(); }, 50);
             } else { 
@@ -409,8 +421,7 @@
         function restartActiveTab() {
             const tab = tabs.find(t => t.id === activeTabId);
             if (tab && tab.state === 'terminal') {
-                const target = document.getElementById('ssh-target').value; const dir = document.getElementById('ssh-dir').value;
-                tab.session = { type: target ? 'ssh' : 'local', ssh_target: target, ssh_dir: dir };
+                const target = tab.session.ssh_target; const dir = tab.session.ssh_dir;
                 tab.term.clear(); tab.socket.emit('restart', { tab_id: tab.id, resume: true, cols: tab.term.cols, rows: tab.term.rows, ssh_target: target, ssh_dir: dir });
                 updateStatus(target, dir);
             }
@@ -474,15 +485,37 @@
             const hosts = await (await fetch('/api/hosts')).json(); const list = document.getElementById('hosts-list'); list.innerHTML = '';
             hosts.forEach(host => {
                 const item = document.createElement('div'); item.className = 'session-item';
-                item.innerHTML = `<div class="session-info"><span style="color:#fff; font-weight:bold;">${host.label}</span><span style="opacity:0.6; margin-left:10px;">${host.target || 'local'}</span></div>` + (host.label !== "Local Box" ? `<button class="danger small" onclick="removeHost('${host.label}')">Delete</button>` : '');
+                item.style.cursor = 'pointer';
+                item.onclick = () => editHost(host);
+                item.innerHTML = `<div class="session-info"><span style="color:#fff; font-weight:bold;">${host.label}</span><span style="opacity:0.6; margin-left:10px;">${host.target || 'local'} ${host.dir || ''}</span></div>` + (host.label !== "local" ? `<button class="danger small" onclick="event.stopPropagation(); removeHost('${host.label}')">Delete</button>` : '');
                 list.appendChild(item);
             });
+        }
+        function editHost(host) {
+            document.getElementById('new-host-label').value = host.label;
+            document.getElementById('new-host-target').value = host.target || '';
+            document.getElementById('new-host-dir').value = host.dir || '';
+            document.getElementById('add-host-btn').innerText = 'Update Host';
+            document.getElementById('add-host-mode').style.color = '#888';
+            document.getElementById('add-host-mode').style.fontWeight = 'normal';
+            document.getElementById('edit-host-mode').style.color = '#3b8eea';
+            document.getElementById('edit-host-mode').style.fontWeight = 'bold';
+        }
+        function clearHostForm() {
+            document.getElementById('new-host-label').value = '';
+            document.getElementById('new-host-target').value = '';
+            document.getElementById('new-host-dir').value = '';
+            document.getElementById('add-host-btn').innerText = 'Add Host';
+            document.getElementById('add-host-mode').style.color = '#3b8eea';
+            document.getElementById('add-host-mode').style.fontWeight = 'bold';
+            document.getElementById('edit-host-mode').style.color = '#888';
+            document.getElementById('edit-host-mode').style.fontWeight = 'normal';
         }
         async function addHost() {
             const label = document.getElementById('new-host-label').value; const target = document.getElementById('new-host-target').value; const dir = document.getElementById('new-host-dir').value;
             if (!label) return alert("Label required"); const host = { label, type: target ? 'ssh' : 'local', target, dir };
             await fetch('/api/hosts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(host) });
-            document.getElementById('new-host-label').value = ''; document.getElementById('new-host-target').value = ''; document.getElementById('new-host-dir').value = ''; loadHosts();
+            clearHostForm(); loadHosts();
         }
         async function removeHost(label) { if (!confirm(`Remove host ${label}?`)) return; await fetch(`/api/hosts/${encodeURIComponent(label)}`, { method: 'DELETE' }); loadHosts(); }
         async function loadKeys() {
