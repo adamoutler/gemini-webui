@@ -255,11 +255,13 @@ def require_auth():
 
     auth = request.authorization
     
+    # Allow ADMIN_USER/ADMIN_PASS bypass
+    if auth and auth.username == ADMIN_USER and auth.password == ADMIN_PASS:
+        session['authenticated'] = True
+        return
+
     # Fallback authentication if LDAP is not configured
     if not LDAP_SERVER:
-        if auth and auth.username == ADMIN_USER and auth.password == ADMIN_PASS:
-            session['authenticated'] = True
-            return
         return authenticate()
         
     if auth and check_auth(auth.username, auth.password, LDAP_SERVER, LDAP_BASE_DN, LDAP_BIND_USER_DN, LDAP_BIND_PASS, LDAP_AUTHORIZED_GROUP, LDAP_FALLBACK_DOMAIN):
