@@ -445,8 +445,8 @@ def pty_restart(data):
                 remote_cmd += f"{gemini_base_cmd}; "
             
             remote_cmd += "else "
-            remote_cmd += "echo '\\r\\n\\033[1;31mError: gemini CLI not found on remote host.\\033[0m'; "
-            remote_cmd += "echo 'Please install it from: \\033[1;34mhttps://geminicli.com/\\033[0m\\r\\n'; "
+            remote_cmd += "printf '\\r\\n\\033[1;31mError: gemini CLI not found on remote host.\\033[0m\\r\\n'; "
+            remote_cmd += "printf 'Please install it from: \\033[1;34mhttps://geminicli.com/\\033[0m\\r\\n\\r\\n'; "
             remote_cmd += "exec $SHELL; "
             remote_cmd += "fi"
                 
