@@ -301,32 +301,65 @@
             
             tab.term.open(termDiv);
             
-            // Improved Web Links support
+            // Improved Web Links support with wrapped line handling
             try {
                 tab.term.registerLinkProvider({
                     provideLinks(y, callback) {
-                        const line = tab.term.buffer.active.getLine(y - 1);
-                        if (!line) return callback(undefined);
-                        const text = line.translateToString(true);
-                        if (text.trim().length > 0) console.log("LINE", y, ":", text);
+                        const buffer = tab.term.buffer.active;
+                        let startY = y - 1;
+                        
+                        // Find the start of the wrapped block
+                        while (startY > 0 && buffer.getLine(startY).isWrapped) {
+                            startY--;
+                        }
+                        
+                        // Assemble full text and keep track of line offsets
+                        let fullText = "";
+                        let lineOffsets = [0];
+                        let lineTexts = [];
+                        let currentY = startY;
+                        
+                        while (currentY < buffer.length) {
+                            const line = buffer.getLine(currentY);
+                            const lineText = line.translateToString(true);
+                            lineTexts.push(lineText);
+                            fullText += lineText;
+                            if (currentY + 1 < buffer.length && !buffer.getLine(currentY + 1).isWrapped) {
+                                break;
+                            }
+                            currentY++;
+                            lineOffsets.push(fullText.length);
+                        }
+                        
                         const urlRegex = /https?:\/\/[^\s"'<>^`]+[^\s"'<>^`.,!?;:]/g;
                         const links = [];
                         let match;
-                        while ((match = urlRegex.exec(text)) !== null) {
+                        while ((match = urlRegex.exec(fullText)) !== null) {
                             const uri = match[0];
-                            console.log("MATCHED LINK:", uri, "at", match.index);
-                            const startX = match.index + 1;
-                            links.push({
-                                text: uri,
-                                range: {
-                                    start: { x: startX, y: y },
-                                    end: { x: startX + uri.length, y: y }
-                                },
-                                activate: (e, text) => {
-                                    console.log("Activating link:", text);
-                                    window.open(text, '_blank', 'noopener,noreferrer');
-                                }
-                            });
+                            const matchStart = match.index;
+                            const matchEnd = match.index + uri.length;
+                            
+                            const lineIdx = y - 1 - startY;
+                            const lineStartOffset = lineOffsets[lineIdx];
+                            const lineEndOffset = lineStartOffset + lineTexts[lineIdx].length;
+                            
+                            if (matchEnd > lineStartOffset && matchStart < lineEndOffset) {
+                                const startX = Math.max(0, matchStart - lineStartOffset);
+                                const endX = Math.min(lineTexts[lineIdx].length, matchEnd - lineStartOffset);
+                                
+                                console.log("MATCHED LINK:", uri, "on line", y, "startX:", startX, "endX:", endX);
+                                links.push({
+                                    text: uri,
+                                    range: {
+                                        start: { x: startX + 1, y: y },
+                                        end: { x: endX + 1, y: y }
+                                    },
+                                    activate: (e, text) => {
+                                        console.log("Activating link:", text);
+                                        window.open(text, '_blank', 'noopener,noreferrer');
+                                    }
+                                });
+                            }
                         }
                         callback(links);
                     }
