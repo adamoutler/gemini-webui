@@ -115,6 +115,20 @@ def init_app():
     
     gemini_data = os.path.join(data_dir, ".gemini")
     os.makedirs(gemini_data, mode=0o700, exist_ok=True)
+    os.makedirs(ssh_dir, mode=0o700, exist_ok=True)
+    
+    # Fix permissions if volume mount made them root-owned
+    for path in [gemini_data, ssh_dir]:
+        try:
+            stat = os.stat(path)
+            if stat.st_uid == 0:
+                shutil.chown(path, user='node', group='node')
+                # Recursively fix if it was existing root data
+                for root, dirs, files in os.walk(path):
+                    for d in dirs: shutil.chown(os.path.join(root, d), user='node', group='node')
+                    for f in files: shutil.chown(os.path.join(root, f), user='node', group='node')
+        except Exception as e:
+            logger.error(f"Failed to fix permissions for {path}: {e}")
     
     # Symlink /home/node/.gemini -> /data/.gemini is handled in Dockerfile for RO root compatibility.
     
@@ -397,6 +411,7 @@ def pty_restart(data):
     if child_pid == 0:
         os.environ['TERM'] = 'xterm-256color'
         os.environ['COLORTERM'] = 'truecolor'
+        os.environ['FORCE_COLOR'] = '3'
         if ssh_target:
             if not validate_ssh_target(ssh_target):
                 print("\r\nInvalid SSH target format\r\n")
