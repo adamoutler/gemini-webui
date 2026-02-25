@@ -353,7 +353,7 @@ def fetch_sessions_for_host(host):
         else:
             remote_cmd = gemini_list_cmd
             
-        cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5', '-o', 'StrictHostKeyChecking=no']
+        cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no']
         data_dir, _, ssh_dir_path = get_config_paths()
         # Ensure known_hosts is writable
         known_hosts_path = os.path.join(ssh_dir_path, 'known_hosts')
@@ -371,7 +371,7 @@ def fetch_sessions_for_host(host):
         cmd = [GEMINI_BIN, '--list-sessions']
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
         # Suppress auth errors from the CLI - just show as "no sessions"
         if result.returncode != 0 and ("Please set an Auth method" in result.stderr or "GEMINI_API_KEY" in result.stderr):
             return {
@@ -384,8 +384,10 @@ def fetch_sessions_for_host(host):
             "error": result.stderr if result.returncode != 0 else None,
             "timestamp": time.time()
         }
+    except subprocess.TimeoutExpired:
+        return {"error": "Could not establish connection (timed out)", "timestamp": time.time()}
     except Exception as e:
-        return {"error": str(e), "timestamp": time.time()}
+        return {"error": "Connection failed", "timestamp": time.time()}
 
 def background_session_preloader():
     """Warms the session cache on startup."""
