@@ -904,6 +904,8 @@
                 }
             } catch (e) { console.error("Rotate failed", e); }
         }
+        let editingHostLabel = null;
+
         async function loadHosts() {
             const hosts = await (await fetch('/api/hosts')).json(); const list = document.getElementById('hosts-list'); list.innerHTML = '';
             hosts.forEach(host => {
@@ -919,8 +921,10 @@
             document.getElementById('new-host-target').value = host.target || '';
             document.getElementById('new-host-dir').value = host.dir || '';
             if (host.label === 'local') {
+                editingHostLabel = null;
                 setHostMode('add'); // Cannot edit default local, force add mode
             } else {
+                editingHostLabel = host.label;
                 setHostMode('edit');
             }
         }
@@ -941,6 +945,7 @@
                 submitBtn.innerText = 'Update Host';
                 submitBtn.className = 'primary';
             } else {
+                editingHostLabel = null;
                 addBtn.style.opacity = '1'; addBtn.style.fontWeight = 'bold';
                 editBtn.style.opacity = '0.5'; editBtn.style.fontWeight = 'normal';
                 submitBtn.innerText = 'Add Host';
@@ -951,19 +956,42 @@
             document.getElementById('new-host-label').value = '';
             document.getElementById('new-host-target').value = '';
             document.getElementById('new-host-dir').value = '';
+            editingHostLabel = null;
             setHostMode('add');
         }
         async function submitHostForm() {
             const label = document.getElementById('new-host-label').value; 
             const target = document.getElementById('new-host-target').value; 
             const dir = document.getElementById('new-host-dir').value;
+            const submitBtn = document.getElementById('add-host-btn');
+            
             if (!label) return alert("Label required");
-            if (label === 'local' && document.getElementById('add-host-btn').innerText === 'Update Host') {
+            if (label === 'local' && submitBtn.innerText === 'Update Host') {
                 return alert("Cannot update protected 'local' host.");
             }
+
+            // If we are editing, we should remove the old one if label changed
+            if (editingHostLabel && editingHostLabel !== label) {
+                await fetch(`/api/hosts/${encodeURIComponent(editingHostLabel)}`, { method: 'DELETE' });
+            }
+
             const host = { label, type: target ? 'ssh' : 'local', target, dir };
-            await fetch('/api/hosts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(host) });
-            clearHostForm(); loadHosts();
+            const response = await fetch('/api/hosts', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(host) 
+            });
+
+            if (response.ok) {
+                const originalText = submitBtn.innerText;
+                submitBtn.innerText = originalText + " ✓";
+                setTimeout(() => { submitBtn.innerText = originalText; }, 2000);
+                
+                editingHostLabel = label; // Update current tracking
+                loadHosts();
+            } else {
+                alert("Failed to save host.");
+            }
         }
         async function removeHost(label) { if (!confirm(`Remove host ${label}?`)) return; await fetch(`/api/hosts/${encodeURIComponent(label)}`, { method: 'DELETE' }); loadHosts(); }
         async function loadKeys() {
