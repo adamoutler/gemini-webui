@@ -86,8 +86,20 @@
         /* Launcher Styles */
         .launcher { padding: 30px; color: #ccc; overflow-y: auto; height: 100%; max-width: 900px; margin: 0 auto;}
         .launcher h2 { color: white; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; font-weight: 500;}
-        .connection-card { background: #252526; border-radius: 6px; padding: 15px; margin-bottom: 15px; border: 1px solid #333; }
+        .connection-card { background: #252526; border-radius: 6px; padding: 15px; margin-bottom: 15px; border: 1px solid #333; transition: opacity 0.2s, transform 0.2s; }
         .connection-card:hover { border-color: #444; }
+        .connection-card.dragging { opacity: 0.1; transform: scale(0.98); }
+        
+        .drag-placeholder {
+            background: rgba(59, 142, 234, 0.05);
+            border: 2px dashed #3b8eea;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            height: 80px;
+            box-shadow: 0 0 15px rgba(59, 142, 234, 0.3);
+            transition: all 0.2s ease;
+        }
+
         .connection-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
         .connection-drag-handle { 
             cursor: grab; 
@@ -326,18 +338,15 @@
                 </div>`;
             const hosts = await (await fetch('/api/hosts')).json();
             const connContainer = document.getElementById(id + '_connections');
+            let draggedCard = null;
+            let placeholder = document.createElement('div');
+            placeholder.className = 'drag-placeholder';
+
             hosts.forEach(conn => {
                 const card = document.createElement('div');
                 card.className = 'connection-card';
                 card.dataset.label = conn.label;
                 
-                // Drag and drop handlers - limited to the handle
-                const handleDragStart = (e) => {
-                    e.dataTransfer.setData('text/plain', conn.label);
-                    card.style.opacity = '0.4';
-                };
-                const handleDragEnd = () => card.style.opacity = '1';
-
                 const sessionListId = `${id}_sessions_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
                 card.innerHTML = `
                     <div class="connection-header">
@@ -354,36 +363,45 @@
                     <div id="${sessionListId}" class="session-list-container"><div style="padding: 10px; color: #888; font-size: 11px;">Loading sessions...</div></div>`;
                 
                 const handle = card.querySelector('.connection-drag-handle');
-                handle.addEventListener('dragstart', handleDragStart);
-                handle.addEventListener('dragend', handleDragEnd);
+                
+                handle.addEventListener('dragstart', (e) => {
+                    draggedCard = card;
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', conn.label);
+                    // Use setTimeout to ensure the "dragging" class is added after the drag image is generated
+                    setTimeout(() => {
+                        card.classList.add('dragging');
+                        card.after(placeholder);
+                        placeholder.style.height = card.offsetHeight + 'px';
+                    }, 0);
+                });
 
-                card.addEventListener('dragover', (e) => e.preventDefault());
-                card.addEventListener('drop', async (e) => {
+                handle.addEventListener('dragend', () => {
+                    draggedCard.classList.remove('dragging');
+                    if (placeholder.parentNode) {
+                        placeholder.replaceWith(draggedCard);
+                    }
+                    draggedCard = null;
+                    
+                    // Final background update
+                    const newLabels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
+                    fetch('/api/hosts/reorder', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newLabels)
+                    });
+                });
+
+                card.addEventListener('dragover', (e) => {
                     e.preventDefault();
-                    const draggedLabel = e.dataTransfer.getData('text/plain');
-                    if (draggedLabel && draggedLabel !== conn.label) {
-                        const allCards = Array.from(connContainer.querySelectorAll('.connection-card'));
-                        const draggedCard = allCards.find(c => c.dataset.label === draggedLabel);
-                        if (!draggedCard) return;
-
-                        // OPTIMISTIC UI: Move the element immediately
-                        const labels = allCards.map(c => c.dataset.label);
-                        const fromIdx = labels.indexOf(draggedLabel);
-                        const toIdx = labels.indexOf(conn.label);
-                        
-                        if (fromIdx < toIdx) {
-                            card.after(draggedCard);
-                        } else {
-                            card.before(draggedCard);
-                        }
-
-                        // Background update - don't await/refresh unless needed
-                        const newLabels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
-                        fetch('/api/hosts/reorder', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(newLabels)
-                        });
+                    if (!draggedCard || draggedCard === card) return;
+                    
+                    const rect = card.getBoundingClientRect();
+                    const midpoint = rect.top + rect.height / 2;
+                    if (e.clientY < midpoint) {
+                        card.before(placeholder);
+                    } else {
+                        card.after(placeholder);
                     }
                 });
 
