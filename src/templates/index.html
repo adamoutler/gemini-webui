@@ -88,8 +88,18 @@
         .launcher h2 { color: white; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; font-weight: 500;}
         .connection-card { background: #252526; border-radius: 6px; padding: 15px; margin-bottom: 15px; border: 1px solid #333; }
         .connection-card:hover { border-color: #444; }
-        .connection-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .connection-title { font-size: 16px; font-weight: bold; color: #fff; }
+        .connection-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
+        .connection-drag-handle { 
+            cursor: grab; 
+            color: #666; 
+            font-size: 20px; 
+            padding: 0 5px; 
+            user-select: none;
+            display: flex;
+            align-items: center;
+        }
+        .connection-drag-handle:active { cursor: grabbing; }
+        .connection-title { font-size: 16px; font-weight: bold; color: #fff; flex-grow: 1; }
         .connection-actions { display: flex; gap: 8px; }
         
         .session-list-container { margin-top: 10px; background: #1e1e1e; border-radius: 4px; overflow: hidden; border: 1px solid #2d2d2d;}
@@ -285,16 +295,45 @@
                         <button class="success" onclick="quickConnectAction('${id}', 'connect')">Connect</button>
                     </div>
 
-                    <div id="${id}_connections"></div>
+                    <div id="${id}_connections" class="connections-list"></div>
                 </div>`;
             const hosts = await (await fetch('/api/hosts')).json();
             const connContainer = document.getElementById(id + '_connections');
             hosts.forEach(conn => {
                 const card = document.createElement('div');
                 card.className = 'connection-card';
+                card.draggable = true;
+                card.dataset.label = conn.label;
+                
+                // Drag and drop handlers
+                card.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', conn.label);
+                    card.style.opacity = '0.4';
+                });
+                card.addEventListener('dragend', () => card.style.opacity = '1');
+                card.addEventListener('dragover', (e) => e.preventDefault());
+                card.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    const draggedLabel = e.dataTransfer.getData('text/plain');
+                    if (draggedLabel !== conn.label) {
+                        const labels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
+                        const fromIdx = labels.indexOf(draggedLabel);
+                        const toIdx = labels.indexOf(conn.label);
+                        labels.splice(toIdx, 0, labels.splice(fromIdx, 1)[0]);
+                        
+                        await fetch('/api/hosts/reorder', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(labels)
+                        });
+                        renderLauncher(id); // Refresh
+                    }
+                });
+
                 const sessionListId = `${id}_sessions_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
                 card.innerHTML = `
                     <div class="connection-header">
+                        <div class="connection-drag-handle" title="Drag to reorder">⠿</div>
                         <div class="connection-title">
                             <div style="font-size: 11px; color: #888; margin-bottom: 2px;">${conn.label}</div>
                             <div style="font-size: 14px; font-family: monospace;">${conn.target || 'local'} ${conn.dir || ''}</div>
@@ -308,6 +347,27 @@
                 connContainer.appendChild(card);
                 fetchSessions(id, conn, sessionListId, false, true); // Use cache first
             });
+        }
+
+        async function terminateSession(tabId, conn, sessionId, targetId) {
+            if (!confirm(`Terminate session #${sessionId}?`)) return;
+            try {
+                const response = await fetch('/api/sessions/terminate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ssh_target: conn.target,
+                        ssh_dir: conn.dir,
+                        session_id: sessionId
+                    })
+                });
+                if (response.ok) {
+                    fetchSessions(tabId, conn, targetId, true, false); // Refresh list
+                } else {
+                    const data = await response.json();
+                    alert("Termination failed: " + (data.error || "Unknown error"));
+                }
+            } catch (e) { console.error(e); }
         }
 
         async function fetchSessions(tabId, conn, targetId, forceAll = false, useCache = false) {
@@ -331,7 +391,16 @@
                     const sorted = sessions.reverse(); const displayCount = forceAll ? sorted.length : 3;
                     let html = '<div class="session-list">';
                     sorted.slice(0, displayCount).forEach(s => {
-                        html += `<div class="session-item"><div class="session-info"><span class="session-name">#${s.id}: ${s.name}</span><span style="font-size: 10px; opacity: 0.7; margin-left: 10px;">(${s.meta})</span></div><button class="small" onclick="startSession('${tabId}', '${conn.type}', '${conn.target || ''}', '${conn.dir || ''}', '${s.id}')">Resume</button></div>`;
+                        html += `<div class="session-item">
+                            <div class="session-info">
+                                <span class="session-name">#${s.id}: ${s.name}</span>
+                                <span style="font-size: 10px; opacity: 0.7; margin-left: 10px;">(${s.meta})</span>
+                            </div>
+                            <div style="display: flex; gap: 5px;">
+                                <button class="small" onclick="startSession('${tabId}', '${conn.type}', '${conn.target || ''}', '${conn.dir || ''}', '${s.id}')">Resume</button>
+                                <button class="small danger" onclick="terminateSession('${tabId}', ${JSON.stringify(conn).replace(/"/g, '&quot;')}, '${s.id}', '${targetId}')">Terminate</button>
+                            </div>
+                        </div>`;
                     });
                     if (!forceAll && sorted.length > 3) html += `<div class="session-item" style="justify-content: center; background: #252526; cursor: pointer;" onclick="fetchSessions('${tabId}', ${JSON.stringify(conn).replace(/"/g, '&quot;')}, '${targetId}', true, false)"><div style="font-size: 11px; color: #2472c8; font-weight: bold;">... Show ${sorted.length - 3} more</div></div>`;
                     listEl.innerHTML = html + '</div>';

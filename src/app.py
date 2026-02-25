@@ -511,6 +511,67 @@ def add_host():
     with open(config_file, 'w') as f: json.dump(curr_conf, f, indent=4)
     return jsonify({"status": "success"})
 
+@app.route('/api/hosts/reorder', methods=['POST'])
+@authenticated_only
+def reorder_hosts():
+    new_order = request.json # Expect list of labels
+    curr_conf = get_config()
+    hosts = curr_conf.get('HOSTS', [])
+    
+    reordered = []
+    host_map = {h['label']: h for h in hosts}
+    for label in new_order:
+        if label in host_map:
+            reordered.append(host_map[label])
+            
+    # Add any missing hosts at the end
+    existing_labels = set(new_order)
+    for h in hosts:
+        if h['label'] not in existing_labels:
+            reordered.append(h)
+            
+    curr_conf['HOSTS'] = reordered
+    _, config_file, _ = get_config_paths()
+    with open(config_file, 'w') as f: json.dump(curr_conf, f, indent=4)
+    return jsonify({"status": "success"})
+
+@app.route('/api/sessions/terminate', methods=['POST'])
+@authenticated_only
+def terminate_remote_session():
+    data = request.json
+    ssh_target = data.get('ssh_target')
+    ssh_dir = data.get('ssh_dir')
+    session_id = data.get('session_id')
+    
+    if not session_id:
+        return jsonify({"error": "Session ID required"}), 400
+        
+    if ssh_target:
+        if not validate_ssh_target(ssh_target):
+            return jsonify({"error": "Invalid SSH target"}), 400
+        
+        remote_cmd = f"gemini --terminate {session_id}"
+        if ssh_dir and ssh_dir != "~":
+            remote_cmd = f"cd {shlex.quote(ssh_dir)} && {remote_cmd}"
+            
+        cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5', '-o', 'StrictHostKeyChecking=no']
+        _, _, ssh_dir_path = get_config_paths()
+        known_hosts_path = os.path.join(ssh_dir_path, 'known_hosts')
+        cmd.extend(['-o', f'UserKnownHostsFile={known_hosts_path}'])
+        if os.path.exists(ssh_dir_path):
+            for f in os.listdir(ssh_dir_path):
+                if os.path.isfile(os.path.join(ssh_dir_path, f)) and f not in ['config', 'known_hosts'] and not f.endswith('.pub'):
+                    cmd.extend(['-i', os.path.join(ssh_dir_path, f)])
+        cmd.extend(['--', ssh_target, remote_cmd])
+    else:
+        cmd = [GEMINI_BIN, '--terminate', str(session_id)]
+        
+    try:
+        subprocess.run(cmd, timeout=10)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/hosts/<label>', methods=['DELETE'])
 @authenticated_only
 def remove_host(label):
