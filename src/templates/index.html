@@ -296,14 +296,18 @@
                 scrollOnData: true
             });
             tab.fitAddon = new FitAddon.FitAddon(); tab.term.loadAddon(tab.fitAddon);
+            
+            // Add Web Links support
             try {
-                if (typeof WebLinksAddon !== 'undefined') {
-                    tab.term.loadAddon(new WebLinksAddon.WebLinksAddon());
-                } else {
-                    console.warn("WebLinksAddon not loaded");
+                if (window.WebLinksAddon && window.WebLinksAddon.WebLinksAddon) {
+                    tab.term.loadAddon(new window.WebLinksAddon.WebLinksAddon());
+                } else if (typeof WebLinksAddon !== 'undefined') {
+                    // Fallback for different loading styles
+                    const addon = WebLinksAddon.WebLinksAddon ? new WebLinksAddon.WebLinksAddon() : new WebLinksAddon();
+                    tab.term.loadAddon(addon);
                 }
             } catch (e) {
-                console.error("Failed to load WebLinksAddon", e);
+                console.error("Failed to load WebLinksAddon:", e);
             }
             tab.term.open(termDiv);
             
