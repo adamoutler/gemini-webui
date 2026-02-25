@@ -300,12 +300,18 @@
             
             // Add Web Links support
             try {
+                let addonInstance = null;
                 if (window.WebLinksAddon && window.WebLinksAddon.WebLinksAddon) {
-                    tab.term.loadAddon(new window.WebLinksAddon.WebLinksAddon());
+                    addonInstance = new window.WebLinksAddon.WebLinksAddon();
                 } else if (typeof WebLinksAddon !== 'undefined') {
-                    // Fallback for different loading styles
-                    const addon = WebLinksAddon.WebLinksAddon ? new WebLinksAddon.WebLinksAddon() : new WebLinksAddon();
-                    tab.term.loadAddon(addon);
+                    addonInstance = typeof WebLinksAddon === 'function' ? new WebLinksAddon() : new WebLinksAddon.WebLinksAddon();
+                }
+                
+                if (addonInstance) {
+                    tab.term.loadAddon(addonInstance);
+                    console.log("WebLinksAddon loaded and activated. Use Ctrl+Click to open links.");
+                } else {
+                    console.warn("WebLinksAddon class not found.");
                 }
             } catch (e) {
                 console.error("Failed to load WebLinksAddon:", e);
