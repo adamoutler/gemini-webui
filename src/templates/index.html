@@ -299,23 +299,44 @@
             });
             tab.fitAddon = new FitAddon.FitAddon(); tab.term.loadAddon(tab.fitAddon);
             
-            // Add Web Links support
+            // Improved Web Links support
             try {
-                let addonInstance = null;
-                if (window.WebLinksAddon && window.WebLinksAddon.WebLinksAddon) {
-                    addonInstance = new window.WebLinksAddon.WebLinksAddon();
-                } else if (typeof WebLinksAddon !== 'undefined') {
-                    addonInstance = typeof WebLinksAddon === 'function' ? new WebLinksAddon() : new WebLinksAddon.WebLinksAddon();
-                }
+                const linkHandler = (event, url) => {
+                    console.log("Opening link:", url);
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                };
                 
-                if (addonInstance) {
-                    tab.term.loadAddon(addonInstance);
-                    console.log("WebLinksAddon loaded and activated. Use Ctrl+Click to open links.");
-                } else {
-                    console.warn("WebLinksAddon class not found.");
+                // Regex for URLs
+                const urlRegex = /https?:\/\/[^\s^"^{}^|^\\^<^>^`]+[^\s^"^{}^|^\\^<^>^`^.^:^,^!^?^}]/g;
+                
+                if (window.WebLinksAddon && window.WebLinksAddon.WebLinksAddon) {
+                    // Use the addon but with custom handler if possible
+                    // Note: standard WebLinksAddon doesn't easily support "no-ctrl" without custom provider
+                    // so we register our own provider for better control
+                    tab.term.registerLinkProvider({
+                        provideLinks(bufferLineNumber, callback) {
+                            const line = tab.term.buffer.active.getLine(bufferLineNumber - 1);
+                            if (!line) return callback(undefined);
+                            const text = line.translateToString(true);
+                            const links = [];
+                            let match;
+                            while ((match = urlRegex.exec(text)) !== null) {
+                                links.push({
+                                    text: match[0],
+                                    range: {
+                                        start: { x: match.index + 1, y: bufferLineNumber },
+                                        end: { x: match.index + match[0].length, y: bufferLineNumber }
+                                    },
+                                    activate: (event, text) => linkHandler(event, text)
+                                });
+                            }
+                            callback(links);
+                        }
+                    });
+                    console.log("Custom LinkProvider registered. Regular click should work.");
                 }
             } catch (e) {
-                console.error("Failed to load WebLinksAddon:", e);
+                console.error("Failed to setup link provider:", e);
             }
             tab.term.open(termDiv);
             
