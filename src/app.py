@@ -554,6 +554,31 @@ def get_public_key():
             return jsonify({"key": f.read().strip()})
     return jsonify({"error": "Public key not found"}), 404
 
+@app.route('/api/keys/rotate', methods=['POST'])
+@authenticated_only
+def rotate_instance_key():
+    _, _, ssh_dir = get_config_paths()
+    key_path = os.path.join(ssh_dir, 'id_ed25519')
+    try:
+        # Backup old key just in case
+        if os.path.exists(key_path):
+            timestamp = int(time.time())
+            shutil.move(key_path, f"{key_path}.{timestamp}.bak")
+            if os.path.exists(key_path + ".pub"):
+                shutil.move(key_path + ".pub", f"{key_path}.{timestamp}.pub.bak")
+        
+        logger.info("Rotating instance SSH key...")
+        subprocess.run(['ssh-keygen', '-t', 'ed25519', '-N', '', '-f', key_path, '-C', 'gemini-webui-instance'], check=True)
+        shutil.chown(key_path, user='node', group='node')
+        shutil.chown(key_path + '.pub', user='node', group='node')
+        os.chmod(key_path, 0o600)
+        
+        with open(key_path + '.pub', 'r') as f:
+            return jsonify({"status": "success", "key": f.read().strip()})
+    except Exception as e:
+        logger.error(f"Failed to rotate SSH key: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route('/api/keys/text', methods=['POST'])
 @authenticated_only
 def add_ssh_key_text():
