@@ -353,6 +353,8 @@ def fetch_sessions_for_host(host):
         else:
             remote_cmd = gemini_list_cmd
             
+        login_wrapped_cmd = f"bash -l -c {shlex.quote(remote_cmd)}"
+            
         cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no']
         data_dir, _, ssh_dir_path = get_config_paths()
         # Ensure known_hosts is writable
@@ -366,7 +368,7 @@ def fetch_sessions_for_host(host):
                 if os.path.isfile(os.path.join(ssh_dir_path, f)) and f not in ['config', 'known_hosts'] and not f.endswith('.pub'):
                     cmd.extend(['-i', os.path.join(ssh_dir_path, f)])
         # Use -- to separate options from positional arguments
-        cmd.extend(['--', ssh_target, remote_cmd])
+        cmd.extend(['--', ssh_target, login_wrapped_cmd])
     else:
         cmd = [GEMINI_BIN, '--list-sessions']
 
@@ -487,6 +489,9 @@ def pty_restart(data):
             remote_cmd += "printf 'Please install it from: \\033[1;34mhttps://geminicli.com/\\033[0m\\r\\n\\r\\n'; "
             remote_cmd += "exec $SHELL; "
             remote_cmd += "fi"
+            
+            # Wrap in login shell to ensure .profile/.bash_profile PATH is loaded
+            login_wrapped_cmd = f"bash -l -c {shlex.quote(remote_cmd)}"
                 
             cmd = ['ssh', '-t']
             data_dir, _, ssh_dir_path = get_config_paths()
@@ -500,7 +505,7 @@ def pty_restart(data):
                 for f in os.listdir(ssh_dir_path):
                     if os.path.isfile(os.path.join(ssh_dir_path, f)) and f not in ['config', 'known_hosts'] and not f.endswith('.pub'):
                         cmd.extend(['-i', os.path.join(ssh_dir_path, f)])
-            cmd.extend(['-o', 'PreferredAuthentications=publickey,password', '-o', 'StrictHostKeyChecking=no', '--', ssh_target, remote_cmd])
+            cmd.extend(['-o', 'PreferredAuthentications=publickey,password', '-o', 'StrictHostKeyChecking=no', '--', ssh_target, login_wrapped_cmd])
         else:
             # Workspace initialization with failover guidance
             work_dir = "/data/workspace"
