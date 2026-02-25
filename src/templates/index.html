@@ -338,7 +338,9 @@
 
         function startSession(tabId, type, target, dir, resumeParam = true) {
             const tab = tabs.find(t => t.id === tabId); if (!tab) return;
-            tab.state = 'terminal'; tab.session = { type, ssh_target: target, ssh_dir: dir }; tab.title = target ? target.split('@').pop() : 'Local';
+            tab.state = 'terminal'; 
+            tab.session = { type, ssh_target: target, ssh_dir: dir, resume: resumeParam }; 
+            tab.title = target ? target.split('@').pop() : 'Local';
             const container = document.getElementById(tabId + '_instance'); container.innerHTML = '';
             
             const termDiv = document.createElement('div'); 
@@ -455,7 +457,7 @@
 
             tab.socket = io.connect(window.location.origin);
             tab.socket.on('connect', () => {
-                tab.socket.emit('restart', { tab_id: tabId, resume: resumeParam, cols: tab.term.cols, rows: tab.term.rows, ssh_target: target, ssh_dir: dir });
+                tab.socket.emit('restart', { tab_id: tabId, resume: tab.session.resume, cols: tab.term.cols, rows: tab.term.rows, ssh_target: target, ssh_dir: dir });
                 setTimeout(() => { fitTerminal(tab); tab.term.focus(); }, 150);
             });
             tab.socket.on('pty-output', (data) => { 
@@ -548,9 +550,17 @@
         function restartActiveTab() {
             const tab = tabs.find(t => t.id === activeTabId);
             if (tab && tab.state === 'terminal') {
-                const target = tab.session.ssh_target; const dir = tab.session.ssh_dir;
-                tab.term.clear(); tab.socket.emit('restart', { tab_id: tab.id, resume: true, cols: tab.term.cols, rows: tab.term.rows, ssh_target: target, ssh_dir: dir });
-                updateStatus(target, dir);
+                const { ssh_target, ssh_dir, resume } = tab.session;
+                tab.term.clear(); 
+                tab.socket.emit('restart', { 
+                    tab_id: tab.id, 
+                    resume: resume, 
+                    cols: tab.term.cols, 
+                    rows: tab.term.rows, 
+                    ssh_target: ssh_target, 
+                    ssh_dir: ssh_dir 
+                });
+                updateStatus(ssh_target, ssh_dir);
             }
         }
 
