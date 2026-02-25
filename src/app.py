@@ -89,7 +89,6 @@ def get_config():
         "LDAP_BIND_PASS": LDAP_BIND_PASS,
         "LDAP_AUTHORIZED_GROUP": LDAP_AUTHORIZED_GROUP,
         "LDAP_FALLBACK_DOMAIN": LDAP_FALLBACK_DOMAIN,
-        "SECRET_KEY": os.environ.get('SECRET_KEY', 'stable-fallback-key-change-me'),
         "ALLOWED_ORIGINS": os.environ.get('ALLOWED_ORIGINS', '*'),
         "HOSTS": [
             { "label": 'local', "type": 'local' }
@@ -101,8 +100,6 @@ def get_config():
             with open(config_file, 'r') as f:
                 file_config = json.load(f)
                 conf.update(file_config)
-                if os.environ.get('SECRET_KEY'):
-                    conf['SECRET_KEY'] = os.environ.get('SECRET_KEY')
         except Exception as e:
             logger.error(f"Error loading config file: {e}")
             
@@ -155,7 +152,7 @@ def init_app():
     LDAP_FALLBACK_DOMAIN = config.get('LDAP_FALLBACK_DOMAIN')
 
     app.config.update(
-        SECRET_KEY=config.get('SECRET_KEY'),
+        SECRET_KEY='gemini-webui-stable-secret-key',
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SECURE=False, 
         SESSION_COOKIE_SAMESITE='Lax',

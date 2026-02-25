@@ -3,6 +3,14 @@ FROM python:3.11-slim
 ENV ADMIN_USER=admin
 ENV ADMIN_PASS=admin
 
+# LDAP Configuration
+ENV LDAP_SERVER=
+ENV LDAP_BASE_DN=
+ENV LDAP_BIND_USER_DN=
+ENV LDAP_BIND_PASS=
+ENV LDAP_AUTHORIZED_GROUP=
+ENV LDAP_FALLBACK_DOMAIN=example.com
+
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

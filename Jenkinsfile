@@ -47,9 +47,6 @@ pipeline {
         stage('Deploy Gemini WebUI') {
             steps {
                 script {
-                    // Generate a stable key for this deployment
-                    env.SECRET_KEY = java.util.UUID.randomUUID().toString()
-
                     withCredentials([
                         usernamePassword(credentialsId: 'ldap-bind-auth-user', passwordVariable: 'LDAP_BIND_PASS', usernameVariable: 'LDAP_BIND_USER_DN')
                     ]) {

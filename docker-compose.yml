@@ -11,9 +11,8 @@ services:
       - LDAP_BASE_DN=${LDAP_BASE_DN}
       - LDAP_BIND_USER_DN=${LDAP_BIND_USER_DN}
       - LDAP_BIND_PASS=${LDAP_BIND_PASS}
-      - SECRET_KEY=${SECRET_KEY}
-      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - LDAP_AUTHORIZED_GROUP=${LDAP_AUTHORIZED_GROUP}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
     volumes:
       - data:/data
     restart: unless-stopped
