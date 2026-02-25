@@ -313,13 +313,16 @@
                         let match;
                         while ((match = urlRegex.exec(text)) !== null) {
                             const uri = match[0];
+                            console.log("MATCHED LINK:", uri, "at", match.index);
+                            const startX = match.index + 1;
                             links.push({
                                 text: uri,
                                 range: {
-                                    start: { x: match.index + 1, y: y },
-                                    end: { x: match.index + uri.length + 1, y: y }
+                                    start: { x: startX, y: y },
+                                    end: { x: startX + uri.length, y: y }
                                 },
                                 activate: (e, text) => {
+                                    console.log("Activating link:", text);
                                     window.open(text, '_blank', 'noopener,noreferrer');
                                 }
                             });
