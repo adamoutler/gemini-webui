@@ -371,7 +371,12 @@ def fetch_sessions_for_host(host):
         # Use -- to separate options from positional arguments
         cmd.extend(['--', ssh_target, login_wrapped_cmd])
     else:
-        cmd = [GEMINI_BIN, '--list-sessions']
+        # Use workspace for local session listing to match startSession
+        work_dir = "/data/workspace"
+        if os.path.exists(work_dir):
+            cmd = ['/bin/sh', '-c', f"cd {work_dir} && {GEMINI_BIN} --list-sessions"]
+        else:
+            cmd = [GEMINI_BIN, '--list-sessions']
 
     try:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
