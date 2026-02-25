@@ -3,6 +3,9 @@ services:
     image: gemini-webui
     build: .
     read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run
     ports:
       - "5000:5000"
     environment:
@@ -15,4 +18,9 @@ services:
       - LDAP_AUTHORIZED_GROUP=${LDAP_AUTHORIZED_GROUP}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - PYTHONDONTWRITEBYTECODE=1
+    volumes:
+      - data:/data
     restart: unless-stopped
+
+volumes:
+  data:
