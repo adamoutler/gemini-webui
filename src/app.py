@@ -403,7 +403,7 @@ def pty_restart(data):
             cmd.extend(['-o', 'PreferredAuthentications=publickey,password', '-o', 'StrictHostKeyChecking=no', ssh_target, remote_cmd])
         else:
             # Use shell to ensure gemini is found in PATH and handled correctly
-            gemini_cmd = "gemini"
+            gemini_cmd = "/usr/local/bin/gemini"
             if resume is True: gemini_cmd += " -r"
             elif resume and str(resume).isdigit(): gemini_cmd += f" -r {resume}"
             cmd = ['/bin/sh', '-c', gemini_cmd]

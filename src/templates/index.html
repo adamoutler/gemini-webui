@@ -308,6 +308,7 @@
                         const line = tab.term.buffer.active.getLine(y - 1);
                         if (!line) return callback(undefined);
                         const text = line.translateToString(true);
+                        if (text.trim().length > 0) console.log("LINE", y, ":", text);
                         const urlRegex = /https?:\/\/[^\s"'<>^`]+[^\s"'<>^`.,!?;:]/g;
                         const links = [];
                         let match;
