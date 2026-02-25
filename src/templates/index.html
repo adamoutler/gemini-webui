@@ -329,38 +329,19 @@
             hosts.forEach(conn => {
                 const card = document.createElement('div');
                 card.className = 'connection-card';
-                card.draggable = true;
                 card.dataset.label = conn.label;
                 
-                // Drag and drop handlers
-                card.addEventListener('dragstart', (e) => {
+                // Drag and drop handlers - limited to the handle
+                const handleDragStart = (e) => {
                     e.dataTransfer.setData('text/plain', conn.label);
                     card.style.opacity = '0.4';
-                });
-                card.addEventListener('dragend', () => card.style.opacity = '1');
-                card.addEventListener('dragover', (e) => e.preventDefault());
-                card.addEventListener('drop', async (e) => {
-                    e.preventDefault();
-                    const draggedLabel = e.dataTransfer.getData('text/plain');
-                    if (draggedLabel !== conn.label) {
-                        const labels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
-                        const fromIdx = labels.indexOf(draggedLabel);
-                        const toIdx = labels.indexOf(conn.label);
-                        labels.splice(toIdx, 0, labels.splice(fromIdx, 1)[0]);
-                        
-                        await fetch('/api/hosts/reorder', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(labels)
-                        });
-                        renderLauncher(id); // Refresh
-                    }
-                });
+                };
+                const handleDragEnd = () => card.style.opacity = '1';
 
                 const sessionListId = `${id}_sessions_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
                 card.innerHTML = `
                     <div class="connection-header">
-                        <div class="connection-drag-handle" title="Drag to reorder">⠿</div>
+                        <div class="connection-drag-handle" title="Drag to reorder" draggable="true">⠿</div>
                         <div class="connection-title">
                             <div style="font-size: 11px; color: #888; margin-bottom: 2px;">${conn.label}</div>
                             <div style="font-size: 14px; font-family: monospace;">${conn.target || 'local'} ${conn.dir || ''}</div>
@@ -371,6 +352,31 @@
                         </div>
                     </div>
                     <div id="${sessionListId}" class="session-list-container"><div style="padding: 10px; color: #888; font-size: 11px;">Loading sessions...</div></div>`;
+                
+                const handle = card.querySelector('.connection-drag-handle');
+                handle.addEventListener('dragstart', handleDragStart);
+                handle.addEventListener('dragend', handleDragEnd);
+
+                card.addEventListener('dragover', (e) => e.preventDefault());
+                card.addEventListener('drop', async (e) => {
+                    e.preventDefault();
+                    const draggedLabel = e.dataTransfer.getData('text/plain');
+                    if (draggedLabel && draggedLabel !== conn.label) {
+                        const labels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
+                        const fromIdx = labels.indexOf(draggedLabel);
+                        const toIdx = labels.indexOf(conn.label);
+                        if (fromIdx !== -1 && toIdx !== -1) {
+                            labels.splice(toIdx, 0, labels.splice(fromIdx, 1)[0]);
+                            await fetch('/api/hosts/reorder', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(labels)
+                            });
+                            renderLauncher(id); // Refresh
+                        }
+                    }
+                });
+
                 connContainer.appendChild(card);
                 fetchSessions(id, conn, sessionListId, false, true); // Use cache first
             });
