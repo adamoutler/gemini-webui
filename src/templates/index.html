@@ -267,7 +267,7 @@
                     <!-- Quick Connect Bar -->
                     <div class="quick-connect-bar">
                         <span class="quick-connect-label">ssh</span>
-                        <input type="text" id="${id}_quick_input" class="quick-connect-input" placeholder="user@host:port/folder or user@host/folder" onkeydown="if(event.key === 'Enter') quickConnectAction('${id}', 'connect')">
+                        <input type="text" id="${id}_quick_input" class="quick-connect-input" placeholder="user@host:port ~/folder" onkeydown="if(event.key === 'Enter') quickConnectAction('${id}', 'connect')">
                         <button class="primary" onclick="quickConnectAction('${id}', 'key')">Add Key</button>
                         <button class="success" onclick="quickConnectAction('${id}', 'connect')">Connect</button>
                     </div>
