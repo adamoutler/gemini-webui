@@ -3,9 +3,6 @@ services:
     image: gemini-webui
     build: .
     read_only: true
-    tmpfs:
-      - /tmp
-      - /var/run
     ports:
       - "5000:5000"
     environment:

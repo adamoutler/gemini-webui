@@ -78,6 +78,12 @@ def cleanup_orphaned_ptys():
 
 def get_config_paths():
     data_dir = app.config.get('DATA_DIR', os.environ.get('DATA_DIR', "/data"))
+    
+    # Check if data_dir is writable, fallback to /tmp if not
+    if not os.access(os.path.dirname(data_dir.rstrip('/')), os.W_OK) and not os.access(data_dir, os.W_OK):
+        data_dir = "/tmp/gemini-data"
+        os.makedirs(data_dir, exist_ok=True)
+        
     config_file = os.path.join(data_dir, "config.json")
     ssh_dir = os.path.join(data_dir, ".ssh")
     return data_dir, config_file, ssh_dir
@@ -111,38 +117,58 @@ def init_app():
     global config, LDAP_SERVER, LDAP_BASE_DN, LDAP_BIND_USER_DN, LDAP_BIND_PASS, LDAP_AUTHORIZED_GROUP, LDAP_FALLBACK_DOMAIN
     data_dir, config_file, ssh_dir = get_config_paths()
     logger.info(f"Initializing app with DATA_DIR: {data_dir}")
-    os.makedirs(ssh_dir, mode=0o700, exist_ok=True)
     
-    gemini_data = os.path.join(data_dir, ".gemini")
-    os.makedirs(gemini_data, mode=0o700, exist_ok=True)
-    os.makedirs(ssh_dir, mode=0o700, exist_ok=True)
-    
-    # Fix permissions if volume mount made them root-owned
-    for path in [gemini_data, ssh_dir]:
-        try:
-            stat = os.stat(path)
-            if stat.st_uid == 0:
-                shutil.chown(path, user='node', group='node')
-                # Recursively fix if it was existing root data
-                for root, dirs, files in os.walk(path):
-                    for d in dirs: shutil.chown(os.path.join(root, d), user='node', group='node')
-                    for f in files: shutil.chown(os.path.join(root, f), user='node', group='node')
-        except Exception as e:
-            logger.error(f"Failed to fix permissions for {path}: {e}")
-    
-    # Generate instance SSH key if not exists
-    key_path = os.path.join(ssh_dir, 'id_ed25519')
-    if not os.path.exists(key_path):
-        try:
-            logger.info("Generating new instance SSH key...")
-            subprocess.run(['ssh-keygen', '-t', 'ed25519', '-N', '', '-f', key_path, '-C', 'gemini-webui-instance'], check=True)
-            shutil.chown(key_path, user='node', group='node')
-            shutil.chown(key_path + '.pub', user='node', group='node')
-            os.chmod(key_path, 0o600)
-        except Exception as e:
-            logger.error(f"Failed to generate SSH key: {e}")
-    
-    # Symlink /home/node/.gemini -> /data/.gemini is handled in Dockerfile for RO root compatibility.
+    # Try to initialize data directory, fallback to /tmp if read-only
+    is_writable = True
+    try:
+        os.makedirs(ssh_dir, mode=0o700, exist_ok=True)
+        gemini_data = os.path.join(data_dir, ".gemini")
+        os.makedirs(gemini_data, mode=0o700, exist_ok=True)
+        
+        # Fix permissions if volume mount made them root-owned
+        for path in [gemini_data, ssh_dir]:
+            try:
+                stat = os.stat(path)
+                if stat.st_uid == 0:
+                    shutil.chown(path, user='node', group='node')
+                    # Recursively fix if it was existing root data
+                    for root, dirs, files in os.walk(path):
+                        for d in dirs: shutil.chown(os.path.join(root, d), user='node', group='node')
+                        for f in files: shutil.chown(os.path.join(root, f), user='node', group='node')
+            except Exception as e:
+                logger.error(f"Failed to fix permissions for {path}: {e}")
+        
+        # Generate instance SSH key if not exists
+        key_path = os.path.join(ssh_dir, 'id_ed25519')
+        if not os.path.exists(key_path):
+            try:
+                logger.info("Generating new instance SSH key...")
+                subprocess.run(['ssh-keygen', '-t', 'ed25519', '-N', '', '-f', key_path, '-C', 'gemini-webui-instance'], check=True)
+                shutil.chown(key_path, user='node', group='node')
+                shutil.chown(key_path + '.pub', user='node', group='node')
+                os.chmod(key_path, 0o600)
+            except Exception as e:
+                logger.error(f"Failed to generate SSH key: {e}")
+    except OSError as e:
+        if e.errno == 30: # Read-only file system
+            logger.warning(f"DATA_DIR {data_dir} is read-only. Persistence disabled.")
+            is_writable = False
+        else:
+            raise e
+
+    # Manage symlink /home/node/.gemini -> [current gemini_data]
+    home_gemini = "/home/node/.gemini"
+    try:
+        # We might need to recreate the symlink if we fell back to /tmp
+        if os.path.islink(home_gemini):
+            if os.readlink(home_gemini) != gemini_data:
+                os.unlink(home_gemini)
+                os.symlink(gemini_data, home_gemini)
+        elif not os.path.exists(home_gemini):
+            os.makedirs(os.path.dirname(home_gemini), exist_ok=True)
+            os.symlink(gemini_data, home_gemini)
+    except Exception as e:
+        logger.error(f"Failed to manage home symlink: {e}")
     
     config = get_config()
     LDAP_SERVER = config.get('LDAP_SERVER')
