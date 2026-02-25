@@ -970,12 +970,14 @@
                 return alert("Cannot update protected 'local' host.");
             }
 
-            // If we are editing, we should remove the old one if label changed
-            if (editingHostLabel && editingHostLabel !== label) {
-                await fetch(`/api/hosts/${encodeURIComponent(editingHostLabel)}`, { method: 'DELETE' });
-            }
-
-            const host = { label, type: target ? 'ssh' : 'local', target, dir };
+            const host = { 
+                label, 
+                type: target ? 'ssh' : 'local', 
+                target, 
+                dir,
+                old_label: editingHostLabel // Pass to server for in-place update
+            };
+            
             const response = await fetch('/api/hosts', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 

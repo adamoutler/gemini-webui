@@ -548,22 +548,28 @@ def list_hosts():
 def add_host():
     new_host = request.json
     label = new_host.get('label')
+    old_label = new_host.get('old_label')
     if not label:
         return jsonify({"status": "error", "message": "Label is required"}), 400
         
     curr_conf = get_config()
     hosts = curr_conf.get('HOSTS', [])
     
-    # Check if we are updating an existing host
-    found = False
+    # Check if we are updating an existing host (by new label or explicitly provided old label)
+    found_idx = -1
+    search_label = old_label if old_label else label
+    
     for i, h in enumerate(hosts):
-        if h['label'] == label:
-            hosts[i] = new_host
-            found = True
+        if h['label'] == search_label:
+            found_idx = i
             break
     
-    if not found:
-        hosts.append(new_host)
+    if found_idx != -1:
+        # Update in place to retain position
+        hosts[found_idx] = {k: v for k, v in new_host.items() if k != 'old_label'}
+    else:
+        # Add to end
+        hosts.append({k: v for k, v in new_host.items() if k != 'old_label'})
         
     curr_conf['HOSTS'] = hosts
     _, config_file, _ = get_config_paths()
