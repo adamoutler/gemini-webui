@@ -284,14 +284,15 @@ def require_auth():
 
     auth = request.authorization
     
-    # Check against local admin credentials
-    if auth and auth.username == ADMIN_USER and auth.password == ADMIN_PASS:
-        session['authenticated'] = True
-        return
-
-    # Check against LDAP if configured
-    if LDAP_SERVER and auth:
-        if check_auth(auth.username, auth.password, LDAP_SERVER, LDAP_BASE_DN, LDAP_BIND_USER_DN, LDAP_BIND_PASS, LDAP_AUTHORIZED_GROUP, LDAP_FALLBACK_DOMAIN):
+    # EXCLUSIVE AUTHENTICATION: 
+    # If LDAP is configured, it is the ONLY allowed method.
+    if LDAP_SERVER:
+        if auth and check_auth(auth.username, auth.password, LDAP_SERVER, LDAP_BASE_DN, LDAP_BIND_USER_DN, LDAP_BIND_PASS, LDAP_AUTHORIZED_GROUP, LDAP_FALLBACK_DOMAIN):
+            session['authenticated'] = True
+            return
+    else:
+        # Fall back to local admin credentials ONLY if LDAP is not configured.
+        if auth and auth.username == ADMIN_USER and auth.password == ADMIN_PASS:
             session['authenticated'] = True
             return
 

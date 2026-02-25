@@ -46,6 +46,11 @@ To run Gemini WebUI, you need to configure the following environment variables i
 *   `LDAP_BIND_USER_DN` & `LDAP_BIND_PASS`: Credentials for LDAP/Active Directory authentication.
 *   `LDAP_AUTHORIZED_GROUP`: The LDAP group permitted to access the UI.
 
+### Authentication
+The WebUI supports two exclusive authentication modes:
+1.  **LDAP (Enterprise)**: If `LDAP_SERVER` is configured, it is the **only** permitted authentication method. Local credentials are disabled.
+2.  **Local Admin (Stand-alone)**: If LDAP is **not** configured, the app uses `ADMIN_USER` and `ADMIN_PASS` (both default to `admin`).
+
 ### Volumes
 The application uses a named volume to persist configuration and AI state:
 *   `data:/data`: Stores application configuration, SSH keys, and the Gemini CLI's persistent memory (linked internally to `/home/node/.gemini`).
