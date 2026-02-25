@@ -1,8 +1,0 @@
-INFO:__main__:APP STARTING - VERSION: TAB_SYSTEM_ACTIVE
-INFO:__main__:Initializing app with DATA_DIR: /tmp/tmp.AdzYqsuGOz
-INFO:werkzeug: * Restarting with stat
-INFO:__main__:APP STARTING - VERSION: TAB_SYSTEM_ACTIVE
-INFO:__main__:Initializing app with DATA_DIR: /tmp/tmp.AdzYqsuGOz
-WARNING:werkzeug: * Debugger is active!
-INFO:werkzeug: * Debugger PIN: 684-306-966
-(940974) wsgi starting up on http://0.0.0.0:5006

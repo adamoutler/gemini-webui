@@ -1,3 +1,0 @@
-1 RLock(s) were not greened, to fix this error make sure you run eventlet.monkey_patch() before importing any other modules.
-INFO:src.app:APP STARTING - VERSION: TAB_SYSTEM_ACTIVE
-INFO:src.app:Initializing app with DATA_DIR: /tmp/tmp.JjDZOheDsn

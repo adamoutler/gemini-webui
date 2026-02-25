@@ -29,14 +29,16 @@ except ImportError:
 
 # Global config holder and defaults
 config = {}
-LDAP_SERVER = os.environ.get('LDAP_SERVER', 'ldaps://192.168.1.100')
-LDAP_BASE_DN = os.environ.get('LDAP_BASE_DN', 'CN=Users,DC=activedirectory,DC=adamoutler,DC=com')
-AD_BIND_USER_DN = os.environ.get('AD_BIND_USER_DN')
-AD_BIND_PASS = os.environ.get('AD_BIND_PASS')
-AUTHORIZED_GROUP = os.environ.get('AUTHORIZED_GROUP')
-FALLBACK_DOMAIN = os.environ.get('FALLBACK_DOMAIN', 'activedirectory.adamoutler.com')
-DEFAULT_SSH_TARGET = os.environ.get('DEFAULT_SSH_TARGET', 'adamoutler@192.168.1.101')
-DEFAULT_SSH_DIR = os.environ.get('DEFAULT_SSH_DIR', '~/oc')
+ADMIN_USER = os.environ.get('ADMIN_USER')
+ADMIN_PASS = os.environ.get('ADMIN_PASS')
+LDAP_SERVER = os.environ.get('LDAP_SERVER')
+LDAP_BASE_DN = os.environ.get('LDAP_BASE_DN')
+LDAP_BIND_USER_DN = os.environ.get('LDAP_BIND_USER_DN')
+LDAP_BIND_PASS = os.environ.get('LDAP_BIND_PASS')
+LDAP_AUTHORIZED_GROUP = os.environ.get('LDAP_AUTHORIZED_GROUP')
+LDAP_FALLBACK_DOMAIN = os.environ.get('LDAP_FALLBACK_DOMAIN', 'example.com')
+DEFAULT_SSH_TARGET = os.environ.get('DEFAULT_SSH_TARGET')
+DEFAULT_SSH_DIR = os.environ.get('DEFAULT_SSH_DIR', '~')
 
 # SECURITY PARADIGM: Fail-Closed Logging
 logging.basicConfig(level=logging.INFO)
@@ -85,20 +87,27 @@ def get_config():
     conf = {
         "LDAP_SERVER": LDAP_SERVER,
         "LDAP_BASE_DN": LDAP_BASE_DN,
-        "AD_BIND_USER_DN": AD_BIND_USER_DN,
-        "AD_BIND_PASS": AD_BIND_PASS,
-        "AUTHORIZED_GROUP": AUTHORIZED_GROUP,
-        "FALLBACK_DOMAIN": FALLBACK_DOMAIN,
+        "LDAP_BIND_USER_DN": LDAP_BIND_USER_DN,
+        "LDAP_BIND_PASS": LDAP_BIND_PASS,
+        "LDAP_AUTHORIZED_GROUP": LDAP_AUTHORIZED_GROUP,
+        "LDAP_FALLBACK_DOMAIN": LDAP_FALLBACK_DOMAIN,
         "DEFAULT_SSH_TARGET": DEFAULT_SSH_TARGET,
         "DEFAULT_SSH_DIR": DEFAULT_SSH_DIR,
         "SECRET_KEY": os.environ.get('SECRET_KEY', 'stable-fallback-key-change-me'),
         "ALLOWED_ORIGINS": os.environ.get('ALLOWED_ORIGINS', '*'),
         "HOSTS": [
-            { "label": 'local', "type": 'local' },
-            { "label": 'OC Box (101)', "type": 'ssh', "target": 'adamoutler@192.168.1.101', "dir": '~/oc' },
-            { "label": 'WebUI Dev (101)', "type": 'ssh', "target": 'adamoutler@192.168.1.101', "dir": '~/gemini-webui' }
+            { "label": 'local', "type": 'local' }
         ]
     }
+    
+    # Add default SSH target if configured
+    if DEFAULT_SSH_TARGET:
+        conf['HOSTS'].append({
+            "label": 'Default SSH',
+            "type": 'ssh',
+            "target": DEFAULT_SSH_TARGET,
+            "dir": DEFAULT_SSH_DIR
+        })
     
     if os.path.exists(config_file):
         try:
@@ -113,28 +122,50 @@ def get_config():
     return conf
 
 def init_app():
-    global config, LDAP_SERVER, LDAP_BASE_DN, AD_BIND_USER_DN, AD_BIND_PASS, AUTHORIZED_GROUP, FALLBACK_DOMAIN, DEFAULT_SSH_TARGET, DEFAULT_SSH_DIR
+    global config, LDAP_SERVER, LDAP_BASE_DN, LDAP_BIND_USER_DN, LDAP_BIND_PASS, LDAP_AUTHORIZED_GROUP, LDAP_FALLBACK_DOMAIN, DEFAULT_SSH_TARGET, DEFAULT_SSH_DIR
     data_dir, config_file, ssh_dir = get_config_paths()
     logger.info(f"Initializing app with DATA_DIR: {data_dir}")
     os.makedirs(ssh_dir, mode=0o700, exist_ok=True)
     
     gemini_data = os.path.join(data_dir, ".gemini")
     os.makedirs(gemini_data, mode=0o700, exist_ok=True)
-    home_gemini = os.path.expanduser("~/.gemini")
-    if not os.path.islink(home_gemini) and not os.path.exists(home_gemini):
+    
+    # Target /home/node/.gemini as requested
+    home_gemini = "/home/node/.gemini"
+    if os.path.islink(home_gemini):
         try:
-            os.symlink(gemini_data, home_gemini)
-            logger.info(f"Linked {home_gemini} to {gemini_data}")
+            if os.readlink(home_gemini) != gemini_data:
+                os.unlink(home_gemini)
+                os.symlink(gemini_data, home_gemini)
+                logger.info(f"Updated symlink {home_gemini} to {gemini_data}")
         except Exception as e:
-            logger.error(f"Failed to symlink .gemini: {e}")
+            logger.error(f"Failed to update symlink: {e}")
+    elif os.path.exists(home_gemini):
+        if os.path.isdir(home_gemini):
+            import shutil
+            try:
+                # If it's a directory, we might want to move its contents? 
+                # But the user said "make it a symlink", so we'll just remove and link.
+                shutil.rmtree(home_gemini)
+                os.symlink(gemini_data, home_gemini)
+                logger.info(f"Replaced directory {home_gemini} with symlink to {gemini_data}")
+            except Exception as e:
+                logger.error(f"Failed to replace directory with symlink: {e}")
+    else:
+        try:
+            os.makedirs(os.path.dirname(home_gemini), exist_ok=True)
+            os.symlink(gemini_data, home_gemini)
+            logger.info(f"Created symlink {home_gemini} to {gemini_data}")
+        except Exception as e:
+            logger.error(f"Failed to create symlink: {e}")
     
     config = get_config()
     LDAP_SERVER = config.get('LDAP_SERVER')
     LDAP_BASE_DN = config.get('LDAP_BASE_DN')
-    AD_BIND_USER_DN = config.get('AD_BIND_USER_DN')
-    AD_BIND_PASS = config.get('AD_BIND_PASS')
-    AUTHORIZED_GROUP = config.get('AUTHORIZED_GROUP')
-    FALLBACK_DOMAIN = config.get('FALLBACK_DOMAIN')
+    LDAP_BIND_USER_DN = config.get('LDAP_BIND_USER_DN')
+    LDAP_BIND_PASS = config.get('LDAP_BIND_PASS')
+    LDAP_AUTHORIZED_GROUP = config.get('LDAP_AUTHORIZED_GROUP')
+    LDAP_FALLBACK_DOMAIN = config.get('LDAP_FALLBACK_DOMAIN')
     DEFAULT_SSH_TARGET = config.get('DEFAULT_SSH_TARGET')
     DEFAULT_SSH_DIR = config.get('DEFAULT_SSH_DIR')
 
@@ -222,11 +253,16 @@ def require_auth():
     if request.path == '/api/health':
         return
 
+    auth = request.authorization
+    
+    # Fallback authentication if LDAP is not configured
     if not LDAP_SERVER:
+        if auth and auth.username == ADMIN_USER and auth.password == ADMIN_PASS:
+            session['authenticated'] = True
+            return
         return authenticate()
         
-    auth = request.authorization
-    if auth and check_auth(auth.username, auth.password, LDAP_SERVER, LDAP_BASE_DN, AD_BIND_USER_DN, AD_BIND_PASS, AUTHORIZED_GROUP, FALLBACK_DOMAIN):
+    if auth and check_auth(auth.username, auth.password, LDAP_SERVER, LDAP_BASE_DN, LDAP_BIND_USER_DN, LDAP_BIND_PASS, LDAP_AUTHORIZED_GROUP, LDAP_FALLBACK_DOMAIN):
         session['authenticated'] = True
         return
 

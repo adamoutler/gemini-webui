@@ -16,7 +16,7 @@ def test_check_auth_simple_success(mock_connection, mock_server):
     mock_connection.return_value = mock_conn_instance
     
     # Run
-    result = check_auth("user", "pass", "ldaps://test", "dc=test", fallback_domain="test.com")
+    result = check_auth("user", "pass", "ldaps://test", "dc=test", ldap_fallback_domain="test.com")
     
     assert result is True
     mock_connection.assert_called()
@@ -37,8 +37,8 @@ def test_check_auth_ad_success(mock_connection, mock_server):
     mock_conn_instance.entries = [mock_entry]
     
     result = check_auth("user", "pass", "ldaps://test", "dc=test", 
-                        ad_bind_user_dn="bind_user", ad_bind_pass="bind_pass", 
-                        authorized_group="allowed")
+                        ldap_bind_user_dn="bind_user", ldap_bind_pass="bind_pass", 
+                        ldap_authorized_group="allowed")
     
     assert result is True
 
@@ -50,7 +50,7 @@ def test_check_auth_ad_user_not_found(mock_connection, mock_server):
     mock_conn_instance.entries = []
     
     result = check_auth("user", "pass", "ldaps://test", "dc=test", 
-                        ad_bind_user_dn="bind_user", ad_bind_pass="bind_pass")
+                        ldap_bind_user_dn="bind_user", ldap_bind_pass="bind_pass")
     
     assert result is False
 
@@ -67,8 +67,8 @@ def test_check_auth_ad_group_mismatch(mock_connection, mock_server):
     mock_conn_instance.entries = [mock_entry]
     
     result = check_auth("user", "pass", "ldaps://test", "dc=test", 
-                        ad_bind_user_dn="bind_user", ad_bind_pass="bind_pass", 
-                        authorized_group="allowed")
+                        ldap_bind_user_dn="bind_user", ldap_bind_pass="bind_pass", 
+                        ldap_authorized_group="allowed")
     
     assert result is False
 

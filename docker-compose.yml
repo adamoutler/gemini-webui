@@ -5,22 +5,21 @@ services:
     ports:
       - "5000:5000"
     environment:
-      - LDAP_SERVER=ldaps://192.168.1.100
-      - LDAP_BASE_DN=CN=Users,DC=activedirectory,DC=adamoutler,DC=com
+      - ADMIN_USER=admin
+      - ADMIN_PASS=admin
+      - LDAP_SERVER=${LDAP_SERVER}
+      - LDAP_BASE_DN=${LDAP_BASE_DN}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - AD_BIND_USER_DN=${AD_BIND_USER_DN}
-      - AD_BIND_PASS=${AD_BIND_PASS}
+      - LDAP_BIND_USER_DN=${LDAP_BIND_USER_DN}
+      - LDAP_BIND_PASS=${LDAP_BIND_PASS}
       - SECRET_KEY=${SECRET_KEY}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
-      - DEFAULT_SSH_TARGET=${DEFAULT_SSH_TARGET:-adamoutler@192.168.1.101}
-      - DEFAULT_SSH_DIR=${DEFAULT_SSH_DIR:-~/oc}
-      - AUTHORIZED_GROUP=CN=gemini-webui,OU=Groups,dc=activedirectory,dc=adamoutler,dc=com
+      - DEFAULT_SSH_TARGET=${DEFAULT_SSH_TARGET}
+      - DEFAULT_SSH_DIR=${DEFAULT_SSH_DIR}
+      - LDAP_AUTHORIZED_GROUP=${LDAP_AUTHORIZED_GROUP}
     volumes:
-      - ./data:/data
-      - ~/Gemini:/app/Gemini
-      # - ~/.gemini:/home/node/.gemini # Host mount example
-      - gemini-state:/home/node/.gemini
+      - data:/data
     restart: unless-stopped
 
 volumes:
-  gemini-state:
+  data:

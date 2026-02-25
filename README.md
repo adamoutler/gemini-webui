@@ -44,17 +44,16 @@ To run Gemini WebUI, you need to configure the following environment variables i
 
 ### Required Variables
 *   `GEMINI_API_KEY`: Your Google Gemini API key.
-*   `AD_BIND_USER_DN` & `AD_BIND_PASS`: Credentials for LDAP/Active Directory authentication.
-*   `AUTHORIZED_GROUP`: The LDAP group permitted to access the UI.
+*   `LDAP_BIND_USER_DN` & `LDAP_BIND_PASS`: Credentials for LDAP/Active Directory authentication.
+*   `LDAP_AUTHORIZED_GROUP`: The LDAP group permitted to access the UI.
 
 ### Optional Defaults
 *   `DEFAULT_SSH_TARGET`: The default `user@host` for SSH sessions (e.g., `adamoutler@192.168.1.101`).
 *   `DEFAULT_SSH_DIR`: The default working directory for SSH sessions (e.g., `~/oc`).
 
 ### Volumes
-Ensure you mount your persistent Gemini data so the AI remembers you:
-*   `~/.gemini:/home/node/.gemini`: Stores your AI's memory and configuration.
-*   `~/Gemini:/app/Gemini`: Provides access to your project files.
+The application uses a named volume to persist configuration and AI state:
+*   `data:/data`: Stores application configuration, SSH keys, and the Gemini CLI's persistent memory (linked internally to `/home/node/.gemini`).
 
 ---
 
