@@ -599,23 +599,18 @@
 
         function parseQuickInput(val) {
             if (!val) return null;
-            // Format: user@host[:port][/folder]
-            // We want to be lenient.
+            // Format: user@host[:port] [directory]
             
             let user = "";
             let host = "";
             let port = "";
             let folder = "~";
 
-            // 1. Split for folder
-            const parts = val.split('/');
-            if (parts.length > 1) {
-                folder = parts.slice(1).join('/');
-                // If it starts with ~, keep it as is, otherwise ensure it starts with /
-                if (!folder.startsWith('~')) {
-                    folder = '/' + folder;
-                }
-                val = parts[0];
+            // 1. Split by space for directory
+            const spaceIdx = val.indexOf(' ');
+            if (spaceIdx !== -1) {
+                folder = val.substring(spaceIdx + 1).trim() || "~";
+                val = val.substring(0, spaceIdx).trim();
             }
 
             // 2. Split for user/host

@@ -284,9 +284,14 @@ def fetch_sessions_for_host(host):
             
         remote_cmd = "gemini --list-sessions"
         if ssh_dir:
-            # Use shlex.quote for safe shell escaping
-            quoted_dir = shlex.quote(ssh_dir)
-            remote_cmd = f"cd {quoted_dir} && {remote_cmd}"
+            # Handle tilde expansion for remote shell
+            if ssh_dir.startswith('~'):
+                suffix = ssh_dir[1:]
+                quoted_suffix = shlex.quote(suffix)
+                remote_cmd = f"cd ~{quoted_suffix} && {remote_cmd}"
+            else:
+                quoted_dir = shlex.quote(ssh_dir)
+                remote_cmd = f"cd {quoted_dir} && {remote_cmd}"
             
         cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5', '-o', 'StrictHostKeyChecking=no']
         data_dir, _, ssh_dir_path = get_config_paths()
@@ -402,8 +407,15 @@ def pty_restart(data):
             elif resume and str(resume).isdigit(): remote_cmd += f" -r {resume}"
             
             if ssh_dir:
-                quoted_dir = shlex.quote(ssh_dir)
-                remote_cmd = f"cd {quoted_dir} && {remote_cmd}"
+                # If it starts with ~, we can't easily shlex.quote it if we want shell expansion.
+                # But we can quote the rest.
+                if ssh_dir.startswith('~'):
+                    suffix = ssh_dir[1:]
+                    quoted_suffix = shlex.quote(suffix)
+                    remote_cmd = f"cd ~{quoted_suffix} && {remote_cmd}"
+                else:
+                    quoted_dir = shlex.quote(ssh_dir)
+                    remote_cmd = f"cd {quoted_dir} && {remote_cmd}"
                 
             cmd = ['ssh', '-t']
             data_dir, _, ssh_dir_path = get_config_paths()
