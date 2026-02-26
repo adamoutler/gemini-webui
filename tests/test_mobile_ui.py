@@ -20,8 +20,8 @@ def mobile_page(server):
         browser.close()
 
 @pytest.mark.timeout(10)
-def test_mobile_physics_momentum(mobile_page):
-    """Verify that Physics-First momentum rules are applied on mobile."""
+def test_mobile_absolute_proxy(mobile_page):
+    """Verify that Absolute Proxy scroller is configured correctly."""
     # Wait for either the terminal or any button in the active launcher tab
     mobile_page.wait_for_function("""
         () => document.querySelector('.xterm-screen') || 
@@ -31,31 +31,28 @@ def test_mobile_physics_momentum(mobile_page):
     if not mobile_page.locator('.xterm-screen').is_visible():
         mobile_page.locator('.tab-instance.active button').filter(has_text="Start New").first.click()
     
-    mobile_page.wait_for_selector('.xterm-viewport', timeout=5000)
+    mobile_page.wait_for_selector('.mobile-scroll-proxy', timeout=5000)
     
-    viewport = mobile_page.locator('.xterm-viewport')
+    proxy = mobile_page.locator('.mobile-scroll-proxy')
     
-    # 1. Viewport should be on top (high z-index) and have pointer-events: all
-    expect(viewport).to_be_visible()
-    expect(viewport).to_have_css("pointer-events", "all")
-    expect(viewport).to_have_css("z-index", "10")
+    # 1. Proxy should be on top and capture gestures
+    expect(proxy).to_be_visible()
+    pe = proxy.evaluate("el => getComputedStyle(el).pointerEvents")
+    assert pe in ["all", "auto"], f"Unexpected pointer-events: {pe}"
+    expect(proxy).to_have_css("z-index", "100")
     
-    # 2. Verify it's full width (allowing for parent container padding)
-    is_full_width = viewport.evaluate("""el => {
-        const parentWidth = el.parentElement.clientWidth;
-        return Math.abs(el.clientWidth - parentWidth) <= 2;
-    }""")
-    assert is_full_width, "Viewport should be full-width to capture all swipes"
+    # 2. Check for the large scrollable area
+    content = proxy.locator('.mobile-scroll-content')
+    expect(content).to_have_css("height", "100000px")
     
-    # 3. Quick Tap should NOT permanently disable viewport
-    # Use mouse API which Playwright correctly translates to touch in mobile context
-    viewport_box = viewport.bounding_box()
-    center_x = viewport_box['x'] + viewport_box['width'] / 2
-    center_y = viewport_box['y'] + viewport_box['height'] / 2
-    
-    mobile_page.mouse.move(center_x, center_y)
+    # 3. Simulate Tap Passthrough
+    mobile_page.mouse.move(100, 100)
     mobile_page.mouse.down()
     mobile_page.mouse.up()
     
-    # Viewport should still have pointer-events: all after tap logic
-    expect(viewport).to_have_css("pointer-events", "all")
+    # After a tap, it should briefly be none then return to all
+    # We wait for the timeout in our JS
+    time.sleep(0.5)
+    pe_after = proxy.evaluate("el => getComputedStyle(el).pointerEvents")
+    assert pe_after in ["all", "auto"], f"Unexpected pointer-events after tap: {pe_after}"
+

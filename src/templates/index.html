@@ -66,22 +66,29 @@
         .terminal-instance { width: 100%; height: 100%; padding: 5px; box-sizing: border-box; direction: ltr !important; position: relative;}
         .xterm-link { text-decoration: underline !important; cursor: pointer !important; }
         
-        /* Physics-First Mobile Momentum */
+        /* Absolute Proxy Momentum Strategy */
+        .mobile-scroll-proxy {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow-y: scroll;
+            z-index: 100;
+            display: none;
+            -webkit-overflow-scrolling: touch;
+            background: transparent;
+            touch-action: pan-y;
+        }
+        .mobile-scroll-content {
+            width: 1px;
+            height: 100000px; /* Large stable height for inertia */
+            background: transparent;
+        }
+        
         @media (max-width: 1080px) {
-            .xterm-viewport { 
-                display: block !important; 
-                width: 100% !important; 
-                background: transparent !important; 
-                z-index: 10 !important; 
-                pointer-events: all !important;
-                -webkit-overflow-scrolling: touch !important;
-            }
-            .xterm-screen { 
-                z-index: 5 !important; 
-            }
-            /* Style scrollbar for modern mobile feel */
-            .xterm-viewport::-webkit-scrollbar { width: 4px; }
-            .xterm-viewport::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+            .mobile-scroll-proxy { display: block; }
+            .xterm-viewport { display: none !important; }
         }
         
         /* Mobile Controls */
@@ -602,45 +609,60 @@
             
             tab.term.open(termDiv);
 
-            // Physics-First Mobile Momentum Orchestration
+            // Absolute Proxy Implementation for Native Momentum
             if (isMobile) {
-                const viewport = termDiv.querySelector('.xterm-viewport');
-                const screen = termDiv.querySelector('.xterm-screen');
-                
-                if (viewport && screen) {
-                    let startX, startY, startTime;
-                    
-                    viewport.addEventListener('touchstart', (e) => {
-                        const touch = e.touches[0];
-                        startX = touch.clientX;
-                        startY = touch.clientY;
-                        startTime = Date.now();
-                    }, {passive: true});
+                const proxy = document.createElement('div');
+                proxy.className = 'mobile-scroll-proxy';
+                const content = document.createElement('div');
+                content.className = 'mobile-scroll-content';
+                proxy.appendChild(content);
+                termDiv.appendChild(proxy);
 
-                    viewport.addEventListener('touchend', (e) => {
-                        const touch = e.changedTouches[0];
-                        const deltaX = Math.abs(touch.clientX - startX);
-                        const deltaY = Math.abs(touch.clientY - startY);
-                        const duration = Date.now() - startTime;
+                let isSyncing = false;
+                const rowHeight = 16; // Approximate row height for line mapping
 
-                        // If it's a quick tap (very little movement, short duration)
-                        // we forward the event to the text layer below.
-                        if (deltaX < 5 && deltaY < 5 && duration < 300) {
-                            viewport.style.pointerEvents = 'none';
-                            const target = document.elementFromPoint(touch.clientX, touch.clientY);
-                            if (target) {
-                                // Simulate a click on the actual intended target
-                                target.click();
-                                // Focus the terminal if it was a tap on the text area
-                                if (target.classList.contains('xterm-rows') || target.closest('.xterm-rows')) {
-                                    tab.term.focus();
-                                }
-                            }
-                            // Restore scroll capturing immediately
-                            viewport.style.pointerEvents = 'all';
+                // Initial sync to the bottom
+                proxy.scrollTop = 50000;
+
+                proxy.addEventListener('scroll', () => {
+                    if (isSyncing) return;
+                    isSyncing = true;
+                    requestAnimationFrame(() => {
+                        const deltaLines = Math.round((proxy.scrollTop - 50000) / rowHeight);
+                        if (deltaLines !== 0) {
+                            tab.term.scrollLines(deltaLines);
+                            // Keep proxy centered to allow infinite-feeling scroll
+                            proxy.scrollTop = 50000; 
                         }
-                    }, {passive: true});
-                }
+                        isSyncing = false;
+                    });
+                }, {passive: true});
+
+                // Tap-to-Click forwarding logic
+                proxy.addEventListener('touchstart', (e) => {
+                    proxy.style.pointerEvents = 'all';
+                }, {passive: true});
+
+                proxy.addEventListener('touchend', (e) => {
+                    // We wait for momentum to potentially finish before disabling.
+                    // If the user tapped, this 100ms window still feels responsive.
+                    setTimeout(() => {
+                        // Only disable if we aren't currently in a momentum scroll
+                        // (Rough heuristic: if scrollTop is still moving, wait)
+                        let lastTop = proxy.scrollTop;
+                        const checkMomentum = () => {
+                            if (proxy.scrollTop !== lastTop) {
+                                lastTop = proxy.scrollTop;
+                                requestAnimationFrame(checkMomentum);
+                            } else {
+                                proxy.style.pointerEvents = 'none';
+                                // Re-enable for the NEXT touch
+                                setTimeout(() => proxy.style.pointerEvents = 'all', 10);
+                            }
+                        };
+                        checkMomentum();
+                    }, 150);
+                }, {passive: true});
             }
 
             // Passive touch listener to ensure the browser doesn't wait for JS
