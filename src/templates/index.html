@@ -339,6 +339,9 @@
         let activeTabId = null;
         let initialAutoResumeDone = false;
         let ctrlActive = false;
+        
+        const isMobile = window.innerWidth <= 1080 || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        console.log("Environment detection: isMobile =", isMobile);
 
         window.addEventListener('popstate', (event) => {
             const activeTab = tabs.find(t => t.id === activeTabId);
@@ -612,6 +615,7 @@
             // Native Momentum Passthrough: Forces the browser to use its high-performance 
             // scroll engine instead of xterm.js's manual line-scrolling.
             if (isMobile) {
+                termDiv.setAttribute('data-mobile', 'true');
                 const viewport = termDiv.querySelector('.xterm-viewport');
                 if (viewport) {
                     viewport.style.width = '100%';
