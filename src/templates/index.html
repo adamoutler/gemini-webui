@@ -64,36 +64,27 @@
         .tab-instance { position: absolute; top: 0; left: 0; width: 100%; height: 100%; visibility: hidden; box-sizing: border-box; background: #1e1e1e;}
         .tab-instance.active { visibility: visible; }
         .terminal-instance { width: 100%; height: 100%; padding: 5px; box-sizing: border-box; direction: ltr !important; position: relative;}
-        .xterm-link { text-decoration: underline !important; cursor: pointer !important; pointer-events: all !important; }
+        .xterm-link { text-decoration: underline !important; cursor: pointer !important; }
         
-        /* Ghost Scroll Momentum Strategy */
-        .ghost-scroll {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            overflow-x: hidden;
-            z-index: 10;
-            display: none;
-            -webkit-overflow-scrolling: touch;
-            pointer-events: none; /* Transparent by default */
-        }
-        .ghost-scroll-content {
-            width: 1px;
-            pointer-events: none;
-        }
-        
+        /* Physics-First Mobile Momentum */
         @media (max-width: 1080px) {
-            .ghost-scroll { display: block; }
-            .xterm-viewport { display: none !important; } /* Hide xterm's internal scroll */
-            .xterm-screen { pointer-events: all !important; } /* Allow clicking beneath ghost */
+            .xterm-viewport { 
+                display: block !important; 
+                width: 100% !important; 
+                background: transparent !important; 
+                z-index: 10 !important; 
+                pointer-events: all !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+            .xterm-screen { 
+                z-index: 5 !important; 
+            }
+            /* Style scrollbar for modern mobile feel */
+            .xterm-viewport::-webkit-scrollbar { width: 4px; }
+            .xterm-viewport::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
         }
         
-        /* Mobile Momentum Physics */
-        @media (max-width: 1080px) {
-            #mobile-controls { display: grid !important; }
+        /* Mobile Controls */
             #toolbar { padding: 5px; gap: 5px; flex-wrap: wrap; }
             #active-connection-info { gap: 5px; }
             body { height: 100vh; height: 100dvh; height: -webkit-fill-available; position: fixed; top: 0; left: 0; width: 100%; }
@@ -611,56 +602,45 @@
             
             tab.term.open(termDiv);
 
-            // Ghost Scroll Implementation for Native Momentum
+            // Physics-First Mobile Momentum Orchestration
             if (isMobile) {
-                const ghost = document.createElement('div');
-                ghost.className = 'ghost-scroll';
-                const ghostContent = document.createElement('div');
-                ghostContent.className = 'ghost-scroll-content';
-                ghost.appendChild(ghostContent);
-                termDiv.appendChild(ghost);
-
-                let isSyncing = false;
+                const viewport = termDiv.querySelector('.xterm-viewport');
+                const screen = termDiv.querySelector('.xterm-screen');
                 
-                // 1. Sync Terminal -> Ghost (on data/scroll)
-                tab.term.onScroll(() => {
-                    if (isSyncing) return;
-                    isSyncing = true;
-                    const dims = tab.term._core._renderService.dimensions;
-                    const scrollTop = tab.term.buffer.active.viewportY * dims.actualCellHeight;
-                    ghost.scrollTop = scrollTop;
-                    isSyncing = false;
-                });
-
-                // 2. Sync Ghost -> Terminal (on user swipe)
-                ghost.addEventListener('scroll', () => {
-                    if (isSyncing) return;
-                    isSyncing = true;
-                    const dims = tab.term._core._renderService.dimensions;
-                    const line = Math.round(ghost.scrollTop / dims.actualCellHeight);
-                    tab.term.scrollToLine(line);
-                    isSyncing = false;
-                }, {passive: true});
-
-                // 3. Orchestrate Touch (Activate ghost only on swipe)
-                termDiv.addEventListener('touchstart', (e) => {
-                    // Update content height to match buffer
-                    const dims = tab.term._core._renderService.dimensions;
-                    const totalHeight = tab.term.buffer.active.length * dims.actualCellHeight;
-                    ghostContent.style.height = totalHeight + 'px';
+                if (viewport && screen) {
+                    let startX, startY, startTime;
                     
-                    // Always enable pointer events on touch so browser handles momentum
-                    ghost.style.pointerEvents = 'all';
-                }, {passive: true});
+                    viewport.addEventListener('touchstart', (e) => {
+                        const touch = e.touches[0];
+                        startX = touch.clientX;
+                        startY = touch.clientY;
+                        startTime = Date.now();
+                    }, {passive: true});
 
-                termDiv.addEventListener('touchend', () => {
-                    // We can't disable pointerEvents immediately or momentum stops.
-                    // Instead, we wait for the scroll to settle or a small timeout.
-                    setTimeout(() => {
-                        // Only disable if we aren't currently scrolling (simplified)
-                        ghost.style.pointerEvents = 'none';
-                    }, 1000); 
-                }, {passive: true});
+                    viewport.addEventListener('touchend', (e) => {
+                        const touch = e.changedTouches[0];
+                        const deltaX = Math.abs(touch.clientX - startX);
+                        const deltaY = Math.abs(touch.clientY - startY);
+                        const duration = Date.now() - startTime;
+
+                        // If it's a quick tap (very little movement, short duration)
+                        // we forward the event to the text layer below.
+                        if (deltaX < 5 && deltaY < 5 && duration < 300) {
+                            viewport.style.pointerEvents = 'none';
+                            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                            if (target) {
+                                // Simulate a click on the actual intended target
+                                target.click();
+                                // Focus the terminal if it was a tap on the text area
+                                if (target.classList.contains('xterm-rows') || target.closest('.xterm-rows')) {
+                                    tab.term.focus();
+                                }
+                            }
+                            // Restore scroll capturing immediately
+                            viewport.style.pointerEvents = 'all';
+                        }
+                    }, {passive: true});
+                }
             }
 
             // Passive touch listener to ensure the browser doesn't wait for JS
