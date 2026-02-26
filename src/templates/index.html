@@ -61,11 +61,31 @@
         button.small { padding: 2px 8px; font-size: 11px; }
         
         #terminal-container { flex-grow: 1; padding: 0; position: relative; overflow: hidden; }
-        .xterm-viewport { -webkit-overflow-scrolling: touch !important; overscroll-behavior-y: auto; touch-action: pan-y !important; }
+        .xterm-viewport { 
+            -webkit-overflow-scrolling: touch !important; 
+            overscroll-behavior-y: auto; 
+            touch-action: pan-y !important; 
+            z-index: 1;
+        }
+        .xterm-screen { 
+            z-index: 2;
+            pointer-events: all;
+        }
+        /* Mobile optimization: Allow swipes to pass through to the viewport for momentum */
+        @media (max-width: 1080px) {
+            .xterm-screen {
+                pointer-events: none; /* Let swipes hit the viewport */
+            }
+            .xterm-link, .xterm-cursor-layer {
+                pointer-events: all; /* Keep links and cursor interactive */
+            }
+            .terminal-instance {
+                pointer-events: all;
+            }
+        }
         .tab-instance { position: absolute; top: 0; left: 0; width: 100%; height: 100%; visibility: hidden; box-sizing: border-box; background: #1e1e1e;}
         .tab-instance.active { visibility: visible; }
         .terminal-instance { width: 100%; height: 100%; padding: 5px; box-sizing: border-box; touch-action: pan-y !important; }
-        .xterm-screen { touch-action: pan-y !important; }
         .xterm-link { text-decoration: underline !important; cursor: pointer !important; }
         
         /* Quick Connect Bar */
@@ -580,6 +600,28 @@
             tab.fitAddon = new FitAddon.FitAddon(); tab.term.loadAddon(tab.fitAddon);
             
             tab.term.open(termDiv);
+
+            // Improved mobile scrolling: Toggle pointer-events on the screen to allow 
+            // the viewport to capture swipes for momentum, while still allowing 
+            // links to be clicked when tapped.
+            if (isMobile) {
+                const screen = termDiv.querySelector('.xterm-screen');
+                const viewport = termDiv.querySelector('.xterm-viewport');
+                
+                termDiv.addEventListener('touchstart', (e) => {
+                    // On touch start, we disable pointer events on the screen so the 
+                    // swipe goes to the viewport (which has native momentum).
+                    if (screen) screen.style.pointerEvents = 'none';
+                }, {passive: true});
+
+                termDiv.addEventListener('touchend', (e) => {
+                    // On touch end, we re-enable pointer events so clicking works.
+                    if (screen) screen.style.pointerEvents = 'all';
+                }, {passive: true});
+                
+                // If the user is just tapping, the click will still fire on the screen
+                // because touchend happens before the click event.
+            }
 
             // Passive touch listener hack to force native momentum scrolling on mobile
             termDiv.addEventListener('touchmove', (e) => {}, {passive: true});
