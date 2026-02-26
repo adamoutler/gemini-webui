@@ -7,7 +7,8 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.ico">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" integrity="sha256-gy8/LGA7Q61DUf8ElwFQzHqHMBQnbbEmpgZcbdgeSHI=" crossorigin="anonymous" />
     <style>
-        body { margin: 0; padding: 0; background-color: #000; overflow: hidden; display: flex; flex-direction: column; height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;}
+        html, body { margin: 0; padding: 0; background-color: #000; overflow: hidden; height: 100%; width: 100%; overscroll-behavior: none; }
+        body { display: flex; flex-direction: column; height: 100vh; height: 100dvh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;}
         #toolbar { background-color: #333; padding: 10px; display: flex; gap: 10px; align-items: center; }
         #tab-bar { background-color: #222; display: flex; overflow-x: auto; padding: 0 5px; }
         .tab { 
@@ -40,7 +41,7 @@
         button.danger:hover { background-color: #f14c4c; }
         button.small { padding: 2px 8px; font-size: 11px; }
         
-        #terminal-container { flex-grow: 1; padding: 0; position: relative; }
+        #terminal-container { flex-grow: 1; padding: 0; position: relative; overflow: hidden; }
         .tab-instance { position: absolute; top: 0; left: 0; width: 100%; height: 100%; visibility: hidden; box-sizing: border-box; background: #1e1e1e;}
         .tab-instance.active { visibility: visible; }
         .terminal-instance { width: 100%; height: 100%; padding: 5px; box-sizing: border-box; }
@@ -161,11 +162,11 @@
         .control-btn.danger { background: #cd3131; }
         .control-btn.danger:active { background: #f14c4c; }
 
-        @media (max-width: 768px) {
+        @media (max-width: 1080px) {
             #mobile-controls { display: grid !important; }
             #toolbar { padding: 5px; gap: 5px; flex-wrap: wrap; }
             #active-connection-info { gap: 5px; }
-            body { height: 100vh; height: -webkit-fill-available; position: fixed; width: 100%; }
+            body { height: 100vh; height: 100dvh; height: -webkit-fill-available; position: fixed; width: 100%; }
         }
 
         /* Modern Dark Scrollbar */
@@ -538,7 +539,7 @@
             termDiv.setAttribute('aria-relevant', 'additions');
             container.appendChild(termDiv);
             
-            const isMobile = window.innerWidth <= 768;
+            const isMobile = window.innerWidth <= 1080;
             const fontSize = isMobile ? 11 : 14;
 
             tab.term = new Terminal({ 
@@ -728,7 +729,7 @@
 
             if (tab.state === 'terminal') {
                 toolbarInfo.style.display = 'flex';
-                if (window.innerWidth <= 768) mobileControls.style.display = 'grid';
+                if (window.innerWidth <= 1080) mobileControls.style.display = 'grid';
                 updateStatus(tab.session.ssh_target, tab.session.ssh_dir);
                 setTimeout(() => { fitTerminal(tab); tab.term.focus(); }, 50);
             } else { 
