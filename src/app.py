@@ -283,7 +283,7 @@ def require_auth():
         session['authenticated'] = True
         return
         
-    if request.path == '/api/health':
+    if request.path in ['/health', '/api/health']:
         return
 
     auth = request.authorization
@@ -776,6 +776,10 @@ def list_gemini_sessions():
         return jsonify(result), 504
     session_results_cache[cache_key] = result
     return jsonify(result)
+
+@app.route('/health')
+def health_check_root():
+    return jsonify({"status": "ok"})
 
 @app.route('/api/health')
 def health_check():

@@ -49,7 +49,7 @@ def server(test_data_dir):
     max_retries = 20
     for i in range(max_retries):
         try:
-            resp = requests.get(f"http://127.0.0.1:{port}/api/health", timeout=1)
+            resp = requests.get(f"http://127.0.0.1:{port}/health", timeout=1)
             if resp.status_code == 200:
                 break
         except Exception:

@@ -51,3 +51,7 @@ def test_instance_key_generation_logic(client, test_data_dir):
 def test_health_check_unauthenticated(client):
     response = client.get('/api/health')
     assert response.status_code == 200
+    
+def test_root_health_check_unauthenticated(client):
+    response = client.get('/health')
+    assert response.status_code == 200
