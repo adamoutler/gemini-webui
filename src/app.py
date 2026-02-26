@@ -283,7 +283,7 @@ def require_auth():
         session['authenticated'] = True
         return
         
-    if request.path in ['/health', '/api/health']:
+    if request.path in ['/health', '/api/health', '/favicon.ico', '/favicon.svg']:
         return
 
     auth = request.authorization
@@ -556,6 +556,11 @@ def pty_restart(data):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/favicon.ico')
+@app.route('/favicon.svg')
+def favicon():
+    return app.send_static_file('favicon.svg')
 
 @app.route('/api/hosts', methods=['GET'])
 @authenticated_only
