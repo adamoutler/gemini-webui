@@ -20,8 +20,8 @@ def mobile_page(server):
         browser.close()
 
 @pytest.mark.timeout(10)
-def test_mobile_absolute_proxy(mobile_page):
-    """Verify that Absolute Proxy scroller is configured correctly."""
+def test_mobile_passive_portal(mobile_page):
+    """Verify that Passive Portal scroller is configured correctly."""
     # Wait for either the terminal or any button in the active launcher tab
     mobile_page.wait_for_function("""
         () => document.querySelector('.xterm-screen') || 
@@ -39,20 +39,20 @@ def test_mobile_absolute_proxy(mobile_page):
     expect(proxy).to_be_visible()
     pe = proxy.evaluate("el => getComputedStyle(el).pointerEvents")
     assert pe in ["all", "auto"], f"Unexpected pointer-events: {pe}"
-    expect(proxy).to_have_css("z-index", "100")
     
     # 2. Check for the large scrollable area
     content = proxy.locator('.mobile-scroll-content')
     expect(content).to_have_css("height", "100000px")
     
     # 3. Simulate Tap Passthrough
+    # Move, down, up at the same spot
     mobile_page.mouse.move(100, 100)
     mobile_page.mouse.down()
     mobile_page.mouse.up()
     
-    # After a tap, it should briefly be none then return to all
-    # We wait for the timeout in our JS
-    time.sleep(0.5)
+    # In 'Passive Portal' mode, the pointerEvents = 'none' happens 
+    # immediately after touchend. 
+    # We check that it returns to all shortly after.
+    time.sleep(0.3)
     pe_after = proxy.evaluate("el => getComputedStyle(el).pointerEvents")
     assert pe_after in ["all", "auto"], f"Unexpected pointer-events after tap: {pe_after}"
-

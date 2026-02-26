@@ -138,17 +138,13 @@
             touch-action: pan-y;
         }
         
-        /* Launcher Styles */
         .launcher { padding: 30px; color: #ccc; overflow-y: auto; height: 100%; max-width: 900px; margin: 0 auto; overscroll-behavior: contain; touch-action: pan-y;}
         .launcher h2 { color: white; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; font-weight: 500;}
         .connection-card { background: #252526; border-radius: 6px; padding: 15px; margin-bottom: 15px; border: 1px solid #333; transition: opacity 0.2s, transform 0.2s; }
         .connection-card:hover { border-color: #444; }
         .connection-card.dragging { 
-            opacity: 0; 
-            height: 0; 
-            margin: 0; 
-            padding: 0; 
-            border: none; 
+            opacity: 0.4; 
+            transform: scale(0.98);
             pointer-events: none;
         }
         
@@ -609,7 +605,7 @@
             
             tab.term.open(termDiv);
 
-            // Absolute Proxy Implementation for Native Momentum
+            // Passive Portal Implementation for Native Momentum
             if (isMobile) {
                 const proxy = document.createElement('div');
                 proxy.className = 'mobile-scroll-proxy';
@@ -619,50 +615,40 @@
                 termDiv.appendChild(proxy);
 
                 let isSyncing = false;
-                const rowHeight = 16; // Approximate row height for line mapping
+                const rowHeight = 16;
 
-                // Initial sync to the bottom
-                proxy.scrollTop = 50000;
-
+                // Sync: Ghost -> Terminal (Passive & Momentum-Safe)
                 proxy.addEventListener('scroll', () => {
                     if (isSyncing) return;
                     isSyncing = true;
-                    requestAnimationFrame(() => {
-                        const deltaLines = Math.round((proxy.scrollTop - 50000) / rowHeight);
-                        if (deltaLines !== 0) {
-                            tab.term.scrollLines(deltaLines);
-                            // Keep proxy centered to allow infinite-feeling scroll
-                            proxy.scrollTop = 50000; 
-                        }
-                        isSyncing = false;
-                    });
+                    const deltaLines = Math.round((proxy.scrollTop - 50000) / rowHeight);
+                    if (deltaLines !== 0) {
+                        tab.term.scrollLines(deltaLines);
+                        proxy.scrollTop = 50000; // Reset to center
+                    }
+                    isSyncing = false;
                 }, {passive: true});
 
-                // Tap-to-Click forwarding logic
+                // Tap-through logic: Only disable when a clear tap is detected
+                let startX, startY;
                 proxy.addEventListener('touchstart', (e) => {
-                    proxy.style.pointerEvents = 'all';
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
                 }, {passive: true});
 
                 proxy.addEventListener('touchend', (e) => {
-                    // We wait for momentum to potentially finish before disabling.
-                    // If the user tapped, this 100ms window still feels responsive.
-                    setTimeout(() => {
-                        // Only disable if we aren't currently in a momentum scroll
-                        // (Rough heuristic: if scrollTop is still moving, wait)
-                        let lastTop = proxy.scrollTop;
-                        const checkMomentum = () => {
-                            if (proxy.scrollTop !== lastTop) {
-                                lastTop = proxy.scrollTop;
-                                requestAnimationFrame(checkMomentum);
-                            } else {
-                                proxy.style.pointerEvents = 'none';
-                                // Re-enable for the NEXT touch
-                                setTimeout(() => proxy.style.pointerEvents = 'all', 10);
-                            }
-                        };
-                        checkMomentum();
-                    }, 150);
+                    const deltaX = Math.abs(e.changedTouches[0].clientX - startX);
+                    const deltaY = Math.abs(e.changedTouches[0].clientY - startY);
+                    
+                    if (deltaX < 10 && deltaY < 10) {
+                        // This was a tap. Briefly open the portal.
+                        proxy.style.pointerEvents = 'none';
+                        setTimeout(() => proxy.style.pointerEvents = 'all', 100);
+                    }
                 }, {passive: true});
+
+                // Set initial position
+                proxy.scrollTop = 50000;
             }
 
             // Passive touch listener to ensure the browser doesn't wait for JS
