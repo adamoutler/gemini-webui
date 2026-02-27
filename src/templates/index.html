@@ -165,8 +165,12 @@
             font-size: 20px; 
             padding: 0 5px; 
             user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
             display: flex;
             align-items: center;
+            touch-action: none;
         }
         .connection-drag-handle:active { cursor: grabbing; }
         .connection-title { font-size: 16px; font-weight: bold; color: #fff; flex-grow: 1; }
@@ -528,6 +532,8 @@
                 
                 const handle = card.querySelector('.connection-drag-handle');
                 
+                handle.addEventListener('contextmenu', (e) => e.preventDefault());
+
                 handle.addEventListener('dragstart', (e) => {
                     draggedCard = card;
                     e.dataTransfer.effectAllowed = 'move';
@@ -535,7 +541,9 @@
                     
                     // Set the drag image to the whole card instead of just the handle
                     const rect = card.getBoundingClientRect();
-                    e.dataTransfer.setDragImage(card, e.clientX - rect.left, e.clientY - rect.top);
+                    if (e.dataTransfer.setDragImage) {
+                        e.dataTransfer.setDragImage(card, e.clientX - rect.left, e.clientY - rect.top);
+                    }
 
                     // Use setTimeout to ensure the "dragging" class is added after the drag image is generated
                     setTimeout(() => {
@@ -546,6 +554,7 @@
                 });
 
                 handle.addEventListener('dragend', () => {
+                    if (!draggedCard) return;
                     draggedCard.classList.remove('dragging');
                     if (placeholder.parentNode) {
                         placeholder.replaceWith(draggedCard);
@@ -553,6 +562,48 @@
                     draggedCard = null;
                     
                     // Final background update
+                    const newLabels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
+                    fetch('/api/hosts/reorder', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(newLabels)
+                    });
+                });
+
+                // Touch support for mobile dragging
+                handle.addEventListener('touchstart', (e) => {
+                    draggedCard = card;
+                    placeholder.style.height = card.offsetHeight + 'px';
+                    card.classList.add('dragging');
+                    card.after(placeholder);
+                }, { passive: false });
+
+                handle.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    if (!draggedCard) return;
+                    const touch = e.touches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const overCard = target ? target.closest('.connection-card') : null;
+                    
+                    if (overCard && overCard !== draggedCard) {
+                        const rect = overCard.getBoundingClientRect();
+                        const midpoint = rect.top + rect.height / 2;
+                        if (touch.clientY < midpoint) {
+                            overCard.before(placeholder);
+                        } else {
+                            overCard.after(placeholder);
+                        }
+                    }
+                }, { passive: false });
+
+                handle.addEventListener('touchend', (e) => {
+                    if (!draggedCard) return;
+                    draggedCard.classList.remove('dragging');
+                    if (placeholder.parentNode) {
+                        placeholder.replaceWith(draggedCard);
+                    }
+                    draggedCard = null;
+                    
                     const newLabels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
                     fetch('/api/hosts/reorder', {
                         method: 'POST',
