@@ -133,20 +133,10 @@ session_manager = SessionManager()
 session_results_cache = {}
 
 def cleanup_orphaned_ptys():
-    """Periodically kills PTYs that have been orphaned for too long."""
+    """Maintenance task. Session dropping is disabled as per 'never drop them' mandate."""
     is_testing = app.config.get('TESTING') or os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true'
     while True:
-        socketio.sleep(10 if not is_testing else 0.1)
-        now = time.time()
-        for tab_id, session in list(session_manager.sessions.items()):
-            if session.orphaned_at and (now - session.orphaned_at > 60):  # 60 second grace period
-                logger.info(f"Cleaning up orphaned PTY for tab: {tab_id}")
-                session_manager.remove_session(tab_id)
-                try:
-                    os.kill(session.pid, signal.SIGKILL)
-                    os.waitpid(session.pid, 0)
-                except Exception:
-                    pass
+        socketio.sleep(3600) # Sleep for a long time; cleanup disabled
         if is_testing: break
 
 def get_config_paths():
@@ -434,7 +424,7 @@ def fetch_sessions_for_host(host):
             
         login_wrapped_cmd = f"bash -l -c {shlex.quote(remote_cmd)}"
             
-        cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=30', '-o', 'StrictHostKeyChecking=no']
+        cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=no']
         data_dir, _, ssh_dir_path = get_config_paths()
         # Ensure known_hosts is writable
         known_hosts_path = os.path.join(ssh_dir_path, 'known_hosts')
@@ -457,7 +447,7 @@ def fetch_sessions_for_host(host):
             cmd = [GEMINI_BIN, '--list-sessions']
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
+        result = subprocess.run(cmd, capture_output=True, text=True)
         # Suppress auth errors from the CLI - just show as "no sessions"
         if result.returncode != 0 and ("Please set an Auth method" in result.stderr or "GEMINI_API_KEY" in result.stderr):
             return {
@@ -542,6 +532,12 @@ def pty_restart(data):
                 set_winsize(session_obj.fd, data.get('rows', 24), data.get('cols', 80))
             except Exception: pass
             return
+
+    # MAX SESSIONS ENFORCEMENT: Limit to 20 total active sessions
+    if len(session_manager.sessions) >= 20 and tab_id not in session_manager.sessions:
+        logger.warning(f"Session limit reached (20). User {user_id} denied new session.")
+        socketio.emit('pty-output', {'output': '\r\n\033[1;31mError: Maximum session limit (20) reached. Please close an existing tab.\033[0m\r\n'}, room=sid)
+        return
     
     # Explicit restart or session not found: Clean up old one first
     old_session = session_manager.remove_session(tab_id, user_id)
@@ -610,7 +606,13 @@ def pty_restart(data):
                 for f in os.listdir(ssh_dir_path):
                     if os.path.isfile(os.path.join(ssh_dir_path, f)) and f not in ['config', 'known_hosts'] and not f.endswith('.pub'):
                         cmd.extend(['-i', os.path.join(ssh_dir_path, f)])
-            cmd.extend(['-o', 'PreferredAuthentications=publickey,password', '-o', 'StrictHostKeyChecking=no', '--', ssh_target, login_wrapped_cmd])
+            cmd.extend([
+                '-o', 'PreferredAuthentications=publickey,password', 
+                '-o', 'StrictHostKeyChecking=no',
+                '-o', 'ServerAliveInterval=60',
+                '-o', 'ServerAliveCountMax=120', # Allow up to 2 hours of silence
+                '--', ssh_target, login_wrapped_cmd
+            ])
         else:
             # Workspace initialization with failover guidance
             work_dir = "/data/workspace"
@@ -755,7 +757,7 @@ def terminate_remote_session():
         if ssh_dir and ssh_dir != "~":
             remote_cmd = f"cd {shlex.quote(ssh_dir)} && {remote_cmd}"
             
-        cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'ConnectTimeout=5', '-o', 'StrictHostKeyChecking=no']
+        cmd = ['ssh', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=no']
         _, _, ssh_dir_path = get_config_paths()
         known_hosts_path = os.path.join(ssh_dir_path, 'known_hosts')
         cmd.extend(['-o', f'UserKnownHostsFile={known_hosts_path}'])
@@ -768,7 +770,7 @@ def terminate_remote_session():
         cmd = [GEMINI_BIN, '--terminate', str(session_id)]
         
     try:
-        subprocess.run(cmd, timeout=10)
+        subprocess.run(cmd)
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
