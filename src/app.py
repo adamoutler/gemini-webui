@@ -491,6 +491,7 @@ def pty_input(data):
     tab_id = session_manager.sid_to_tabid.get(sid)
     session_obj = session_manager.get_session(tab_id, user_id)
     if session_obj:
+        session_obj.last_seen = time.time()
         # Filter out terminal identification responses (DA) to prevent loops
         # e.g. \x1b[?1;2c or similar. These often get echoed back on reclaim.
         input_data = data['input']
@@ -533,11 +534,30 @@ def pty_restart(data):
             except Exception: pass
             return
 
-    # MAX SESSIONS ENFORCEMENT: Limit to 20 total active sessions
-    if len(session_manager.sessions) >= 20 and tab_id not in session_manager.sessions:
-        logger.warning(f"Session limit reached (20). User {user_id} denied new session.")
-        socketio.emit('pty-output', {'output': '\r\n\033[1;31mError: Maximum session limit (20) reached. Please close an existing tab.\033[0m\r\n'}, room=sid)
-        return
+    # LRU EVICTION POLICY: Limit to 10 total active sessions
+    if len(session_manager.sessions) >= 10 and tab_id not in session_manager.sessions:
+        # Find the least recently used session
+        oldest_session = None
+        oldest_time = time.time()
+        
+        for s in session_manager.sessions.values():
+            if s.last_seen < oldest_time:
+                oldest_time = s.last_seen
+                oldest_session = s
+        
+        if oldest_session:
+            logger.info(f"LRU Eviction: Dropping session {oldest_session.tab_id} (last seen {oldest_time}) to make room.")
+            
+            # Inform the client that their session was evicted if they are still connected
+            sid_to_notify = session_manager.tabid_to_sid.get(oldest_session.tab_id)
+            if sid_to_notify:
+                socketio.emit('pty-output', {'output': '\r\n\033[1;33mWarning: This session was evicted to make room for a new one.\033[0m\r\n'}, room=sid_to_notify)
+                
+            session_manager.remove_session(oldest_session.tab_id)
+            try:
+                os.kill(oldest_session.pid, signal.SIGKILL)
+                os.waitpid(oldest_session.pid, 0)
+            except Exception: pass
     
     # Explicit restart or session not found: Clean up old one first
     old_session = session_manager.remove_session(tab_id, user_id)

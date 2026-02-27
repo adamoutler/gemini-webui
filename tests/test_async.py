@@ -92,18 +92,41 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
             assert session is not None
             assert session.pid == 999
 
-def test_pty_restart_limit(mock_socketio):
+def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
     from src.app import app, session_manager, Session
-    # Fill up session manager with 20 sessions
+    import time
+    
+    # child_pid=999, fd=10
+    mock_pty.return_value = (999, 10)
+    
+    # Fill up session manager with 10 sessions, each with a different last_seen
     session_manager.sessions.clear()
-    for i in range(20):
-        session_manager.add_session(Session(f'tab_{i}', i+10, 1000+i, 'admin'))
+    session_manager.tabid_to_sid.clear()
+    now = time.time()
+    for i in range(10):
+        tab_id = f'tab_{i}'
+        s = Session(tab_id, i+10, 1000+i, 'admin')
+        s.last_seen = now - (100 - i) # tab_0 is oldest, tab_9 is newest
+        session_manager.add_session(s)
+        session_manager.tabid_to_sid[tab_id] = f'sid_{i}'
     
     with app.test_request_context('/'):
-        # Attempt to start the 21st session
-        pty_restart({'tab_id': 'tab_too_many', 'sid': 'test-sid'})
-        
-        # Verify socketio emitted the error message
-        mock_socketio.emit.assert_any_call('pty-output', {'output': '\r\n\033[1;31mError: Maximum session limit (20) reached. Please close an existing tab.\033[0m\r\n'}, room='test-sid')
-        # Verify session was NOT added
-        assert session_manager.get_session('tab_too_many') is None
+        with patch('os.kill') as mock_kill, \
+             patch('os.waitpid') as mock_wait, \
+             patch('src.app.set_winsize'):
+            
+            # Attempt to start the 11th session
+            pty_restart({'tab_id': 'tab_new', 'sid': 'sid_new'})
+            
+            # Verify LRU: tab_0 (PID 1000) should have been killed
+            mock_kill.assert_any_call(1000, signal.SIGKILL)
+            
+            # Verify tab_0 was removed
+            assert session_manager.get_session('tab_0') is None
+            # Verify tab_new was added
+            assert session_manager.get_session('tab_new') is not None
+            # Verify session count remains 10
+            assert len(session_manager.sessions) == 10
+            
+            # Verify notification was sent to evicted tab's SID (sid_0)
+            mock_socketio.emit.assert_any_call('pty-output', {'output': '\r\n\033[1;33mWarning: This session was evicted to make room for a new one.\033[0m\r\n'}, room='sid_0')
