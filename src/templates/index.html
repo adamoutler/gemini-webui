@@ -1032,12 +1032,19 @@
                 timeout: 20000
             });
             
+            let disconnectTime = null;
             tab.socket.on('connect', () => {
+                if (disconnectTime && (Date.now() - disconnectTime > 5000)) {
+                    console.log("Significant downtime detected, reloading page...");
+                    location.reload();
+                    return;
+                }
+                disconnectTime = null;
                 tab.term.write('\r\n\x1b[1;32m[Connected to server]\x1b[0m\r\n');
                 tab.socket.emit('restart', { 
                     tab_id: tabId, 
                     reclaim: true,
-                    sid: tab.socket.id, // Explicitly pass current SID
+                    sid: tab.socket.id,
                     resume: tab.session.resume, 
                     cols: tab.term.cols, 
                     rows: tab.term.rows, 
@@ -1048,6 +1055,7 @@
             });
 
             tab.socket.on('disconnect', (reason) => {
+                disconnectTime = Date.now();
                 tab.term.write('\r\n\x1b[1;33m[Connection lost: ' + reason + '. Attempting to reconnect...]\x1b[0m\r\n');
                 if (reason === "io server disconnect") {
                     tab.socket.connect();
