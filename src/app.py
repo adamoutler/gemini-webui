@@ -281,7 +281,8 @@ csp = {
         'https:',
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com'
-    ]
+    ],
+    'manifest-src': ["'self'"]
 }
 
 Talisman(app, 
@@ -669,6 +670,16 @@ def index():
 @app.route('/favicon.svg')
 def favicon():
     return app.send_static_file('favicon.svg')
+
+@app.route('/manifest.json')
+def manifest():
+    return app.send_static_file('manifest.json')
+
+@app.route('/sw.js')
+def service_worker():
+    response = app.send_static_file('sw.js')
+    response.headers['Service-Worker-Allowed'] = '/'
+    return response
 
 @app.route('/api/hosts', methods=['GET'])
 @authenticated_only

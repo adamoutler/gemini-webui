@@ -1,0 +1,17 @@
+{
+  "name": "Gemini WebUI",
+  "short_name": "Gemini",
+  "description": "A secure web-based terminal for Gemini CLI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e1e1e",
+  "theme_color": "#2472c8",
+  "icons": [
+    {
+      "src": "/static/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
