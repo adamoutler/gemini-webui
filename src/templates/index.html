@@ -750,28 +750,7 @@
             });
         }
 
-        async function terminateSession(tabId, conn, sessionId, targetId) {
-            if (!confirm(`Terminate session #${sessionId}?`)) return;
-            try {
-                const response = await fetch('/api/sessions/terminate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        ssh_target: conn.target,
-                        ssh_dir: conn.dir,
-                        session_id: sessionId
-                    })
-                });
-                if (response.ok) {
-                    fetchSessions(tabId, conn, targetId, true, false); // Refresh list
-                } else {
-                    const data = await response.json();
-                    alert("Termination failed: " + (data.error || "Unknown error"));
-                }
-            } catch (e) { console.error(e); }
-        }
-
-        async function terminateBackendSession(launcherTabId, tabId) {
+        function parseSessions(output) {
             if (!confirm(`Are you sure you want to terminate this backend session? Any unsaved work in the terminal will be lost.`)) return;
             try {
                 const response = await fetch('/api/management/sessions/terminate', {
@@ -1078,13 +1057,11 @@
 
             tab.socket.on('reconnect_error', (error) => {
                 console.log('Reconnection error:', error);
-                // If we get a 502 (Bad Gateway), it means the server is restarting/down
-                // We should probably just reload the page to get a clean state
-                if (error && (error.message === "xhr poll error" || error.description === 502)) {
-                    console.log("502 or Poll error detected, checking for reload...");
-                    if (disconnectTime && (Date.now() - disconnectTime > 5000)) {
-                        location.reload();
-                    }
+                // If we get a 502 (Bad Gateway) or other connection errors, the server is likely restarting
+                // We should reload to get a fresh state once it's back.
+                if (error && (error.message === "xhr poll error" || error.description === 502 || error.type === "TransportError")) {
+                    console.log("Connection error detected, reloading page...");
+                    location.reload();
                 }
             });
 
