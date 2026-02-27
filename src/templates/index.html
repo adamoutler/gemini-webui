@@ -1024,8 +1024,16 @@
                 });
             }
 
-            tab.socket = io.connect(window.location.origin);
+            tab.socket = io.connect(window.location.origin, {
+                reconnection: true,
+                reconnectionAttempts: Infinity,
+                reconnectionDelay: 1000,
+                reconnectionDelayMax: 5000,
+                timeout: 20000
+            });
+            
             tab.socket.on('connect', () => {
+                tab.term.write('\r\n\x1b[1;32m[Connected to server]\x1b[0m\r\n');
                 tab.socket.emit('restart', { 
                     tab_id: tabId, 
                     reclaim: true,
@@ -1037,6 +1045,23 @@
                 });
                 setTimeout(() => { fitTerminal(tab); tab.term.focus(); }, 150);
             });
+
+            tab.socket.on('disconnect', (reason) => {
+                tab.term.write('\r\n\x1b[1;33m[Connection lost: ' + reason + '. Attempting to reconnect...]\x1b[0m\r\n');
+                if (reason === "io server disconnect") {
+                    // the disconnection was initiated by the server, you need to reconnect manually
+                    tab.socket.connect();
+                }
+            });
+
+            tab.socket.on('reconnect_attempt', (attempt) => {
+                console.log('Reconnection attempt:', attempt);
+            });
+
+            tab.socket.on('reconnect_failed', () => {
+                tab.term.write('\r\n\x1b[1;31m[Reconnection failed. Please refresh the page or restart the tab.]\x1b[0m\r\n');
+            });
+
             tab.socket.on('pty-output', (data) => { 
                 if (tab.term) {
                     tab.term.write(data.output);

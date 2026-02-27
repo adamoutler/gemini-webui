@@ -346,7 +346,7 @@ def require_auth():
         session['authenticated'] = True
         return
         
-    if request.path in ['/health', '/api/health', '/favicon.ico', '/favicon.svg']:
+    if request.path in ['/health', '/api/health', '/favicon.ico', '/favicon.svg', '/manifest.json', '/sw.js']:
         return
 
     auth = request.authorization
@@ -539,6 +539,9 @@ def pty_restart(data):
                 set_winsize(session_obj.fd, data.get('rows', 24), data.get('cols', 80))
             except Exception: pass
             return
+        else:
+            logger.warning(f"Reclaim failed for session {tab_id}. Creating a fresh session.")
+            socketio.emit('pty-output', {'output': '\r\n\x1b[1;33m[Session not found on server. Starting fresh...]\x1b[0m\r\n'}, room=sid)
 
     # LRU EVICTION POLICY: Limit to 10 total active sessions
     if len(session_manager.sessions) >= 10 and tab_id not in session_manager.sessions:
