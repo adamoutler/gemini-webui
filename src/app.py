@@ -31,7 +31,7 @@ except ImportError:
 
 # Global config holder and defaults
 config = {}
-GEMINI_BIN = os.environ.get('GEMINI_BIN', '/usr/bin/gemini')
+GEMINI_BIN = os.environ.get('GEMINI_BIN', '/usr/local/bin/gemini')
 ADMIN_USER = os.environ.get('ADMIN_USER', 'admin')
 ADMIN_PASS = os.environ.get('ADMIN_PASS', 'admin')
 LDAP_SERVER = os.environ.get('LDAP_SERVER')

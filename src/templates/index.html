@@ -89,9 +89,8 @@
         @media (max-width: 1080px) {
             .mobile-scroll-proxy { display: block; }
             .xterm-viewport { display: none !important; }
-        }
-        
-        /* Mobile Controls */
+            
+            /* Mobile Controls */
             #toolbar { padding: 5px; gap: 5px; flex-wrap: wrap; }
             #active-connection-info { gap: 5px; }
             body { height: 100vh; height: 100dvh; height: -webkit-fill-available; position: fixed; top: 0; left: 0; width: 100%; }
@@ -201,9 +200,10 @@
             color: white; 
             border: 1px solid #555; 
             border-radius: 4px; 
-            padding: 15px 5px; 
+            padding: 8px 2px; 
             text-align: center; 
             font-weight: bold; 
+            font-size: 11px;
             cursor: pointer;
             user-select: none;
             -webkit-tap-highlight-color: transparent;
@@ -744,7 +744,7 @@
             container.appendChild(termDiv);
             
             const isMobile = window.innerWidth <= 1080;
-            const fontSize = isMobile ? 11 : 14;
+            const fontSize = isMobile ? 10 : 14;
 
             tab.term = new Terminal({ 
                 cursorBlink: true, 
