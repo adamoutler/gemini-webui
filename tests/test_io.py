@@ -8,10 +8,10 @@ def test_read_and_forward_pty_output_basic(test_data_dir):
     decoder_mock = MagicMock()
     decoder_mock.decode.return_value = "hello world"
     
-    session = Session("tab1", 10, 123)
+    session = Session("tab1", 10, 123, "admin")
     session.decoder = decoder_mock
     session_manager.add_session(session)
-    session_manager.reclaim_session("tab1", "sid1")
+    session_manager.reclaim_session("tab1", "sid1", "admin")
     
     with patch('select.select') as mock_select, \
          patch('os.read') as mock_read, \
@@ -34,7 +34,7 @@ def test_read_and_forward_pty_output_basic(test_data_dir):
         assert "hello world" in session.buffer
 
 def test_read_and_forward_pty_output_error():
-    session = Session("tab_err", 11, 124)
+    session = Session("tab_err", 11, 124, "admin")
     session_manager.add_session(session)
     
     with patch('select.select') as mock_select, \

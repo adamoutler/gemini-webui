@@ -23,16 +23,16 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     import time
     
     # 1. Active PTY
-    active_session = Session('active', 4, 123)
+    active_session = Session('active', 4, 123, 'admin')
     session_manager.add_session(active_session)
     
     # 2. Orphaned PTY (old)
-    old_orphan = Session('old_orphan', 5, 124)
+    old_orphan = Session('old_orphan', 5, 124, 'admin')
     old_orphan.orphaned_at = time.time() - 100 # 100s ago
     session_manager.add_session(old_orphan)
     
     # 3. Orphaned PTY (new)
-    new_orphan = Session('new_orphan', 6, 125)
+    new_orphan = Session('new_orphan', 6, 125, 'admin')
     new_orphan.orphaned_at = time.time() - 10 # 10s ago
     session_manager.add_session(new_orphan)
 

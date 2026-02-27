@@ -6,43 +6,29 @@ Gemini WebUI provides a high-fidelity, persistent web interface for the Gemini C
 
 ## 🚀 Key Features
 
-### 🖥️ Persistence & Multi-Tab
-*   **Always-On Background Sessions**: Backend processes continue running even if you close your browser or navigate away.
-*   **One Session, Many Views**: Real-time mirroring across multiple devices or tabs—input and output stay perfectly in sync.
-*   **Session Context Tracking**: The "Restart" button and page refresh intelligently maintain your session state (Fresh vs. Resume).
-*   **Dynamic Tab Titles**: Terminal escape sequences automatically update tab names in real-time.
-*   **Back Button Hijacking**: Navigate "back" from a terminal to instantly open the connection launcher in a new tab.
-*   **PTY Lifecycle Management**: Automatic cleanup of orphaned PTY processes after 60 seconds of disconnection.
+### 📱 Mobile-First Accessibility
+*   **Touch-Native Drag & Drop**: Reorder connection cards with smooth, mobile-optimized touch handles—bypassing unreliable mobile browser drag-and-drop APIs.
+*   **Adaptive Viewport Integration**: Dynamically adjusts layout and terminal fit when the on-screen keyboard is toggled, ensuring your prompt is always visible.
+*   **Compact UI Controls**: Optimized mobile control bar with reduced footprint, perfectly fitting narrow displays like the Pixel 9 Pro Fold.
+*   **Smart Keyboard Handling**: implemements a "Single Character Buffer" to prevent mobile OS autocorrect and predictive text from corrupting terminal input.
+
+### 🖥️ True Cross-Device Persistence
+*   **Independent Window State**: Each browser tab maintains its own workspace configuration using `sessionStorage`, enabling native multi-monitor workflows.
+*   **Session Reclaiming**: Easily "pull" running terminal sessions from one device to another via the "Backend Managed Sessions" dashboard.
+*   **Real-time Reattach Notifications**: Instantly notified if another device reclaims your active session ("Session stolen by another device").
+*   **Visual Continuity**: Every session maintains a 10,000-character rolling buffer, ensuring your visual state is perfectly restored upon reattachment or refresh.
+*   **Always-On Background Tasks**: Backend PTY processes continue running even if all browser windows are closed.
 
 ### 🔌 Advanced Connectivity
-*   **Host Management**: Add, Edit, Delete, and Reorder connection cards with an optimistic, animated drag-and-drop interface.
+*   **Dynamic Launcher**: Backend session states are polled every 10 seconds, ensuring your connection dashboard is always up-to-date without refreshing.
+*   **Host Management**: Add, Edit, Delete, and Reorder connection cards with an optimistic, animated interface.
 *   **Quick Connect Bar**: Instantly connect via SSH using `user@host[:port] [directory]` syntax with automatic persistence.
-*   **Remote Session Management**: List and Terminate active Gemini sessions on remote hosts directly from the launcher.
-*   **Tilde-Aware Pathing**: Intelligent handling of `~/` directory paths for both local and remote SSH sessions.
-*   **Login Shell Parity**: Remote commands are executed via `bash -l -c` to ensure your full remote environment (`.profile`, `.bashrc`) is loaded.
+*   **Descriptive Tab Titles**: Tab titles automatically sync with resumed Gemini session names or terminal escape sequences.
 
 ### 🔑 Robust SSH Key Management
 *   **Instance Key Generation**: Automatic generation of a unique Ed25519 key pair on first run.
-*   **Manual Key Management**: Add and Delete your own private keys for specific hosts.
-*   **One-Click Authorization**: Dedicated "Copy Snippet" button provides a one-liner to authorize the instance on any remote host.
-*   **Secure Rotation**: Rotate the instance-wide SSH key with a single click and safety confirmation.
-
-### 🎨 High-Fidelity Experience
-*   **Full Color Support**: Forced 256-color and Truecolor (`FORCE_COLOR=3`) ensure progress bars and graphics look perfect.
-*   **Interactive Links**: Intelligent multi-line link detection allows you to click URLs that wrap across terminal lines.
-*   **Modern Aesthetics**: Custom dark-themed scrollbars and ephemeral "Success" feedback (✓) on action buttons.
-
-### 📱 Mobile Optimized
-*   **Visual Viewport Integration**: Dynamically adjusts layout and terminal fit when the on-screen keyboard is toggled.
-*   **Android Keyboard Workaround**: Implements a "Single Character Buffer" to prevent mobile OS autocorrect from interfering with terminal input.
-*   **ANSI Navigation Overlay**: Dedicated mobile control bar for sending raw arrow keys and Ctrl sequences to the PTY.
-
-### 🔒 Security & Operations
-*   **Exclusive Authentication**: Uses LDAP/AD as the sole method if configured; otherwise, falls back to a secure local admin account.
-*   **Hardened Docker Architecture**: Runs with a **Read-Only Root Filesystem** and `tmpfs` for maximum security.
-*   **Storage Resilience**: Automatic failover to `/tmp` if persistent storage is unavailable, with clear on-screen guidance.
-*   **Automatic Permissions**: Startup logic detects and corrects root-owned volume mounts to the `node` user.
-*   **Proxy-Ready**: Built-in support for `X-Forwarded-For` and `X-Forwarded-Proto` headers via `ProxyFix`.
+*   **Clipboard Fallback**: Robust "Copy to Clipboard" support that works in both secure (HTTPS) and non-secure (HTTP/IP-based) dev environments.
+*   **Secure Authorization Snippet**: One-click "Copy Snippet" provides a one-liner to authorize the WebUI instance on any remote host.
 
 ---
 
@@ -50,10 +36,12 @@ Gemini WebUI provides a high-fidelity, persistent web interface for the Gemini C
 
 ```mermaid
 graph TD
-    User([User Browser]) -- WebSockets --> App[Docker Container: Flask App]
-    App --> Local[Local Gemini CLI]
-    App -- SSH --> Remote[Remote Host]
-    Remote --> RemoteGemini[Remote Gemini CLI]
+    User([User Device]) -- WebSockets --> App[Flask SessionManager]
+    App -- PTY + Buffer --> Local[Local Gemini CLI]
+    App -- SSH Tunnel --> Remote[Remote Host]
+    subgraph Backend Persistence
+        App -- Registry --> Sessions[(Active Registry)]
+    end
 ```
 
 ## 🛠 Configuration

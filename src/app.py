@@ -53,10 +53,11 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_
 
 # Multi-tab support and persistence
 class Session:
-    def __init__(self, tab_id, fd, pid, title=None, ssh_target=None, ssh_dir=None, resume=True):
+    def __init__(self, tab_id, fd, pid, user_id, title=None, ssh_target=None, ssh_dir=None, resume=True):
         self.tab_id = tab_id
         self.fd = fd
         self.pid = pid
+        self.user_id = user_id
         self.title = title or ("Local" if not ssh_target else f"SSH: {ssh_target}")
         self.ssh_target = ssh_target
         self.ssh_dir = ssh_dir
@@ -86,12 +87,16 @@ class SessionManager:
     def add_session(self, session):
         self.sessions[session.tab_id] = session
 
-    def get_session(self, tab_id):
-        return self.sessions.get(tab_id)
+    def get_session(self, tab_id, user_id=None):
+        session = self.sessions.get(tab_id)
+        if session and (user_id is None or session.user_id == user_id):
+            return session
+        return None
 
-    def remove_session(self, tab_id):
-        session = self.sessions.pop(tab_id, None)
+    def remove_session(self, tab_id, user_id=None):
+        session = self.get_session(tab_id, user_id)
         if session:
+            self.sessions.pop(tab_id, None)
             sid = self.tabid_to_sid.pop(tab_id, None)
             if sid: self.sid_to_tabid.pop(sid, None)
         return session
@@ -102,8 +107,8 @@ class SessionManager:
             session.orphaned_at = time.time()
             self.tabid_to_sid.pop(tab_id, None)
 
-    def reclaim_session(self, tab_id, sid):
-        session = self.get_session(tab_id)
+    def reclaim_session(self, tab_id, sid, user_id):
+        session = self.get_session(tab_id, user_id)
         if session:
             # If already owned by another SID, disconnect that one
             old_sid = self.tabid_to_sid.get(tab_id)
@@ -119,8 +124,8 @@ class SessionManager:
             return session
         return None
 
-    def list_sessions(self):
-        return [s.to_dict() for s in self.sessions.values()]
+    def list_sessions(self, user_id):
+        return [s.to_dict() for s in self.sessions.values() if s.user_id == user_id]
 
 session_manager = SessionManager()
 
@@ -355,11 +360,13 @@ def require_auth():
     if LDAP_SERVER:
         if auth and check_auth(auth.username, auth.password, LDAP_SERVER, LDAP_BASE_DN, LDAP_BIND_USER_DN, LDAP_BIND_PASS, LDAP_AUTHORIZED_GROUP, LDAP_FALLBACK_DOMAIN):
             session['authenticated'] = True
+            session['user_id'] = auth.username
             return
     else:
         # Fall back to local admin credentials ONLY if LDAP is not configured.
         if auth and auth.username == ADMIN_USER and auth.password == ADMIN_PASS:
             session['authenticated'] = True
+            session['user_id'] = ADMIN_USER
             return
 
     if not session.get('authenticated'):
@@ -490,51 +497,54 @@ def background_session_preloader():
 @socketio.on('pty-input')
 def pty_input(data):
     sid = request.sid
+    user_id = session.get('user_id') or ('admin' if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true' else None)
     tab_id = session_manager.sid_to_tabid.get(sid)
-    session = session_manager.get_session(tab_id)
-    if session:
+    session_obj = session_manager.get_session(tab_id, user_id)
+    if session_obj:
         # Filter out terminal identification responses (DA) to prevent loops
         # e.g. \x1b[?1;2c or similar. These often get echoed back on reclaim.
         input_data = data['input']
         if input_data.startswith('\x1b[?') and input_data.endswith('c'):
             return
-        os.write(session.fd, input_data.encode())
+        os.write(session_obj.fd, input_data.encode())
 
 @socketio.on('resize')
 def pty_resize(data):
     sid = request.sid
+    user_id = session.get('user_id') or ('admin' if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true' else None)
     tab_id = session_manager.sid_to_tabid.get(sid)
-    session = session_manager.get_session(tab_id)
-    if session:
+    session_obj = session_manager.get_session(tab_id, user_id)
+    if session_obj:
         try:
-            set_winsize(session.fd, data['rows'], data['cols'])
+            set_winsize(session_obj.fd, data['rows'], data['cols'])
         except Exception:
             pass
 
 @socketio.on('restart')
 def pty_restart(data):
     sid = data.get('sid') or getattr(request, 'sid', None)
+    user_id = session.get('user_id') or ('admin' if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true' else None)
     tab_id = data.get('tab_id')
     if not tab_id:
         return
     
     reclaim = data.get('reclaim', False)
     if reclaim:
-        session = session_manager.reclaim_session(tab_id, sid)
-        if session:
+        session_obj = session_manager.reclaim_session(tab_id, sid, user_id)
+        if session_obj:
             logger.info(f"Reattached to session: {tab_id} (sid: {sid})")
             # Flush the scrollback buffer to the new client
-            for chunk in session.buffer:
+            for chunk in session_obj.buffer:
                 socketio.emit('pty-output', {'output': chunk}, room=sid)
             
             # Re-sync terminal size
             try:
-                set_winsize(session.fd, data.get('rows', 24), data.get('cols', 80))
+                set_winsize(session_obj.fd, data.get('rows', 24), data.get('cols', 80))
             except Exception: pass
             return
     
     # Explicit restart or session not found: Clean up old one first
-    old_session = session_manager.remove_session(tab_id)
+    old_session = session_manager.remove_session(tab_id, user_id)
     if old_session:
         logger.info(f"Killing old session {tab_id} for fresh restart")
         try:
@@ -550,6 +560,8 @@ def pty_restart(data):
     
     (child_pid, fd) = pty.fork()
     if child_pid == 0:
+        # (Child process setup remains same)
+        # ...
         # (Child process setup remains same)
         os.environ['TERM'] = 'xterm-256color'
         os.environ['COLORTERM'] = 'truecolor'
@@ -619,9 +631,9 @@ def pty_restart(data):
         os._exit(0)
     else:
         # Parent process: create a new session
-        session = Session(tab_id, fd, child_pid, ssh_target=ssh_target, ssh_dir=ssh_dir, resume=resume)
-        session_manager.add_session(session)
-        session_manager.reclaim_session(tab_id, sid) # Connect current SID
+        session_obj = Session(tab_id, fd, child_pid, user_id, ssh_target=ssh_target, ssh_dir=ssh_dir, resume=resume)
+        session_manager.add_session(session_obj)
+        session_manager.reclaim_session(tab_id, sid, user_id) # Connect current SID
         
         try: set_winsize(fd, rows, cols)
         except Exception: pass
@@ -644,8 +656,9 @@ def list_hosts():
 @app.route('/api/management/sessions', methods=['GET'])
 @authenticated_only
 def list_active_sessions():
-    """List all active/orphaned sessions managed by the backend."""
-    return jsonify(session_manager.list_sessions())
+    """List all active/orphaned sessions managed by the backend for current user."""
+    user_id = session.get('user_id') or ('admin' if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true' else None)
+    return jsonify(session_manager.list_sessions(user_id))
 
 @app.route('/api/sessions', methods=['GET'])
 @authenticated_only
