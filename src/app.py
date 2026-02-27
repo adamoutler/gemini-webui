@@ -18,6 +18,8 @@ import json
 import shutil
 import shlex
 import collections
+import socket
+import datetime
 from functools import wraps
 from flask import Flask, render_template, request, Response, session, jsonify
 from werkzeug.utils import secure_filename
@@ -212,8 +214,11 @@ def init_app():
         key_path = os.path.join(ssh_dir, 'id_ed25519')
         if not os.path.exists(key_path):
             try:
-                logger.info("Generating new instance SSH key...")
-                subprocess.run(['ssh-keygen', '-t', 'ed25519', '-N', '', '-f', key_path, '-C', 'gemini-webui-instance'], check=True)
+                hostname = socket.gethostname()
+                datestr = datetime.datetime.now().strftime('%Y%m%d')
+                comment = f"gemini-webui-{hostname}-{datestr}"
+                logger.info(f"Generating new instance SSH key with comment: {comment}...")
+                subprocess.run(['ssh-keygen', '-t', 'ed25519', '-N', '', '-f', key_path, '-C', comment], check=True)
                 shutil.chown(key_path, user='node', group='node')
                 shutil.chown(key_path + '.pub', user='node', group='node')
                 os.chmod(key_path, 0o600)
@@ -892,8 +897,11 @@ def rotate_instance_key():
             if os.path.exists(key_path + ".pub"):
                 shutil.move(key_path + ".pub", f"{key_path}.{timestamp}.pub.bak")
         
-        logger.info("Rotating instance SSH key...")
-        subprocess.run(['ssh-keygen', '-t', 'ed25519', '-N', '', '-f', key_path, '-C', 'gemini-webui-instance'], check=True)
+        hostname = socket.gethostname()
+        datestr = datetime.datetime.now().strftime('%Y%m%d')
+        comment = f"gemini-webui-{hostname}-{datestr}"
+        logger.info(f"Rotating instance SSH key with comment: {comment}...")
+        subprocess.run(['ssh-keygen', '-t', 'ed25519', '-N', '', '-f', key_path, '-C', comment], check=True)
         try:
             shutil.chown(key_path, user='node', group='node')
             shutil.chown(key_path + '.pub', user='node', group='node')
