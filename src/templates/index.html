@@ -96,18 +96,30 @@
         .xterm-link { text-decoration: underline !important; cursor: pointer !important; }
         
         /* Enable text selection on mobile for xterm.js */
-        .xterm .xterm-viewport {
-            pointer-events: none !important; /* Let touches pass through to screen */
-        }
-        .xterm .xterm-screen {
+        .xterm .xterm-viewport, .xterm .xterm-screen {
             -webkit-user-select: auto !important;
             user-select: auto !important;
             touch-action: pan-y auto !important;
-            pointer-events: auto !important; /* Catch touches for selection and custom scrolling */
         }
-        .xterm .xterm-rows, .xterm .xterm-rows > div, .xterm .xterm-rows > div > span {
-            -webkit-user-select: auto !important;
-            user-select: auto !important;
+        
+        /* Absolute Proxy Momentum Strategy */
+        .mobile-scroll-proxy {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow-y: scroll;
+            z-index: 100;
+            display: none;
+            -webkit-overflow-scrolling: touch;
+            background: transparent;
+            touch-action: pan-y;
+        }
+        .mobile-scroll-content {
+            width: 1px;
+            height: 100000px; /* Large stable height for inertia */
+            background: transparent;
         }
         
         /* Quick Connect Bar */
@@ -264,6 +276,7 @@
         }
 
         @media (max-width: 1200px) {
+            .mobile-scroll-proxy { display: block; }
             .xterm-viewport { display: none !important; }
             .modal-content { width: 98% !important; margin: 10px auto !important; padding: 10px !important; }
             
@@ -872,81 +885,74 @@
             
             tab.term.open(termDiv);
 
+            // Passive Portal Implementation for Native Momentum
             if (isMobile) {
-                let lastTouchY = 0;
-                termDiv.addEventListener('touchstart', (e) => {
-                    if (e.touches.length === 1) lastTouchY = e.touches[0].clientY;
-                }, { passive: true });
+                const proxy = document.createElement('div');
+                proxy.className = 'mobile-scroll-proxy';
+                const content = document.createElement('div');
+                content.className = 'mobile-scroll-content';
+                proxy.appendChild(content);
+                termDiv.appendChild(proxy);
+
+                let isSyncing = false;
+                const rowHeight = 16;
+
+                // Sync: Ghost -> Terminal (Passive & Momentum-Safe)
+                proxy.addEventListener('scroll', () => {
+                    if (isSyncing) return;
+                    isSyncing = true;
+                    const deltaLines = Math.round((proxy.scrollTop - 50000) / rowHeight);
+                    if (deltaLines !== 0) {
+                        tab.term.scrollLines(deltaLines);
+                        proxy.scrollTop = 50000; // Reset to center
+                    }
+                    isSyncing = false;
+                }, {passive: true});
+
+                                // Tap-through logic: Only disable when a clear tap or long-press is detected
+                                let startX, startY;
+                                let touchTimeout;
+                                proxy.addEventListener('touchstart', (e) => {
+                                    startX = e.touches[0].clientX;
+                                    startY = e.touches[0].clientY;
+                                    
+                                    // Allow long press to pass through to xterm for text selection
+                                    touchTimeout = setTimeout(() => {
+                                        proxy.style.pointerEvents = 'none';
+                                    }, 400); // 400ms for long press
+                                }, {passive: true});
                 
-                termDiv.addEventListener('touchmove', (e) => {
-                    if (e.touches.length === 1) {
-                        const currentY = e.touches[0].clientY;
-                        const deltaY = lastTouchY - currentY;
-                        // Scroll roughly 1 line per 15 pixels dragged
-                        if (Math.abs(deltaY) > 15) {
-                            const lines = Math.sign(deltaY) * Math.floor(Math.abs(deltaY) / 15);
-                            tab.term.scrollLines(lines);
-                            lastTouchY = currentY;
-                        }
-                    }
-                }, { passive: true });
+                                proxy.addEventListener('touchmove', (e) => {
+                                    const deltaY = Math.abs(e.touches[0].clientY - startY);
+                                    const deltaX = Math.abs(e.touches[0].clientX - startX);
+                                    if (deltaY > 10 || deltaX > 10) {
+                                        clearTimeout(touchTimeout); // It's a scroll, don't pass through
+                                    }
+                                }, {passive: true});
+                
+                                proxy.addEventListener('touchend', (e) => {
+                                    clearTimeout(touchTimeout);
+                                    const deltaX = Math.abs(e.changedTouches[0].clientX - startX);
+                                    const deltaY = Math.abs(e.changedTouches[0].clientY - startY);
+                
+                                    if (deltaX < 10 && deltaY < 10) {
+                                        // This was a tap. Briefly open the portal.
+                                        proxy.style.pointerEvents = 'none';
+                                        setTimeout(() => proxy.style.pointerEvents = 'all', 100);
+                                    } else {
+                                        // If we disabled pointer events due to long press but then lifted, we restore it
+                                        // xterm handles selection ending itself. We just need proxy back to normal for scrolling.
+                                        proxy.style.pointerEvents = 'all';
+                                    }
+                                }, {passive: true});
+                // Set initial position
+                proxy.scrollTop = 50000;
             }
 
-            // Floating Copy Button for Mobile
-            if (isMobile) {
-                let copyBtn = document.getElementById('mobile-copy-btn');
-                if (!copyBtn) {
-                    copyBtn = document.createElement('button');
-                    copyBtn.id = 'mobile-copy-btn';
-                    copyBtn.innerHTML = '📋 Copy';
-                    copyBtn.style.position = 'absolute';
-                    copyBtn.style.display = 'none';
-                    copyBtn.style.zIndex = '1000';
-                    copyBtn.style.padding = '8px 12px';
-                    copyBtn.style.background = '#2472c8';
-                    copyBtn.style.color = '#fff';
-                    copyBtn.style.border = '1px solid #3b8eea';
-                    copyBtn.style.borderRadius = '5px';
-                    copyBtn.style.boxShadow = '0 2px 5px rgba(0,0,0,0.5)';
-                    copyBtn.style.fontSize = '14px';
-                    copyBtn.style.pointerEvents = 'auto';
-                    document.body.appendChild(copyBtn);
-
-                    copyBtn.addEventListener('click', () => {
-                        const activeTab = tabs.find(t => t.id === activeTabId);
-                        if (activeTab && activeTab.term) {
-                            const text = activeTab.term.getSelection();
-                            if (text) {
-                                navigator.clipboard.writeText(text).then(() => {
-                                    const originalText = copyBtn.innerHTML;
-                                    copyBtn.innerHTML = '✅ Copied!';
-                                    setTimeout(() => {
-                                        copyBtn.innerHTML = originalText;
-                                        copyBtn.style.display = 'none';
-                                        activeTab.term.clearSelection();
-                                    }, 1000);
-                                });
-                            }
-                        }
-                    });
-                }
-
-                tab.term.onSelectionChange(() => {
-                    if (tab.id !== activeTabId) return;
-                    const text = tab.term.getSelection();
-                    if (text && text.length > 0) {
-                        // Position button near the bottom right of the terminal or top right
-                        copyBtn.style.bottom = '80px';
-                        copyBtn.style.right = '20px';
-                        copyBtn.style.top = 'auto';
-                        copyBtn.style.left = 'auto';
-                        copyBtn.style.display = 'block';
-                    } else {
-                        copyBtn.style.display = 'none';
-                    }
-                });
-            }
-
+            // Passive touch listener to ensure the browser doesn't wait for JS
+            // before initiating a native scroll on the viewport.
+            termDiv.addEventListener('touchmove', (e) => {}, {passive: true});
+            
             // Improved Web Links support with wrapped line handling
             try {
                 tab.term.registerLinkProvider({
