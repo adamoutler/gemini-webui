@@ -14,18 +14,17 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" integrity="sha256-gy8/LGA7Q61DUf8ElwFQzHqHMBQnbbEmpgZcbdgeSHI=" crossorigin="anonymous" />
     <style>
         * { box-sizing: border-box; }
-        html, body { 
-            margin: 0; 
-            padding: 0; 
-            background-color: #000; 
-            overflow-x: hidden; 
-            overflow-y: auto;
-            height: 100%; 
-            width: 100%; 
-            overscroll-behavior-y: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        body { 
+                html, body {
+                    margin: 0;
+                    padding: 0;
+                    background-color: #000;
+                    overflow-x: hidden;
+                    overflow-y: auto;
+                    height: 100%;
+                    width: 100%;
+                    overscroll-behavior-y: none;
+                    -webkit-overflow-scrolling: touch;
+                }        body { 
             display: flex; 
             flex-direction: column; 
             min-height: 100vh; 
@@ -96,19 +95,31 @@
         .xterm-link { text-decoration: underline !important; cursor: pointer !important; }
         
         /* Enable text selection on mobile for xterm.js */
-        .xterm, .xterm * {
-            -webkit-user-select: text !important;
-            user-select: text !important;
-            -webkit-touch-callout: default !important;
-        }
         .xterm .xterm-viewport, .xterm .xterm-screen {
+            -webkit-user-select: auto !important;
+            user-select: auto !important;
             touch-action: pan-y auto !important;
-        }
-        .xterm .xterm-helpers {
-            pointer-events: none !important;
         }
         
         /* Absolute Proxy Momentum Strategy */
+        .mobile-scroll-proxy {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow-y: scroll;
+            z-index: 100;
+            display: none;
+            -webkit-overflow-scrolling: touch;
+            background: transparent;
+            touch-action: pan-y;
+        }
+        .mobile-scroll-content {
+            width: 1px;
+            height: 100000px; /* Large stable height for inertia */
+            background: transparent;
+        }
         
         /* Quick Connect Bar */
         .quick-connect-bar {
@@ -265,6 +276,7 @@
         }
 
         @media (max-width: 1200px) {
+            .mobile-scroll-proxy { display: block; }
             .xterm-viewport { display: none !important; }
             .modal-content { width: 98% !important; margin: 10px auto !important; padding: 10px !important; }
             
@@ -873,73 +885,74 @@
             
             tab.term.open(termDiv);
 
-            // JavaScript Momentum Scrolling
+            // Passive Portal Implementation for Native Momentum
             if (isMobile) {
-                let velocity = 0;
-                let lastY = 0;
-                let lastTime = 0;
-                let isDragging = false;
-                let animationFrameId = null;
-                let accumulatedLines = 0;
+                const proxy = document.createElement('div');
+                proxy.className = 'mobile-scroll-proxy';
+                const content = document.createElement('div');
+                content.className = 'mobile-scroll-content';
+                proxy.appendChild(content);
+                termDiv.appendChild(proxy);
 
-                termDiv.addEventListener('touchstart', (e) => {
-                    if (e.touches.length !== 1) return;
-                    isDragging = true;
-                    lastY = e.touches[0].clientY;
-                    lastTime = Date.now();
-                    velocity = 0;
-                    cancelAnimationFrame(animationFrameId);
-                }, { passive: true });
+                let isSyncing = false;
+                const rowHeight = 16;
 
-                termDiv.addEventListener('touchmove', (e) => {
-                    if (!isDragging || e.touches.length !== 1) return;
-                    const currentY = e.touches[0].clientY;
-                    const currentTime = Date.now();
-                    const deltaY = currentY - lastY;
-                    const deltaTime = currentTime - lastTime;
-                    
-                    if (deltaTime > 0) {
-                        velocity = deltaY / deltaTime; // pixels per ms
+                // Sync: Ghost -> Terminal (Passive & Momentum-Safe)
+                proxy.addEventListener('scroll', () => {
+                    if (isSyncing) return;
+                    isSyncing = true;
+                    const deltaLines = Math.round((proxy.scrollTop - 50000) / rowHeight);
+                    if (deltaLines !== 0) {
+                        tab.term.scrollLines(deltaLines);
+                        proxy.scrollTop = 50000; // Reset to center
                     }
-                    
-                    // xterm handles the immediate drag scrolling natively if it's set up to do so,
-                    // but sometimes it's sluggish. Let's let xterm do the active drag, we just track velocity.
-                    
-                    lastY = currentY;
-                    lastTime = currentTime;
-                }, { passive: true });
+                    isSyncing = false;
+                }, {passive: true});
 
-                termDiv.addEventListener('touchend', () => {
-                    isDragging = false;
-                    // Apply momentum if the swipe was fast enough
-                    if (Math.abs(velocity) > 0.5) {
-                        applyMomentum();
-                    }
-                }, { passive: true });
-
-                function applyMomentum() {
-                    if (Math.abs(velocity) < 0.05 || isDragging) return; 
-                    
-                    // Scroll xterm by velocity amount (converted to lines)
-                    // 1 line is roughly 16 pixels. 16ms frame target.
-                    const pixelsToScroll = velocity * 16; 
-                    const lines = -pixelsToScroll / 16;
-                    
-                    accumulatedLines += lines;
-                    
-                    if (Math.abs(accumulatedLines) >= 1) {
-                        const linesToScroll = Math.trunc(accumulatedLines);
-                        tab.term.scrollLines(linesToScroll);
-                        accumulatedLines -= linesToScroll;
-                    }
-                    
-                    // Apply friction
-                    velocity *= 0.92; 
-                    
-                    animationFrameId = requestAnimationFrame(applyMomentum);
-                }
+                                // Tap-through logic: Only disable when a clear tap or long-press is detected
+                                let startX, startY;
+                                let touchTimeout;
+                                proxy.addEventListener('touchstart', (e) => {
+                                    startX = e.touches[0].clientX;
+                                    startY = e.touches[0].clientY;
+                                    
+                                    // Allow long press to pass through to xterm for text selection
+                                    touchTimeout = setTimeout(() => {
+                                        proxy.style.pointerEvents = 'none';
+                                    }, 400); // 400ms for long press
+                                }, {passive: true});
+                
+                                proxy.addEventListener('touchmove', (e) => {
+                                    const deltaY = Math.abs(e.touches[0].clientY - startY);
+                                    const deltaX = Math.abs(e.touches[0].clientX - startX);
+                                    if (deltaY > 10 || deltaX > 10) {
+                                        clearTimeout(touchTimeout); // It's a scroll, don't pass through
+                                    }
+                                }, {passive: true});
+                
+                                proxy.addEventListener('touchend', (e) => {
+                                    clearTimeout(touchTimeout);
+                                    const deltaX = Math.abs(e.changedTouches[0].clientX - startX);
+                                    const deltaY = Math.abs(e.changedTouches[0].clientY - startY);
+                
+                                    if (deltaX < 10 && deltaY < 10) {
+                                        // This was a tap. Briefly open the portal.
+                                        proxy.style.pointerEvents = 'none';
+                                        setTimeout(() => proxy.style.pointerEvents = 'all', 100);
+                                    } else {
+                                        // If we disabled pointer events due to long press but then lifted, we restore it
+                                        // xterm handles selection ending itself. We just need proxy back to normal for scrolling.
+                                        proxy.style.pointerEvents = 'all';
+                                    }
+                                }, {passive: true});
+                // Set initial position
+                proxy.scrollTop = 50000;
             }
 
+            // Passive touch listener to ensure the browser doesn't wait for JS
+            // before initiating a native scroll on the viewport.
+            termDiv.addEventListener('touchmove', (e) => {}, {passive: true});
+            
             // Improved Web Links support with wrapped line handling
             try {
                 tab.term.registerLinkProvider({
