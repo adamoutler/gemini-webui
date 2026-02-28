@@ -96,31 +96,19 @@
         .xterm-link { text-decoration: underline !important; cursor: pointer !important; }
         
         /* Enable text selection on mobile for xterm.js */
+        .xterm, .xterm * {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+            -webkit-touch-callout: default !important;
+        }
         .xterm .xterm-viewport, .xterm .xterm-screen {
-            -webkit-user-select: auto !important;
-            user-select: auto !important;
             touch-action: pan-y auto !important;
+        }
+        .xterm .xterm-helpers {
+            pointer-events: none !important;
         }
         
         /* Absolute Proxy Momentum Strategy */
-        .mobile-scroll-proxy {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow-y: scroll;
-            z-index: 100;
-            display: none;
-            -webkit-overflow-scrolling: touch;
-            background: transparent;
-            touch-action: pan-y;
-        }
-        .mobile-scroll-content {
-            width: 1px;
-            height: 100000px; /* Large stable height for inertia */
-            background: transparent;
-        }
         
         /* Quick Connect Bar */
         .quick-connect-bar {
@@ -223,16 +211,17 @@
         #new-tab-btn { background-color: #2472c8; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-weight: bold; margin-right: 10px;}
         input[type="text"], textarea { width: 100%; background: #444; color: white; border: 1px solid #666; padding: 8px; margin: 5px 0; border-radius: 3px; box-sizing: border-box; font-family: inherit;}
 
-        /* Mobile Controls */
-        #mobile-controls { 
-            display: none; 
-            background: #333; 
-            padding: 5px; 
-            grid-template-columns: repeat(7, 1fr); 
-            gap: 5px; 
-            border-top: 1px solid #444;
-        }
-        .control-btn { 
+                /* Mobile Controls */
+                #mobile-controls {
+                    display: none;
+                    background: #333;
+                    padding: 5px;
+                    grid-template-columns: repeat(7, 1fr);
+                    gap: 5px;
+                    border-top: 1px solid #444;
+                    touch-action: none;
+                    overscroll-behavior: none;
+                }        .control-btn { 
             background: #444; 
             color: white; 
             border: 1px solid #555; 
@@ -276,7 +265,6 @@
         }
 
         @media (max-width: 1200px) {
-            .mobile-scroll-proxy { display: block; }
             .xterm-viewport { display: none !important; }
             .modal-content { width: 98% !important; margin: 10px auto !important; padding: 10px !important; }
             
@@ -885,74 +873,73 @@
             
             tab.term.open(termDiv);
 
-            // Passive Portal Implementation for Native Momentum
+            // JavaScript Momentum Scrolling
             if (isMobile) {
-                const proxy = document.createElement('div');
-                proxy.className = 'mobile-scroll-proxy';
-                const content = document.createElement('div');
-                content.className = 'mobile-scroll-content';
-                proxy.appendChild(content);
-                termDiv.appendChild(proxy);
+                let velocity = 0;
+                let lastY = 0;
+                let lastTime = 0;
+                let isDragging = false;
+                let animationFrameId = null;
+                let accumulatedLines = 0;
 
-                let isSyncing = false;
-                const rowHeight = 16;
+                termDiv.addEventListener('touchstart', (e) => {
+                    if (e.touches.length !== 1) return;
+                    isDragging = true;
+                    lastY = e.touches[0].clientY;
+                    lastTime = Date.now();
+                    velocity = 0;
+                    cancelAnimationFrame(animationFrameId);
+                }, { passive: true });
 
-                // Sync: Ghost -> Terminal (Passive & Momentum-Safe)
-                proxy.addEventListener('scroll', () => {
-                    if (isSyncing) return;
-                    isSyncing = true;
-                    const deltaLines = Math.round((proxy.scrollTop - 50000) / rowHeight);
-                    if (deltaLines !== 0) {
-                        tab.term.scrollLines(deltaLines);
-                        proxy.scrollTop = 50000; // Reset to center
+                termDiv.addEventListener('touchmove', (e) => {
+                    if (!isDragging || e.touches.length !== 1) return;
+                    const currentY = e.touches[0].clientY;
+                    const currentTime = Date.now();
+                    const deltaY = currentY - lastY;
+                    const deltaTime = currentTime - lastTime;
+                    
+                    if (deltaTime > 0) {
+                        velocity = deltaY / deltaTime; // pixels per ms
                     }
-                    isSyncing = false;
-                }, {passive: true});
+                    
+                    // xterm handles the immediate drag scrolling natively if it's set up to do so,
+                    // but sometimes it's sluggish. Let's let xterm do the active drag, we just track velocity.
+                    
+                    lastY = currentY;
+                    lastTime = currentTime;
+                }, { passive: true });
 
-                                // Tap-through logic: Only disable when a clear tap or long-press is detected
-                                let startX, startY;
-                                let touchTimeout;
-                                proxy.addEventListener('touchstart', (e) => {
-                                    startX = e.touches[0].clientX;
-                                    startY = e.touches[0].clientY;
-                                    
-                                    // Allow long press to pass through to xterm for text selection
-                                    touchTimeout = setTimeout(() => {
-                                        proxy.style.pointerEvents = 'none';
-                                    }, 400); // 400ms for long press
-                                }, {passive: true});
-                
-                                proxy.addEventListener('touchmove', (e) => {
-                                    const deltaY = Math.abs(e.touches[0].clientY - startY);
-                                    const deltaX = Math.abs(e.touches[0].clientX - startX);
-                                    if (deltaY > 10 || deltaX > 10) {
-                                        clearTimeout(touchTimeout); // It's a scroll, don't pass through
-                                    }
-                                }, {passive: true});
-                
-                                proxy.addEventListener('touchend', (e) => {
-                                    clearTimeout(touchTimeout);
-                                    const deltaX = Math.abs(e.changedTouches[0].clientX - startX);
-                                    const deltaY = Math.abs(e.changedTouches[0].clientY - startY);
-                
-                                    if (deltaX < 10 && deltaY < 10) {
-                                        // This was a tap. Briefly open the portal.
-                                        proxy.style.pointerEvents = 'none';
-                                        setTimeout(() => proxy.style.pointerEvents = 'all', 100);
-                                    } else {
-                                        // If we disabled pointer events due to long press but then lifted, we restore it
-                                        // xterm handles selection ending itself. We just need proxy back to normal for scrolling.
-                                        proxy.style.pointerEvents = 'all';
-                                    }
-                                }, {passive: true});
-                // Set initial position
-                proxy.scrollTop = 50000;
+                termDiv.addEventListener('touchend', () => {
+                    isDragging = false;
+                    // Apply momentum if the swipe was fast enough
+                    if (Math.abs(velocity) > 0.5) {
+                        applyMomentum();
+                    }
+                }, { passive: true });
+
+                function applyMomentum() {
+                    if (Math.abs(velocity) < 0.05 || isDragging) return; 
+                    
+                    // Scroll xterm by velocity amount (converted to lines)
+                    // 1 line is roughly 16 pixels. 16ms frame target.
+                    const pixelsToScroll = velocity * 16; 
+                    const lines = -pixelsToScroll / 16;
+                    
+                    accumulatedLines += lines;
+                    
+                    if (Math.abs(accumulatedLines) >= 1) {
+                        const linesToScroll = Math.trunc(accumulatedLines);
+                        tab.term.scrollLines(linesToScroll);
+                        accumulatedLines -= linesToScroll;
+                    }
+                    
+                    // Apply friction
+                    velocity *= 0.92; 
+                    
+                    animationFrameId = requestAnimationFrame(applyMomentum);
+                }
             }
 
-            // Passive touch listener to ensure the browser doesn't wait for JS
-            // before initiating a native scroll on the viewport.
-            termDiv.addEventListener('touchmove', (e) => {}, {passive: true});
-            
             // Improved Web Links support with wrapped line handling
             try {
                 tab.term.registerLinkProvider({
@@ -1572,6 +1559,14 @@
             if (!name || !text) return alert("Name and key text required");
             await fetch('/api/keys/text', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, key: text }) });
             document.getElementById('ssh-key-name').value = ''; document.getElementById('ssh-key-text').value = ''; loadKeys();
+        }
+
+        // Prevent iOS rubber-banding when swiping on the mobile controls bar
+        const mobileControlsContainer = document.getElementById('mobile-controls');
+        if (mobileControlsContainer) {
+            mobileControlsContainer.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+            }, { passive: false });
         }
     </script>
 </body>
