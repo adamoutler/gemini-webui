@@ -30,8 +30,8 @@
                     position: absolute;
                     top: 0; left: 0; right: 0; bottom: 0;
                     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                }        #toolbar { background-color: #333; padding: 10px; display: flex; gap: 10px; align-items: center; touch-action: pan-y; }
-        #tab-bar { background-color: #222; display: flex; overflow-x: auto; padding: 0 5px; touch-action: pan-x pan-y; }
+                }        #toolbar { background-color: #333; padding: 10px; display: flex; gap: 10px; align-items: center; touch-action: pan-x pan-y; flex-shrink: 0; }
+                #tab-bar { background-color: #222; display: flex; overflow-x: auto; padding: 0 5px; touch-action: pan-x pan-y; flex-shrink: 0; }
         .tab { 
             padding: 8px 12px; 
             background-color: #333; 
@@ -493,6 +493,13 @@
 
         const isMobile = window.innerWidth <= 1080 || 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         console.log("Environment detection: isMobile =", isMobile);
+        
+        if (isMobile && window.visualViewport) {
+            window.visualViewport.addEventListener('resize', () => {
+                document.body.style.height = window.visualViewport.height + 'px';
+            });
+            document.body.style.height = window.visualViewport.height + 'px';
+        }
 
         window.addEventListener('popstate', (event) => {
             const activeTab = tabs.find(t => t.id === activeTabId);
@@ -920,6 +927,10 @@
                                     // Allow long press to pass through to xterm for text selection
                                     touchTimeout = setTimeout(() => {
                                         proxy.style.pointerEvents = 'none';
+                                        // Blur xterm's hidden textarea so the keyboard doesn't pop up instead of the selection menu
+                                        if (tab.term && tab.term.textarea) {
+                                            tab.term.textarea.blur();
+                                        }
                                     }, 400); // 400ms for long press
                                 }, {passive: true});
                 
