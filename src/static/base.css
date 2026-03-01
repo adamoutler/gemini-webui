@@ -1,0 +1,105 @@
+* { box-sizing: border-box; }
+html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    height: 100dvh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+}
+body { overflow-y: auto; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+#toolbar { background-color: #333; padding: 10px; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+#tab-bar { background-color: #222; display: flex; overflow-x: auto; padding: 0 5px; flex-shrink: 0; }
+.tab { 
+    padding: 8px 12px; 
+    background-color: #333; 
+    color: #ccc; 
+    cursor: pointer; 
+    border-right: 1px solid #222; 
+    font-size: 13px; 
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    max-width: 200px;
+    min-width: 120px;
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+}
+.tab span { flex-grow: 1; overflow: hidden; text-overflow: ellipsis; }
+.tab.active { 
+    background-color: #1e1e1e; 
+    color: white; 
+    border-top: 2px solid #2472c8; 
+    font-weight: bold;
+    min-width: 132px;
+    max-width: 220px;
+}
+.tab:hover { background-color: #444; }
+.tab-close { 
+    font-weight: bold; font-size: 18px; cursor: pointer; color: #888; flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+}
+.tab-close:hover { color: #f14c4c; }
+
+button { background-color: #555; color: white; border: none; padding: 5px 12px; cursor: pointer; border-radius: 3px; font-size: 12px;}
+button:hover { background-color: #777; }
+button.primary { background-color: #2472c8; }
+button.primary:hover { background-color: #3b8eea; }
+button.success { background-color: #0dbc79; }
+button.success:hover { background-color: #23d18b; }
+button.danger { background-color: #cd3131; }
+button.danger:hover { background-color: #f14c4c; }
+button.small { padding: 2px 8px; font-size: 11px; }
+
+#terminal-container { flex-grow: 1; padding: 0; position: relative; overflow: hidden; }
+.tab-instance { position: absolute; top: 0; left: 0; width: 100%; height: 100%; visibility: hidden; box-sizing: border-box; background: #1e1e1e;}
+.tab-instance.active { visibility: visible; }
+.terminal-instance { width: 100%; height: 100%; padding: 5px; box-sizing: border-box; direction: ltr !important; position: relative;}
+.xterm-link { text-decoration: underline !important; cursor: pointer !important; }
+
+.quick-connect-bar {
+    background: #2d2d2d; padding: 10px 15px; border-radius: 6px; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; border: 1px solid #444; flex-wrap: nowrap;
+}
+.quick-connect-label { color: #3b8eea; font-weight: bold; font-size: 14px; white-space: nowrap; }
+.quick-connect-input { flex-grow: 1; margin: 0 !important; min-width: 100px; }
+.quick-connect-bar button { white-space: nowrap; flex-shrink: 0; }
+
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); }
+.modal-content { background-color: #333; color: white; margin: 5% auto; padding: 25px; border: 1px solid #444; width: 60%; max-height: 85vh; overflow-y: auto; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); touch-action: pan-y; }
+
+.launcher { padding: 30px; color: #ccc; overflow-y: auto; height: 100%; max-width: 900px; margin: 0 auto; overscroll-behavior: auto; touch-action: pan-y;}
+.launcher h2 { color: white; margin-top: 0; border-bottom: 1px solid #444; padding-bottom: 10px; font-weight: 500;}
+.connection-card { background: #252526; border-radius: 6px; padding: 15px; margin-bottom: 15px; border: 1px solid #333; transition: opacity 0.2s, transform 0.2s; }
+.connection-card:hover { border-color: #444; }
+.connection-card.dragging { opacity: 0.4; transform: scale(0.98); pointer-events: none; }
+
+.drag-placeholder { background: rgba(59, 142, 234, 0.05); border: 2px dashed #3b8eea; border-radius: 6px; margin-bottom: 15px; height: 80px; box-shadow: 0 0 15px rgba(59, 142, 234, 0.3); transition: all 0.2s ease; }
+
+.connection-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 10px; }
+.connection-drag-handle { cursor: grab; color: #666; font-size: 20px; padding: 0 5px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; display: flex; align-items: center; touch-action: none;}
+.connection-drag-handle:active { cursor: grabbing; }
+.connection-title { font-size: 16px; font-weight: bold; color: #fff; flex-grow: 1; }
+.connection-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; min-width: 180px; }
+.connection-actions button { flex: 1 1 85px; white-space: nowrap; text-align: center; }
+
+.session-list-container { margin-top: 10px; background: #1e1e1e; border-radius: 4px; overflow: hidden; border: 1px solid #2d2d2d;}
+.session-list { list-style: none; padding: 0; margin: 0; }
+.session-item { padding: 6px 12px; border-bottom: 1px solid #2d2d2d; display: flex; justify-content: space-between; align-items: center; font-family: monospace; font-size: 12px;}
+.session-item:last-child { border-bottom: none; }
+.session-item:hover { background: #2a2d2e; }
+.session-info { flex-grow: 1; margin-right: 15px; color: #999; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.session-name { color: #3b8eea; font-weight: bold; }
+
+#new-tab-btn { background-color: #2472c8; color: white; border: none; padding: 5px 10px; cursor: pointer; border-radius: 3px; font-weight: bold; margin-right: 10px;}
+input[type="text"], textarea { width: 100%; background: #444; color: white; border: 1px solid #666; padding: 8px; margin: 5px 0; border-radius: 3px; box-sizing: border-box; font-family: inherit;}
+
+/* Modern Dark Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #1e1e1e; }
+::-webkit-scrollbar-thumb { background: #444; border-radius: 5px; border: 2px solid #1e1e1e; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
+::-webkit-scrollbar-corner { background: #1e1e1e; }
+/* Firefox support */
+* { scrollbar-width: thin; scrollbar-color: #444 #1e1e1e; }

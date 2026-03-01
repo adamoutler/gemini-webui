@@ -1,0 +1,9 @@
+/* 
+ * pwa.css
+ * Extends mobile styles for the PWA standalone mode.
+ * Contains basically no changes from mobile, ensuring they are treated the same.
+ */
+
+@media all and (display-mode: standalone) {
+    /* PWA-specific overrides go here if needed in the future */
+}

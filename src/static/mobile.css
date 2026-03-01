@@ -1,0 +1,58 @@
+/* Mobile Controls */
+#mobile-controls {
+    display: none;
+    background: #333;
+    padding: 5px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 5px;
+    border-top: 1px solid #444;
+    flex-shrink: 0;
+    touch-action: none;
+    overscroll-behavior: none;
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.control-btn { 
+    background: #444; 
+    color: white; 
+    border: 1px solid #555; 
+    border-radius: 4px; 
+    padding: 8px 2px; 
+    text-align: center; 
+    font-weight: bold; 
+    font-size: 11px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+.control-btn:active { background: #666; }
+.control-btn.active { background: #2472c8; border-color: #3b8eea; }
+.control-btn.danger { background: #cd3131; }
+.control-btn.danger:active { background: #f14c4c; }
+
+/* Absolute Proxy Momentum Strategy */
+.mobile-scroll-proxy {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+    z-index: 100;
+    display: none;
+    -webkit-overflow-scrolling: touch;
+    background: transparent;
+    touch-action: pan-y;
+}
+.mobile-scroll-content {
+    width: 1px;
+    height: 100000px; /* Large stable height for inertia */
+    background: transparent;
+}
+
+.is-mobile .mobile-scroll-proxy { display: block; }
+.is-mobile .xterm-viewport { display: none !important; }
+.is-mobile .modal-content { width: 98% !important; margin: 10px auto !important; padding: 10px !important; }
+
+/* Mobile Controls overrides */
+.is-mobile #toolbar { padding: 5px; gap: 5px; flex-wrap: wrap; }
+.is-mobile #active-connection-info { gap: 5px; }
