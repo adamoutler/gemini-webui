@@ -294,8 +294,8 @@
     <div id="terminal-container"></div>
     <div id="mobile-controls" style="display: none;">
         <div class="control-btn holdable" data-cmd="\x1b">Esc</div>
-        <div class="control-btn holdable" data-func="adjustFontSize(1)">A+</div>
-        <div class="control-btn holdable" data-func="adjustFontSize(-1)">A-</div>
+        <div class="control-btn holdable" data-func-adjust="1">A+</div>
+        <div class="control-btn holdable" data-func-adjust="-1">A-</div>
         <div class="control-btn holdable" data-cmd="\x1b[A">▲</div>
         <div class="control-btn holdable" data-cmd="\t">Tab</div>
         <div class="control-btn holdable" data-cmd="\x1b[H">Home</div>
@@ -1625,14 +1625,18 @@
 
             const executeAction = () => {
                 let cmd = btn.getAttribute('data-cmd');
-                const func = btn.getAttribute('data-func');
+                const adjust = btn.getAttribute('data-func-adjust');
                 if (cmd) {
                     // Unescape characters like \x1b and \t from the DOM attribute string
                     cmd = cmd.replace(/\\x([0-9A-Fa-f]{2})/g, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
                     cmd = cmd.replace(/\\t/g, '\t');
+                    cmd = cmd.replace(/\\r/g, '\r');
+                    cmd = cmd.replace(/\\n/g, '\n');
                     sendToTerminal(cmd);
                 }
-                if (func) eval(func);
+                if (adjust) {
+                    adjustFontSize(parseInt(adjust));
+                }
             };
 
             const startAction = (e) => {
