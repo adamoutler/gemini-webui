@@ -65,7 +65,7 @@ class Session:
         self.ssh_dir = ssh_dir
         self.resume = resume
         self.decoder = codecs.getincrementaldecoder('utf-8')()
-        self.buffer = collections.deque(maxlen=10000) # Store last 10k chars
+        self.buffer = collections.deque(maxlen=1000) # Store last 1000 chunks (up to ~20MB)
         self.last_seen = time.time()
         self.orphaned_at = None
 
@@ -133,6 +133,9 @@ session_manager = SessionManager()
 
 # Background session cache: key -> {"output": str, "error": str, "timestamp": float}
 session_results_cache = {}
+
+# Precompile terminal ID regex for performance
+IDENTIFICATION_REGEX = re.compile(r'\x1b\[\??\d+(?:;\d+)*c')
 
 def cleanup_orphaned_ptys():
     """Maintenance task. Session dropping is disabled as per 'never drop them' mandate."""
@@ -395,7 +398,10 @@ def read_and_forward_pty_output():
                         if decoded_output:
                             # Filter out terminal identification responses (e.g. \x1b[?62;c or \x1b[0c)
                             # These are often triggered by the terminal on reclaim and shouldn't be buffered.
-                            filtered_output = re.sub(r'\x1b\[\??\d+(?:;\d+)*c', '', decoded_output)
+                            if '\x1b[' in decoded_output and 'c' in decoded_output:
+                                filtered_output = IDENTIFICATION_REGEX.sub('', decoded_output)
+                            else:
+                                filtered_output = decoded_output
                             if filtered_output:
                                 session.buffer.append(filtered_output)
                                 if sid:

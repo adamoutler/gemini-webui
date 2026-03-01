@@ -377,6 +377,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js" integrity="sha256-8K6g919IVZATrmZDwked1zfSbaQtVSTm0rcJFa5lI8c=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js" integrity="sha256-EPMZTF8XwXhvt9XbhlweyFObZzajGAY/04var3xGhI8=" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.js"></script>
+    <script src="https://unpkg.com/xterm-addon-webgl@0.16.0/lib/xterm-addon-webgl.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha256-y6ZcVexS2AE/5ykFy1hqui8oXHHkKXk1CDE4x43QsDs=" crossorigin="anonymous"></script>
     <script>
         // PWA Service Worker Registration
@@ -607,16 +608,16 @@
                     sessions.forEach(s => {
                         const statusColor = s.is_orphaned ? '#888' : '#0dbc79';
                         const statusLabel = s.is_orphaned ? 'Orphaned' : 'Active';
+                        const shortDir = s.ssh_dir ? s.ssh_dir.split('/').pop() : '';
+                        const dirContext = shortDir ? `<span style="color: #0dbc79; font-weight: bold; margin-right: 5px;">[${shortDir}]</span>` : '';
                         html += `
                             <div class="session-item" style="background: #252526; margin-bottom: 8px; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
                                 <div class="session-info">
-                                    <div style="color: #3b8eea; font-weight: bold; font-size: 14px; margin-bottom: 2px;">Tab: ${s.title}</div>
+                                    <div style="color: #3b8eea; font-weight: bold; font-size: 14px; margin-bottom: 2px;">${dirContext}${s.title}</div>
                                     <div style="color: #888; font-size: 11px; display: flex; align-items: center; gap: 8px;">
                                         <span style="color: ${statusColor}; font-weight: bold; display: flex; align-items: center; gap: 4px;">
                                             <span style="font-size: 14px;">●</span> ${statusLabel}
                                         </span> 
-                                        <span>•</span>
-                                        <span>Last seen: ${new Date(s.last_active * 1000).toLocaleTimeString()}</span>
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: 8px;">
@@ -825,13 +826,16 @@
                     const sorted = sessions.reverse(); const displayCount = forceAll ? sorted.length : 3;
                     let html = '<div class="session-list">';
                     sorted.slice(0, displayCount).forEach(s => {
-                        const dirContext = conn.dir ? `<span style="color: #0dbc79; font-weight: bold; margin-right: 5px;">[${conn.dir}]</span>` : '';
-                        html += `<div class="session-item">
-                            <div class="session-info">
-                                ${dirContext}<span class="session-name">Session: ${s.name}</span>
-                                <span style="font-size: 10px; opacity: 0.7; margin-left: 10px;">(ID #${s.id} • ${s.meta})</span>
+                        const shortDir = conn.dir ? conn.dir.split('/').pop() : '';
+                        const dirContext = shortDir ? `<span style="color: #0dbc79; font-weight: bold; margin-right: 5px;">[${shortDir}]</span>` : '';
+                        html += `<div class="session-item" style="align-items: center;">
+                            <div style="flex-grow: 1; margin-right: 10px; min-width: 0;">
+                                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #999;">
+                                    ${dirContext}<span class="session-name" style="color: #3b8eea; font-weight: bold;">${s.name}</span>
+                                </div>
+                                <div style="font-size: 10px; opacity: 0.7; color: #999; margin-top: 2px;">ID #${s.id} • ${s.meta}</div>
                             </div>
-                            <div style="display: flex; gap: 5px;">
+                            <div style="flex-shrink: 0;">
                                 <button class="small" onclick="startSession('${tabId}', '${conn.type}', '${conn.target || ''}', '${conn.dir || ''}', '${s.id}', '${s.name.replace(/'/g, "\\'")}')">Resume</button>
                             </div>
                         </div>`;
@@ -888,8 +892,21 @@
                 scrollOnData: false
             });
             tab.fitAddon = new FitAddon.FitAddon(); tab.term.loadAddon(tab.fitAddon);
-            
+
             tab.term.open(termDiv);
+
+            try {
+                if (typeof WebglAddon !== 'undefined') {
+                    tab.webglAddon = new WebglAddon.WebglAddon();
+                    tab.term.loadAddon(tab.webglAddon);
+                    tab.webglAddon.onContextLoss(() => {
+                        console.warn("WebGL Context lost, disposing addon");
+                        tab.webglAddon.dispose();
+                    });
+                }
+            } catch (e) {
+                console.log("WebGL addon could not be loaded", e);
+            }
 
             // Passive Portal Implementation for Native Momentum
             if (isMobile) {
