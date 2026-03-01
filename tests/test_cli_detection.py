@@ -35,8 +35,7 @@ def test_local_project_session_fetching(test_data_dir):
         from src.app import fetch_sessions_for_host
         # Force the branch that checks for workspace
         with patch('src.app.os.path.exists', return_value=True):
-            fetch_sessions_for_host({'type': 'local'})
-        
+            fetch_sessions_for_host({'type': 'local'}, '/tmp/.ssh')        
         # Verify it used /bin/sh -c or direct gemini
         cmd = mock_run.call_args[0][0]
         cmd_str = " ".join(cmd)

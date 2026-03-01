@@ -19,7 +19,7 @@ def test_fetch_sessions_security():
         "target": "user@host; rm -rf /",
         "dir": "/tmp"
     }
-    result = fetch_sessions_for_host(malicious_host)
+    result = fetch_sessions_for_host(malicious_host, '/tmp/.ssh')
     assert "error" in result
     assert "Invalid SSH target" in result['error']
 
