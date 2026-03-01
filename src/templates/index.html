@@ -823,9 +823,10 @@
                     const sorted = sessions.reverse(); const displayCount = forceAll ? sorted.length : 3;
                     let html = '<div class="session-list">';
                     sorted.slice(0, displayCount).forEach(s => {
+                        const dirContext = conn.dir ? `<span style="color: #0dbc79; font-weight: bold; margin-right: 5px;">[${conn.dir}]</span>` : '';
                         html += `<div class="session-item">
                             <div class="session-info">
-                                <span class="session-name">Session: ${s.name}</span>
+                                ${dirContext}<span class="session-name">Session: ${s.name}</span>
                                 <span style="font-size: 10px; opacity: 0.7; margin-left: 10px;">(ID #${s.id} • ${s.meta})</span>
                             </div>
                             <div style="display: flex; gap: 5px;">
@@ -1621,9 +1622,14 @@
             let isActive = false;
 
             const executeAction = () => {
-                const cmd = btn.getAttribute('data-cmd');
+                let cmd = btn.getAttribute('data-cmd');
                 const func = btn.getAttribute('data-func');
-                if (cmd) sendToTerminal(cmd);
+                if (cmd) {
+                    // Unescape characters like \x1b and \t from the DOM attribute string
+                    cmd = cmd.replace(/\\x([0-9A-Fa-f]{2})/g, (match, hex) => String.fromCharCode(parseInt(hex, 16)));
+                    cmd = cmd.replace(/\\t/g, '\t');
+                    sendToTerminal(cmd);
+                }
                 if (func) eval(func);
             };
 
