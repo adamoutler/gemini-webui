@@ -84,6 +84,14 @@ The project uses **Pytest** and **Playwright**.
 - **Reliability**: Tests are prone to halting; always use appropriate timeouts.
 - **Safety**: NEVER DISABLE TIMEOUTS.
 
+### Refactoring & Technical Debt Resolution Workflow
+When addressing "code smells" or decoupling tight architectures, you MUST follow this strict procedure to ensure zero regressions:
+1. **Identify the Scope**: Use tools like `codebase_investigator` to find technical debt (e.g., God objects, overloaded functions, concurrency risks).
+2. **Write Strict Baseline Tests FIRST**: Before changing any application logic, write new unit tests that strictly assert the *current* behavior of the un-refactored code (e.g., exact CLI command outputs, concurrent dictionary manipulation).
+3. **Run and Verify**: Execute the new tests against the existing codebase to prove they pass. This locks in the baseline behavior.
+4. **Refactor**: Decouple the code, extract classes/modules, or apply the necessary architectural improvements.
+5. **Validate Without Compromise**: Re-run the tests. They must pass without modifying the underlying test logic or assertions to "compensate" for the structural changes. If a test breaks, the refactoring is flawed.
+
 ---
 
 ## 6. Orientation for Future Gemini Agents
