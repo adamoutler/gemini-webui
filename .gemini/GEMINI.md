@@ -58,6 +58,15 @@ The project uses a custom Jenkins pipeline defined in the `Jenkinsfile`:
 - It blocks until Jenkins confirms a successful deployment, ensuring you don't leave the environment in a broken state.
 - **REMEMBER**: The job's not done till `git p` is run.
 
+> [!CAUTION]
+> **DEPLOYMENT VISIBILITY WARNING**: Because `git p` triggers a zero-downtime deployment that restarts the server, **you will lose the response context of the `git p` command itself**. The user's web session will be temporarily disconnected.
+> 
+> **MANDATORY WORKFLOW**: 
+> 1. Stage and commit your changes in one turn (`git add ... && git commit -m "..."`).
+> 2. Execute `git p` as a separate, final turn.
+> 3. Before executing `git p`, you MUST explicitly state as your FINAL message to the user: 
+> "When I run `git p` I may lose context of this transaction due to Gemini WebUI restart."
+
 ### SSH Identity
 The `Dockerfile` and `Jenkinsfile` work together to inject an SSH private key (`id_ed25519`) and configure `~/.ssh/config` at build time. The username is dynamically injected into `src/GEMINI.md` for user reference.
 
