@@ -23,6 +23,7 @@
             <button onclick="restartActiveTab()">Restart</button>
         </div>
         <button onclick="openSettings()" style="background: #2472c8; margin-left: 10px;">Settings</button>
+        <button onclick="openFileTransfer()" style="background: #2472c8; margin-left: 10px;">Files</button>
         <div id="connection-status" style="margin-left: auto; color: #0dbc79; font-weight: bold; font-family: monospace; padding: 5px 10px;"></div>
     </div>
     <div id="tab-bar"></div>
@@ -40,6 +41,23 @@
         <div class="control-btn holdable" data-cmd="\x1b[B">▼</div>
         <div class="control-btn holdable" data-cmd="\x1b[C">▶</div>
         <div class="control-btn holdable" data-cmd="\x1b[F">End</div>
+    </div>
+
+    <div id="file-transfer-modal" class="modal">
+        <div class="modal-content">
+            <span onclick="closeFileTransfer()" style="float: right; font-size: 28px; font-weight: bold; cursor: pointer; opacity: 0.7;">&times;</span>
+            <h2 style="margin-top: 0;">File Transfer</h2>
+            <div style="background: #2a2d2e; padding: 15px; border-radius: 4px; margin-top: 15px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 13px;">Upload File to Workspace</h4>
+                <input type="file" id="workspace-upload-file" style="margin-bottom: 10px; width: 100%; color: #ccc;">
+                <button class="primary" style="width: 100%;" onclick="uploadWorkspaceFile()">Upload File</button>
+            </div>
+            <div style="background: #2a2d2e; padding: 15px; border-radius: 4px; margin-top: 15px;">
+                <h4 style="margin: 0 0 10px 0; font-size: 13px;">Download File from Workspace</h4>
+                <input type="text" id="workspace-download-filename" placeholder="Filename" style="margin-bottom: 10px; width: 100%; padding: 5px; box-sizing: border-box;">
+                <button class="primary" style="width: 100%;" onclick="downloadWorkspaceFile()">Download File</button>
+            </div>
+        </div>
     </div>
 
     <div id="settings-modal" class="modal">
@@ -70,13 +88,45 @@
                 <h3 style="font-size: 14px; text-transform: uppercase;">Manage SSH Keys</h3>
                 <ul id="key-list" style="list-style: none; padding: 0; border: 1px solid #444; border-radius: 4px; margin-bottom: 15px;"></ul>
                 <div style="background: #2a2d2e; padding: 15px; border-radius: 4px;">
-                    <h4 style="margin: 0 0 10px 0; font-size: 13px;">Add Key</h4>
-                    <input type="text" id="ssh-key-name" placeholder="Label eg. Personal Key">
-                    <textarea id="ssh-key-text" placeholder="-----BEGIN OPENSSH PRIVATE KEY----- ..." style="height: 80px;"></textarea>
-                    <button class="primary" style="width: 100%;" onclick="savePastedKey()">Save Key</button>
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px;">Add Key (Text)</h4>
+                    <input type="text" id="ssh-key-name" placeholder="Label eg. Personal Key" style="margin-bottom: 5px;">
+                    <textarea id="ssh-key-text" placeholder="-----BEGIN OPENSSH PRIVATE KEY----- ..." style="height: 80px; margin-bottom: 5px;"></textarea>
+                    <button class="primary" style="width: 100%; margin-bottom: 15px;" onclick="savePastedKey()">Save Key</button>
+                    
+                    <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
+                    
+                    <h4 style="margin: 0 0 10px 0; font-size: 13px;">Upload Key (File)</h4>
+                    <input type="file" id="ssh-key-file" style="margin-bottom: 10px; width: 100%; color: #ccc;">
+                    <button class="primary" style="width: 100%;" onclick="uploadKeyFile()">Upload File</button>
                 </div>
             </div>
             
+            <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
+            <div style="margin-top: 20px;">
+                <h3 style="font-size: 14px; text-transform: uppercase;">Theme & Font Settings</h3>
+                <div style="background: #2a2d2e; padding: 15px; border-radius: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label for="theme-bg" style="font-size: 12px; color: #ccc; display: block; margin-bottom: 5px;">Background</label>
+                        <input type="color" id="theme-bg" onchange="applyTheme()">
+                    </div>
+                    <div>
+                        <label for="theme-fg" style="font-size: 12px; color: #ccc; display: block; margin-bottom: 5px;">Foreground</label>
+                        <input type="color" id="theme-fg" onchange="applyTheme()">
+                    </div>
+                    <div>
+                        <label for="theme-cursor" style="font-size: 12px; color: #ccc; display: block; margin-bottom: 5px;">Cursor</label>
+                        <input type="color" id="theme-cursor" onchange="applyTheme()">
+                    </div>
+                    <div>
+                        <label for="theme-font" style="font-size: 12px; color: #ccc; display: block; margin-bottom: 5px;">Font Size</label>
+                        <input type="number" id="theme-font" min="8" max="40" onchange="applyTheme()" style="width: 100%;">
+                    </div>
+                    <div style="grid-column: span 2; margin-top: 10px;">
+                        <button class="small primary" onclick="resetTheme()" style="width: 100%;">Reset to Default</button>
+                    </div>
+                </div>
+            </div>
+
             <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
             <div id="public-key-container" style="background: #1e1e1e; padding: 15px; border: 1px solid #444; border-radius: 4px; display: none;">
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">

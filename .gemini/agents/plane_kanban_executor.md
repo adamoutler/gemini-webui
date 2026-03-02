@@ -2,12 +2,21 @@
 name: plane_kanban_executor
 description: A specialized agent responsible for executing development tasks defined in Plane (or provided by the primary agent) to exactly match specifications. It focuses purely on coding implementation and verification. Use this agent when you have a clear plan or ticket and need it implemented perfectly without polluting the main context window.
 tools:
-  - run_shell_command
-  - write_file
-  - replace
+  - list_directory
   - read_file
-  - grep_search
+  - write_file
   - glob
+  - grep_search
+  - search_file_content
+  - replace
+  - write_todos
+  - activate_skill
+  - google_web_search
+  - web_fetch
+  - run_shell_command
+  - activate_skill
+  - chrome-devtools__click
+  - get_internal_docs
 ---
 
 # Role: Plane Kanban Executor

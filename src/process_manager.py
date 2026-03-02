@@ -77,6 +77,20 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin='gemini'):
     except Exception as e:
         return {"error": "Connection failed", "timestamp": time.time()}
 
+def _wrap_with_multiplexer(cmd):
+    """Wraps the terminal command in a multiplexer (tmux or dtach) to prevent visual corruption on detach/re-attach."""
+    import shutil
+    import uuid
+    session_id = f"gemini_{uuid.uuid4().hex[:8]}"
+    
+    if shutil.which('tmux'):
+        cmd_str = " ".join(shlex.quote(c) for c in cmd)
+        return ['tmux', 'new-session', '-A', '-s', session_id, cmd_str]
+    elif shutil.which('dtach'):
+        return ['dtach', '-A', f"/tmp/{session_id}", '-r', 'winch'] + cmd
+    
+    return cmd
+
 def build_terminal_command(ssh_target, ssh_dir, resume, ssh_dir_path, gemini_bin='gemini'):
     """Builds the shell/ssh command array for os.execvp when starting a PTY."""
     if ssh_target:
@@ -84,8 +98,10 @@ def build_terminal_command(ssh_target, ssh_dir, resume, ssh_dir_path, gemini_bin
             return None # Invalid target
             
         gemini_base_cmd = gemini_bin
-        if resume is True: gemini_base_cmd += " -r"
-        elif resume and str(resume).isdigit(): gemini_base_cmd += f" -r {resume}"
+        if resume is True or str(resume).lower() == 'true':
+            gemini_base_cmd += " -r"
+        elif resume and str(resume).lower() != 'false':
+            gemini_base_cmd += f" -r {resume}"
         
         # Export color env vars remotely
         remote_env = "export TERM=xterm-256color; export COLORTERM=truecolor; export FORCE_COLOR=3; "
@@ -128,7 +144,7 @@ def build_terminal_command(ssh_target, ssh_dir, resume, ssh_dir_path, gemini_bin
             '-o', 'ServerAliveCountMax=120', # Allow up to 2 hours of silence
             '--', ssh_target, login_wrapped_cmd
         ])
-        return cmd
+        return _wrap_with_multiplexer(cmd)
     else:
         # Workspace initialization with failover guidance
         work_dir = "/data/workspace"
@@ -142,7 +158,9 @@ def build_terminal_command(ssh_target, ssh_dir, resume, ssh_dir_path, gemini_bin
         
         # Use shell to ensure gemini is found in PATH and handled correctly
         gemini_cmd = gemini_bin
-        if resume is True: gemini_cmd += " -r"
-        elif resume and str(resume).isdigit(): gemini_cmd += f" -r {resume}"
+        if resume is True or str(resume).lower() == 'true':
+            gemini_cmd += " -r"
+        elif resume and str(resume).lower() != 'false':
+            gemini_cmd += f" -r {resume}"
         cmd = ['/bin/sh', '-c', f"{setup_cmd} exec {gemini_cmd}"]
-        return cmd
+        return _wrap_with_multiplexer(cmd)

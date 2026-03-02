@@ -14,7 +14,7 @@ class Session:
         self.ssh_dir = ssh_dir
         self.resume = resume
         self.decoder = codecs.getincrementaldecoder('utf-8')()
-        self.buffer = collections.deque(maxlen=1000) # Store last 1000 chunks (up to ~20MB)
+        self.buffer = collections.deque(maxlen=300) # Store last 300 chunks
         self.last_seen = time.time()
         self.orphaned_at = None
 
@@ -46,6 +46,10 @@ class SessionManager:
             if session and (user_id is None or session.user_id == user_id):
                 return session
             return None
+
+    def get_all_sessions(self):
+        with self._lock:
+            return list(self.sessions.values())
 
     def remove_session(self, tab_id, user_id=None):
         with self._lock:

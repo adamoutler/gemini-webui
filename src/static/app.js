@@ -134,14 +134,72 @@
             }
         });
 
+        let savedTheme = localStorage.getItem('gemini_theme');
+        let customTheme = savedTheme ? JSON.parse(savedTheme) : {};
+        const defaultFontSize = isMobile ? 10 : 14;
+        let customFontSize = localStorage.getItem('gemini_font_size');
+        let currentFontSize = customFontSize ? parseInt(customFontSize) : defaultFontSize;
+
         const terminalTheme = {
-            background: '#1e1e1e', foreground: '#d4d4d4', cursor: '#ffffff', selection: '#264f78',
+            background: customTheme.background || '#1e1e1e', 
+            foreground: customTheme.foreground || '#d4d4d4', 
+            cursor: customTheme.cursor || '#ffffff', 
+            selection: '#264f78',
             black: '#000000', red: '#cd3131', green: '#0dbc79', yellow: '#e5e510',
             blue: '#2472c8', magenta: '#bc3fbc', cyan: '#11a8cd', white: '#e5e5e5',
             brightBlack: '#666666', brightRed: '#f14c4c', brightGreen: '#23d18b',
             brightYellow: '#f5f543', brightBlue: '#3b8eea', brightMagenta: '#d670d6',
             brightCyan: '#29b8db', brightWhite: '#e5e5e5'
         };
+
+        function initThemeUI() {
+            document.getElementById('theme-bg').value = terminalTheme.background;
+            document.getElementById('theme-fg').value = terminalTheme.foreground;
+            document.getElementById('theme-cursor').value = terminalTheme.cursor;
+            document.getElementById('theme-font').value = currentFontSize;
+        }
+
+        function applyTheme() {
+            terminalTheme.background = document.getElementById('theme-bg').value;
+            terminalTheme.foreground = document.getElementById('theme-fg').value;
+            terminalTheme.cursor = document.getElementById('theme-cursor').value;
+            currentFontSize = parseInt(document.getElementById('theme-font').value) || defaultFontSize;
+
+            localStorage.setItem('gemini_theme', JSON.stringify({
+                background: terminalTheme.background,
+                foreground: terminalTheme.foreground,
+                cursor: terminalTheme.cursor
+            }));
+            localStorage.setItem('gemini_font_size', currentFontSize);
+
+            // Apply to all open terminals
+            tabs.forEach(tab => {
+                if (tab.term) {
+                    tab.term.options.theme = terminalTheme;
+                    tab.term.options.fontSize = currentFontSize;
+                    fitTerminal(tab);
+                }
+            });
+        }
+
+        function resetTheme() {
+            localStorage.removeItem('gemini_theme');
+            localStorage.removeItem('gemini_font_size');
+            terminalTheme.background = '#1e1e1e';
+            terminalTheme.foreground = '#d4d4d4';
+            terminalTheme.cursor = '#ffffff';
+            currentFontSize = defaultFontSize;
+            initThemeUI();
+            
+            // Apply immediately to terminals
+            tabs.forEach(tab => {
+                if (tab.term) {
+                    tab.term.options.theme = terminalTheme;
+                    tab.term.options.fontSize = currentFontSize;
+                    fitTerminal(tab);
+                }
+            });
+        }
 
         function updateStatus(target, dir) {
             const statusEl = document.getElementById('connection-status');
@@ -329,38 +387,52 @@
                     });
                 });
 
+                let dragOffset = { x: 0, y: 0 };
+                
                 // Touch support for mobile dragging
                 handle.addEventListener('touchstart', (e) => {
                     draggedCard = card;
-                    placeholder.style.height = card.offsetHeight + 'px';
-                    card.classList.add('dragging');
-                    card.after(placeholder);
+                    const rect = card.getBoundingClientRect();
+                    const touch = e.touches[0];
+                    dragOffset.x = touch.clientX - rect.left;
+                    dragOffset.y = touch.clientY - rect.top;
+                    
+                    card.style.width = rect.width + 'px';
+                    card.classList.add('dragging-mobile');
+                    card.style.position = 'fixed';
+                    card.style.left = (touch.clientX - dragOffset.x) + 'px';
+                    card.style.top = (touch.clientY - dragOffset.y) + 'px';
                 }, { passive: false });
 
                 handle.addEventListener('touchmove', (e) => {
                     e.preventDefault();
                     if (!draggedCard) return;
                     const touch = e.touches[0];
+                    
+                    draggedCard.style.left = (touch.clientX - dragOffset.x) + 'px';
+                    draggedCard.style.top = (touch.clientY - dragOffset.y) + 'px';
+                    
                     const target = document.elementFromPoint(touch.clientX, touch.clientY);
                     const overCard = target ? target.closest('.connection-card') : null;
                     
-                    if (overCard && overCard !== draggedCard) {
+                    if (overCard && overCard !== draggedCard && !overCard.classList.contains('dragging-mobile')) {
                         const rect = overCard.getBoundingClientRect();
                         const midpoint = rect.top + rect.height / 2;
                         if (touch.clientY < midpoint) {
-                            overCard.before(placeholder);
+                            overCard.before(draggedCard);
                         } else {
-                            overCard.after(placeholder);
+                            overCard.after(draggedCard);
                         }
                     }
                 }, { passive: false });
 
                 handle.addEventListener('touchend', (e) => {
                     if (!draggedCard) return;
-                    draggedCard.classList.remove('dragging');
-                    if (placeholder.parentNode) {
-                        placeholder.replaceWith(draggedCard);
-                    }
+                    draggedCard.classList.remove('dragging-mobile');
+                    draggedCard.style.position = '';
+                    draggedCard.style.left = '';
+                    draggedCard.style.top = '';
+                    draggedCard.style.width = '';
                     draggedCard = null;
                     
                     const newLabels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
@@ -503,14 +575,12 @@
             termDiv.setAttribute('aria-relevant', 'additions');
             container.appendChild(termDiv);
             
-            const fontSize = isMobile ? 10 : 14;
-
             tab.term = new Terminal({ 
                 cursorBlink: true, 
                 cursorStyle: 'block', 
                 macOptionIsMeta: true, 
                 scrollback: 10000, 
-                fontSize: fontSize, 
+                fontSize: currentFontSize, 
                 fontFamily: 'Menlo, Monaco, "Courier New", monospace', 
                 allowProposedApi: true, 
                 theme: terminalTheme,
@@ -695,10 +765,22 @@
                 textarea.setAttribute('autocorrect', 'off');
                 textarea.setAttribute('autocapitalize', 'none');
                 textarea.setAttribute('spellcheck', 'false');
-                
+
+                // TRACK COMPOSITION STATE (Speech-to-Text, swipe typing, etc.)
+                let isComposing = false;
+                textarea.addEventListener('compositionstart', () => { isComposing = true; });
+                textarea.addEventListener('compositionend', () => {
+                    isComposing = false;
+                    // When composition ends, clear the buffer after a slight delay
+                    setTimeout(() => { if (textarea.value.length > 0) textarea.value = ''; }, 50);
+                });
+
                 // Clear the input buffer immediately after xterm.js has had a chance to process it
+                // ONLY if we are not in the middle of a composition (e.g., Speech-to-Text)
                 textarea.addEventListener('input', () => {
-                    setTimeout(() => { if (textarea.value.length > 0) textarea.value = ''; }, 10);
+                    if (!isComposing) {
+                        setTimeout(() => { if (textarea.value.length > 0) textarea.value = ''; }, 10);
+                    }
                 });
             }
 
@@ -741,17 +823,27 @@
                 }
             });
 
+            let reloadTimeout = null;
+
             tab.socket.on('reconnect', (attemptNumber) => {
+                if (reloadTimeout) {
+                    clearTimeout(reloadTimeout);
+                    reloadTimeout = null;
+                }
                 tab.term.write('\r\n\x1b[1;32m[Reconnected! Total attempts: ' + attemptNumber + ']\x1b[0m\r\n');
             });
 
             tab.socket.on('reconnect_error', (error) => {
                 console.log('Reconnection error:', error);
                 // If we get a 502 (Bad Gateway) or other connection errors, the server is likely restarting
-                // We should reload to get a fresh state once it's back.
+                // We should reload to get a fresh state once it's back, but throttle it.
                 if (error && (error.message === "xhr poll error" || error.description === 502 || error.type === "TransportError")) {
-                    console.log("Connection error detected, reloading page...");
-                    location.reload();
+                    console.log("Connection error detected, scheduling reload...");
+                    if (!reloadTimeout) {
+                        reloadTimeout = setTimeout(() => {
+                            location.reload();
+                        }, 5000);
+                    }
                 }
             });
 
@@ -861,6 +953,11 @@
             if (tab && tab.term) {
                 const newSize = Math.max(8, Math.min(40, tab.term.options.fontSize + delta));
                 tab.term.options.fontSize = newSize;
+                currentFontSize = newSize;
+                localStorage.setItem('gemini_font_size', currentFontSize);
+                if (document.getElementById('theme-font')) {
+                    document.getElementById('theme-font').value = currentFontSize;
+                }
                 setTimeout(() => fitTerminal(tab), 50);
             }
         }
@@ -1088,7 +1185,7 @@
                 });
         
                 async function openSettings() { 
-         document.getElementById('settings-modal').style.display = 'block'; loadHosts(); loadKeys(); loadPublicKey(); }
+         document.getElementById('settings-modal').style.display = 'block'; loadHosts(); loadKeys(); loadPublicKey(); initThemeUI(); }
         async function loadPublicKey() {
             try {
                 const response = await fetch('/api/keys/public');
@@ -1252,6 +1349,31 @@
             document.getElementById('ssh-key-name').value = ''; document.getElementById('ssh-key-text').value = ''; loadKeys();
         }
 
+        async function uploadKeyFile() {
+            const fileInput = document.getElementById('ssh-key-file');
+            if (!fileInput.files.length) return alert("Please select a file to upload");
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                const response = await fetch('/api/keys/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    fileInput.value = '';
+                    loadKeys();
+                } else {
+                    const data = await response.json();
+                    alert("Upload failed: " + (data.message || "Unknown error"));
+                }
+            } catch (err) {
+                alert("Upload failed: " + err.message);
+            }
+        }
+
         // Prevent iOS/Android pull-to-refresh or page slide when swiping on controls
         const mobileControlsContainer = document.getElementById('mobile-controls');
         if (mobileControlsContainer) {
@@ -1315,4 +1437,47 @@
             btn.addEventListener('touchend', stopAction);
             btn.addEventListener('touchcancel', stopAction);
         });
+
+        function openFileTransfer() {
+            document.getElementById('file-transfer-modal').style.display = 'block';
+        }
+
+        function closeFileTransfer() {
+            document.getElementById('file-transfer-modal').style.display = 'none';
+        }
+
+        async function uploadWorkspaceFile() {
+            const fileInput = document.getElementById('workspace-upload-file');
+            if (!fileInput.files.length) return alert("Please select a file to upload");
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                if (result.status === 'success') {
+                    alert('File uploaded successfully');
+                    closeFileTransfer();
+                    fileInput.value = '';
+                } else {
+                    alert('Upload failed: ' + result.message);
+                }
+            } catch (err) {
+                alert('Upload error: ' + err.message);
+            }
+        }
+
+        function downloadWorkspaceFile() {
+            const filenameInput = document.getElementById('workspace-download-filename');
+            const filename = filenameInput.value.trim();
+            if (!filename) return alert("Please enter a filename");
+            
+            window.location.href = `/api/download/${encodeURIComponent(filename)}`;
+            closeFileTransfer();
+            filenameInput.value = '';
+        }
     

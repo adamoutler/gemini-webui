@@ -37,14 +37,21 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     session_manager.add_session(new_orphan)
 
     with patch('os.kill') as mock_kill, patch('os.waitpid') as mock_wait:
+        # Mock ORPHANED_SESSION_TTL to 60 for testing
+        from src.app import app
+        app.config['ORPHANED_SESSION_TTL'] = 60
+        
         cleanup_orphaned_ptys()
         
-        # Sessions should NEVER be killed as per the 'never drop them' mandate
-        assert mock_kill.call_count == 0
-        # Verify they still exist in the session manager
-        assert session_manager.get_session('old_orphan') is not None
-        assert session_manager.get_session('new_orphan') is not None
+        # Only old_orphan should be killed
+        assert mock_kill.call_count == 1
+        mock_kill.assert_called_with(124, 9) # SIGKILL is 9
+        
+        # Verify it was removed from the session manager
+        assert session_manager.get_session('old_orphan') is None
+        # Verify active and new_orphan still exist
         assert session_manager.get_session('active') is not None
+        assert session_manager.get_session('new_orphan') is not None
 
 @patch('src.app.get_config')
 def test_background_session_preloader(mock_get_config):

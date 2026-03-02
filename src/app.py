@@ -21,7 +21,7 @@ import collections
 import socket
 import datetime
 from functools import wraps
-from flask import Flask, render_template, request, Response, session, jsonify
+from flask import Flask, render_template, request, Response, session, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO, disconnect
 from flask_talisman import Talisman
@@ -66,11 +66,25 @@ session_results_cache = {}
 IDENTIFICATION_REGEX = re.compile(r'\x1b\[\??\d+(?:;\d+)*c')
 
 def cleanup_orphaned_ptys():
-    """Maintenance task. Session dropping is disabled as per 'never drop them' mandate."""
+    """Cleanup orphaned sessions based on ORPHANED_SESSION_TTL."""
     is_testing = app.config.get('TESTING') or os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true'
     while True:
-        socketio.sleep(3600) # Sleep for a long time; cleanup disabled
+        try:
+            ttl = app.config.get('ORPHANED_SESSION_TTL', 3600)
+            now = time.time()
+            for session in session_manager.get_all_sessions():
+                if session.orphaned_at is not None and (now - session.orphaned_at) > ttl:
+                    try:
+                        os.kill(session.pid, signal.SIGKILL)
+                        os.waitpid(session.pid, os.WNOHANG)
+                    except OSError:
+                        pass
+                    session_manager.remove_session(session.tab_id)
+        except Exception as e:
+            logger.error(f"Error in cleanup_orphaned_ptys: {e}")
+            
         if is_testing: break
+        socketio.sleep(60)
 
 def get_config_paths():
     data_dir = app.config.get('DATA_DIR', os.environ.get('DATA_DIR', "/data"))
@@ -403,9 +417,9 @@ def pty_restart(data):
         session_obj = session_manager.reclaim_session(tab_id, sid, user_id, on_steal=handle_steal)
         if session_obj:
             logger.info(f"Reattached to session: {tab_id} (sid: {sid})")
-            # Flush the scrollback buffer to the new client
-            for chunk in session_obj.buffer:
-                socketio.emit('pty-output', {'output': chunk}, room=sid)
+            # Flush the scrollback buffer to the new client in a single batch
+            if session_obj.buffer:
+                socketio.emit('pty-output', {'output': "".join(session_obj.buffer)}, room=sid)
             
             # Re-sync terminal size
             try:
@@ -451,6 +465,12 @@ def pty_restart(data):
         except Exception: pass
             
     resume = data.get('resume', True)
+    if isinstance(resume, str):
+        if resume.lower() == 'true':
+            resume = True
+        elif resume.lower() == 'false':
+            resume = False
+            
     cols = data.get('cols', 80)
     rows = data.get('rows', 24)
     ssh_target = data.get('ssh_target')
@@ -690,7 +710,7 @@ def list_ssh_keys():
     keys = []
     if os.path.exists(ssh_dir):
         for f in os.listdir(ssh_dir):
-            if os.path.isfile(os.path.join(ssh_dir, f)) and f not in ['config', 'known_hosts'] and not f.endswith('.pub'):
+            if os.path.isfile(os.path.join(ssh_dir, f)) and f not in ['config', 'known_hosts']:
                 keys.append(f)
     return jsonify(keys)
 
@@ -749,6 +769,27 @@ def add_ssh_key_text():
     os.chmod(save_path, 0o600)
     return jsonify({"status": "success", "filename": name})
 
+@app.route('/api/keys/upload', methods=['POST'])
+@authenticated_only
+def upload_ssh_key():
+    if 'file' not in request.files:
+        return jsonify({"status": "error", "message": "No file part"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "No selected file"}), 400
+    
+    filename = secure_filename(file.filename)
+    if not filename:
+        return jsonify({"status": "error", "message": "Invalid filename"}), 400
+        
+    _, _, ssh_dir = get_config_paths()
+    save_path = os.path.join(ssh_dir, filename)
+    file.save(save_path)
+    # Check if the file is a private key or a public key by looking at extension.
+    # Public keys don't need strict permissions, but giving them 600 is fine.
+    os.chmod(save_path, 0o600)
+    return jsonify({"status": "success", "filename": filename})
+
 @app.route('/api/keys/<filename>', methods=['DELETE'])
 @authenticated_only
 def remove_ssh_key(filename):
@@ -759,6 +800,32 @@ def remove_ssh_key(filename):
         os.remove(path)
         return jsonify({"status": "success"})
     return jsonify({"status": "error", "message": "File not found"}), 404
+
+@app.route('/api/upload', methods=['POST'])
+@authenticated_only
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({"status": "error", "message": "No file part"}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({"status": "error", "message": "No selected file"}), 400
+    
+    filename = secure_filename(file.filename)
+    if not filename:
+        return jsonify({"status": "error", "message": "Invalid filename"}), 400
+        
+    workspace_dir = "/data/workspace"
+    os.makedirs(workspace_dir, exist_ok=True)
+    save_path = os.path.join(workspace_dir, filename)
+    file.save(save_path)
+    return jsonify({"status": "success", "filename": filename})
+
+@app.route('/api/download/<filename>', methods=['GET'])
+@authenticated_only
+def download_file(filename):
+    filename = secure_filename(filename)
+    workspace_dir = "/data/workspace"
+    return send_from_directory(workspace_dir, filename, as_attachment=True)
 
 @app.route('/health')
 def health_check_root():
