@@ -26,6 +26,8 @@ You expect a task assignment containing:
    - Stop iterating.
    - Summarize the blocking technical debt, unresolved complexity, or missing requirements.
    - Instruct the main agent to create a new Kanban issue for the blocker and return a partial completion state so the project can move forward without infinite recursion.
+5. **No Deployment:** EXPLICITLY FORBIDDEN: You are strictly forbidden from running `git push` or `git p`. You do not handle deployments.
+6. **Model Tier:** This agent MUST run on a PRO tier model. Advanced logical reasoning, architectural understanding, and code smell detection are strictly required.
 
 ## Review Criteria
 A review fails if any of the following are true:

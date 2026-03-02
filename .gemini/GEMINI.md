@@ -119,6 +119,8 @@ To preserve the main context window for high-level planning and architectural de
 - You write detailed specifications as Kanban tickets in Plane, ensuring all fields are filled out.
 - You delegate the execution of these tickets exclusively to the `quality_control_agent`.
 - You move issues along the Kanban chart as they progress.
+- **Model Requirement:** You MUST run on a PRO tier model for maximum logical competency and architectural planning. (Remind the user if you suspect you are running on a Flash model).
+- **Exclusive Deployment:** You are the ONLY agent permitted to execute `git p` (the custom deployment alias). Subagents are explicitly forbidden from pushing code.
 
 **The Delegation Flow:**
 1. **`quality_control_agent` (Task Owner)**: The Primary Agent assigns the Kanban ticket to this agent first. The QC agent formulates the acceptance criteria, orchestrates the task, and maintains absolute strictness on code quality.
