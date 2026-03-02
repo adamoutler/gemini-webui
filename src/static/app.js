@@ -614,8 +614,8 @@
                 const selectionOverlay = document.createElement('div');
                 selectionOverlay.className = 'mobile-selection-overlay';
                 selectionOverlay.style.position = 'absolute';
-                selectionOverlay.style.left = '-1ch';
-                selectionOverlay.style.width = 'calc(100% + 1ch)';
+                selectionOverlay.style.left = '0';
+                selectionOverlay.style.width = '100%';
                 selectionOverlay.style.height = '100%';
                 selectionOverlay.style.boxSizing = 'border-box';
                 selectionOverlay.style.color = 'transparent';
@@ -666,7 +666,7 @@
                                         cellHeight = tab.term._core._renderService.dimensions.css.cell.height;
                                     }
                                     selectionOverlay.style.lineHeight = cellHeight + 'px';
-                                    selectionOverlay.style.paddingTop = (cellHeight / 2) + "px";
+                                    selectionOverlay.style.paddingTop = '0px';
                                     selectionOverlay.style.fontSize = tab.term.options.fontSize + 'px';
                                     selectionOverlay.style.fontFamily = tab.term.options.fontFamily;
                                     
@@ -677,7 +677,9 @@
                                     for (let i = startRow; i < endRow; i++) {
                                         const line = buffer.getLine(i);
                                         if (line) {
-                                            textContent += line.translateToString(false) + '\n';
+                                            // Use translateToString(true) to trim trailing spaces.
+                                            // Replace box-drawing characters with spaces to preserve layout alignment without polluting copy buffer.
+                                            textContent += line.translateToString(true).replace(/[\u2500-\u257F]/g, ' ') + '\n';
                                         } else {
                                             textContent += '\n';
                                         }

@@ -42,6 +42,7 @@
     -webkit-overflow-scrolling: touch;
     background: transparent;
     touch-action: pan-y;
+    overscroll-behavior: none;
 }
 .mobile-scroll-content {
     width: 1px;
@@ -54,7 +55,8 @@
 .is-mobile .modal-content { width: 98% !important; margin: 10px auto !important; padding: 10px !important; }
 
 /* Mobile Controls overrides */
-.is-mobile #toolbar { padding: 5px; gap: 5px; flex-wrap: wrap; }
+.is-mobile #toolbar { padding: 5px; gap: 5px; flex-wrap: wrap; touch-action: none; overscroll-behavior: none; }
+.is-mobile #tab-bar { touch-action: pan-x; overscroll-behavior: none; }
 .is-mobile #active-connection-info { gap: 5px; }
 
 html, body {

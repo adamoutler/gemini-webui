@@ -59,6 +59,7 @@ def test_mobile_quick_tap_focus(mobile_page):
     mobile_page.evaluate("""() => {
         const overlay = document.querySelector('.mobile-selection-overlay');
         if (overlay) {
+            overlay.textContent = 'dummy text';
             const range = document.createRange();
             range.selectNodeContents(overlay);
             const selection = window.getSelection();

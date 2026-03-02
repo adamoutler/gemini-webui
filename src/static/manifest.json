@@ -26,5 +26,6 @@
       "type": "image/svg+xml",
       "purpose": "any"
     }
-  ]
+  ],
+  "version": "0.1.2"
 }
