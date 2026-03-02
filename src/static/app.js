@@ -614,9 +614,10 @@
                 const selectionOverlay = document.createElement('div');
                 selectionOverlay.className = 'mobile-selection-overlay';
                 selectionOverlay.style.position = 'absolute';
-                selectionOverlay.style.left = '0';
-                selectionOverlay.style.width = '100%';
+                selectionOverlay.style.left = '-1ch';
+                selectionOverlay.style.width = 'calc(100% + 1ch)';
                 selectionOverlay.style.height = '100%';
+                selectionOverlay.style.boxSizing = 'border-box';
                 selectionOverlay.style.color = 'transparent';
                 selectionOverlay.style.userSelect = 'text';
                 selectionOverlay.style.webkitUserSelect = 'text';
@@ -665,6 +666,7 @@
                                         cellHeight = tab.term._core._renderService.dimensions.css.cell.height;
                                     }
                                     selectionOverlay.style.lineHeight = cellHeight + 'px';
+                                    selectionOverlay.style.paddingTop = (cellHeight / 2) + "px";
                                     selectionOverlay.style.fontSize = tab.term.options.fontSize + 'px';
                                     selectionOverlay.style.fontFamily = tab.term.options.fontFamily;
                                     
@@ -692,10 +694,21 @@
                                     const deltaY = Math.abs(e.changedTouches[0].clientY - startY);
                                     const duration = Date.now() - touchStartTime;
 
-                                    if (deltaX < 10 && deltaY < 10 && duration < 300 && proxy.style.pointerEvents !== 'none') {
-                                        // This was a quick tap. Briefly open the portal.
+                                    if (deltaX < 10 && deltaY < 10 && duration < 300) {
+                                        // This was a quick tap. 
+                                        // 1. Clear any active selection
+                                        window.getSelection().removeAllRanges();
+                                        
+                                        // 2. Immediately focus the terminal
+                                        if (tab.term) {
+                                            tab.term.focus();
+                                        }
+
+                                        // 3. Briefly disable pointer-events to let the tap through for focus
                                         proxy.style.pointerEvents = 'none';
-                                        setTimeout(() => proxy.style.pointerEvents = 'all', 150);
+                                        setTimeout(() => {
+                                            if (proxy) proxy.style.pointerEvents = 'all';
+                                        }, 150);
                                     }
                                 }, {passive: true});
                 

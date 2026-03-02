@@ -47,3 +47,46 @@ def test_mobile_text_selection_overlay(mobile_page):
     # Assuming there's some text like "gemini" or bash prompt in the terminal
     # The overlay should contain something non-empty
     assert len(text_content.strip()) > 0
+
+@pytest.mark.timeout(20)
+def test_mobile_quick_tap_focus(mobile_page):
+    """Verify that a quick tap clears selection and focuses the terminal's textarea."""
+    mobile_page.click("text=Start New")
+    mobile_page.wait_for_selector(".terminal-instance", timeout=10000)
+    mobile_page.wait_for_timeout(2000)
+    
+    # Manually trigger a selection to clear later
+    mobile_page.evaluate("""() => {
+        const overlay = document.querySelector('.mobile-selection-overlay');
+        if (overlay) {
+            const range = document.createRange();
+            range.selectNodeContents(overlay);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+    }""")
+    
+    # Verify selection is NOT empty before tap
+    selection_length_before = mobile_page.evaluate("window.getSelection().toString().length")
+    assert selection_length_before > 0
+    
+    # Simulate a quick tap on the proxy
+    proxy = mobile_page.locator(".mobile-scroll-proxy").first
+    proxy_box = proxy.bounding_box()
+    
+    # Trigger a real tap
+    mobile_page.touchscreen.tap(proxy_box["x"] + 50, proxy_box["y"] + 50)
+    
+    # Give it a moment to process the touchend event
+    mobile_page.wait_for_timeout(500)
+    
+    # Verify selection is cleared
+    selection_length_after = mobile_page.evaluate("window.getSelection().toString().length")
+    assert selection_length_after == 0
+    
+    # Verify textarea is focused
+    # Find the active tab's textarea
+    textarea = mobile_page.locator("textarea.xterm-helper-textarea")
+    # Some environments might focus it automatically on tap, but we want to ensure our JS did it
+    expect(textarea.first).to_be_focused()
