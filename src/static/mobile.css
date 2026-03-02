@@ -56,3 +56,7 @@
 /* Mobile Controls overrides */
 .is-mobile #toolbar { padding: 5px; gap: 5px; flex-wrap: wrap; }
 .is-mobile #active-connection-info { gap: 5px; }
+
+html, body {
+    overscroll-behavior: none;
+}

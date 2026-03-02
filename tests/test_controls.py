@@ -98,6 +98,11 @@ def test_holdable_buttons_emit_commands(mobile_page):
     last_data = mobile_page.evaluate("window.lastSentData")
     assert last_data == "	", "Tab button should send 	"
 
+    # Test Shift+Tab button
+    mobile_page.click("text=Tab", modifiers=["Shift"])
+    last_data = mobile_page.evaluate("window.lastSentData")
+    assert last_data == "\x1b[Z", "Shift+Tab should send \\x1b[Z"
+
     # Test ▲ button (Esc[A)
     mobile_page.click("text=▲")
     last_data = mobile_page.evaluate("window.lastSentData")

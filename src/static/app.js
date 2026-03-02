@@ -610,7 +610,23 @@
                 proxy.className = 'mobile-scroll-proxy';
                 const content = document.createElement('div');
                 content.className = 'mobile-scroll-content';
+                
+                const selectionOverlay = document.createElement('div');
+                selectionOverlay.className = 'mobile-selection-overlay';
+                selectionOverlay.style.position = 'absolute';
+                selectionOverlay.style.left = '0';
+                selectionOverlay.style.width = '100%';
+                selectionOverlay.style.height = '100%';
+                selectionOverlay.style.color = 'transparent';
+                selectionOverlay.style.userSelect = 'text';
+                selectionOverlay.style.webkitUserSelect = 'text';
+                selectionOverlay.style.whiteSpace = 'pre';
+                selectionOverlay.style.zIndex = '5';
+                selectionOverlay.style.overflow = 'hidden';
+                selectionOverlay.style.pointerEvents = 'auto'; // allow selection
+                
                 proxy.appendChild(content);
+                proxy.appendChild(selectionOverlay);
                 termDiv.appendChild(proxy);
 
                 let isSyncing = false;
@@ -624,49 +640,62 @@
                     if (deltaLines !== 0) {
                         tab.term.scrollLines(deltaLines);
                         proxy.scrollTop = 50000; // Reset to center
+                        selectionOverlay.style.top = proxy.scrollTop + 'px';
                     }
                     isSyncing = false;
                 }, {passive: true});
 
                                 // Tap-through logic: Only disable when a clear tap or long-press is detected
                                 let startX, startY;
-                                let touchTimeout;
+                                let touchStartTime = 0;
                                 proxy.addEventListener('touchstart', (e) => {
                                     startX = e.touches[0].clientX;
                                     startY = e.touches[0].clientY;
+                                    touchStartTime = Date.now();
                                     
-                                    // Allow long press to pass through to xterm for text selection
-                                    touchTimeout = setTimeout(() => {
-                                        proxy.style.pointerEvents = 'none';
-                                        // Blur xterm's hidden textarea so the keyboard doesn't pop up instead of the selection menu
-                                        if (tab.term && tab.term.textarea) {
-                                            tab.term.textarea.blur();
+                                    // Blur xterm's hidden textarea so the keyboard doesn't pop up instead of the selection menu
+                                    if (tab.term && tab.term.textarea) {
+                                        tab.term.textarea.blur();
+                                    }
+                                    
+                                    // Populate selection overlay with visible terminal text
+                                    selectionOverlay.style.top = proxy.scrollTop + 'px';
+                                    let cellHeight = 16;
+                                    if (tab.term._core && tab.term._core._renderService && tab.term._core._renderService.dimensions) {
+                                        cellHeight = tab.term._core._renderService.dimensions.css.cell.height;
+                                    }
+                                    selectionOverlay.style.lineHeight = cellHeight + 'px';
+                                    selectionOverlay.style.fontSize = tab.term.options.fontSize + 'px';
+                                    selectionOverlay.style.fontFamily = tab.term.options.fontFamily;
+                                    
+                                    const buffer = tab.term.buffer.active;
+                                    const startRow = buffer.viewportY;
+                                    const endRow = startRow + tab.term.rows;
+                                    let textContent = '';
+                                    for (let i = startRow; i < endRow; i++) {
+                                        const line = buffer.getLine(i);
+                                        if (line) {
+                                            textContent += line.translateToString(false) + '\n';
+                                        } else {
+                                            textContent += '\n';
                                         }
-                                    }, 400); // 400ms for long press
+                                    }
+                                    selectionOverlay.textContent = textContent;
                                 }, {passive: true});
                 
                                 proxy.addEventListener('touchmove', (e) => {
-                                    const deltaY = Math.abs(e.touches[0].clientY - startY);
-                                    const deltaX = Math.abs(e.touches[0].clientX - startX);
-                                    if (deltaY > 10 || deltaX > 10) {
-                                        clearTimeout(touchTimeout); // It's a scroll, don't pass through
-                                    }
+                                    // Not doing much here now since selection uses native browser handling
                                 }, {passive: true});
                 
                                 proxy.addEventListener('touchend', (e) => {
-                                    clearTimeout(touchTimeout);
                                     const deltaX = Math.abs(e.changedTouches[0].clientX - startX);
                                     const deltaY = Math.abs(e.changedTouches[0].clientY - startY);
+                                    const duration = Date.now() - touchStartTime;
 
-                                    if (deltaX < 10 && deltaY < 10 && proxy.style.pointerEvents !== 'none') {
+                                    if (deltaX < 10 && deltaY < 10 && duration < 300 && proxy.style.pointerEvents !== 'none') {
                                         // This was a quick tap. Briefly open the portal.
                                         proxy.style.pointerEvents = 'none';
                                         setTimeout(() => proxy.style.pointerEvents = 'all', 150);
-                                    } else {
-                                        // If we disabled pointer events due to long press, DO NOT immediately restore it on touchend.
-                                        // The user is lifting their finger *after* the long press triggered the selection mode.
-                                        // They might now drag the selection handles. 
-                                        // We need the proxy out of the way until they interact elsewhere.
                                     }
                                 }, {passive: true});
                 
@@ -1388,7 +1417,7 @@
             let intervalId = null;
             let isActive = false;
 
-            const executeAction = () => {
+            const executeAction = (e) => {
                 let cmd = btn.getAttribute('data-cmd');
                 const adjust = btn.getAttribute('data-func-adjust');
                 if (cmd) {
@@ -1397,6 +1426,9 @@
                     cmd = cmd.replace(/\\t/g, '\t');
                     cmd = cmd.replace(/\\r/g, '\r');
                     cmd = cmd.replace(/\\n/g, '\n');
+                    if (cmd === '\t' && e && e.shiftKey) {
+                        cmd = '\x1b[Z';
+                    }
                     sendToTerminal(cmd);
                 }
                 if (adjust) {
@@ -1412,13 +1444,13 @@
                 // Add visual feedback
                 btn.style.opacity = '0.7';
                 
-                executeAction();
+                executeAction(e);
                 
                 // Delay before repeating
                 timeoutId = setTimeout(() => {
                     // Repeat rate
-                    intervalId = setInterval(executeAction, 80);
-                }, 400);
+                    intervalId = setInterval(() => executeAction(e), 40);
+                }, 250);
             };
 
             const stopAction = (e) => {
