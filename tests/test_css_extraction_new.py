@@ -1,5 +1,5 @@
 import pytest
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import sync_playwright
 
 @pytest.fixture(scope="function")
 def css_page(server):

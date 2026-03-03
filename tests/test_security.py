@@ -1,4 +1,3 @@
-import pytest
 from src.app import validate_ssh_target, fetch_sessions_for_host
 
 def test_validate_ssh_target():

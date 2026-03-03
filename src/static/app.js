@@ -3,20 +3,20 @@
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js').then(reg => {
-                    console.log('SW registered:', reg);
+                    // console.log('SW registered:', reg);
                 }).catch(err => {
-                    console.log('SW registration failed:', err);
+                    // console.log('SW registration failed:', err);
                 });
             });
         }
 
         window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('beforeinstallprompt event fired');
+            // console.log('beforeinstallprompt event fired');
             // e.preventDefault(); // Don't prevent default, we want the browser prompt
         });
 
         window.addEventListener('appinstalled', (evt) => {
-            console.log('Gemini WebUI was installed');
+            // console.log('Gemini WebUI was installed');
         });
 
         // Request Notification Permission
@@ -121,7 +121,7 @@
         if (isMobile) {
             document.documentElement.classList.add('is-mobile');
         }
-        console.log("Environment detection: isMobile =", isMobile, "(UA:", navigator.userAgent, "Width:", window.innerWidth, "Touch:", ('ontouchstart' in window || navigator.maxTouchPoints > 0), ")");
+        // console.log("Environment detection: isMobile =", isMobile, "(UA:", navigator.userAgent, "Width:", window.innerWidth, "Touch:", ('ontouchstart' in window || navigator.maxTouchPoints > 0), ")");
         
         // VisualViewport logic is handled at the bottom of the script
 
@@ -601,7 +601,7 @@
                     });
                 }
             } catch (e) {
-                console.log("WebGL addon could not be loaded", e);
+                // console.log("WebGL addon could not be loaded", e);
             }
 
             // Passive Portal Implementation for Native Momentum
@@ -793,7 +793,7 @@
                         callback(links);
                     }
                 });
-                console.log("Custom LinkProvider registered.");
+                // console.log("Custom LinkProvider registered.");
             } catch (e) {
                 console.error("Failed to setup link provider:", e);
             }
@@ -840,7 +840,7 @@
             let disconnectTime = null;
             tab.socket.on('connect', () => {
                 if (disconnectTime && (Date.now() - disconnectTime > 5000)) {
-                    console.log("Significant downtime detected, reloading page...");
+                    // console.log("Significant downtime detected, reloading page...");
                     location.reload();
                     return;
                 }
@@ -879,11 +879,11 @@
             });
 
             tab.socket.on('reconnect_error', (error) => {
-                console.log('Reconnection error:', error);
+                // console.log('Reconnection error:', error);
                 // If we get a 502 (Bad Gateway) or other connection errors, the server is likely restarting
                 // We should reload to get a fresh state once it's back, but throttle it.
                 if (error && (error.message === "xhr poll error" || error.description === 502 || error.type === "TransportError")) {
-                    console.log("Connection error detected, scheduling reload...");
+                    // console.log("Connection error detected, scheduling reload...");
                     if (!reloadTimeout) {
                         reloadTimeout = setTimeout(() => {
                             location.reload();

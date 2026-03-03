@@ -1,8 +1,6 @@
-import pytest
 import os
-import shutil
 from unittest.mock import patch, MagicMock
-from src.app import get_config_paths, init_app
+from src.app import get_config_paths
 
 def test_get_config_paths_env_override():
     with patch.dict(os.environ, {"DATA_DIR": "/custom/data"}):

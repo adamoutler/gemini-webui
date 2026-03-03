@@ -11,7 +11,7 @@ html, body {
     overscroll-behavior: none;
 }
 body { overflow: hidden; overscroll-behavior: none; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-#toolbar { background-color: #333; padding: 10px; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
+#toolbar { background-color: #333; padding: 10px; display: flex; gap: 10px; align-items: center; flex-shrink: 0; overscroll-behavior: none; touch-action: none; }
 #tab-bar { background-color: #222; display: flex; overflow-x: auto; padding: 0 5px; flex-shrink: 0; }
 .tab { 
     padding: 8px 12px; 
@@ -55,7 +55,7 @@ button.danger { background-color: #cd3131; }
 button.danger:hover { background-color: #f14c4c; }
 button.small { padding: 2px 8px; font-size: 11px; }
 
-#terminal-container { flex-grow: 1; padding: 0; position: relative; overflow: hidden; }
+#terminal-container { flex-grow: 1; padding: 0; position: relative; overflow: hidden; overscroll-behavior: none; }
 .tab-instance { position: absolute; top: 0; left: 0; width: 100%; height: 100%; visibility: hidden; box-sizing: border-box; background: #1e1e1e;}
 .tab-instance.active { visibility: visible; }
 .terminal-instance { width: 100%; height: 100%; padding: 5px; box-sizing: border-box; direction: ltr !important; position: relative;}

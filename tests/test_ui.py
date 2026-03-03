@@ -87,8 +87,6 @@ def test_ui_tab_management(page):
     page.locator('.tab-close').last.click()
     expect(page.locator('.tab')).to_have_count(initial_tabs)
 import pytest
-import time
-from playwright.sync_api import expect
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(20)

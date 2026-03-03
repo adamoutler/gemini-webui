@@ -60,7 +60,7 @@ graph TD
 | `ADMIN_USER` | Local admin username | `admin` |
 | `ADMIN_PASS` | Local admin password | `admin` |
 | `ALLOWED_ORIGINS` | CORS whitelist (comma-separated) | `*` |
-| `GEMINI_BIN` | Path to the Gemini executable | `/usr/local/bin/gemini` |
+| `GEMINI_BIN` | Path to the Gemini executable | `gemini` |
 
 ### Volumes
 *   `data:/data`: Persists app config, SSH keys, and CLI state (linked to `/home/node/.gemini`).

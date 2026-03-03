@@ -2,7 +2,7 @@ import pytest
 import json
 import os
 import signal
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from src.app import app, init_app, session_manager, Session
 
 @pytest.fixture

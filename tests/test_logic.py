@@ -1,6 +1,5 @@
 import pytest
 import os
-import shutil
 from src.app import validate_ssh_target, get_config_paths, set_winsize
 
 def test_validate_ssh_target():

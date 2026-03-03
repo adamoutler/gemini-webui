@@ -1,6 +1,5 @@
-import pytest
 from unittest.mock import patch, MagicMock
-from src.process_manager import fetch_sessions_for_host, validate_ssh_target, build_terminal_command
+from src.process_manager import fetch_sessions_for_host, validate_ssh_target
 from src.app import pty_restart
 
 def test_fetch_sessions_for_host_local():

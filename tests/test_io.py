@@ -1,6 +1,4 @@
-import pytest
 from unittest.mock import MagicMock, patch
-import os
 from src.app import read_and_forward_pty_output, session_manager, Session
 
 def test_read_and_forward_pty_output_basic(test_data_dir):

@@ -1,6 +1,5 @@
 import pytest
 import json
-import os
 from src.app import app, init_app
 
 @pytest.fixture

@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 import os
 import signal
 from src.app import pty_restart, cleanup_orphaned_ptys, background_session_preloader, session_results_cache

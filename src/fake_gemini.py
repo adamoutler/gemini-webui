@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import sys
-import time
 
 def run_fake_gemini():
     print("Welcome to Fake Gemini")

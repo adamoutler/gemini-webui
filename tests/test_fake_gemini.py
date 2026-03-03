@@ -1,4 +1,3 @@
-import pytest
 import io
 from unittest.mock import patch
 from src.fake_gemini import run_fake_gemini

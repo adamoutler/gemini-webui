@@ -199,3 +199,27 @@ def test_mobile_keyboard_scroll_prevention(mobile_page):
     assert 'hidden' in html_overflow
     assert 'none' in html_overscroll
 
+@pytest.mark.timeout(20)
+def test_pull_to_refresh_blocking_styles(mobile_page):
+    """Verify that overscroll-behavior is none for body, html, and #toolbar on mobile."""
+    mobile_page.click("text=Start New")
+    mobile_page.wait_for_selector("#toolbar", timeout=10000)
+    
+    body_overscroll = mobile_page.evaluate("window.getComputedStyle(document.body).getPropertyValue('overscroll-behavior')")
+    assert 'none' in body_overscroll
+    
+    html_overscroll = mobile_page.evaluate("window.getComputedStyle(document.documentElement).getPropertyValue('overscroll-behavior')")
+    assert 'none' in html_overscroll
+    
+    toolbar_overscroll = mobile_page.evaluate("window.getComputedStyle(document.getElementById('toolbar')).getPropertyValue('overscroll-behavior')")
+    assert 'none' in toolbar_overscroll
+    
+    terminal_overscroll = mobile_page.evaluate("window.getComputedStyle(document.getElementById('terminal-container')).getPropertyValue('overscroll-behavior')")
+    assert 'none' in terminal_overscroll
+    
+    proxy_overscroll = mobile_page.evaluate("window.getComputedStyle(document.querySelector('.mobile-scroll-proxy')).getPropertyValue('overscroll-behavior')")
+    assert 'none' in proxy_overscroll
+
+    proxy_touch_action = mobile_page.evaluate("window.getComputedStyle(document.querySelector('.mobile-scroll-proxy')).getPropertyValue('touch-action')")
+    assert 'pan-y' in proxy_touch_action
+

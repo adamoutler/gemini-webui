@@ -1,4 +1,3 @@
-import pytest
 import threading
 from src.session_manager import Session, SessionManager
 

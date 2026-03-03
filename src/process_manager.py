@@ -75,7 +75,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin='gemini'):
         }
     except subprocess.TimeoutExpired:
         return {"error": "Could not establish connection (timed out)", "timestamp": time.time()}
-    except Exception as e:
+    except Exception:
         return {"error": "Connection failed", "timestamp": time.time()}
 
 def _wrap_with_multiplexer(cmd):

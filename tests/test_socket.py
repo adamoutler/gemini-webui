@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from src.app import app, pty_input, pty_resize, handle_connect, handle_disconnect, session_manager, Session
 
 def test_pty_input_handling():

@@ -2,11 +2,8 @@ import os
 os.environ['SKIP_MONKEY_PATCH'] = 'true'
 
 import time
-import random
 import subprocess
 import pytest
-import json
-import shutil
 import signal
 from src.app import app, init_app
 
@@ -81,7 +78,6 @@ def client(test_data_dir):
     if 'src.app' in sys.modules:
         import importlib
         importlib.reload(sys.modules['src.app'])
-    from src.app import app, init_app
     
     app.config['TESTING'] = True
     app.config['BYPASS_AUTH_FOR_TESTING'] = 'true'

@@ -1,5 +1,4 @@
 import pytest
-import time
 from playwright.sync_api import sync_playwright, expect
 
 # Individual test execution MUST NOT exceed 20 seconds.

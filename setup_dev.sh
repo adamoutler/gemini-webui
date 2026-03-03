@@ -24,5 +24,6 @@ playwright install chromium
 echo "Configuring git hooks..."
 git config core.hooksPath scripts/hooks
 chmod +x scripts/hooks/pre-commit
+chmod +x scripts/increment_version.sh
 
 echo "Setup complete! To activate your environment, run: source $VENV_DIR/bin/activate"

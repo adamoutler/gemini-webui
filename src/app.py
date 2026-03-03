@@ -13,17 +13,15 @@ import fcntl
 import termios
 import re
 import logging
-import codecs
 import json
 import shutil
 import shlex
-import collections
 import socket
 import datetime
 from functools import wraps
 from flask import Flask, render_template, request, Response, session, jsonify, send_from_directory
 from werkzeug.utils import secure_filename
-from flask_socketio import SocketIO, disconnect
+from flask_socketio import SocketIO
 from flask_talisman import Talisman
 from werkzeug.middleware.proxy_fix import ProxyFix
 try:
@@ -53,6 +51,16 @@ logger = logging.getLogger(__name__)
 
 template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=template_dir)
+
+try:
+    with open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'VERSION'), 'r') as f:
+        APP_VERSION = f.read().strip()
+except Exception:
+    APP_VERSION = "unknown"
+
+@app.context_processor
+def inject_version():
+    return dict(version=APP_VERSION)
 
 # Handle proxy headers (X-Forwarded-For, X-Forwarded-Proto, etc.)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)

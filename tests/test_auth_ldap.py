@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import MagicMock, patch
 from src.auth_ldap import sanitize_ldap_input, check_auth
 

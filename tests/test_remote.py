@@ -1,7 +1,6 @@
 import pytest
 import json
 from unittest.mock import patch, MagicMock
-import os
 from src.app import app
 
 @pytest.fixture

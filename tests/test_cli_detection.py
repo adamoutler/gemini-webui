@@ -1,4 +1,3 @@
-import pytest
 import os
 from unittest.mock import patch, MagicMock
 from src.app import pty_restart, app
