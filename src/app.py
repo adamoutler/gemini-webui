@@ -341,22 +341,32 @@ def read_and_forward_pty_output():
             decoder = session.decoder
             sid = session_manager.tabid_to_sid.get(tab_id)
             try:
-                (data_ready, _, _) = select.select([fd], [], [], 0)
-                if data_ready:
-                    output = os.read(fd, max_read_bytes)
-                    if output:
-                        decoded_output = decoder.decode(output)
-                        if decoded_output:
-                            # Filter out terminal identification responses (e.g. \x1b[?62;c or \x1b[0c)
-                            # These are often triggered by the terminal on reclaim and shouldn't be buffered.
-                            if '\x1b[' in decoded_output and 'c' in decoded_output:
-                                filtered_output = IDENTIFICATION_REGEX.sub('', decoded_output)
-                            else:
-                                filtered_output = decoded_output
-                            if filtered_output:
-                                session.buffer.append(filtered_output)
-                                if sid:
-                                    socketio.emit('pty-output', {'output': filtered_output}, room=sid)
+                batched_output = []
+                for _ in range(10): # Read up to 200KB per tick
+                    (data_ready, _, _) = select.select([fd], [], [], 0)
+                    if data_ready:
+                        output = os.read(fd, max_read_bytes)
+                        if output:
+                            batched_output.append(output)
+                        else:
+                            break
+                    else:
+                        break
+                
+                if batched_output:
+                    combined_output = b"".join(batched_output)
+                    decoded_output = decoder.decode(combined_output)
+                    if decoded_output:
+                        # Filter out terminal identification responses (e.g. \x1b[?62;c or \x1b[0c)
+                        # These are often triggered by the terminal on reclaim and shouldn't be buffered.
+                        if '\x1b[' in decoded_output and 'c' in decoded_output:
+                            filtered_output = IDENTIFICATION_REGEX.sub('', decoded_output)
+                        else:
+                            filtered_output = decoded_output
+                        if filtered_output:
+                            session.append_buffer(filtered_output)
+                            if sid:
+                                socketio.emit('pty-output', {'output': filtered_output}, room=sid)
             except (OSError, IOError, EOFError):
                 logger.info(f"Removing session {tab_id} due to I/O error")
                 session_manager.remove_session(tab_id)
@@ -426,9 +436,13 @@ def pty_restart(data):
         session_obj = session_manager.reclaim_session(tab_id, sid, user_id, on_steal=handle_steal)
         if session_obj:
             logger.info(f"Reattached to session: {tab_id} (sid: {sid})")
-            # Flush the scrollback buffer to the new client in a single batch
+            # Flush the scrollback buffer to the new client in chunks
             if session_obj.buffer:
-                socketio.emit('pty-output', {'output': "".join(session_obj.buffer)}, room=sid)
+                full_buffer = "".join(session_obj.buffer)
+                chunk_size = 1024 * 64 # 64KB
+                for i in range(0, len(full_buffer), chunk_size):
+                    socketio.emit('pty-output', {'output': full_buffer[i:i+chunk_size]}, room=sid)
+                    socketio.sleep(0.01)
             
             # Re-sync terminal size
             try:

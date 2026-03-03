@@ -14,9 +14,18 @@ class Session:
         self.ssh_dir = ssh_dir
         self.resume = resume
         self.decoder = codecs.getincrementaldecoder('utf-8')()
-        self.buffer = collections.deque(maxlen=300) # Store last 300 chunks
+        self.buffer = collections.deque() # Store chunks
+        self.buffer_len = 0 # Track total string length
+        self.max_buffer_len = 1024 * 256 # 256KB max scrollback
         self.last_seen = time.time()
         self.orphaned_at = None
+
+    def append_buffer(self, text):
+        self.buffer.append(text)
+        self.buffer_len += len(text)
+        while self.buffer_len > self.max_buffer_len and self.buffer:
+            removed = self.buffer.popleft()
+            self.buffer_len -= len(removed)
 
     def to_dict(self):
         return {

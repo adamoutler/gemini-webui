@@ -81,10 +81,18 @@ def test_extreme_data_injection_and_delta_updates():
         mock_select.return_value = ([12], [], [])
         
         # side effects for os.read: return chunks then block
-        mock_read.side_effect = payload_chunks + [b""]
+        # We need a few empty reads to break out of the 10-batch loops early or gracefully.
+        # But here, we have 100 chunks. They will be consumed 10 at a time.
+        mock_read_returns = payload_chunks + [b"", b""]
+        def mock_read_side_effect(*args):
+            if mock_read_returns:
+                return mock_read_returns.pop(0)
+            return b""
+        mock_read.side_effect = mock_read_side_effect
         
-        # mock sleep to break loop after chunks are read
-        mock_sio.sleep.side_effect = [None] * num_chunks + [Exception("Stop")]
+        # The inner loop reads 10 chunks per tick. 100 chunks / 10 = 10 ticks.
+        # So sleep will be called 11 times. We raise an exception on the 12th.
+        mock_sio.sleep.side_effect = [None] * 12 + [Exception("Stop")]
         
         try:
             read_and_forward_pty_output()
@@ -92,10 +100,11 @@ def test_extreme_data_injection_and_delta_updates():
             assert str(e) == "Stop"
         
         # Verify the chunks were emitted (delta updates during active connection)
-        assert mock_sio.emit.call_count == num_chunks
+        # Should be batched into ~11 emits (100 chunks / 10 = 10 full ticks + 1 empty tick before sleep)
+        assert mock_sio.emit.call_count == 11
         
-        # Verify buffer size is constrained
-        assert len(session.buffer) <= 300
+        # Verify buffer size is constrained to max_buffer_len
+        assert session.buffer_len <= session.max_buffer_len
         
         # 3. Resuming (reclaiming)
         mock_sio.reset_mock()
@@ -105,12 +114,13 @@ def test_extreme_data_injection_and_delta_updates():
         
         assert mock_sio.emit.call_count == 1
         emitted_buffer = mock_sio.emit.call_args[0][1]['output']
-        # The buffer only keeps up to 300 chunks (300 * 20KB = ~6MB), since we sent 2MB, it has all of it
-        assert len(emitted_buffer) == num_chunks * chunk_size
+        # The buffer only keeps up to max_buffer_len (256KB), since we sent 2MB, it has max_buffer_len
+        # The length should be roughly max_buffer_len (depending on exact chunk truncation)
+        assert len(emitted_buffer) <= session.max_buffer_len + chunk_size * 10
         
         # 4. Adding text (2 lines delta update) after resume to ensure no corruption
         mock_sio.reset_mock()
-        mock_read.side_effect = [b"Line 1\nLine 2\n", b""]
+        mock_read_returns = [b"Line 1\nLine 2\n"]
         mock_sio.sleep.side_effect = [None, Exception("Stop")]
         
         try:
@@ -124,4 +134,4 @@ def test_extreme_data_injection_and_delta_updates():
         assert delta_output == "Line 1\nLine 2\n"
         
         # Ensure it was appended to the end of the buffer
-        assert session.buffer[-1] == "Line 1\nLine 2\n"
+        assert "".join(session.buffer).endswith("Line 1\nLine 2\n")
