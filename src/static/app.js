@@ -1656,9 +1656,15 @@
                 let successCount = 0;
                 let lastFilename = '';
                 
+                let uploadPrefix = '';
+                if (allFiles.length > 1) {
+                    uploadPrefix = `upload-${Math.floor(Date.now() / 1000)}/`;
+                }
+
                 for (const { file, path } of allFiles) {
+                    const finalPath = uploadPrefix + path;
                     const formData = new FormData();
-                    formData.append('file', file, path);
+                    formData.append('file', file, finalPath);
                     
                     try {
                         const response = await fetch('/api/upload', {
@@ -1673,17 +1679,17 @@
                             successCount++;
                             lastFilename = result.filename;
                         } else {
-                            alert(`Upload failed for ${path}: ` + result.message);
+                            alert(`Upload failed for ${finalPath}: ` + result.message);
                         }
                     } catch (err) {
-                        alert(`Upload error for ${path}: ` + err.message);
+                        alert(`Upload error for ${finalPath}: ` + err.message);
                     }
                 }
                 
                 if (successCount > 0) {
                     const tab = tabs.find(t => t.id === activeTabId);
                     if (tab && tab.socket && tab.state === 'terminal') {
-                        const msg = successCount > 1 ? `> I uploaded ${successCount} files including @${lastFilename} ` : `> I uploaded @${lastFilename} `;
+                        const msg = successCount > 1 ? `> I uploaded multiple files to @${uploadPrefix} ` : `> I uploaded @${lastFilename} `;
                         tab.socket.emit('pty-input', {input: msg});
                         tab.term.focus();
                     } else if (successCount === 1) {

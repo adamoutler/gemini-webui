@@ -174,11 +174,17 @@ def test_folder_drag_and_drop_upload(page, test_data_dir):
         return "";
     }""")
     
-    assert "myfolder/subfolder/file2.txt" in content or "2 files including" in content, f"Expected indication of file2.txt uploaded or 2 files uploaded, got terminal content: {content}"
+    assert "> I uploaded multiple files to @upload-" in content, f"Expected indication of multiple files uploaded to an upload- timestamped folder, got terminal content: {content}"
     
-    # Check if files actually exist in test_data_dir
-    assert os.path.exists(os.path.join(test_data_dir, "workspace", "myfolder", "file1.txt"))
-    assert os.path.exists(os.path.join(test_data_dir, "workspace", "myfolder", "subfolder", "file2.txt"))
+    # Check if files actually exist in test_data_dir within a timestamped upload folder
+    import glob
+    workspace_dir = os.path.join(test_data_dir, "workspace")
+    upload_dirs = glob.glob(os.path.join(workspace_dir, "upload-*"))
+    assert len(upload_dirs) == 1, "Expected exactly one upload-* directory"
+    upload_dir = upload_dirs[0]
+    
+    assert os.path.exists(os.path.join(upload_dir, "myfolder", "file1.txt"))
+    assert os.path.exists(os.path.join(upload_dir, "myfolder", "subfolder", "file2.txt"))
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(30)
