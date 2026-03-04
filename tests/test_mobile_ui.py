@@ -233,6 +233,9 @@ def test_pull_to_refresh_styles(mobile_page):
     
     html_overscroll = mobile_page.evaluate("window.getComputedStyle(document.documentElement).getPropertyValue('overscroll-behavior')")
     assert 'none' not in html_overscroll
+
+    tabbar_touch = mobile_page.evaluate("window.getComputedStyle(document.getElementById('tab-bar')).getPropertyValue('touch-action')")
+    assert 'none' not in tabbar_touch and 'pan-x pan-y' not in tabbar_touch, f"tab-bar has restricted touch-action: {tabbar_touch}"
     
     # Toolbar might still have it if we decided to block it there, but user said NO difference.
     # toolbar_overscroll = mobile_page.evaluate("window.getComputedStyle(document.getElementById('toolbar')).getPropertyValue('overscroll-behavior')")
