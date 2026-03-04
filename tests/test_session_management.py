@@ -55,25 +55,21 @@ def test_terminate_managed_session(client):
     user_id = "admin"
     mock_session = Session(tab_id, 888, pid, user_id)
     session_manager.add_session(mock_session)
-    
+
     with patch('os.kill') as mock_kill, patch('os.waitpid') as mock_waitpid:
-        response = client.post('/api/management/sessions/terminate',
-                               data=json.dumps({"tab_id": tab_id}),
-                               content_type='application/json')
+        response = client.delete(f'/api/management/sessions/{tab_id}')
         assert response.status_code == 200
         data = json.loads(response.data)
         assert data['status'] == 'success'
-        
+
         mock_kill.assert_called_once_with(pid, signal.SIGKILL)
         mock_waitpid.assert_called_once_with(pid, 0)
-        
+
         # Verify session is removed
         assert session_manager.get_session(tab_id) is None
 
 def test_terminate_managed_session_not_found(client):
-    response = client.post('/api/management/sessions/terminate',
-                           data=json.dumps({"tab_id": "non-existent"}),
-                           content_type='application/json')
+    response = client.delete('/api/management/sessions/non-existent')
     assert response.status_code == 404
     data = json.loads(response.data)
     assert "error" in data

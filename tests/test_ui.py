@@ -106,18 +106,7 @@ def test_fresh_session_no_reclaim_warning(page, server):
     expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
     
     # Wait for the welcome message to appear, which indicates successful connection
-    page.wait_for_function("""() => {
-        const tab = tabs.find(t => t.id === activeTabId);
-        if (tab && tab.term) {
-            let out = "";
-            for (let i = 0; i < 5; i++) {
-                const line = tab.term.buffer.active.getLine(i);
-                if (line) out += line.translateToString() + "\\n";
-            }
-            return out.includes("Welcome to Fake Gemini");
-        }
-        return false;
-    }""", timeout=10000)
+    expect(page.locator('.xterm-rows')).to_contain_text("Welcome to Fake Gemini", timeout=15000)
 
     # Now that we've received the welcome message, verify there's no reclaim warning
     content = page.evaluate("""() => {
@@ -213,7 +202,7 @@ def test_ui_backend_session_termination_no_refresh(page, server):
     initial_count = page.locator('.tab-instance.active .backend-sessions-container .session-item').count()
 
     # Wait for the network response to the terminate call
-    with page.expect_response("**/api/management/sessions/terminate") as response_info:
+    with page.expect_response("**/api/management/sessions/*") as response_info:
         # Click Terminate
         terminate_btn = page.locator('.tab-instance.active .backend-sessions-container button.danger:has-text("Terminate")').first
         terminate_btn.click()

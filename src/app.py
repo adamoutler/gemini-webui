@@ -565,17 +565,14 @@ def list_active_sessions():
     user_id = session.get('user_id') or ('admin' if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true' else None)
     return jsonify(session_manager.list_sessions(user_id))
 
-@app.route('/api/management/sessions/terminate', methods=['POST'])
+@app.route('/api/management/sessions/<tab_id>', methods=['DELETE'])
 @authenticated_only
-def terminate_managed_session():
+def terminate_managed_session(tab_id):
     """Terminate a backend managed session and kill its process."""
-    data = request.json
-    tab_id = data.get('tab_id')
     user_id = session.get('user_id') or ('admin' if os.environ.get('BYPASS_AUTH_FOR_TESTING') == 'true' else None)
-    
+
     if not tab_id:
-        return jsonify({"error": "Tab ID required"}), 400
-        
+        return jsonify({"error": "Tab ID required"}), 400        
     session_obj = session_manager.remove_session(tab_id, user_id)
     if session_obj:
         logger.info(f"Terminating managed session {tab_id}")
