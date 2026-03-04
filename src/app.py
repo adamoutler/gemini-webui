@@ -781,10 +781,30 @@ def rotate_instance_key():
 @app.route('/api/keys/text', methods=['POST'])
 @authenticated_only
 def add_ssh_key_text():
+    if request.content_length and request.content_length > 10 * 1024:
+        return jsonify({"status": "error", "message": "Payload too large"}), 400
+
     data = request.json
-    name = secure_filename(data.get('name'))
+    if not isinstance(data, dict):
+        return jsonify({"status": "error", "message": "Invalid JSON payload"}), 400
+
+    raw_name = data.get('name')
+    if not isinstance(raw_name, str):
+        return jsonify({"status": "error", "message": "Invalid name format"}), 400
+
+    name = secure_filename(raw_name)
     key_text = data.get('key')
-    if not name or not key_text: return jsonify({"status": "error", "message": "Name and key are required"}), 400
+    
+    if not name or not key_text:
+        return jsonify({"status": "error", "message": "Name and key are required"}), 400
+        
+    if not isinstance(key_text, str) or len(key_text) > 10 * 1024:
+        return jsonify({"status": "error", "message": "Invalid key format or size"}), 400
+
+    valid_prefixes = ('-----BEGIN ', 'ssh-', 'ecdsa-')
+    if not any(key_text.lstrip().startswith(prefix) for prefix in valid_prefixes):
+        return jsonify({"status": "error", "message": "Invalid SSH key format"}), 400
+
     if not key_text.endswith('\n'): key_text += '\n'
     _, _, ssh_dir = get_config_paths()
     save_path = os.path.join(ssh_dir, name)
@@ -795,6 +815,9 @@ def add_ssh_key_text():
 @app.route('/api/keys/upload', methods=['POST'])
 @authenticated_only
 def upload_ssh_key():
+    if request.content_length and request.content_length > 10 * 1024:
+        return jsonify({"status": "error", "message": "Payload too large"}), 400
+
     if 'file' not in request.files:
         return jsonify({"status": "error", "message": "No file part"}), 400
     file = request.files['file']
@@ -805,9 +828,23 @@ def upload_ssh_key():
     if not filename:
         return jsonify({"status": "error", "message": "Invalid filename"}), 400
         
+    key_content = file.read(10 * 1024 + 1)
+    if len(key_content) > 10 * 1024:
+        return jsonify({"status": "error", "message": "File too large"}), 400
+
+    try:
+        key_text = key_content.decode('utf-8')
+    except UnicodeDecodeError:
+        return jsonify({"status": "error", "message": "Invalid file encoding"}), 400
+
+    valid_prefixes = ('-----BEGIN ', 'ssh-', 'ecdsa-')
+    if not any(key_text.lstrip().startswith(prefix) for prefix in valid_prefixes):
+        return jsonify({"status": "error", "message": "Invalid SSH key format"}), 400
+
     _, _, ssh_dir = get_config_paths()
     save_path = os.path.join(ssh_dir, filename)
-    file.save(save_path)
+    with open(save_path, 'wb') as f:
+        f.write(key_content)
     # Check if the file is a private key or a public key by looking at extension.
     # Public keys don't need strict permissions, but giving them 600 is fine.
     os.chmod(save_path, 0o600)
