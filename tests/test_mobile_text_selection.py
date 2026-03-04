@@ -109,3 +109,59 @@ def test_mobile_quick_tap_focus(mobile_page):
     # Verify textarea is focused (it should happen after touchend)
     textarea = mobile_page.locator("textarea.xterm-helper-textarea")
     expect(textarea.first).to_be_focused(timeout=5000)
+
+@pytest.mark.timeout(20)
+def test_mobile_text_selection_sanitization(mobile_page):
+    """Verify that the mobile text selection overlay strips box characters and trailing whitespace."""
+    # Ensure launcher is loaded
+    mobile_page.wait_for_selector(".launcher", timeout=10000)
+    
+    # Click "Start New" specifically in the launcher connection card
+    start_new_btn = mobile_page.locator(".connection-card .primary:has-text('Start New')").first
+    start_new_btn.click()
+    
+    # Wait for terminal instance to be created
+    mobile_page.wait_for_selector(".terminal-instance", timeout=10000)
+    
+    # Wait for terminal buffer to contain rendered text
+    mobile_page.wait_for_function("""() => {
+        const terminal = document.querySelector('.terminal-instance');
+        return terminal && terminal.textContent.trim().length > 0;
+    }""", timeout=10000)
+    
+    # Inject text with box characters and trailing spaces directly via xterm.write
+    mobile_page.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            tab.term.write('BOX\\u2500CHAR   \\r\\n');
+        }
+    }""")
+    
+    # Wait for the injection to process
+    mobile_page.wait_for_timeout(500)
+    
+    # Trigger a touchstart event to populate the overlay by tapping on it
+    proxy = mobile_page.locator(".mobile-scroll-proxy").first
+    proxy_box = proxy.bounding_box()
+    mobile_page.touchscreen.tap(proxy_box["x"] + 10, proxy_box["y"] + 10)
+    
+    # Check if the overlay now has the injected text
+    overlay = mobile_page.locator(".mobile-selection-overlay").first
+    expect(overlay).to_contain_text("BOX", timeout=5000)
+    text_content = overlay.text_content()
+    
+    assert text_content is not None
+    
+    # Assert that box drawing characters are removed (replaced by space or empty string)
+    assert "\u2500" not in text_content
+    # Depending on exactly how app.js replaces it, it's either empty string or space. 
+    # In app.js: `.replace(/[\u2500-\u257F]/g, ' ')` so it becomes a space.
+    assert "BOX CHAR" in text_content
+    
+    # Assert no line ends with trailing spaces
+    lines = text_content.split("\\n")
+    for line in lines:
+        if line.startswith("BOX"):
+            # The line should not end with spaces
+            assert not line.endswith(" "), f"Line has trailing spaces: '{line}'"
+
