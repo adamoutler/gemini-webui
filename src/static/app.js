@@ -265,7 +265,7 @@
                     const dirContext = shortDir ? `<span style="color: #0dbc79; font-weight: bold; margin-right: 5px;">[${shortDir}]</span>` : '';
                     const lastSeenDate = s.last_active ? new Date(s.last_active * 1000).toLocaleString() : 'Unknown';
                     html += `
-                        <div class="session-item" style="background: #252526; margin-bottom: 8px; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
+                        <div id="managed-session-${s.tab_id}" class="session-item" style="background: #252526; margin-bottom: 8px; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
                             <div class="session-info">
                                 <div style="color: #3b8eea; font-weight: bold; font-size: 14px; margin-bottom: 2px;">${dirContext}${s.title}</div>
                                 <div style="color: #888; font-size: 11px; display: flex; align-items: center; gap: 8px;">
@@ -487,19 +487,26 @@
         async function terminateBackendSession(launcherTabId, tabId) {
             if (!confirm(`Are you sure you want to terminate this backend session? Any unsaved work in the terminal will be lost.`)) return;
             try {
-                const response = await fetch('/api/management/sessions/terminate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tab_id: tabId })
+                const response = await fetch(`/api/management/sessions/${tabId}`, {
+                    method: 'DELETE',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    }
                 });
                 if (response.ok) {
-                    // Refresh only the backend session list instead of the whole launcher
+                    const row = document.getElementById(`managed-session-${tabId}`);
+                    if (row) row.remove();
+                    // Optional: refresh from backend to ensure consistent state
                     refreshBackendSessionsList(launcherTabId);
                 } else {
                     const data = await response.json();
                     alert("Termination failed: " + (data.error || "Unknown error"));
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e);
+                alert("Termination failed: " + e.message);
+            }
         }
 
         function reclaimBackendSession(id, tabId, title, session) {
@@ -1684,6 +1691,30 @@
                     } else {
                         alert(`${successCount} files uploaded successfully`);
                     }
+                }
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const fileTransferModal = document.getElementById('file-transfer-modal');
+                const dropZone = document.querySelector('.drop-zone');
+                if ((fileTransferModal && fileTransferModal.style.display === 'block') || (dropZone && dropZone.classList.contains('active'))) {
+                    if (fileTransferModal) closeFileTransfer();
+                    if (dropZone) dropZone.classList.remove('active');
+                    return;
+                }
+
+                const settingsModal = document.getElementById('settings-modal');
+                if (settingsModal && settingsModal.style.display === 'block') {
+                    closeSettings();
+                    return;
+                }
+
+                const activeTab = tabs.find(t => t.id === activeTabId);
+                if (activeTab && activeTab.state === 'launcher' && tabs.length > 1) {
+                    closeTab(activeTabId);
+                    return;
                 }
             }
         });
