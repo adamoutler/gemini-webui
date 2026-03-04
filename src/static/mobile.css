@@ -52,6 +52,9 @@
 .is-mobile .modal-content { width: 98% !important; margin: 10px auto !important; padding: 10px !important; }
 
 /* Mobile Controls overrides */
+/* WARNING: DO NOT add `touch-action: none`, `touch-action: pan-x pan-y`, or `overscroll-behavior: none` to `#toolbar` or `#tab-bar`.
+   Doing so will block the native mobile pull-to-refresh gesture.
+   See Kanban ticket GEMWE-54 (REGRESSION: Fix pull-to-refresh on mobile top toolbar). */
 .is-mobile #toolbar { padding: 5px; gap: 5px; flex-wrap: wrap; }
 .is-mobile #tab-bar { }
 .is-mobile #active-connection-info { gap: 5px; }
