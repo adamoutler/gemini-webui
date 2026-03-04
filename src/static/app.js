@@ -230,6 +230,41 @@
             saveTabsToStorage();
         }
 
+        function refreshBackendSessionsList(id) {
+            const listEl = document.getElementById(`${id}_backend_sessions`);
+            if (!listEl) return; // Tab closed or switched
+            
+            fetch('/api/management/sessions').then(r => r.json()).then(sessions => {
+                if (!sessions || sessions.length === 0) {
+                    listEl.innerHTML = '<div style="padding: 10px; color: #444; font-size: 11px;">No detached sessions found on the server.</div>';
+                    return;
+                }
+                let html = '';
+                sessions.forEach(s => {
+                    const statusColor = s.is_orphaned ? '#888' : '#0dbc79';
+                    const statusLabel = s.is_orphaned ? 'Orphaned' : 'Active';
+                    const shortDir = s.ssh_dir ? s.ssh_dir.split('/').pop() : '';
+                    const dirContext = shortDir ? `<span style="color: #0dbc79; font-weight: bold; margin-right: 5px;">[${shortDir}]</span>` : '';
+                    html += `
+                        <div class="session-item" style="background: #252526; margin-bottom: 8px; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
+                            <div class="session-info">
+                                <div style="color: #3b8eea; font-weight: bold; font-size: 14px; margin-bottom: 2px;">${dirContext}${s.title}</div>
+                                <div style="color: #888; font-size: 11px; display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: ${statusColor}; font-weight: bold; display: flex; align-items: center; gap: 4px;">
+                                        <span style="font-size: 14px;">●</span> ${statusLabel}
+                                    </span> 
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="small primary" style="padding: 6px 12px;" onclick="reclaimBackendSession('${id}', '${s.tab_id}', '${s.title}', ${JSON.stringify(s).replace(/"/g, '&quot;')})">Reclaim</button>
+                                <button class="small danger" style="padding: 6px 12px;" onclick="terminateBackendSession('${id}', '${s.tab_id}')">Terminate</button>
+                            </div>
+                        </div>`;
+                });
+                listEl.innerHTML = html;
+            }).catch(e => console.error("Session fetch failed", e));
+        }
+
         async function renderLauncher(id) {
             const config = await (await fetch('/api/config')).json();
             const container = document.getElementById(id + '_instance');
@@ -279,47 +314,12 @@
                     </div>
                 </div>`;
 
-            const refreshManagedSessions = () => {
-                const listEl = document.getElementById(`${id}_backend_sessions`);
-                if (!listEl) return; // Tab closed or switched
-                
-                fetch('/api/management/sessions').then(r => r.json()).then(sessions => {
-                    if (!sessions || sessions.length === 0) {
-                        listEl.innerHTML = '<div style="padding: 10px; color: #444; font-size: 11px;">No detached sessions found on the server.</div>';
-                        return;
-                    }
-                    let html = '';
-                    sessions.forEach(s => {
-                        const statusColor = s.is_orphaned ? '#888' : '#0dbc79';
-                        const statusLabel = s.is_orphaned ? 'Orphaned' : 'Active';
-                        const shortDir = s.ssh_dir ? s.ssh_dir.split('/').pop() : '';
-                        const dirContext = shortDir ? `<span style="color: #0dbc79; font-weight: bold; margin-right: 5px;">[${shortDir}]</span>` : '';
-                        html += `
-                            <div class="session-item" style="background: #252526; margin-bottom: 8px; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;">
-                                <div class="session-info">
-                                    <div style="color: #3b8eea; font-weight: bold; font-size: 14px; margin-bottom: 2px;">${dirContext}${s.title}</div>
-                                    <div style="color: #888; font-size: 11px; display: flex; align-items: center; gap: 8px;">
-                                        <span style="color: ${statusColor}; font-weight: bold; display: flex; align-items: center; gap: 4px;">
-                                            <span style="font-size: 14px;">●</span> ${statusLabel}
-                                        </span> 
-                                    </div>
-                                </div>
-                                <div style="display: flex; gap: 8px;">
-                                    <button class="small primary" style="padding: 6px 12px;" onclick="reclaimBackendSession('${id}', '${s.tab_id}', '${s.title}', ${JSON.stringify(s).replace(/"/g, '&quot;')})">Reclaim</button>
-                                    <button class="small danger" style="padding: 6px 12px;" onclick="terminateBackendSession('${id}', '${s.tab_id}')">Terminate</button>
-                                </div>
-                            </div>`;
-                    });
-                    listEl.innerHTML = html;
-                }).catch(e => console.error("Session fetch failed", e));
-            };
-
             // Initial fetch
-            refreshManagedSessions();
+            refreshBackendSessionsList(id);
             
             // Set up polling while this launcher is visible
             if (launcherRefreshInterval) clearInterval(launcherRefreshInterval);
-            launcherRefreshInterval = setInterval(refreshManagedSessions, 10000);
+            launcherRefreshInterval = setInterval(() => refreshBackendSessionsList(id), 10000);
 
             const hosts = await (await fetch('/api/hosts')).json();
             const connContainer = document.getElementById(id + '_connections');
@@ -470,8 +470,8 @@
                     body: JSON.stringify({ tab_id: tabId })
                 });
                 if (response.ok) {
-                    // Trigger a refresh of the launcher that called this
-                    renderLauncher(launcherTabId);
+                    // Refresh only the backend session list instead of the whole launcher
+                    refreshBackendSessionsList(launcherTabId);
                 } else {
                     const data = await response.json();
                     alert("Termination failed: " + (data.error || "Unknown error"));
@@ -1020,9 +1020,9 @@
                 // We don't re-render the whole launcher, just the dynamic parts if they exist
                 const refreshBtn = document.getElementById(`${id}_backend_sessions`);
                 if (refreshBtn) {
-                    // We need a way to call the refreshManagedSessions function. 
-                    // I'll re-render just to be safe and simple for now.
-                    renderLauncher(id);
+                    refreshBackendSessionsList(id);
+                    if (launcherRefreshInterval) clearInterval(launcherRefreshInterval);
+                    launcherRefreshInterval = setInterval(() => refreshBackendSessionsList(id), 10000);
                 }
             }
 
