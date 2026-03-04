@@ -2,6 +2,8 @@
 
 **The ultimate management interface for your Gemini AI, built for mobility and persistence.**
 
+![Gemini WebUI Address Bar and Interface](docs/images/addressBar-New-Settings-restart-files-tabs-actionrequiredtab-agenttext.png)
+
 Gemini WebUI provides a high-fidelity, persistent web interface for the Gemini CLI. Whether you are monitoring complex projects, executing long-running AI tasks, or interacting with remote host machines, Gemini WebUI delivers a seamless experience across all your devices.
 
 ## 🚀 Key Features
@@ -14,6 +16,9 @@ Gemini WebUI provides a high-fidelity, persistent web interface for the Gemini C
     True cross-device persistence allows you to resume live sessions from your desktop directly on your phone or tablet without losing valuable context.
 *   **Seamless File Management**
     Upload files directly through the UI via intuitive drag-and-drop or dedicated buttons, making your data immediately available to the AI.
+    
+    ![File Transfer Screen](docs/images/file-transfer-screen.png)
+
 *   **Scoped Environments**
     Robust support for scoped development or per-app system administrator setups, ensuring secure and isolated AI environments tailored to your needs.
 *   **Easy Deployment**
@@ -40,6 +45,8 @@ Gemini WebUI is highly customizable to fit both stand-alone and enterprise envir
 ### Authentication Modes
 1.  **LDAP (Enterprise)**: If `LDAP_SERVER` is configured, it becomes the exclusive authentication method, perfect for corporate networks.
 2.  **Local Admin (Stand-alone)**: If LDAP is not configured, the application falls back to local authentication using `ADMIN_USER` and `ADMIN_PASS` (both default to `admin`).
+
+![Basic Authentication / Active Directory](docs/images/basic-auth-active-directory.png)
 
 ### Environment Variables
 
