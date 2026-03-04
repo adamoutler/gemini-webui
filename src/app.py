@@ -405,7 +405,9 @@ def pty_input(data):
         session_obj.last_seen = time.time()
         # Filter out terminal identification responses (DA) to prevent loops
         # e.g. \x1b[?1;2c or similar. These often get echoed back on reclaim.
-        input_data = data['input']
+        input_data = data.get('input', '')
+        if not input_data:
+            return
         if input_data.startswith('\x1b[?') and input_data.endswith('c'):
             return
         os.write(session_obj.fd, input_data.encode())

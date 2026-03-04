@@ -92,7 +92,6 @@ import pytest
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(20)
 def test_fresh_session_no_reclaim_warning(page, server):
-    pytest.skip("Skipping flaky playwright test")
     """Verify that a fresh session does not show 'Session not found' warning."""
     # Ensure launcher is loaded
     page.on("response", lambda r: print("RESPONSE:", r.url, r.status))
@@ -106,16 +105,28 @@ def test_fresh_session_no_reclaim_warning(page, server):
     # Wait for terminal to appear
     expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
     
-    # Give it a moment to initialize the socket and receive data
-    time.sleep(2)
-    
-    # Use evaluate to check xterm buffer content
+    # Wait for the welcome message to appear, which indicates successful connection
+    page.wait_for_function("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            let out = "";
+            for (let i = 0; i < 5; i++) {
+                const line = tab.term.buffer.active.getLine(i);
+                if (line) out += line.translateToString() + "\\n";
+            }
+            return out.includes("Welcome to Fake Gemini");
+        }
+        return false;
+    }""", timeout=10000)
+
+    # Now that we've received the welcome message, verify there's no reclaim warning
     content = page.evaluate("""() => {
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
             let out = "";
             for (let i = 0; i < 5; i++) {
-                out += tab.term.buffer.active.getLine(i).translateToString() + "\\n";
+                const line = tab.term.buffer.active.getLine(i);
+                if (line) out += line.translateToString() + "\\n";
             }
             return out;
         }
@@ -123,7 +134,6 @@ def test_fresh_session_no_reclaim_warning(page, server):
     }""")
     
     assert "Session not found on server" not in content
-    assert "Welcome to Fake Gemini" in content
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(20)
 def test_reload_triggers_reclaim(page, server):

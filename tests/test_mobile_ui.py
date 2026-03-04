@@ -29,31 +29,24 @@ def custom_server(tmp_path_factory):
     # Create mock script
     mock_dir = tmp_path_factory.mktemp("custom_mock")
     mock_script = mock_dir / "echo_gemini.sh"
-    mock_script_content = """#!/usr/bin/env python3
-import sys
-import os
+    mock_script_content = """#!/usr/bin/env bash
+if [[ "$*" == *"--list-sessions"* ]]; then
+    echo "Available sessions for this project (1):"
+    echo "  1. Mock Session (Just now) [mock-uuid]"
+    exit 0
+fi
 
-if "--list-sessions" in sys.argv:
-    print("Available sessions for this project (1):")
-    print("  1. Mock Session (Just now) [mock-uuid]")
-    sys.exit(0)
+if [[ "$*" == *"-r 1"* ]]; then
+    echo "MOCK_EXECUTED: -r 1"
+elif [[ "$*" == *"-r"* ]]; then
+    echo "MOCK_EXECUTED: -r"
+else
+    echo "MOCK_EXECUTED: $*"
+fi
 
-# Simulate what the test expects:
-if "-r" in sys.argv:
-    if "1" in sys.argv:
-        print("MOCK_EXECUTED: -r 1")
-    else:
-        print("MOCK_EXECUTED: -r")
-else:
-    print("MOCK_EXECUTED:", " ".join(sys.argv[1:]))
-sys.stdout.flush()
-
-while True:
-    line = sys.stdin.readline()
-    if not line:
-        break
-    print("You said:", line.strip())
-    sys.stdout.flush()
+while IFS= read -r line; do
+    echo "You said: $line"
+done
 """
     mock_script.write_text(mock_script_content)
     mock_script.chmod(mock_script.stat().st_mode | stat.S_IEXEC)
@@ -63,7 +56,8 @@ while True:
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
-    port = "5006"
+    import random
+    port = str(random.randint(6000, 9000))
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
     env["DATA_DIR"] = str(data_dir)
@@ -140,41 +134,44 @@ def test_mobile_controls_buttons(mobile_page):
 
 @pytest.mark.timeout(40)
 def test_mobile_resume_latest(custom_mobile_page):
-    pytest.skip("Skipping flaky playwright test")
     """Verify Resume Latest executes correct commands."""
     page = custom_mobile_page
-    
+
     # Wait for the launcher and session list to populate
     page.wait_for_selector(".launcher", state="attached", timeout=15000)
-    
+
     # Test Resume Latest
     page.click("button.success:has-text('Resume Latest')", timeout=10000)
     page.wait_for_selector(".terminal-instance", timeout=10000)
-    
-    # Wait for the mock output to appear via sleep, then evaluate
-    page.wait_for_timeout(3000)
-    content = page.evaluate("""() => {
-        const tab = tabs.find(t => t.id === activeTabId);
-        if (tab && tab.term) {
-            let out = "";
-            for (let i = 0; i < 15; i++) {
-                const line = tab.term.buffer.active.getLine(i);
-                if (line) out += line.translateToString() + "\\n";
+
+    # Wait for the mock output to appear
+    import time
+    start_time = time.time()
+    found = False
+    while time.time() - start_time < 15:
+        content = page.evaluate("""() => {
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (tab && tab.term) {
+                let out = "";
+                for (let i = 0; i < 15; i++) {
+                    const line = tab.term.buffer.active.getLine(i);
+                    if (line) out += line.translateToString() + "\\n";
+                }
+                return out;
             }
-            return out;
-        }
-        return "";
-    }""")
-    assert "MOCK_EXECUTED: -r" in content
+            return "";
+        }""")
+        if "MOCK_EXECUTED: -r" in content:
+            found = True
+            break
+        time.sleep(0.5)
+    
+    assert found, f"Expected 'MOCK_EXECUTED: -r' not found in terminal content: {content}"
 
 @pytest.mark.timeout(40)
 def test_mobile_resume_specific(custom_mobile_page):
-    pytest.skip("Skipping flaky playwright test")
     page = custom_mobile_page
     page.wait_for_selector(".launcher", state="attached", timeout=15000)
-    
-    # Give the session list a moment to render
-    page.wait_for_timeout(2000)
     
     # Find the specific Resume button for this session
     resume_buttons = page.locator("button.small:has-text('Resume')")
@@ -183,24 +180,38 @@ def test_mobile_resume_specific(custom_mobile_page):
     
     page.wait_for_selector(".terminal-instance", timeout=10000)
     
-    # Wait for the terminal to connect
-    page.wait_for_function("() => { const tab = tabs.find(t => t.id === activeTabId); return tab && tab.term && tab.term.buffer.active.getLine(0) && tab.term.buffer.active.getLine(0).translateToString().includes('Connected'); }", timeout=5000)
+    import time
+    start_time = time.time()
+    connected = False
+    while time.time() - start_time < 5:
+        content = page.evaluate("() => { const tab = tabs.find(t => t.id === activeTabId); return (tab && tab.term && tab.term.buffer.active.getLine(0)) ? tab.term.buffer.active.getLine(0).translateToString() : ''; }")
+        if 'Connected' in content:
+            connected = True
+            break
+        time.sleep(0.5)
     
     # The command should contain `-r 1` because the mock script session id is 1
-    page.wait_for_timeout(2000)
-    content2 = page.evaluate("""() => {
-        const tab = tabs.find(t => t.id === activeTabId);
-        if (tab && tab.term) {
-            let out = "";
-            for (let i = 0; i < 5; i++) {
-                const line = tab.term.buffer.active.getLine(i);
-                if (line) out += line.translateToString() + "\\n";
+    start_time = time.time()
+    found = False
+    while time.time() - start_time < 15:
+        content2 = page.evaluate("""() => {
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (tab && tab.term) {
+                let out = "";
+                for (let i = 0; i < 5; i++) {
+                    const line = tab.term.buffer.active.getLine(i);
+                    if (line) out += line.translateToString() + "\\n";
+                }
+                return out;
             }
-            return out;
-        }
-        return "";
-    }""")
-    assert "MOCK_EXECUTED: -r 1" in content2
+            return "";
+        }""")
+        if "MOCK_EXECUTED: -r 1" in content2:
+            found = True
+            break
+        time.sleep(0.5)
+
+    assert found, f"Expected 'MOCK_EXECUTED: -r 1' not found in terminal content: {content2}"
 
 @pytest.mark.timeout(20)
 def test_mobile_keyboard_scroll_prevention(mobile_page):
