@@ -660,15 +660,29 @@
                                     }
                                     
                                     // Populate selection overlay with visible terminal text
-                                    selectionOverlay.style.top = proxy.scrollTop + 'px';
                                     let cellHeight = 16;
                                     if (tab.term._core && tab.term._core._renderService && tab.term._core._renderService.dimensions) {
                                         cellHeight = tab.term._core._renderService.dimensions.css.cell.height;
                                     }
                                     selectionOverlay.style.lineHeight = cellHeight + 'px';
-                                    selectionOverlay.style.paddingTop = '0px';
                                     selectionOverlay.style.fontSize = tab.term.options.fontSize + 'px';
                                     selectionOverlay.style.fontFamily = tab.term.options.fontFamily;
+                                    
+                                    const screenElement = termDiv.querySelector('.xterm-screen');
+                                    let offsetTop = 0;
+                                    let offsetLeft = 0;
+                                    if (screenElement) {
+                                        const screenBox = screenElement.getBoundingClientRect();
+                                        const proxyBox = proxy.getBoundingClientRect();
+                                        offsetTop = screenBox.top - proxyBox.top;
+                                        offsetLeft = screenBox.left - proxyBox.left;
+                                        selectionOverlay.style.width = screenElement.offsetWidth + 'px';
+                                    } else {
+                                        selectionOverlay.style.width = '100%';
+                                    }
+                                    selectionOverlay.style.paddingTop = '0px';
+                                    selectionOverlay.style.left = offsetLeft + 'px';
+                                    selectionOverlay.style.top = (proxy.scrollTop + offsetTop) + 'px';
                                     
                                     const buffer = tab.term.buffer.active;
                                     const startRow = buffer.viewportY;

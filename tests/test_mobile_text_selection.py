@@ -165,3 +165,87 @@ def test_mobile_text_selection_sanitization(mobile_page):
             # The line should not end with spaces
             assert not line.endswith(" "), f"Line has trailing spaces: '{line}'"
 
+@pytest.mark.timeout(20)
+def test_mobile_text_selection_alignment(mobile_page):
+    """Verify that the mobile text selection overlay styles and bounding boxes match xterm exactly."""
+    # Ensure launcher is loaded
+    mobile_page.wait_for_selector(".launcher", timeout=10000)
+    
+    # Click "Start New" specifically in the launcher connection card
+    start_new_btn = mobile_page.locator(".connection-card .primary:has-text('Start New')").first
+    start_new_btn.click()
+    
+    # Wait for terminal instance to be created
+    mobile_page.wait_for_selector(".terminal-instance", timeout=10000)
+    
+    # Inject 5 lines of text
+    mobile_page.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            tab.term.write('Line 1\\r\\nLine 2\\r\\nLine 3\\r\\nLine 4\\r\\nLine 5\\r\\n');
+        }
+    }""")
+    
+    # Wait for terminal buffer to contain rendered text
+    mobile_page.wait_for_function("""() => {
+        const terminal = document.querySelector('.terminal-instance');
+        return terminal && terminal.textContent.trim().length > 0;
+    }""", timeout=10000)
+    
+    # Trigger a touchstart event to populate the overlay by tapping on it
+    proxy = mobile_page.locator(".mobile-scroll-proxy").first
+    proxy_box = proxy.bounding_box()
+    mobile_page.touchscreen.tap(proxy_box["x"] + 10, proxy_box["y"] + 10)
+    
+    # Ensure overlay has text content
+    mobile_page.wait_for_function("""() => {
+        const overlay = document.querySelector('.mobile-selection-overlay');
+        return overlay && overlay.textContent.trim().length > 0;
+    }""", timeout=5000)
+    
+    # Compare dimensions and bounding boxes
+    alignment_data = mobile_page.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        const term = tab.term;
+        const overlay = document.querySelector('.mobile-selection-overlay');
+        const proxy = document.querySelector('.mobile-scroll-proxy');
+        
+        const cell = term._core._renderService.dimensions.css.cell;
+        const overlayStyle = window.getComputedStyle(overlay);
+        
+        // Let's grab the screen element to check position
+        const screen = document.querySelector('.xterm-screen');
+        const screenBox = screen ? screen.getBoundingClientRect() : null;
+        const overlayBox = overlay.getBoundingClientRect();
+        
+        return {
+            cellHeight: cell.height,
+            cellWidth: cell.width,
+            termFontFamily: term.options.fontFamily,
+            termFontSize: term.options.fontSize,
+            overlayLineHeight: parseFloat(overlayStyle.lineHeight),
+            overlayFontSize: parseFloat(overlayStyle.fontSize),
+            overlayFontFamily: overlayStyle.fontFamily,
+            overlayTop: overlayStyle.top,
+            proxyScrollTop: proxy.scrollTop,
+            screenBox: screenBox,
+            overlayBox: overlayBox,
+            termLetterSpacing: term.options.letterSpacing || 0,
+            overlayLetterSpacing: overlayStyle.letterSpacing
+        };
+    }""")
+    
+    print("Alignment Data:", alignment_data)
+    
+    # Check that line height matches the calculated cell height from xterm
+    assert abs(alignment_data["overlayLineHeight"] - alignment_data["cellHeight"]) < 1.0
+    
+    # Check that font size matches
+    assert abs(alignment_data["overlayFontSize"] - alignment_data["termFontSize"]) < 1.0
+
+    # Bounding boxes should match exactly (with 1px tolerance)
+    if alignment_data["screenBox"]:
+        assert abs(alignment_data["screenBox"]["top"] - alignment_data["overlayBox"]["top"]) <= 1.0
+        assert abs(alignment_data["screenBox"]["left"] - alignment_data["overlayBox"]["left"]) <= 1.0
+
+
