@@ -13,7 +13,7 @@ class Session:
         self.ssh_target = ssh_target
         self.ssh_dir = ssh_dir
         self.resume = resume
-        self.decoder = codecs.getincrementaldecoder('utf-8')()
+        self.decoder = codecs.getincrementaldecoder('utf-8')(errors='replace')
         self.buffer = collections.deque() # Store chunks
         self.buffer_len = 0 # Track total string length
         self.max_buffer_len = 1024 * 256 # 256KB max scrollback
