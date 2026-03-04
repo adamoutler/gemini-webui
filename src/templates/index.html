@@ -19,12 +19,14 @@
 </head>
 <body>
     <div id="toolbar">
-        <button id="new-tab-btn" onclick="addNewTab()">+ New</button>
-        <div id="active-connection-info" style="display: none; align-items: center; gap: 10px;">
-            <button onclick="restartActiveTab()">Restart</button>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="new-tab-btn" onclick="addNewTab()">+ New</button>
+            <button onclick="openSettings()" style="background: #5c3b77;">Settings</button>
         </div>
-        <button onclick="openSettings()" style="background: #2472c8; margin-left: 10px;">Settings</button>
-        <button onclick="openFileTransfer()" style="background: #2472c8; margin-left: 10px;">Files</button>
+        <div id="active-connection-info" style="display: none; align-items: center; gap: 10px; border-left: 1px solid #555; padding-left: 10px;">
+            <button onclick="restartActiveTab()">Restart</button>
+            <button onclick="openFileTransfer()" style="background: #2472c8;">Files</button>
+        </div>
         <div id="connection-status" style="margin-left: auto; color: #0dbc79; font-weight: bold; font-family: monospace; padding: 5px 10px;"></div>
     </div>
     <div id="tab-bar"></div>

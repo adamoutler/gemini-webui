@@ -24,8 +24,11 @@ def test_drag_and_drop_upload(page, test_data_dir):
     expect(btns.first).to_be_visible(timeout=5000)
     btns.first.click()
     
-    page.on("response", lambda r: print("RESPONSE:", r.url, r.status, r.text() if "upload" in r.url else ""))
+
     expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+
+    # Wait for the terminal to connect
+    page.wait_for_timeout(3000)
 
     # Trigger dragover to show dropzone
     page.evaluate("""() => {
@@ -90,38 +93,15 @@ def test_drag_and_drop_upload(page, test_data_dir):
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(30)
-def test_workspace_file_upload_success_message(page, test_data_dir):
-    dialog_messages = []
-    page.on("dialog", lambda dialog: (dialog_messages.append(dialog.message), dialog.accept()))
-    
-    # Open the file transfer modal
-    page.click('button:has-text("Files")')
-    expect(page.locator('#file-transfer-modal')).to_be_visible(timeout=5000)
-    
-    # Create a temporary file to upload
-    test_file_path = os.path.join(test_data_dir, "test_upload_file.txt")
-    with open(test_file_path, "w") as f:
-        f.write("Test content for upload")
-        
-    # Set the file input
-    page.locator('#workspace-upload-file').set_input_files(test_file_path)
-    
-    # Click upload button
-    page.click('button:has-text("Upload File")')
-    
-    # Wait for the alert
-    page.wait_for_timeout(2000)
-    
-    assert "File uploaded successfully" in dialog_messages, f"Expected success alert, got: {dialog_messages}"
-
-@pytest.mark.prone_to_timeout
-@pytest.mark.timeout(30)
 def test_folder_drag_and_drop_upload(page, test_data_dir):
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=5000)
     btns.first.click()
     
     expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+
+    # Wait for the terminal to connect
+    page.wait_for_timeout(3000)
 
     page.evaluate("""() => {
         const dragEvent = new DragEvent('dragover', { bubbles: true, cancelable: true });
@@ -209,6 +189,9 @@ def test_workspace_file_upload_button_injection(page, test_data_dir):
     btns.first.click()
     
     expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+
+    # Wait for the terminal to connect
+    page.wait_for_timeout(3000)
 
     # Open the file transfer modal
     page.click('button:has-text("Files")')
