@@ -11,6 +11,8 @@ def run_fake_gemini():
         line = sys.stdin.readline()
         if not line:
             break
+        print(f"RAW_LINE_RECEIVED: {repr(line)}")
+        sys.stdout.flush()
         line = line.strip()
         
         if "Remember this TEST_VALUE:" in line:
@@ -23,6 +25,9 @@ def run_fake_gemini():
                 print(f"The TEST_VALUE is {memory['TEST_VALUE']}")
             else:
                 print("I don't know the TEST_VALUE.")
+            sys.stdout.flush()
+        elif "\x1b" in line:
+            print(f"ALT_ENTER_RECEIVED: {repr(line)}")
             sys.stdout.flush()
         elif "EXIT" in line:
             break

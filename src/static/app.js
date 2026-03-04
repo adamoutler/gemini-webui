@@ -984,7 +984,13 @@
                     }
                 }
             });
-            tab.term.onKey((e) => { if (e.domEvent.ctrlKey && e.domEvent.key === 'Enter') if (tab.socket) tab.socket.emit('pty-input', {input: '\x1b\r'}); });
+            tab.term.attachCustomKeyEventHandler((e) => {
+                if (e.type === 'keydown' && e.ctrlKey && e.key === 'Enter') {
+                    if (tab.socket) tab.socket.emit('pty-input', {input: '\x1b\r'});
+                    return false;
+                }
+                return true;
+            });
             renderTabs(); switchTab(tabId);
         }
 

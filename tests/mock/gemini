@@ -31,6 +31,11 @@ while True:
     line = sys.stdin.readline()
     if not line:
         break
+    
+    if "\x1b" in line:
+        print(f"ALT_ENTER_RECEIVED: {repr(line)}")
+        sys.stdout.flush()
+
     line = line.strip()
     
     if "Remember this TEST_VALUE:" in line:
