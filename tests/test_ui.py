@@ -263,3 +263,64 @@ def test_ui_backend_session_details_display(page, server):
     expect(session_item.locator('.session-last-seen-display')).to_be_visible(timeout=5000)
     expect(session_item.locator('.session-last-seen-display')).to_contain_text("Last seen: ")
 
+@pytest.mark.prone_to_timeout
+@pytest.mark.timeout(20)
+def test_ui_title_flashing_on_action_required(page):
+    """Verify that document.title flashes when action is required and stops on focus."""
+    page.locator('#new-tab-btn').click()
+    btns = page.locator('.tab-instance.active button:has-text("Start New")')
+    expect(btns.first).to_be_visible(timeout=5000)
+    btns.first.click()
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+
+    # Initial title should not have ✋
+    initial_title = page.evaluate("document.title")
+    assert "✋" not in initial_title
+    
+    # Override document.hasFocus to return false for the test, then change title
+    page.evaluate("""() => {
+        document.hasFocus = () => false;
+        window.dispatchEvent(new Event('blur'));
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            // Trigger title change
+            tab.term._core._onTitleChange.fire("✋ Action needed");
+        }
+    }""")
+    
+    titles_seen = set()
+    for _ in range(4):
+        titles_seen.add(page.evaluate("document.title"))
+        time.sleep(0.6)
+        
+    assert "⚠️ Action Required! ✋" in titles_seen
+    
+    # Now simulate focus
+    page.evaluate("""() => {
+        document.hasFocus = () => true;
+        window.dispatchEvent(new Event('focus'));
+    }""")
+    time.sleep(0.5)
+    
+    focused_titles_seen = set()
+    for _ in range(3):
+        focused_titles_seen.add(page.evaluate("document.title"))
+        time.sleep(0.6)
+        
+    assert len(focused_titles_seen) == 1
+    assert "⚠️ Action Required! ✋" not in focused_titles_seen
+    assert "✋" in list(focused_titles_seen)[0]
+
+    # Remove the emoji
+    page.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            tab.term._core._onTitleChange.fire("Normal Title");
+        }
+    }""")
+    time.sleep(0.5)
+    final_title = page.evaluate("document.title")
+    assert "✋" not in final_title
+    assert "⚠️ Action Required! ✋" not in final_title
+
+

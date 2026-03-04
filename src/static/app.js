@@ -109,28 +109,41 @@
         function updatePageTitle() {
             updateWakeLock();
             const hasActionRequired = tabs.some(t => t.title && t.title.includes('✋'));
-            const newTitle = hasActionRequired ? '✋ Gemini WebUI' : originalPageTitle;
+            const baseTitle = hasActionRequired ? '✋ Gemini WebUI' : originalPageTitle;
             
-            if (document.title !== newTitle) {
-                document.title = newTitle;
-                
-                // Flash the title once if window is not focused and action is required
-                if (hasActionRequired && document.visibilityState !== 'visible') {
-                    const tempTitle = 'ACTION REQUIRED';
-                    let flashCount = 0;
-                    if (titleFlashInterval) clearInterval(titleFlashInterval);
-                    
-                    titleFlashInterval = setInterval(() => {
-                        document.title = (document.title === newTitle) ? tempTitle : newTitle;
-                        flashCount++;
-                        if (flashCount >= 2) { // Flash once (to temp and back)
-                            clearInterval(titleFlashInterval);
-                            document.title = newTitle;
-                        }
-                    }, 500);
+            if (!hasActionRequired) {
+                if (titleFlashInterval) {
+                    clearInterval(titleFlashInterval);
+                    titleFlashInterval = null;
+                }
+                document.title = baseTitle;
+            } else {
+                if (!document.hasFocus()) {
+                    if (!titleFlashInterval) {
+                        document.title = baseTitle;
+                        const tempTitle = '⚠️ Action Required! ✋';
+                        titleFlashInterval = setInterval(() => {
+                            document.title = (document.title === baseTitle) ? tempTitle : baseTitle;
+                        }, 1000);
+                    }
+                } else {
+                    if (titleFlashInterval) {
+                        clearInterval(titleFlashInterval);
+                        titleFlashInterval = null;
+                    }
+                    document.title = baseTitle;
                 }
             }
         }
+
+        window.addEventListener('focus', () => {
+            if (titleFlashInterval) {
+                clearInterval(titleFlashInterval);
+                titleFlashInterval = null;
+                const hasActionRequired = tabs.some(t => t.title && t.title.includes('✋'));
+                document.title = hasActionRequired ? '✋ Gemini WebUI' : originalPageTitle;
+            }
+        });
 
         function saveTabsToStorage() {
             const data = tabs.map(t => ({
