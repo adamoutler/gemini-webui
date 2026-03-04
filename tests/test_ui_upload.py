@@ -39,14 +39,21 @@ def test_drag_and_drop_upload(page, test_data_dir):
     # Trigger drop
     page.evaluate("""() => {
         const file = new File(["dropped content"], "drop_test.txt", { type: 'text/plain' });
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
         
-        const dropEvent = new DragEvent('drop', {
-            dataTransfer: dataTransfer,
-            bubbles: true,
-            cancelable: true
-        });
+        const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
+        dropEvent.dataTransfer = {
+            items: [
+                {
+                    webkitGetAsEntry: () => ({
+                        isFile: true,
+                        isDirectory: false,
+                        name: 'drop_test.txt',
+                        file: (cb) => cb(file)
+                    })
+                }
+            ],
+            files: [file]
+        };
         document.dispatchEvent(dropEvent);
     }""")
 
@@ -106,3 +113,89 @@ def test_workspace_file_upload_success_message(page, test_data_dir):
     page.wait_for_timeout(2000)
     
     assert "File uploaded successfully" in dialog_messages, f"Expected success alert, got: {dialog_messages}"
+
+@pytest.mark.prone_to_timeout
+@pytest.mark.timeout(30)
+def test_folder_drag_and_drop_upload(page, test_data_dir):
+    btns = page.locator('.tab-instance.active button:has-text("Start New")')
+    expect(btns.first).to_be_visible(timeout=5000)
+    btns.first.click()
+    
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+
+    page.evaluate("""() => {
+        const dragEvent = new DragEvent('dragover', { bubbles: true, cancelable: true });
+        document.dispatchEvent(dragEvent);
+    }""")
+    
+    expect(page.locator('.drop-zone')).to_have_class('drop-zone active')
+
+    # Mock a drop event with webkitGetAsEntry simulating a directory
+    page.evaluate("""() => {
+        const file1 = new File(["file1 content"], "file1.txt", { type: 'text/plain' });
+        const file2 = new File(["file2 content"], "file2.txt", { type: 'text/plain' });
+        
+        const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
+        dropEvent.dataTransfer = {
+            items: [
+                {
+                    webkitGetAsEntry: () => ({
+                        isDirectory: true,
+                        isFile: false,
+                        name: 'myfolder',
+                        createReader: () => ({
+                            readEntries: (cb) => cb([
+                                {
+                                    isDirectory: false,
+                                    isFile: true,
+                                    name: 'file1.txt',
+                                    file: (cb2) => cb2(file1)
+                                },
+                                {
+                                    isDirectory: true,
+                                    isFile: false,
+                                    name: 'subfolder',
+                                    createReader: () => ({
+                                        readEntries: (cb3) => cb3([
+                                            {
+                                                isDirectory: false,
+                                                isFile: true,
+                                                name: 'file2.txt',
+                                                file: (cb4) => cb4(file2)
+                                            }
+                                        ])
+                                    })
+                                }
+                            ])
+                        })
+                    })
+                }
+            ],
+            files: [] 
+        };
+        
+        document.dispatchEvent(dropEvent);
+    }""")
+
+    expect(page.locator('.drop-zone')).not_to_have_class('drop-zone active')
+
+    page.wait_for_timeout(3000)
+    
+    content = page.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            let out = "";
+            for (let i = 0; i < 5; i++) {
+                const line = tab.term.buffer.active.getLine(i);
+                if (line) out += line.translateToString(true) + "\\n";
+            }
+            return out;
+        }
+        return "";
+    }""")
+    
+    assert "myfolder/subfolder/file2.txt" in content or "2 files including" in content, f"Expected indication of file2.txt uploaded or 2 files uploaded, got terminal content: {content}"
+    
+    # Check if files actually exist in test_data_dir
+    assert os.path.exists(os.path.join(test_data_dir, "myfolder", "file1.txt"))
+    assert os.path.exists(os.path.join(test_data_dir, "myfolder", "subfolder", "file2.txt"))

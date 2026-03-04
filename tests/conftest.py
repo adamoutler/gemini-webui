@@ -81,6 +81,7 @@ def client(test_data_dir):
     app.config['WTF_CSRF_ENABLED'] = False
     os.environ['BYPASS_AUTH_FOR_TESTING'] = 'true'
     os.environ['WTF_CSRF_ENABLED'] = 'false'
+    os.environ['DATA_DIR'] = str(test_data_dir)
     app.config['SECRET_KEY'] = 'test-secret-key'
     app.config['DATA_DIR'] = str(test_data_dir)
     

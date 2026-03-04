@@ -1589,33 +1589,84 @@
             e.preventDefault();
             dropZone.classList.remove('active');
 
-            if (e.dataTransfer.files.length > 0) {
-                const file = e.dataTransfer.files[0];
-                const formData = new FormData();
-                formData.append('file', file);
-                
-                try {
-                    const response = await fetch('/api/upload', {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                        },
-                        body: formData
-                    });
-                    const result = await response.json();
-                    if (result.status === 'success') {
-                        const tab = tabs.find(t => t.id === activeTabId);
-                        if (tab && tab.socket && tab.state === 'terminal') {
-                            tab.socket.emit('pty-input', {input: `> I uploaded @${result.filename} `});
-                            tab.term.focus();
-                        } else {
-                            alert('File uploaded successfully');
-                        }
+            async function traverseFileTree(item, path = '') {
+                return new Promise((resolve) => {
+                    if (item.isFile) {
+                        item.file((file) => {
+                            resolve([{ file, path: path + file.name }]);
+                        });
+                    } else if (item.isDirectory) {
+                        const dirReader = item.createReader();
+                        dirReader.readEntries(async (entries) => {
+                            let files = [];
+                            for (let i = 0; i < entries.length; i++) {
+                                const subFiles = await traverseFileTree(entries[i], path + item.name + "/");
+                                files = files.concat(subFiles);
+                            }
+                            resolve(files);
+                        });
                     } else {
-                        alert('Upload failed: ' + result.message);
+                        resolve([]);
                     }
-                } catch (err) {
-                    alert('Upload error: ' + err.message);
+                });
+            }
+
+            let allFiles = [];
+            if (e.dataTransfer.items) {
+                const promises = [];
+                for (let i = 0; i < e.dataTransfer.items.length; i++) {
+                    const item = e.dataTransfer.items[i].webkitGetAsEntry();
+                    if (item) {
+                        promises.push(traverseFileTree(item));
+                    }
+                }
+                const results = await Promise.all(promises);
+                allFiles = results.flat();
+            } else if (e.dataTransfer.files) {
+                for (let i = 0; i < e.dataTransfer.files.length; i++) {
+                    allFiles.push({ file: e.dataTransfer.files[i], path: e.dataTransfer.files[i].name });
+                }
+            }
+
+            if (allFiles.length > 0) {
+                let successCount = 0;
+                let lastFilename = '';
+                
+                for (const { file, path } of allFiles) {
+                    const formData = new FormData();
+                    formData.append('file', file, path);
+                    
+                    try {
+                        const response = await fetch('/api/upload', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                            },
+                            body: formData
+                        });
+                        const result = await response.json();
+                        if (result.status === 'success') {
+                            successCount++;
+                            lastFilename = result.filename;
+                        } else {
+                            alert(`Upload failed for ${path}: ` + result.message);
+                        }
+                    } catch (err) {
+                        alert(`Upload error for ${path}: ` + err.message);
+                    }
+                }
+                
+                if (successCount > 0) {
+                    const tab = tabs.find(t => t.id === activeTabId);
+                    if (tab && tab.socket && tab.state === 'terminal') {
+                        const msg = successCount > 1 ? `> I uploaded ${successCount} files including @${lastFilename} ` : `> I uploaded @${lastFilename} `;
+                        tab.socket.emit('pty-input', {input: msg});
+                        tab.term.focus();
+                    } else if (successCount === 1) {
+                        alert('File uploaded successfully');
+                    } else {
+                        alert(`${successCount} files uploaded successfully`);
+                    }
                 }
             }
         });
