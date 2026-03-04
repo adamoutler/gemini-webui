@@ -1651,11 +1651,15 @@
         document.body.appendChild(dropZone);
 
         document.addEventListener('dragover', (e) => {
+            const activeTab = tabs.find(t => t.id === activeTabId);
+            if (!activeTab || activeTab.state !== 'terminal') return;
             e.preventDefault();
             dropZone.classList.add('active');
         });
 
         document.addEventListener('dragleave', (e) => {
+            const activeTab = tabs.find(t => t.id === activeTabId);
+            if (!activeTab || activeTab.state !== 'terminal') return;
             e.preventDefault();
             if (e.target === dropZone || e.relatedTarget === null) {
                 dropZone.classList.remove('active');
@@ -1663,6 +1667,8 @@
         });
 
         document.addEventListener('drop', async (e) => {
+            const activeTab = tabs.find(t => t.id === activeTabId);
+            if (!activeTab || activeTab.state !== 'terminal') return;
             e.preventDefault();
             dropZone.classList.remove('active');
 

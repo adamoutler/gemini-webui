@@ -232,3 +232,51 @@ def test_workspace_file_upload_button_injection(page, test_data_dir):
     
     assert "test_upload_file2.txt" in content, "Uploaded file name not found in terminal output"
 
+@pytest.mark.prone_to_timeout
+@pytest.mark.timeout(30)
+def test_drag_and_drop_disabled_on_launcher(page):
+    # Ensure we are on the launcher screen
+    expect(page.locator('.launcher').first).to_be_visible(timeout=5000)
+
+    # Listen for requests to /api/upload to verify none are made
+    upload_requests = []
+    page.on("request", lambda request: upload_requests.append(request) if "/api/upload" in request.url else None)
+
+    # Trigger dragover
+    page.evaluate("""() => {
+        const dragEvent = new DragEvent('dragover', { bubbles: true, cancelable: true });
+        document.dispatchEvent(dragEvent);
+    }""")
+    
+    # Check dropzone is NOT active
+    expect(page.locator('.drop-zone')).not_to_have_class('drop-zone active', timeout=1000)
+
+    # Trigger drop
+    page.evaluate("""() => {
+        const file = new File(["dropped content"], "drop_test_launcher.txt", { type: 'text/plain' });
+        
+        const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
+        dropEvent.dataTransfer = {
+            items: [
+                {
+                    webkitGetAsEntry: () => ({
+                        isFile: true,
+                        isDirectory: false,
+                        name: 'drop_test_launcher.txt',
+                        file: (cb) => cb(file)
+                    })
+                }
+            ],
+            files: [file]
+        };
+        document.dispatchEvent(dropEvent);
+    }""")
+
+    # Check dropzone is STILL inactive
+    page.wait_for_timeout(1000)
+    expect(page.locator('.drop-zone')).not_to_have_class('drop-zone active', timeout=1000)
+    
+    # Ensure no upload API requests were triggered
+    assert len(upload_requests) == 0, "Upload API requests should not be made on the launcher screen"
+
+
