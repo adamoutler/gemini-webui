@@ -1,3 +1,5 @@
+import os
+import signal
 import time
 import collections
 import codecs
@@ -47,6 +49,26 @@ class SessionManager:
 
     def add_session(self, session):
         with self._lock:
+            user_sessions = [s for s in self.sessions.values() if s.user_id == session.user_id]
+            if len(user_sessions) >= 10:
+                user_sessions.sort(key=lambda s: s.last_seen)
+                while len(user_sessions) >= 10:
+                    oldest = user_sessions.pop(0)
+                    try:
+                        if oldest.fd is not None:
+                            os.close(oldest.fd)
+                    except OSError:
+                        pass
+                    try:
+                        if oldest.pid is not None:
+                            os.kill(oldest.pid, signal.SIGKILL)
+                            os.waitpid(oldest.pid, os.WNOHANG)
+                    except OSError:
+                        pass
+                    self.sessions.pop(oldest.tab_id, None)
+                    sid = self.tabid_to_sid.pop(oldest.tab_id, None)
+                    if sid:
+                        self.sid_to_tabid.pop(sid, None)
             self.sessions[session.tab_id] = session
 
     def get_session(self, tab_id, user_id=None):
