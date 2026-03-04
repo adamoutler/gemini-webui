@@ -1436,6 +1436,9 @@
             try {
                 const response = await fetch('/api/keys/upload', {
                     method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
                     body: formData
                 });
                 
@@ -1536,6 +1539,9 @@
             try {
                 const response = await fetch('/api/upload', {
                     method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
                     body: formData
                 });
                 const result = await response.json();
@@ -1591,6 +1597,9 @@
                 try {
                     const response = await fetch('/api/upload', {
                         method: 'POST',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                        },
                         body: formData
                     });
                     const result = await response.json();

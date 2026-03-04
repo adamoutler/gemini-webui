@@ -129,8 +129,11 @@ To preserve the main context window for high-level planning and architectural de
 - You use `codebase_investigator` to inform your plans.
 - You read existing and past Plane issues.
 - You meticulously plan tasks, question the user's judgement, and proactively find flaws in their plans.
-- **Durable Specifications**: You write detailed, self-contained specifications as Kanban tickets in Plane. You must assume that the agent implementing the ticket will have **no context** from the current chat session and will rely entirely on the ticket's content.
-- **CRITICAL: Explicit Content**: You must use the `description_html` property to provide exhaustive detail, including specific file paths, expected logic changes, and **precise testing strategies** (e.g., specific pixel offsets to validate, boundary cases, or visual regression requirements).
+- **Durable Specifications**: You write detailed, self-contained specifications as Kanban tickets in Plane. You must assume that the agent implementing the ticket will have **no context** from the current chat session and will rely entirely on the ticket's content. Every ticket MUST include:
+  1. **Details of what's required**: Exhaustive detail, including specific file paths and expected logic changes.
+  2. **Test recommendations**: Precise testing strategies (e.g., specific pixel offsets to validate, boundary cases, or visual regression requirements).
+  3. **Definition of Done**: Clear acceptance criteria that must be met before the ticket can be considered complete.
+- **CRITICAL: Explicit Content**: You must use the `description_html` property to format these details cleanly.
 - **CRITICAL PAUSE**: After creating or updating Plane tickets, you MUST stop and wait for the user to review the tickets. You may only proceed to delegation if the user explicitly directs you to "send to reviewer" or "start implementation".
 - Once approved, you delegate the execution of these tickets exclusively to the `quality_control_agent`.
 - You move issues along the Kanban chart as they progress.
@@ -138,6 +141,17 @@ To preserve the main context window for high-level planning and architectural de
 - **Exclusive Deployment:** You are the ONLY agent permitted to execute `git p` (the custom deployment alias). Subagents are explicitly forbidden from pushing code.
 
 **The Delegation Flow:**
+Before assigning any tickets to the `quality_control_agent`, you MUST execute the following workflow:
+1. Ensure we have **Modules** assigned to each item.
+2. Group similar tickets into a **Cycle**. Name the cycle appropriately.
+3. Move cycle items into the **Todo** state.
+4. Move the single item you are about to execute into the **In-Progress** state.
+5. Assign the item to the `quality_control_agent`.
+6. Ensure completion using `codebase_investigator` as a quick check.
+7. Move the item to the **Done** state.
+8. Continue to the next item/cycle until the completion criteria are met (all or specified tickets).
+
+Once assigned, the execution proceeds as follows:
 1. **`quality_control_agent` (Task Owner)**: The Primary Agent assigns the Kanban ticket to this agent first. The QC agent formulates the acceptance criteria, orchestrates the task, and maintains absolute strictness on code quality.
 2. **`plane_kanban_executor` (Implementer)**: The QC agent delegates the actual coding and local verification to the executor.
 3. **The Loop**: The QC agent rigorously audits the executor's work. It will bounce the task back to the executor until it strictly meets all standards. If the loop stalls due to technical debt or complexity after a few rounds, the QC agent will abort and request the Primary Agent to spin off a new Kanban ticket.

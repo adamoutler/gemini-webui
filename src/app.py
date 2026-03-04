@@ -873,22 +873,60 @@ def upload_file():
     if file.filename == '':
         return jsonify({"status": "error", "message": "No selected file"}), 400
     
-    filename = secure_filename(file.filename)
+    # preserve path structure if provided, otherwise fallback to standard secure_filename
+    original_filename = file.filename
+    if '/' in original_filename or '\\' in original_filename:
+        # replace backslashes and normalize
+        normalized_path = original_filename.replace('\\', '/')
+        # extract directories and secure each part
+        parts = [secure_filename(p) for p in normalized_path.split('/') if p]
+        filename = '/'.join(parts)
+    else:
+        filename = secure_filename(file.filename)
+        
     if not filename:
         return jsonify({"status": "error", "message": "Invalid filename"}), 400
 
     workspace_dir = os.environ.get("DATA_DIR", "/data")
-    os.makedirs(workspace_dir, exist_ok=True)
-    save_path = os.path.join(workspace_dir, filename)
+    
+    # Ensure save path is within workspace
+    base_path = os.path.abspath(workspace_dir)
+    save_path = os.path.abspath(os.path.join(base_path, filename))
+    if not save_path.startswith(base_path):
+        return jsonify({"status": "error", "message": "Access denied"}), 403
+        
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     file.save(save_path)
     return jsonify({"status": "success", "filename": filename})
 
-@app.route('/api/download/<filename>', methods=['GET'])
+@app.route('/api/download/<path:filename>', methods=['GET'])
 @authenticated_only
 def download_file(filename):
-    filename = secure_filename(filename)
     workspace_dir = os.environ.get("DATA_DIR", "/data")
-    return send_from_directory(workspace_dir, filename, as_attachment=True)
+    
+    # Securely resolve the path and prevent directory traversal
+    try:
+        # We need to securely join the filename to the workspace_dir
+        base_path = os.path.abspath(workspace_dir)
+        target_path = os.path.abspath(os.path.join(base_path, filename))
+        
+        # Verify the target_path starts with the base_path
+        if not target_path.startswith(base_path):
+            return jsonify({"status": "error", "message": "Access denied"}), 403
+            
+        if not os.path.isfile(target_path):
+            return jsonify({"status": "error", "message": f"File not found: {target_path}"}), 404
+            
+        # Get the directory and the actual filename to send
+        dir_name = os.path.dirname(target_path)
+        base_name = os.path.basename(target_path)
+        
+        print(f"DEBUG: sending {base_name} from {dir_name}")
+        return send_from_directory(dir_name, base_name, as_attachment=True)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/health')
 def health_check_root():
