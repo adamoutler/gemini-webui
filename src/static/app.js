@@ -1126,7 +1126,7 @@
 
         function triggerHapticFeedback() {
             if (navigator.vibrate) {
-                navigator.vibrate(15);
+                navigator.vibrate(5);
             }
         }
 
@@ -1657,7 +1657,10 @@
                 // Delay before repeating
                 timeoutId = setTimeout(() => {
                     // Repeat rate
-                    intervalId = setInterval(() => executeAction(e), 40);
+                    intervalId = setInterval(() => {
+                        triggerHapticFeedback();
+                        executeAction(e);
+                    }, 40);
                 }, 250);
             };
 

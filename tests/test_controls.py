@@ -133,7 +133,7 @@ def test_haptic_feedback(mobile_page):
     
     # Check if navigator.vibrate was called
     vibrated_params = mobile_page.evaluate("window.vibratedParams")
-    assert vibrated_params == [15], f"Expected navigator.vibrate(15) to be called, got {vibrated_params}"
+    assert vibrated_params == [5], f"Expected navigator.vibrate(5) to be called, got {vibrated_params}"
 
     # Test toggle button (Ctrl)
     # Reset mock array
@@ -146,7 +146,7 @@ def test_haptic_feedback(mobile_page):
     time.sleep(0.1)
     
     vibrated_params = mobile_page.evaluate("window.vibratedParams")
-    assert vibrated_params == [15], f"Expected navigator.vibrate(15) to be called for Ctrl toggle, got {vibrated_params}"
+    assert vibrated_params == [5], f"Expected navigator.vibrate(5) to be called for Ctrl toggle, got {vibrated_params}"
     
     # Verify fallback (no JS error when navigator.vibrate is undefined)
     mobile_page.evaluate("""() => {
@@ -159,3 +159,31 @@ def test_haptic_feedback(mobile_page):
     
     # If we reached here without a crash, the test passes
     assert mobile_page.evaluate("window.vibratedParams.length") == 0
+
+def test_haptic_feedback_hold_to_repeat(mobile_page):
+    """Verify that holding a button triggers multiple haptic feedbacks at 5ms."""
+    # Mock navigator.vibrate
+    mobile_page.evaluate("""() => {
+        window.vibratedParams = [];
+        navigator.vibrate = (pattern) => {
+            window.vibratedParams.push(pattern);
+            return true;
+        };
+    }""")
+
+    # Test holdable button (Esc)
+    esc_btn = mobile_page.locator('text=Esc')
+    esc_btn.dispatch_event("touchstart")
+    
+    # Wait for the hold-to-repeat delay (250ms) plus a few intervals (40ms each)
+    time.sleep(0.4)
+    
+    # Stop the hold
+    esc_btn.dispatch_event("touchend")
+    
+    # Check if navigator.vibrate was called multiple times
+    vibrated_params = mobile_page.evaluate("window.vibratedParams")
+    # First vibrate is on touchstart. Wait 250ms, then vibrate every 40ms.
+    # Total wait is 400ms. 400 - 250 = 150ms. 150 / 40 = ~3-4 times.
+    assert len(vibrated_params) > 1, f"Expected multiple haptic feedback events during hold, got {len(vibrated_params)}"
+    assert all(p == 5 for p in vibrated_params), f"Expected all vibrate patterns to be 5, got {vibrated_params}"
