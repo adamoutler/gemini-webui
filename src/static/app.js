@@ -435,8 +435,10 @@
                         <div class="connection-drag-handle" title="Drag to reorder" draggable="true">⠿</div>
                         <div class="connection-title">
                             <div style="font-size: 18px; color: #fff; margin-bottom: 2px; display: flex; align-items: center;">
-                                <span id="${healthId}" style="font-size: 12px; margin-right: 5px; vertical-align: middle;">🔴</span>
-                                <div id="${pulseId}" class="pulse-indicator"></div>
+                                <div style="position: relative; display: inline-block; width: 14px; height: 14px; margin-right: 8px;">
+                                    <span id="${healthId}" style="font-size: 12px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">🔴</span>
+                                    <div id="${pulseId}" class="pulse-indicator"></div>
+                                </div>
                                 <span>${conn.label}</span>
                             </div>
                             <div style="font-size: 11px; font-family: monospace; color: #888; opacity: 0.8;">${conn.target || 'local'} ${conn.dir || ''}</div>
