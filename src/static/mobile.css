@@ -48,7 +48,7 @@
 }
 
 .is-mobile .mobile-scroll-proxy { display: block; }
-.is-mobile .xterm-viewport { display: none !important; }
+.is-mobile .xterm-viewport { opacity: 0 !important; pointer-events: none !important; width: 0 !important; }
 .is-mobile .modal-content { width: 98% !important; margin: 10px auto !important; padding: 10px !important; }
 
 /* Mobile Controls overrides */
