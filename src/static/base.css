@@ -83,6 +83,26 @@ button.small { padding: 2px 8px; font-size: 11px; }
 .connection-drag-handle { cursor: grab; color: #666; font-size: 20px; padding: 0 5px; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; display: flex; align-items: center; touch-action: none;}
 .connection-drag-handle:active { cursor: grabbing; }
 .connection-title { font-size: 16px; font-weight: bold; color: #fff; flex-grow: 1; }
+
+@keyframes pulseFade {
+    0% { opacity: 0.8; transform: scale(0.5); }
+    100% { opacity: 0; transform: scale(1.5); }
+}
+
+.pulse-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: white;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+    opacity: 0;
+}
+
+.pulse-indicator.pulsing {
+    animation: pulseFade 1s ease-out;
+}
 .connection-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; min-width: 180px; }
 .connection-actions button { flex: 1 1 85px; white-space: nowrap; text-align: center; }
 

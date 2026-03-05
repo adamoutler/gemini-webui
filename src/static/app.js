@@ -429,12 +429,15 @@
                 
                 const sessionListId = `${id}_sessions_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
                 const healthId = `${id}_health_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
+                const pulseId = `${id}_pulse_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
                 card.innerHTML = `
                     <div class="connection-header">
                         <div class="connection-drag-handle" title="Drag to reorder" draggable="true">⠿</div>
                         <div class="connection-title">
-                            <div style="font-size: 18px; color: #fff; margin-bottom: 2px;">
-                                <span id="${healthId}" style="font-size: 12px; margin-right: 5px; vertical-align: middle;">🔴</span>${conn.label}
+                            <div style="font-size: 18px; color: #fff; margin-bottom: 2px; display: flex; align-items: center;">
+                                <span id="${healthId}" style="font-size: 12px; margin-right: 5px; vertical-align: middle;">🔴</span>
+                                <div id="${pulseId}" class="pulse-indicator"></div>
+                                <span>${conn.label}</span>
                             </div>
                             <div style="font-size: 11px; font-family: monospace; color: #888; opacity: 0.8;">${conn.target || 'local'} ${conn.dir || ''}</div>
                         </div>
@@ -612,6 +615,17 @@
             const query = new URLSearchParams();
             if (conn.type === 'ssh') { query.set('ssh_target', conn.target); if (conn.dir) query.set('ssh_dir', conn.dir); }
             if (useCache) query.set('cache', 'true');
+
+            if (!useCache) {
+                const pulseId = `${tabId}_pulse_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
+                const pulseEl = document.getElementById(pulseId);
+                if (pulseEl) {
+                    pulseEl.classList.remove('pulsing');
+                    void pulseEl.offsetWidth; // trigger reflow to restart animation
+                    pulseEl.classList.add('pulsing');
+                }
+            }
+
             try {
                 const response = await fetch('/api/sessions?' + query.toString());
                 if (!response.ok) throw new Error("HTTP error " + response.status);

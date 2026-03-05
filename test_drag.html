@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.card { width: 100px; height: 50px; background: red; margin: 10px; }
+.dragging { display: none; }
+.placeholder { width: 100px; height: 50px; background: grey; margin: 10px; }
+</style>
+</head>
+<body>
+<div class="card" draggable="true" id="c1">1</div>
+<div class="card" draggable="true" id="c2">2</div>
+<script>
+document.querySelectorAll('.card').forEach(c => {
+    c.addEventListener('dragstart', (e) => {
+        setTimeout(() => c.classList.add('dragging'), 0);
+    });
+    c.addEventListener('dragend', (e) => {
+        c.classList.remove('dragging');
+    });
+});
+</script>
+</body>
+</html>

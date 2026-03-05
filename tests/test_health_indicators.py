@@ -1,5 +1,6 @@
 import pytest
 import time
+import re
 from playwright.sync_api import sync_playwright, expect
 
 @pytest.fixture(scope="function")
@@ -28,6 +29,9 @@ def test_connection_health_indicators(page):
     local_health = page.locator('div[data-label="local"] .connection-title span[id$="_health_local"]')
     expect(local_health).to_have_text("🟢", timeout=5000)
     
+    # Locate the pulse indicator
+    pulse_indicator = page.locator('div[data-label="local"] .connection-title div[id$="_pulse_local"]')
+
     # Mock /api/sessions to return 500
     def handle_route(route):
         route.fulfill(status=500, body="Internal Server Error")
@@ -41,6 +45,9 @@ def test_connection_health_indicators(page):
         fetchSessions(id, {label: 'local', type: 'local'}, sessionListId, false, false);
     }''')
     
+    # Verify the pulse indicator triggers
+    expect(pulse_indicator).to_have_class(re.compile(r"pulsing"), timeout=5000)
+
     # 1 failure -> Yellow 🟡
     expect(local_health).to_have_text("🟡", timeout=5000)
     
