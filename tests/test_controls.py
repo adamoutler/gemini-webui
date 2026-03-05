@@ -112,3 +112,50 @@ def test_holdable_buttons_emit_commands(mobile_page):
     mobile_page.click("text=Esc")
     last_data = mobile_page.evaluate("window.lastSentData")
     assert last_data == "\x1b", "Esc button should send Esc"
+
+def test_haptic_feedback(mobile_page):
+    """Verify that tapping extended keyboard controls triggers haptic feedback via navigator.vibrate."""
+    # Mock navigator.vibrate
+    mobile_page.evaluate("""() => {
+        window.vibratedParams = [];
+        navigator.vibrate = (pattern) => {
+            window.vibratedParams.push(pattern);
+            return true;
+        };
+    }""")
+
+    # Test holdable button (Esc)
+    esc_btn = mobile_page.locator('text=Esc')
+    esc_btn.dispatch_event("touchstart")
+    
+    # Wait a bit
+    time.sleep(0.1)
+    
+    # Check if navigator.vibrate was called
+    vibrated_params = mobile_page.evaluate("window.vibratedParams")
+    assert vibrated_params == [15], f"Expected navigator.vibrate(15) to be called, got {vibrated_params}"
+
+    # Test toggle button (Ctrl)
+    # Reset mock array
+    mobile_page.evaluate("window.vibratedParams = []")
+    
+    ctrl_btn = mobile_page.locator('#ctrl-toggle')
+    ctrl_btn.dispatch_event("touchstart")
+    
+    # Wait a bit
+    time.sleep(0.1)
+    
+    vibrated_params = mobile_page.evaluate("window.vibratedParams")
+    assert vibrated_params == [15], f"Expected navigator.vibrate(15) to be called for Ctrl toggle, got {vibrated_params}"
+    
+    # Verify fallback (no JS error when navigator.vibrate is undefined)
+    mobile_page.evaluate("""() => {
+        window.vibratedParams = [];
+        navigator.vibrate = undefined; // override
+    }""")
+    
+    # Test holdable button again, shouldn't throw error
+    esc_btn.dispatch_event("touchstart")
+    
+    # If we reached here without a crash, the test passes
+    assert mobile_page.evaluate("window.vibratedParams.length") == 0

@@ -38,8 +38,8 @@
         <div class="control-btn holdable" data-cmd="\x1b[A">▲</div>
         <div class="control-btn holdable" data-cmd="\t">Tab</div>
         <div class="control-btn holdable" data-cmd="\x1b[H">Home</div>
-        <div id="ctrl-toggle" class="control-btn" onclick="toggleCtrl()">Ctrl</div>
-        <div id="alt-toggle" class="control-btn" onclick="toggleAlt()">Alt</div>
+        <div id="ctrl-toggle" class="control-btn" onclick="toggleCtrl()" ontouchstart="event.preventDefault(); triggerHapticFeedback(); toggleCtrl()">Ctrl</div>
+        <div id="alt-toggle" class="control-btn" onclick="toggleAlt()" ontouchstart="event.preventDefault(); triggerHapticFeedback(); toggleAlt()">Alt</div>
         <div class="control-btn holdable" data-cmd="\x1b[D">◀</div>
         <div class="control-btn holdable" data-cmd="\x1b[B">▼</div>
         <div class="control-btn holdable" data-cmd="\x1b[C">▶</div>

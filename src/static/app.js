@@ -1124,6 +1124,12 @@
             } catch (e) { console.error("Fit error", e); }
         }
 
+        function triggerHapticFeedback() {
+            if (navigator.vibrate) {
+                navigator.vibrate(15);
+            }
+        }
+
         function toggleCtrl(force) {
             ctrlActive = force !== undefined ? force : !ctrlActive;
             const btn = document.getElementById('ctrl-toggle');
@@ -1636,7 +1642,10 @@
             };
 
             const startAction = (e) => {
-                if (e.type === 'touchstart') e.preventDefault(); // prevent mouse emulation and selection
+                if (e.type === 'touchstart') {
+                    e.preventDefault(); // prevent mouse emulation and selection
+                    triggerHapticFeedback();
+                }
                 if (isActive) return;
                 isActive = true;
                 
