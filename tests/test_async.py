@@ -79,26 +79,57 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
     
     with app.test_request_context('/'):
         with patch('src.app.get_config_paths') as mock_paths, \
+             patch('src.app.get_config') as mock_get_config, \
              patch('shutil.which', return_value=None), \
              patch('os.chdir'), \
              patch('os.execv'), \
-             patch('os.execvp'), \
-             patch('os._exit'):            
+             patch('os.execvp') as mock_execvp, \
+             patch('os._exit'), \
+             patch('src.app.build_terminal_command', return_value=['bash']) as mock_build_cmd:            
             mock_paths.return_value = ("/data", "/data/config.json", "/data/.ssh")
+            mock_get_config.return_value = {
+                'HOSTS': [{'target': 'test@host', 'env_vars': {'MY_VAR': '123'}}]
+            }
             
             # Trigger restart (child branch)
-            pty_restart({'tab_id': 'tab1', 'sid': 'test-sid'})
+            pty_restart({'tab_id': 'tab1', 'sid': 'test-sid', 'ssh_target': 'test@host', 'ssh_dir': '/remote/dir', 'resume': True})
+            
+            mock_execvp.assert_called_once_with('bash', ['bash'])
+            import os
+            from src.app import GEMINI_BIN
+            mock_build_cmd.assert_called_once_with('test@host', '/remote/dir', True, '/data/.ssh', GEMINI_BIN, env_vars={'MY_VAR': '123'})
+            assert os.environ.get('TERM') == 'xterm-256color'
+            assert os.environ.get('COLORTERM') == 'truecolor'
+            assert os.environ.get('FORCE_COLOR') == '3'
 
     # Test parent branch
     mock_pty.return_value = (999, 10) # child_pid=999, fd=10
     with app.test_request_context('/'):
-        with patch('src.app.set_winsize'):
-            pty_restart({'tab_id': 'tab2', 'rows': 24, 'cols': 80, 'sid': 'test-sid'})
+        with patch('src.app.set_winsize') as mock_set_winsize:
+            pty_restart({'tab_id': 'tab2', 'rows': 24, 'cols': 80, 'sid': 'test-sid', 'ssh_target': 'test@host', 'ssh_dir': '/home/test'})
             
             from src.app import session_manager
             session = session_manager.get_session('tab2')
             assert session is not None
             assert session.pid == 999
+            assert session.fd == 10
+            assert session.tab_id == 'tab2'
+            assert session.ssh_target == 'test@host'
+            assert session.ssh_dir == '/home/test'
+            assert session.resume is True
+            mock_set_winsize.assert_called_with(10, 24, 80)
+
+            # Test default rows/cols
+            pty_restart({'tab_id': 'tab3', 'sid': 'test-sid3'})
+            session3 = session_manager.get_session('tab3')
+            assert session3 is not None
+            assert session3.pid == 999
+            assert session3.fd == 10
+            assert session3.tab_id == 'tab3'
+            assert session3.ssh_target is None
+            assert session3.ssh_dir is None
+            assert session3.resume is True
+            mock_set_winsize.assert_called_with(10, 24, 80)
 
 def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
     from src.app import app, session_manager, Session

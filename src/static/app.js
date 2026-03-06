@@ -78,11 +78,19 @@
                 return '🔴';
             },
 
+            getStatusClass: function(failures) {
+                if (failures === 0) return 'connected';
+                if (failures === 1) return 'degraded';
+                if (failures < 0) return 'offline';
+                return 'error';
+            },
+
             renderHealthUI: function(tabId, label, failures) {
                 const indicatorId = `${tabId}_health_${label.replace(/[^a-z0-9]/gi, '')}`;
                 const el = document.getElementById(indicatorId);
                 if (el) {
                     el.innerText = this.getIndicator(failures);
+                    el.dataset.status = this.getStatusClass(failures);
                 }
             },
 
@@ -107,6 +115,11 @@
             getInitialIndicator: function(label) {
                 if (!this.states[label]) return '⚪';
                 return this.getIndicator(this.states[label].failures);
+            },
+            
+            getInitialStatusClass: function(label) {
+                if (!this.states[label]) return 'offline';
+                return this.getStatusClass(this.states[label].failures);
             }
         };
 
@@ -479,6 +492,7 @@
                 const pulseId = `${id}_pulse_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
                 
                 let initialIndicator = HostStateManager.getInitialIndicator(conn.label);
+                let initialStatus = HostStateManager.getInitialStatusClass(conn.label);
 
                 card.innerHTML = `
                     <div class="connection-header">
@@ -486,7 +500,7 @@
                         <div class="connection-title">
                             <div style="font-size: 18px; color: #fff; margin-bottom: 2px; display: flex; align-items: center;">
                                 <div style="position: relative; display: inline-block; width: 14px; height: 14px; margin-right: 8px;">
-                                    <span id="${healthId}" style="font-size: 12px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">${initialIndicator}</span>
+                                    <span id="${healthId}" data-status="${initialStatus}" style="font-size: 12px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">${initialIndicator}</span>
                                     <div id="${pulseId}" class="pulse-indicator"></div>
                                 </div>
                                 <span>${conn.label}</span>

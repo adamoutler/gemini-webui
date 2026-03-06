@@ -10,29 +10,37 @@ def test_validate_ssh_target():
     assert validate_ssh_target("invalid-target!") is False
     assert validate_ssh_target("user@host; rm -rf /") is False
 
+from unittest.mock import patch, MagicMock
+
 def test_get_config_paths_failover(tmp_path):
-    # Test fallback to /tmp/gemini-data if /data is RO
-    data_dir = tmp_path / "data"
-    data_dir.mkdir()
-    # Make it RO (on some systems this might not work as expected in tests, but we try)
-    os.chmod(data_dir, 0o555) 
-    
-    # We can't easily mock os.access perfectly without side effects, 
-    # but we can check if it handles non-existent paths by falling back.
-    non_existent = "/non/existent/path/gemini"
-    
-    # Since we can't easily change the global DATA_DIR in app.py for just this test 
-    # without re-importing or mocking, we rely on the logic itself.
-    # For now, let's just test that it returns valid strings.
-    d, c, s = get_config_paths()
-    assert isinstance(d, str)
-    assert isinstance(c, str)
-    assert isinstance(s, str)
+    with patch('src.app.app.config.get') as mock_get:
+        # Simulate that the initially configured DATA_DIR is not writable
+        mock_get.return_value = '/ro/data_dir'
+        
+        # Mock os.access to return False for the RO dir and True for /tmp
+        def mock_access(path, mode):
+            if path in ('/ro/data_dir', '/ro'):
+                return False
+            if path == '/tmp':
+                return True
+            return os.access(path, mode)
+            
+        with patch('os.access', side_effect=mock_access):
+            with patch('os.makedirs') as mock_makedirs:
+                with patch('os.path.exists', return_value=True):
+                    d, c, s = get_config_paths()
+                    
+                    # Verify it fell back to /tmp/gemini-data
+                    assert d == "/tmp/gemini-data"
+                    assert c == "/tmp/gemini-data/config.json"
+                    assert s == "/tmp/gemini-data/.ssh"
+                    mock_makedirs.assert_called_once_with("/tmp/gemini-data", exist_ok=True)
 
 def test_set_winsize_no_error():
-    # We can't easily test the actual ioctl without a real PTY, 
-    # but we can ensure it handles invalid FDs gracefully.
-    try:
-        set_winsize(-1, 24, 80)
-    except Exception:
-        pytest.fail("set_winsize raised exception on invalid FD")
+    with patch('src.app.struct.pack') as mock_pack:
+        mock_pack.return_value = b'mocked_winsize'
+        with patch('src.app.fcntl.ioctl') as mock_ioctl:
+            with patch('src.app.termios.TIOCSWINSZ', 21524, create=True):
+                set_winsize(42, 24, 80, 0, 0)
+                mock_pack.assert_called_once_with("HHHH", 24, 80, 0, 0)
+                mock_ioctl.assert_called_once_with(42, 21524, b'mocked_winsize')

@@ -28,6 +28,7 @@ def test_connection_health_indicators(page):
     # Let's wait for the first successful fetch to turn it to green
     local_health = page.locator('div[data-label="local"] .connection-title span[id$="_health_local"]')
     expect(local_health).to_have_text("🟢", timeout=5000)
+    expect(local_health).to_have_attribute("data-status", "connected", timeout=5000)
     
     # Locate the pulse indicator
     pulse_indicator = page.locator('div[data-label="local"] .connection-title div[id$="_pulse_local"]')
@@ -50,6 +51,7 @@ def test_connection_health_indicators(page):
 
     # 1 failure -> Yellow 🟡
     expect(local_health).to_have_text("🟡", timeout=5000)
+    expect(local_health).to_have_attribute("data-status", "degraded", timeout=5000)
     
     # Trigger again
     page.evaluate('''() => {
@@ -60,6 +62,7 @@ def test_connection_health_indicators(page):
     
     # 2 failures -> Red 🔴
     expect(local_health).to_have_text("🔴", timeout=5000)
+    expect(local_health).to_have_attribute("data-status", "error", timeout=5000)
     
     # Remove mock to let it succeed
     page.unroute("**/api/sessions*")
@@ -73,11 +76,12 @@ def test_connection_health_indicators(page):
     
     # Success -> Green 🟢
     expect(local_health).to_have_text("🟢", timeout=5000)
+    expect(local_health).to_have_attribute("data-status", "connected", timeout=5000)
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(20)
 def test_default_health_indicator_grey(server):
-    """Verify that a server defaults to grey (⚪) and stays grey on first failure."""
+    """Verify that a server defaults to grey (⚪) and correctly turns red on manual failure."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
@@ -96,8 +100,9 @@ def test_default_health_indicator_grey(server):
         # Check that local health indicator is ⚪ (grey)
         local_health = page.locator('div[data-label="local"] .connection-title span[id$="_health_local"]')
         expect(local_health).to_have_text("⚪", timeout=5000)
+        expect(local_health).to_have_attribute("data-status", "offline", timeout=5000)
         
-        # Check that it STAYS ⚪ even after a manual re-fetch
+        # Check that it turns 🔴 when doing a manual non-cached fetch
         page.evaluate('''() => {
             if (typeof activeTabId !== "undefined") {
                 const id = activeTabId;
@@ -106,7 +111,8 @@ def test_default_health_indicator_grey(server):
             }
         }''')
         
-        expect(local_health).to_have_text("⚪", timeout=5000)
+        expect(local_health).to_have_text("🔴", timeout=5000)
+        expect(local_health).to_have_attribute("data-status", "error", timeout=5000)
 
         context.close()
         browser.close()

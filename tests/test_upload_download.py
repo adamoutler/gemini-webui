@@ -64,16 +64,21 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
         verify_call = mock_run.call_args_list[2][0][0]
         path_call = mock_run.call_args_list[3][0][0]
         
-        assert ssh_call[0] == 'ssh'
-        assert 'user@host' in ssh_call
-        assert any('mkdir -p' in arg for arg in ssh_call)
+        import os
+        import shlex
+        base_ssh_args = ['-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/tmp/ssh_dir/known_hosts']
+        workspace_dir = os.path.join(test_data_dir, "workspace")
+        save_path = os.path.abspath(os.path.join(workspace_dir, "testfile.txt"))
         
-        assert scp_call[0] == 'scp'
-        assert 'user@host:/remote/dir/testfile.txt' in scp_call
-
-        assert verify_call[0] == 'ssh'
-        assert 'user@host' in verify_call
-        assert any('ls' in arg for arg in verify_call)
+        expected_ssh_call = ['ssh'] + base_ssh_args + ['--', 'user@host', f"mkdir -p {shlex.quote('/remote/dir')}"]
+        expected_scp_call = ['scp'] + base_ssh_args + ['--', save_path, "user@host:/remote/dir/testfile.txt"]
+        expected_verify_call = ['ssh'] + base_ssh_args + ['--', 'user@host', f"ls {shlex.quote('/remote/dir/testfile.txt')}"]
+        expected_path_call = ['ssh'] + base_ssh_args + ['--', 'user@host', f"realpath {shlex.quote('/remote/dir/testfile.txt')} 2>/dev/null || readlink -m {shlex.quote('/remote/dir/testfile.txt')} 2>/dev/null || echo {shlex.quote('/remote/dir/testfile.txt')}"]
+        
+        assert ssh_call == expected_ssh_call
+        assert scp_call == expected_scp_call
+        assert verify_call == expected_verify_call
+        assert path_call == expected_path_call
 
 def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
     data = {
@@ -96,12 +101,19 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
         verify_call = mock_run.call_args_list[1][0][0]
         path_call = mock_run.call_args_list[2][0][0]
         
-        assert scp_call[0] == 'scp'
-        assert 'user@host:testfile.txt' in scp_call
-
-        assert verify_call[0] == 'ssh'
-        assert 'user@host' in verify_call
-        assert any('ls' in arg for arg in verify_call)
+        import os
+        import shlex
+        base_ssh_args = ['-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=no', '-o', 'UserKnownHostsFile=/tmp/ssh_dir/known_hosts']
+        workspace_dir = os.path.join(test_data_dir, "workspace")
+        save_path = os.path.abspath(os.path.join(workspace_dir, "testfile.txt"))
+        
+        expected_scp_call = ['scp'] + base_ssh_args + ['--', save_path, "user@host:testfile.txt"]
+        expected_verify_call = ['ssh'] + base_ssh_args + ['--', 'user@host', f"ls {shlex.quote('testfile.txt')}"]
+        expected_path_call = ['ssh'] + base_ssh_args + ['--', 'user@host', f"realpath {shlex.quote('testfile.txt')} 2>/dev/null || readlink -m {shlex.quote('testfile.txt')} 2>/dev/null || echo {shlex.quote('testfile.txt')}"]
+        
+        assert scp_call == expected_scp_call
+        assert verify_call == expected_verify_call
+        assert path_call == expected_path_call
 
 def test_download_file_success(client, test_data_dir):
     # Setup file in workspace
