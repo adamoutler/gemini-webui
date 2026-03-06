@@ -37,10 +37,12 @@ try:
     from auth_ldap import check_auth
     from session_manager import Session, SessionManager
     from process_manager import validate_ssh_target, fetch_sessions_for_host, build_terminal_command, get_remote_command_prefix
+    from share_manager import ShareManager
 except ImportError:
     from src.auth_ldap import check_auth
     from src.session_manager import Session, SessionManager
     from src.process_manager import validate_ssh_target, fetch_sessions_for_host, build_terminal_command, get_remote_command_prefix
+    from src.share_manager import ShareManager
 
 # Global config holder and defaults
 config = {}
@@ -83,6 +85,7 @@ def inject_version():
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 
 session_manager = SessionManager()
+share_manager = ShareManager()
 
 # Background session cache: key -> {"output": str, "error": str, "timestamp": float}
 session_results_cache = {}
@@ -326,7 +329,7 @@ def require_auth():
         session['authenticated'] = True
         return
         
-    if request.path in ['/health', '/api/health', '/favicon.ico', '/favicon.svg', '/manifest.json', '/sw.js']:
+    if request.path in ['/health', '/api/health', '/favicon.ico', '/favicon.svg', '/manifest.json', '/sw.js'] or request.path.startswith('/s/'):
         return
 
     auth = request.authorization
@@ -869,6 +872,104 @@ def download_file(filename):
         import traceback
         traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/s/<share_id>', methods=['GET'])
+def view_share(share_id):
+    if not re.match(r'^[a-zA-Z0-9-]+$', share_id):
+        return "Invalid share ID", 400
+        
+    metadata = share_manager.get_share_metadata(share_id)
+    if not metadata:
+        return "Share not found", 404
+        
+    file_path = metadata.get('file_path')
+    if not file_path or not os.path.exists(file_path):
+        return "Share data not found", 404
+        
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            html_content = f.read()
+    except Exception as e:
+        logger.error(f"Failed to read share {share_id}: {e}")
+        return "Error reading share data", 500
+        
+    wrapper = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shared Terminal Session: {metadata.get('session_name', 'Unknown')}</title>
+<style>
+  body {{
+    background-color: #000;
+    color: #fff;
+    margin: 0;
+    padding: 10px;
+    font-family: monospace;
+    display: flex;
+    justify-content: center;
+  }}
+  .terminal-wrapper {{
+    width: 100%;
+    max-width: 1200px;
+    overflow-x: auto;
+    background-color: #000;
+  }}
+</style>
+</head>
+<body>
+<div class="terminal-wrapper">
+{html_content}
+</div>
+</body>
+</html>"""
+    return wrapper
+
+@app.route('/api/shares/create', methods=['POST'])
+@authenticated_only
+def create_share():
+    data = request.json
+    if not data:
+        return jsonify({"error": "No JSON payload"}), 400
+    
+    session_name = data.get('session_name')
+    html_content = data.get('html_content')
+    
+    if not session_name or not html_content:
+        return jsonify({"error": "Missing session_name or html_content"}), 400
+        
+    try:
+        share_id = share_manager.create_share(html_content, session_name)
+        return jsonify({"share_id": share_id, "share_url": f"/s/{share_id}"})
+    except Exception as e:
+        logger.error(f"Error creating share: {e}")
+        return jsonify({"error": "Failed to create share"}), 500
+
+@app.route('/api/shares', methods=['GET'])
+@authenticated_only
+def list_shares():
+    try:
+        shares = share_manager.list_shares()
+        return jsonify(shares)
+    except Exception as e:
+        logger.error(f"Error listing shares: {e}")
+        return jsonify({"error": "Failed to list shares"}), 500
+
+@app.route('/api/shares/<share_id>', methods=['DELETE'])
+@authenticated_only
+def delete_share(share_id):
+    if not re.match(r'^[a-zA-Z0-9-]+$', share_id):
+        return jsonify({"error": "Invalid share ID"}), 400
+        
+    try:
+        success = share_manager.delete_share(share_id)
+        if success:
+            return jsonify({"status": "success"})
+        else:
+            return jsonify({"error": "Share not found"}), 404
+    except Exception as e:
+        logger.error(f"Error deleting share: {e}")
+        return jsonify({"error": "Failed to delete share"}), 500
 
 @app.route('/health')
 def health_check_root():
