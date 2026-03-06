@@ -761,12 +761,12 @@ def upload_file():
                     base_ssh_args.extend(['-i', os.path.join(ssh_dir_path, f)])
 
         # Determine remote path
-        remote_path = filename
-        if ssh_dir and ssh_dir != "~":
-            if ssh_dir.startswith('~'):
-                remote_path = f"{ssh_dir}/{filename}"
-            else:
-                remote_path = os.path.join(ssh_dir, filename).replace('\\', '/')
+        if not ssh_dir or ssh_dir == "~":
+            remote_path = filename
+        elif ssh_dir.startswith('~/'):
+            remote_path = f"{ssh_dir[2:]}/{filename}"
+        else:
+            remote_path = os.path.join(ssh_dir, filename).replace('\\', '/')
 
         # Ensure directory structure exists on remote
         remote_dir = os.path.dirname(remote_path)
@@ -790,7 +790,9 @@ def upload_file():
 
         if remote_dir:
             ssh_cmd = ssh_cmd_base + ['--', clean_target, f"mkdir -p {shlex.quote(remote_dir)}"]
-            subprocess.run(ssh_cmd)
+            res = subprocess.run(ssh_cmd, capture_output=True, text=True)
+            if res.returncode != 0:
+                return jsonify({"status": "error", "message": f"Failed to create remote directory: {res.stderr}"}), 500
 
         # Run SCP
         scp_cmd = scp_cmd_base + ['--', save_path, f"{clean_target}:{remote_path}"]
@@ -798,6 +800,12 @@ def upload_file():
             result = subprocess.run(scp_cmd, capture_output=True, text=True)
             if result.returncode != 0:
                 return jsonify({"status": "error", "message": f"SCP failed: {result.stderr}"}), 500
+                
+            verify_cmd = ssh_cmd_base + ['--', clean_target, f"ls {shlex.quote(remote_path)}"]
+            verify_res = subprocess.run(verify_cmd, capture_output=True)
+            if verify_res.returncode != 0:
+                return jsonify({"status": "error", "message": "SCP returned 0, but file verification failed on remote host."}), 500
+                
         except Exception as e:
             return jsonify({"status": "error", "message": f"SCP error: {str(e)}"}), 500
 
