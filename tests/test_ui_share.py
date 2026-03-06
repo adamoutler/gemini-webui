@@ -43,6 +43,9 @@ def test_ui_share_workflow(page, server):
     expect(page.locator('#share-modal')).to_be_visible(timeout=5000)
     expect(page.locator('#share-modal')).to_contain_text("This will generate a publicly accessible link.", timeout=5000)
 
+    # Select the Light theme
+    page.locator('#share-theme-select').select_option('light')
+
     # Click confirm and wait for API request
     with page.expect_request("**/api/shares/create") as req_info:
         page.locator('#confirm-share-btn').click()
@@ -52,6 +55,7 @@ def test_ui_share_workflow(page, server):
     
     post_data = req.post_data_json
     assert "html_content" in post_data
+    assert post_data.get("theme") == "light"
     
     # Wait for result to be visible
     expect(page.locator('#share-result')).to_be_visible(timeout=5000)
@@ -62,3 +66,17 @@ def test_ui_share_workflow(page, server):
     
     val = link_input.input_value()
     assert "/s/" in val
+
+    # Navigate to the generated link
+    new_page = page.context.new_page()
+    new_page.goto(val, timeout=15000)
+    
+    # Verify structural classes and layout
+    expect(new_page.locator('body')).to_have_class('theme-light')
+    expect(new_page.locator('.terminal-wrapper')).to_be_visible()
+    
+    # Verify background color of body based on theme-light css
+    body_bg_color = new_page.evaluate('window.getComputedStyle(document.body).backgroundColor')
+    assert body_bg_color == 'rgb(255, 255, 255)', f"Expected white background for light theme, got {body_bg_color}"
+    
+    new_page.close()

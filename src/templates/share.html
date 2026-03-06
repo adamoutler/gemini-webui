@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shared Terminal Session: {{ session_name }}</title>
+<style>
+  :root {
+    --bg-color: #000000;
+    --text-color: #ffffff;
+  }
+  body.theme-light {
+    --bg-color: #ffffff;
+    --text-color: #000000;
+  }
+  body.theme-color {
+    --bg-color: #1e1e1e;
+    --text-color: #cccccc;
+  }
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+    font-family: 'Courier New', Courier, monospace;
+    display: flex;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+  .terminal-wrapper {
+    width: 100%;
+    max-width: 1200px;
+    overflow-x: auto;
+    background-color: var(--bg-color);
+    border-radius: 8px;
+    padding: 10px;
+  }
+  .terminal-wrapper pre, .terminal-wrapper div {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: inherit;
+    line-height: 1.2;
+  }
+</style>
+</head>
+<body class="theme-{{ theme }}">
+<div class="terminal-wrapper">
+{{ html_content | safe }}
+</div>
+</body>
+</html>

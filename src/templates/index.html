@@ -171,6 +171,16 @@
             <div style="background: #2a2d2e; padding: 15px; border-radius: 4px; margin-top: 15px;">
                 <p style="color: #e5a50a; font-weight: bold;">Warning!</p>
                 <p>This will generate a publicly accessible link. Ensure there are no passwords, API keys, or sensitive environment variables in the terminal scrollback before sharing.</p>
+                
+                <div style="margin-top: 15px;">
+                    <label for="share-theme-select"><strong>Theme:</strong></label>
+                    <select id="share-theme-select" style="margin-left: 10px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #3c3c3c; border-radius: 4px;">
+                        <option value="dark" selected>Dark (Default)</option>
+                        <option value="light">Light</option>
+                        <option value="color">Full Color</option>
+                    </select>
+                </div>
+
                 <div id="share-result" style="margin-top: 15px; display: none;">
                     <input type="text" id="share-link-input" readonly style="width: 100%; margin-bottom: 10px; color: #0dbc79;">
                     <button class="small" onclick="copyShareLink()">Copy Link</button>

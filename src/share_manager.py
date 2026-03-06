@@ -31,12 +31,20 @@ class ShareManager:
                     id TEXT PRIMARY KEY,
                     session_name TEXT NOT NULL,
                     created_at REAL NOT NULL,
-                    file_path TEXT NOT NULL
+                    file_path TEXT NOT NULL,
+                    theme TEXT DEFAULT 'dark'
                 )
             """)
+            
+            # Try to add 'theme' column to existing table to support older databases
+            try:
+                conn.execute("ALTER TABLE shares ADD COLUMN theme TEXT DEFAULT 'dark'")
+            except sqlite3.OperationalError:
+                pass # Column already exists
+                
             conn.commit()
 
-    def create_share(self, html_content: str, session_name: str) -> str:
+    def create_share(self, html_content: str, session_name: str, theme: str = 'dark') -> str:
         """
         Generates UUID, saves HTML to disk, updates metadata.
         Returns the new share ID.
@@ -52,8 +60,8 @@ class ShareManager:
         # Update metadata
         with self._get_connection() as conn:
             conn.execute(
-                "INSERT INTO shares (id, session_name, created_at, file_path) VALUES (?, ?, ?, ?)",
-                (share_id, session_name, created_at, str(file_path))
+                "INSERT INTO shares (id, session_name, created_at, file_path, theme) VALUES (?, ?, ?, ?, ?)",
+                (share_id, session_name, created_at, str(file_path), theme)
             )
             conn.commit()
             
@@ -65,7 +73,7 @@ class ShareManager:
         """
         with self._get_connection() as conn:
             cursor = conn.execute(
-                "SELECT id, session_name, created_at, file_path FROM shares WHERE id = ?",
+                "SELECT id, session_name, created_at, file_path, theme FROM shares WHERE id = ?",
                 (share_id,)
             )
             row = cursor.fetchone()
@@ -79,7 +87,7 @@ class ShareManager:
         """
         with self._get_connection() as conn:
             cursor = conn.execute(
-                "SELECT id, session_name, created_at, file_path FROM shares ORDER BY created_at DESC"
+                "SELECT id, session_name, created_at, file_path, theme FROM shares ORDER BY created_at DESC"
             )
             return [dict(row) for row in cursor.fetchall()]
 

@@ -98,9 +98,9 @@
                 const pulseId = `${tabId}_pulse_${label.replace(/[^a-z0-9]/gi, '')}`;
                 const pulseEl = document.getElementById(pulseId);
                 if (pulseEl) {
-                    pulseEl.classList.remove('pulsing');
+                    pulseEl.classList.remove('pulsing', 'superbright');
                     void pulseEl.offsetWidth; // trigger reflow
-                    pulseEl.classList.add('pulsing');
+                    pulseEl.classList.add('pulsing', 'superbright');
                 }
             },
 
@@ -382,8 +382,10 @@
                     const statusLabel = s.is_orphaned ? 'Orphaned' : 'Active';
 
                     let flashClass = '';
+                    let pulseHtml = '';
                     if (backendSessionLastSeen[s.tab_id] && backendSessionLastSeen[s.tab_id] !== s.last_active) {
                         flashClass = 'flash';
+                        pulseHtml = '<div class="pulse-indicator superbright pulsing"></div>';
                     }
                     backendSessionLastSeen[s.tab_id] = s.last_active;
 
@@ -396,7 +398,10 @@
                                 <div style="color: #3b8eea; font-weight: bold; font-size: 14px; margin-bottom: 2px;">${dirContext}${s.title}</div>
                                 <div style="color: #888; font-size: 11px; display: flex; align-items: center; gap: 8px;">
                                     <span style="font-weight: bold; display: flex; align-items: center; gap: 4px;">
-                                        <span class="status-node ${statusClass} ${flashClass}"></span> ${statusLabel}
+                                        <span style="position: relative; display: inline-block; width: 10px; height: 10px; margin: 4px 12px 4px 4px;">
+                                            <span class="status-node ${statusClass} ${flashClass}" style="margin: 0; position: absolute; top: 0; left: 0;"></span>
+                                            ${pulseHtml}
+                                        </span> ${statusLabel}
                                     </span> 
                                     <span style="color: #555;">|</span>
                                     <span class="session-id-display" style="font-family: monospace;">ID: ${s.tab_id}</span>
@@ -692,6 +697,10 @@
         }
 
         async function fetchSessions(tabId, conn, targetId, forceAll = false, useCache = false, isPolling = false) {
+            if (!window.expandedSessionLists) window.expandedSessionLists = new Set();
+            if (window.expandedSessionLists.has(conn.label)) {
+                forceAll = true;
+            }
             const query = new URLSearchParams();
             if (conn.type === 'ssh') { query.set('ssh_target', conn.target); if (conn.dir) query.set('ssh_dir', conn.dir); }
             if (useCache) query.set('cache', 'true');
@@ -745,7 +754,11 @@
                             </div>
                         </div>`;
                     });
-                    if (!forceAll && sorted.length > 3) html += `<div class="session-item" style="justify-content: center; background: #252526; cursor: pointer;" onclick="fetchSessions('${tabId}', ${JSON.stringify(conn).replace(/"/g, '&quot;')}, '${targetId}', true, false)"><div style="font-size: 11px; color: #2472c8; font-weight: bold;">... Show ${sorted.length - 3} more</div></div>`;
+                    if (!forceAll && sorted.length > 3) {
+                        html += `<div class="session-item" style="justify-content: center; background: #252526; cursor: pointer;" onclick="window.expandedSessionLists.add('${conn.label}'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(/"/g, '&quot;')}, '${targetId}', true, true, true)"><div style="font-size: 11px; color: #2472c8; font-weight: bold;">... Show ${sorted.length - 3} more</div></div>`;
+                    } else if (forceAll && sorted.length > 3) {
+                        html += `<div class="session-item" style="justify-content: center; background: #252526; cursor: pointer;" onclick="window.expandedSessionLists.delete('${conn.label}'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(/"/g, '&quot;')}, '${targetId}', false, true, true)"><div style="font-size: 11px; color: #2472c8; font-weight: bold;">... Show less</div></div>`;
+                    }
                     listEl.innerHTML = html + '</div>';
                 }
                 if (useCache && !isPolling) fetchSessions(tabId, conn, targetId, forceAll, false); // Update after cache load
@@ -1993,6 +2006,8 @@
             }
 
             const htmlDump = serializeAddon.serializeAsHTML();
+            const themeElement = document.getElementById('share-theme-select');
+            const selectedTheme = themeElement ? themeElement.value : 'dark';
 
             try {
                 const response = await fetch('/api/shares/create', {
@@ -2003,7 +2018,8 @@
                     },
                     body: JSON.stringify({
                         html_content: htmlDump,
-                        session_name: tab.title || tab.session.ssh_target || 'Local Session'
+                        session_name: tab.title || tab.session.ssh_target || 'Local Session',
+                        theme: selectedTheme
                     })
                 });
 

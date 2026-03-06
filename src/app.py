@@ -893,37 +893,10 @@ def view_share(share_id):
         logger.error(f"Failed to read share {share_id}: {e}")
         return "Error reading share data", 500
         
-    wrapper = f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Shared Terminal Session: {metadata.get('session_name', 'Unknown')}</title>
-<style>
-  body {{
-    background-color: #000;
-    color: #fff;
-    margin: 0;
-    padding: 10px;
-    font-family: monospace;
-    display: flex;
-    justify-content: center;
-  }}
-  .terminal-wrapper {{
-    width: 100%;
-    max-width: 1200px;
-    overflow-x: auto;
-    background-color: #000;
-  }}
-</style>
-</head>
-<body>
-<div class="terminal-wrapper">
-{html_content}
-</div>
-</body>
-</html>"""
-    return wrapper
+    return render_template('share.html', 
+                           session_name=metadata.get('session_name', 'Unknown'),
+                           theme=metadata.get('theme', 'dark'),
+                           html_content=html_content)
 
 @app.route('/api/shares/create', methods=['POST'])
 @authenticated_only
@@ -934,12 +907,13 @@ def create_share():
     
     session_name = data.get('session_name')
     html_content = data.get('html_content')
+    theme = data.get('theme', 'dark')
     
     if not session_name or not html_content:
         return jsonify({"error": "Missing session_name or html_content"}), 400
         
     try:
-        share_id = share_manager.create_share(html_content, session_name)
+        share_id = share_manager.create_share(html_content, session_name, theme)
         return jsonify({"share_id": share_id, "share_url": f"/s/{share_id}"})
     except Exception as e:
         logger.error(f"Error creating share: {e}")
