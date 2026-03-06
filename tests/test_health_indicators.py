@@ -48,6 +48,7 @@ def test_connection_health_indicators(page):
     
     # Verify the pulse indicator triggers
     expect(pulse_indicator).to_have_class(re.compile(r"pulsing"), timeout=5000)
+    expect(pulse_indicator).to_have_class(re.compile(r"superbright"), timeout=5000)
 
     # 1 failure -> Yellow 🟡
     expect(local_health).to_have_text("🟡", timeout=5000)
@@ -151,6 +152,7 @@ def test_sync_pulse_with_health_indicator(server):
         
         # Verify the pulse indicator triggers immediately
         expect(pulse_indicator).to_have_class(re.compile(r"pulsing"), timeout=1000)
+        expect(pulse_indicator).to_have_class(re.compile(r"superbright"), timeout=1000)
 
         context.close()
         browser.close()
