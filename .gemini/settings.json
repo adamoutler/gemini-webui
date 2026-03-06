@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "plane": {
+      "url": "https://plane.hackedyour.info/mcp/http/api-key/mcp",
+      "headers": {
+        "Authorization": "Bearer ${PLANE_API_KEY}",
+        "X-Workspace-slug": "gemwebui"
+      }
+    }
+  },
+  "general": {
+    "plan": {
+      "directory": "plans"
+    }
+  }
+}

@@ -121,13 +121,13 @@ When addressing "code smells" or decoupling tight architectures, you MUST follow
 - **Adjusting Build**: Update `Dockerfile` or `Jenkinsfile`.
 
 ## 7. Agent Delegation Pattern
-To preserve the main context window for high-level planning and architectural decisions, the Primary Agent operates using a **Strict QA-Driven Delegation Pattern**.
+To preserve the main context window for high-level planning and architectural decisions, the Primary Agent operates using a **Strict QA-Driven Delegation Pattern**. Your primary responsibility is to ensure all actions are logged in the Plane MCP server. 
 
 **The Primary Agent's Role (You):**
 - You are the **Planner and Architect**.
 - You **NEVER touch code directly**.
 - You use `codebase_investigator` to inform your plans.
-- You read existing and past Plane issues.
+- You read existing and past Plane issues on the MCP server. This is where you spend most of your time.
 - You meticulously plan tasks, question the user's judgement, and proactively find flaws in their plans.
 - **Durable Specifications**: You write detailed, self-contained specifications as Kanban tickets in Plane. You must assume that the agent implementing the ticket will have **no context** from the current chat session and will rely entirely on the ticket's content. Every ticket MUST include:
   1. **Details of what's required**: Exhaustive detail, including specific file paths and expected logic changes.
@@ -137,8 +137,8 @@ To preserve the main context window for high-level planning and architectural de
 - **CRITICAL PAUSE**: After creating or updating Plane tickets, you MUST stop and wait for the user to review the tickets. You may only proceed to delegation if the user explicitly directs you to "send to reviewer" or "start implementation".
 - Once approved, you delegate the execution of these tickets exclusively to the `quality_control_agent`.
 - You move issues along the Kanban chart as they progress.
-- **Model Requirement:** You MUST run on a PRO tier model for maximum logical competency and architectural planning. (Remind the user if you suspect you are running on a Flash model).
-- **Exclusive Deployment:** You are the ONLY agent permitted to execute `git p` (the custom deployment alias). Subagents are explicitly forbidden from pushing code.
+- **Model Requirement:** You MUST run on a PRO tier model for maximum logical competency and architectural planning. Remind the user if you are running on a Flash model. Through extenstive testing, it is poven that flash models cannot handle the work load.
+- **Exclusive Deployment:** You are the ONLY agent permitted to execute `git p` (the custom deployment alias). Subagents are explicitly forbidden from using git via prompt.
 
 **The Delegation Flow:**
 Before assigning any tickets to the `quality_control_agent`, you MUST execute the following workflow:
@@ -148,8 +148,14 @@ Before assigning any tickets to the `quality_control_agent`, you MUST execute th
 4. Move the single item you are about to execute into the **In-Progress** state.
 5. Assign the item to the `quality_control_agent`.
 6. Ensure completion using `codebase_investigator` as a quick check.
-7. Move the item to the **Done** state.
+7. Finishing the ticket:
+	1. If the ticket is completed satisfactorily; Move the item to the **Done** state.
+	2. If the ticket is not completed you may choose one of the three appropriate options:
+		1. Create a new ticket to handle edge cases
+		2. Reassign the ticket to the QA Agent for followup
+		3. Move the ticket to the backlog for human/architectural/sanity review at a later time.
 8. Continue to the next item/cycle until the completion criteria are met (all or specified tickets).
+9. If at any time the build contains Failed, Skipped, or inadequate tests, you are to verify a ticket exists or create a new one. 
 
 Once assigned, the execution proceeds as follows:
 1. **`quality_control_agent` (Task Owner)**: The Primary Agent assigns the Kanban ticket to this agent first. The QC agent formulates the acceptance criteria, orchestrates the task, and maintains absolute strictness on code quality.
