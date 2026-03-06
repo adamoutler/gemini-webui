@@ -65,9 +65,25 @@ html, body {
 }
 
 /* Adjust connection action buttons size on mobile */
+.is-mobile .connection-header {
+    flex-wrap: wrap;
+}
+.is-mobile .connection-title {
+    min-width: 0;
+    max-width: calc(100% - 40px);
+}
+.is-mobile .connection-title > div:last-child {
+    word-break: break-all;
+}
+.is-mobile .connection-actions {
+    min-width: unset;
+    width: 100%;
+    margin-top: 5px;
+    justify-content: flex-start;
+}
 .is-mobile .connection-actions button {
-    flex: 0 1 34%;
-    max-width: 34%;
-    white-space: normal;
-    word-wrap: break-word;
+    flex: 1 1 auto;
+    max-width: unset;
+    white-space: nowrap;
+    word-wrap: normal;
 }

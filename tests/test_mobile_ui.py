@@ -253,14 +253,13 @@ def test_pull_to_refresh_styles(mobile_page):
 
 @pytest.mark.timeout(20)
 def test_mobile_connection_button_size(mobile_page):
-    """Verify that connection action buttons are reduced in size on mobile."""
+    """Verify that connection action buttons don't break text mid-word on mobile."""
     mobile_page.wait_for_selector(".connection-actions button", timeout=10000)
-    
-    button_max_width = mobile_page.evaluate("""() => {
-        const btn = document.querySelector('.connection-actions button');
-        return window.getComputedStyle(btn).getPropertyValue('max-width');
-    }""")
-    
-    assert button_max_width != 'none', f"max-width should be set, but got {button_max_width}"
 
+    button_white_space = mobile_page.evaluate("""() => {
+        const btn = document.querySelector('.connection-actions button');
+        return window.getComputedStyle(btn).getPropertyValue('white-space');
+    }""")
+
+    assert button_white_space == 'nowrap', f"white-space should be nowrap, but got {button_white_space}"
 
