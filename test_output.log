@@ -1,0 +1,67 @@
+WARNING:src.app:ALLOWED_ORIGINS not set. Defaulting to '*' (CORS restricted disabled).
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.0.2, pluggy-1.6.0 -- /home/adamoutler/gemini-webui/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/adamoutler/gemini-webui
+configfile: pytest.ini
+plugins: playwright-0.4.4, anyio-4.12.1, timeout-2.4.0, base-url-2.1.0, cov-7.0.0
+collecting ... collected 1 item
+
+tests/test_ui.py::test_ui_add_and_use_host INFO:__main__:Initializing app with DATA_DIR: /tmp/pytest-of-adamoutler/pytest-697/data0
+INFO:__main__:Generating new instance SSH key with comment: gemini-webui-inferrence1-20260305...
+Generating public/private ed25519 key pair.
+Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-697/data0/.ssh/id_ed25519
+Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-697/data0/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:tk9nPDM3dMmnimQUNiFfdwffuAd3D1pFKRQU54HH+90 gemini-webui-inferrence1-20260305
+The key's randomart image is:
++--[ED25519 256]--+
+|        . . +=B=*|
+|         o o +oO+|
+|          =   B.*|
+|         . o o.*+|
+|        S . . ooO|
+|       . o . . +E|
+|        . + B +  |
+|         = + * . |
+|          o .    |
++----[SHA256]-----+
+WARNING:__main__:Failed to generate SSH key: no such user: 'node'
+WARNING:__main__:Failed to manage symlink for /home/node/.gemini: [Errno 13] Permission denied: '/home/node'
+INFO:__main__:Background preloading sessions for: local
+CONSOLE: Error with Permissions-Policy header: Origin trial controlled feature not enabled: 'browsing-topics'.
+FAILEDnode:events:496
+      throw er; // Unhandled 'error' event
+      ^
+
+Error: write EPIPE
+    at afterWriteDispatched (node:internal/stream_base_commons:160:15)
+    at writeGeneric (node:internal/stream_base_commons:151:3)
+    at Socket._writeGeneric (node:net:952:11)
+    at Socket._write (node:net:964:8)
+    at writeOrBuffer (node:internal/streams/writable:564:12)
+    at _write (node:internal/streams/writable:493:10)
+    at Writable.write (node:internal/streams/writable:502:10)
+    at PipeTransport.send (/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/playwright/driver/package/lib/protocol/transport.js:51:21)
+    at dispatcherConnection.onmessage (/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/playwright/driver/package/lib/cli/driver.js:61:57)
+    at DispatcherConnection._sendMessageToClient (/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/dispatchers/dispatcher.js:216:10)
+Emitted 'error' event on Socket instance at:
+    at emitErrorNT (node:internal/streams/destroy:169:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:128:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
+  errno: -32,
+  code: 'EPIPE',
+  syscall: 'write'
+}
+
+Node.js v20.11.0
+INFO:__main__:Background preloading sessions for: local
+INFO:__main__:Background preloading sessions for: Test SSH Host
+INFO:__main__:Background preloading sessions for: local
+INFO:__main__:Background preloading sessions for: Test SSH Host
+INFO:__main__:Background preloading sessions for: local
+INFO:__main__:Background preloading sessions for: Test SSH Host
+INFO:__main__:Background preloading sessions for: local
+INFO:__main__:Background preloading sessions for: Test SSH Host
+INFO:__main__:Background preloading sessions for: local
+INFO:__main__:Background preloading sessions for: Test SSH Host

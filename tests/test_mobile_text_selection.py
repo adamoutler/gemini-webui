@@ -79,8 +79,8 @@ def test_mobile_quick_tap_focus(mobile_page):
         return terminal && terminal.textContent.trim().length > 0;
     }""", timeout=10000)
     
-    # Manually trigger a selection to clear later
-    mobile_page.wait_for_function("""() => {
+    # Manually trigger a selection to clear later and verify it's not empty immediately
+    selection_length_before = mobile_page.evaluate("""() => {
         const overlay = document.querySelector('.mobile-selection-overlay');
         if (overlay) {
             overlay.textContent = 'dummy text';
@@ -89,13 +89,11 @@ def test_mobile_quick_tap_focus(mobile_page):
             const selection = window.getSelection();
             selection.removeAllRanges();
             selection.addRange(range);
-            return window.getSelection().toString().length > 0;
+            return window.getSelection().toString().length;
         }
-        return false;
-    }""", timeout=10000)
+        return 0;
+    }""")
 
-    # Verify selection is NOT empty before tap
-    selection_length_before = mobile_page.evaluate("window.getSelection().toString().length")
     assert selection_length_before > 0    
     # Simulate a quick tap on the proxy
     proxy = mobile_page.locator(".mobile-scroll-proxy").first

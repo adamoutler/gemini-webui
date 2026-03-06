@@ -1,0 +1,45 @@
+WARNING:src.app:ALLOWED_ORIGINS not set. Defaulting to '*' (CORS restricted disabled).
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.0.2, pluggy-1.6.0 -- /home/adamoutler/gemini-webui/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/adamoutler/gemini-webui
+configfile: pytest.ini
+plugins: playwright-0.4.4, anyio-4.12.1, timeout-2.4.0, base-url-2.1.0, cov-7.0.0
+collecting ... collected 1 item
+
+tests/test_ui.py::test_ui_add_and_use_host INFO:__main__:Initializing app with DATA_DIR: /tmp/pytest-of-adamoutler/pytest-700/data0
+INFO:__main__:Generating new instance SSH key with comment: gemini-webui-inferrence1-20260305...
+Generating public/private ed25519 key pair.
+Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-700/data0/.ssh/id_ed25519
+Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-700/data0/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:YWfCOZ/d0F2s4lGzPGLiiJDadcM60/jhPfDFKMV/uu0 gemini-webui-inferrence1-20260305
+The key's randomart image is:
++--[ED25519 256]--+
+|               ..|
+|       . .   .o.o|
+|     . .B.o .o.+.|
+|    o ..+B+o=o=  |
+|   o o *S=oB.+.. |
+|  . . * * o = .  |
+|       = * . o   |
+|        o + ..   |
+|           ..oE  |
++----[SHA256]-----+
+WARNING:__main__:Failed to generate SSH key: no such user: 'node'
+WARNING:__main__:Failed to manage symlink for /home/node/.gemini: [Errno 13] Permission denied: '/home/node'
+INFO:__main__:Background preloading sessions for: local
+CONSOLE: Error with Permissions-Policy header: Origin trial controlled feature not enabled: 'browsing-topics'.
+Filling details
+Clicking Add Host
+Got response
+Verifying host in list
+Closing settings
+FAILEDINFO:__main__:Background preloading sessions for: local
+INFO:__main__:Background preloading sessions for: Test SSH Host
+INFO:__main__:Background preloading sessions for: local
+INFO:__main__:Background preloading sessions for: Test SSH Host
+INFO:__main__:Background preloading sessions for: local
+INFO:__main__:Background preloading sessions for: Test SSH Host
+INFO:__main__:Background preloading sessions for: local
+INFO:__main__:Background preloading sessions for: Test SSH Host

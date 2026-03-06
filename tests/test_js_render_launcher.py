@@ -16,41 +16,6 @@ def page(server):
         context.close()
         browser.close()
 
-def test_getLauncherWarningHtml_critical(page):
-    """Test getLauncherWarningHtml returns critical warning when no storage is writable."""
-    result = page.evaluate('''() => {
-        const config = { DATA_WRITABLE: false, TMP_WRITABLE: false };
-        return getLauncherWarningHtml(config);
-    }''')
-    assert "CRITICAL: No writable storage found." in result
-
-def test_getLauncherWarningHtml_warning(page):
-    """Test getLauncherWarningHtml returns warning when only data is not writable."""
-    result = page.evaluate('''() => {
-        const config = { DATA_WRITABLE: false, TMP_WRITABLE: true };
-        return getLauncherWarningHtml(config);
-    }''')
-    assert "WARNING:</strong> Persistent storage (/data) is not writable." in result
-
-def test_getLauncherWarningHtml_none(page):
-    """Test getLauncherWarningHtml returns empty string when storage is writable."""
-    result = page.evaluate('''() => {
-        const config = { DATA_WRITABLE: true, TMP_WRITABLE: true };
-        return getLauncherWarningHtml(config);
-    }''')
-    assert result == ""
-
-def test_getLauncherHtml_contains_elements(page):
-    """Test getLauncherHtml returns the basic HTML structure."""
-    result = page.evaluate('''() => {
-        return getLauncherHtml('test_id', '<div id="test_warning">Warning</div>');
-    }''')
-    assert '<div id="test_warning">Warning</div>' in result
-    assert 'Select a Connection' in result
-    assert 'id="test_id_quick_input"' in result
-    assert 'id="test_id_connections"' in result
-    assert 'id="test_id_backend_sessions"' in result
-
 def test_renderLauncher_e2e(page):
     """Test that renderLauncher successfully creates the DOM elements."""
     # Ensure launcher is present

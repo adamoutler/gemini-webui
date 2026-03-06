@@ -1893,7 +1893,10 @@
 
                 const activeTab = tabs.find(t => t.id === activeTabId);
                 if (activeTab && activeTab.state === 'launcher' && tabs.length > 1) {
-                    closeTab(activeTabId);
+                    const otherTab = tabs.find(t => t.id !== activeTabId && t.state === 'terminal') || tabs.find(t => t.id !== activeTabId);
+                    if (otherTab) {
+                        switchTab(otherTab.id);
+                    }
                     return;
                 }
             }
