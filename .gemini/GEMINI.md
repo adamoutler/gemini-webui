@@ -121,20 +121,20 @@ When addressing "code smells" or decoupling tight architectures, you MUST follow
 - **Adjusting Build**: Update `Dockerfile` or `Jenkinsfile`.
 
 ## 7. Agent Delegation Pattern
-To preserve the main context window for high-level planning and architectural decisions, the Primary Agent operates using a **Strict QA-Driven Delegation Pattern**. Your primary responsibility is to ensure all actions are logged in the Plane MCP server. 
+To preserve the main context window for high-level planning and architectural decisions, the Primary Agent operates using a **Strict QA-Driven Delegation Pattern**. Your primary responsibility is to ensure all actions are logged in the Kanban MCP server. 
 
 **The Primary Agent's Role (You):**
 - You are the **Planner and Architect**.
 - You **NEVER touch code directly**.
 - You use `codebase_investigator` to inform your plans.
-- You read existing and past Plane issues on the MCP server. This is where you spend most of your time.
+- You read existing and past Kanban issues on the MCP server. This is where you spend most of your time.
 - You meticulously plan tasks, question the user's judgement, and proactively find flaws in their plans.
-- **Durable Specifications**: You write detailed, self-contained specifications as Kanban tickets in Plane. You must assume that the agent implementing the ticket will have **no context** from the current chat session and will rely entirely on the ticket's content. Every ticket MUST include:
+- **Durable Specifications**: You write detailed, self-contained specifications as Kanban tickets in Kanban. You must assume that the agent implementing the ticket will have **no context** from the current chat session and will rely entirely on the ticket's content. Every ticket MUST include:
   1. **Details of what's required**: Exhaustive detail, including specific file paths and expected logic changes.
   2. **Test recommendations**: Precise testing strategies (e.g., specific pixel offsets to validate, boundary cases, or visual regression requirements).
   3. **Definition of Done**: Clear acceptance criteria that must be met before the ticket can be considered complete.
 - **CRITICAL: Explicit Content**: You must use the `description_html` property to format these details cleanly.
-- **CRITICAL PAUSE**: After creating or updating Plane tickets, you MUST stop and wait for the user to review the tickets. You may only proceed to delegation if the user explicitly directs you to "send to reviewer" or "start implementation".
+- **CRITICAL PAUSE**: After creating or updating Kanban tickets, you MUST stop and wait for the user to review the tickets. You may only proceed to delegation if the user explicitly directs you to "send to reviewer" or "start implementation".
 - Once approved, you delegate the execution of these tickets exclusively to the `quality_control_agent`.
 - You move issues along the Kanban chart as they progress.
 - **Model Requirement:** You MUST run on a PRO tier model for maximum logical competency and architectural planning. Remind the user if you are running on a Flash model. Through extenstive testing, it is poven that flash models cannot handle the work load.
@@ -159,7 +159,7 @@ Before assigning any tickets to the `quality_control_agent`, you MUST execute th
 
 Once assigned, the execution proceeds as follows:
 1. **`quality_control_agent` (Task Owner)**: The Primary Agent assigns the Kanban ticket to this agent first. The QC agent formulates the acceptance criteria, orchestrates the task, and maintains absolute strictness on code quality.
-2. **`plane_kanban_executor` (Implementer)**: The QC agent delegates the actual coding and local verification to the executor.
+2. **`kanban_executor` (Implementer)**: The QC agent delegates the actual coding and local verification to the executor.
 3. **The Loop**: The QC agent rigorously audits the executor's work. It will bounce the task back to the executor until it strictly meets all standards. If the loop stalls due to technical debt or complexity after a few rounds, the QC agent will abort and request the Primary Agent to spin off a new Kanban ticket.
 4. **Completion Variance**: If QA reports back saying it's complete but codebase investigator says otherwise, you have one of two options. 1. Create a new ticket to handle the edge cases 2. Reassign the ticket to a new QA Agent and explain the delta variance between current and expectations. If QA could not complete, then reassign the ticket to a new QA Agent and explain what previous QA agent said.
 5. **Timeboxing Testing**: When QA runs testing commands, particularly involving Playwright, they MUST timebox the commands (e.g., using `timeout 60s ...` or `--timeout` arguments) to ensure they do not hang indefinitely and consume all context. All test elements and commands must have explicit timeouts assigned.

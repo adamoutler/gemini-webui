@@ -14,5 +14,5 @@ The container is pre-configured with the necessary SSH keys for the **${USERNAME
 
 # Project Standards & Tooling
 
-## Plane Issue Management
-**MANDATORY**: When creating or updating work items in Plane, always use Markdown for the `description_html` field. The system processes Markdown correctly, but raw HTML may be rendered literally, making the tickets unreadable. Ensure all task lists, headers, and code blocks use standard GitHub-flavored Markdown. 
+## Kanban Issue Management
+**MANDATORY**: When creating or updating work items in Kanban, always use Markdown for the `description_html` field. The system processes Markdown correctly, but raw HTML may be rendered literally, making the tickets unreadable. Ensure all task lists, headers, and code blocks use standard GitHub-flavored Markdown. 
