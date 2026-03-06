@@ -1746,7 +1746,7 @@
                 if (result.status === 'success') {
                     const tab = tabs.find(t => t.id === activeTabId);
                     if (tab && tab.socket && tab.state === 'terminal') {
-                        tab.socket.emit('pty-input', {input: `> I uploaded @${result.filename} `});
+                        tab.socket.emit('pty-input', {input: `> I uploaded @${result.filename}\r`});
                         tab.term.focus();
                     } else {
                         alert('File uploaded successfully');
@@ -1887,7 +1887,7 @@
                 if (successCount > 0) {
                     const tab = tabs.find(t => t.id === activeTabId);
                     if (tab && tab.socket && tab.state === 'terminal') {
-                        const msg = successCount > 1 ? `> I uploaded multiple files to @${uploadPrefix} ` : `> I uploaded @${lastFilename} `;
+                        const msg = successCount > 1 ? `> I uploaded multiple files to @${uploadPrefix}\r` : `> I uploaded @${lastFilename}\r`;
                         tab.socket.emit('pty-input', {input: msg});
                         tab.term.focus();
                     } else if (successCount === 1) {

@@ -50,18 +50,19 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
          patch('src.app.validate_ssh_target', return_value=True), \
          patch('src.app.get_config_paths', return_value=('/tmp', '/tmp/config', '/tmp/ssh_dir')):
         
-        mock_run.return_value = MagicMock(returncode=0)
+        mock_run.return_value = MagicMock(returncode=0, stdout="mock_path")
         response = client.post('/api/upload', data=data, content_type='multipart/form-data')
         
         assert response.status_code == 200
         resp_data = json.loads(response.data)
         assert resp_data['status'] == 'success'
-        assert resp_data['filename'] == 'testfile.txt'
+        assert resp_data['filename'] == 'mock_path'
 
-        assert mock_run.call_count == 3
+        assert mock_run.call_count == 4
         ssh_call = mock_run.call_args_list[0][0][0]
         scp_call = mock_run.call_args_list[1][0][0]
         verify_call = mock_run.call_args_list[2][0][0]
+        path_call = mock_run.call_args_list[3][0][0]
         
         assert ssh_call[0] == 'ssh'
         assert 'user@host' in ssh_call
@@ -84,15 +85,16 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
          patch('src.app.validate_ssh_target', return_value=True), \
          patch('src.app.get_config_paths', return_value=('/tmp', '/tmp/config', '/tmp/ssh_dir')):
         
-        mock_run.return_value = MagicMock(returncode=0)
+        mock_run.return_value = MagicMock(returncode=0, stdout="mock_path")
         response = client.post('/api/upload', data=data, content_type='multipart/form-data')
         
         assert response.status_code == 200
         
         # In this case, remote_dir is empty string, so ssh mkdir is not called
-        assert mock_run.call_count == 2
+        assert mock_run.call_count == 3
         scp_call = mock_run.call_args_list[0][0][0]
         verify_call = mock_run.call_args_list[1][0][0]
+        path_call = mock_run.call_args_list[2][0][0]
         
         assert scp_call[0] == 'scp'
         assert 'user@host:testfile.txt' in scp_call

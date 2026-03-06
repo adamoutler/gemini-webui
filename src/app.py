@@ -806,6 +806,11 @@ def upload_file():
             if verify_res.returncode != 0:
                 return jsonify({"status": "error", "message": "SCP returned 0, but file verification failed on remote host."}), 500
                 
+            path_cmd = ssh_cmd_base + ['--', clean_target, f"realpath {shlex.quote(remote_path)} 2>/dev/null || readlink -m {shlex.quote(remote_path)} 2>/dev/null || echo {shlex.quote(remote_path)}"]
+            path_res = subprocess.run(path_cmd, capture_output=True, text=True)
+            if path_res.returncode == 0 and path_res.stdout.strip():
+                filename = path_res.stdout.strip()
+                
         except Exception as e:
             return jsonify({"status": "error", "message": f"SCP error: {str(e)}"}), 500
 
