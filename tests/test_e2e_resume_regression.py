@@ -207,3 +207,63 @@ def test_auto_resume_after_server_restart(custom_server, test_data_dir):
 
         context.close()
         browser.close()
+
+@pytest.mark.timeout(60)
+def test_no_terminal_clear_on_stolen_session(custom_server, test_data_dir):
+    """
+    Test that session-stolen event does not clear the terminal buffer or loop.
+    """
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        # Browser 1
+        context1 = browser.new_context()
+        page1 = context1.new_page()
+        page1.goto(custom_server.url)
+        expect(page1.get_by_text("Select a Connection").first).to_be_visible(timeout=5000)
+        page1.locator('.tab-instance.active button:has-text("Start New")').first.click()
+        expect(page1.locator('#active-connection-info')).to_be_visible(timeout=5000)
+        page1.locator('.xterm').first.click()
+        page1.keyboard.type("Initial buffer state check\r")
+        
+        def check_text(page):
+            return page.evaluate("""() => {
+                if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return '';
+                const tab = tabs.find(t => t.id === activeTabId);
+                if (!tab || !tab.term) return '';
+                let text = '';
+                for (let i = 0; i < tab.term.buffer.active.length; i++) {
+                    text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
+                    text += '\\n';
+                }
+                return text;
+            }""")
+            
+        # Wait for input to be processed
+        for _ in range(10):
+            term_text1 = check_text(page1)
+            if "Initial buffer state check" in term_text1:
+                break
+            time.sleep(0.5)
+            
+        assert "Initial buffer state check" in term_text1
+        
+        # Simulate session-stolen by dispatching it
+        page1.evaluate("""() => {
+            const tab = tabs.find(t => t.id === activeTabId);
+            tab.socket._callbacks['$session-stolen'][0]({});
+        }""")
+        
+        # Check that 'Reclaim' button appeared
+        expect(page1.locator('#reclaim-btn')).to_be_visible(timeout=5000)
+        
+        # Check that connection status says Stolen
+        status_el = page1.locator('#connection-status')
+        expect(status_el).to_have_text("Stolen", timeout=5000)
+        
+        # Buffer should still have initial text
+        term_text1_after = check_text(page1)
+        assert "Initial buffer state check" in term_text1_after
+        assert "Session stolen" in term_text1_after
+        
+        context1.close()
+        browser.close()

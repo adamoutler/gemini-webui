@@ -1198,9 +1198,7 @@
                     statusEl.innerText = 'Reconnecting...';
                     statusEl.style.color = '#e5e510'; // yellow
                 }
-                if (reason === "io server disconnect") {
-                    tab.socket.connect();
-                }
+                // Socket.io handles reconnection natively
             });
 
             let reloadTimeout = null;
@@ -1228,8 +1226,21 @@
                 }
             });
             tab.socket.on('session-stolen', (data) => {
+                tab.stolen = true;
+                if (tab.socket) {
+                    tab.socket.disconnect();
+                }
                 if (tab.term) {
-                    tab.term.write('\r\n\x1b[1;31m[Session stolen by another device]\x1b[0m\r\n');
+                    tab.term.write('\r\n\x1b[1;31m[Session stolen by another device. Click Reclaim to take it back.]\x1b[0m\r\n');
+                }
+                if (activeTabId === tab.id) {
+                    const statusEl = document.getElementById('connection-status');
+                    if (statusEl) {
+                        statusEl.innerText = 'Stolen';
+                        statusEl.style.color = '#c82424'; // red
+                    }
+                    const reclaimBtn = document.getElementById('reclaim-btn');
+                    if (reclaimBtn) reclaimBtn.style.display = 'inline-block';
                 }
             });
             tab.term.onData((data) => { 
@@ -1410,8 +1421,17 @@
 
             if (tab.state === 'terminal') {
                 toolbarInfo.style.display = 'flex';
+                const reclaimBtn = document.getElementById('reclaim-btn');
+                if (reclaimBtn) reclaimBtn.style.display = tab.stolen ? 'inline-block' : 'none';
                 if (isMobile) mobileControls.style.display = 'grid';
                 updateStatus(tab.session.ssh_target, tab.session.ssh_dir);
+                if (tab.stolen) {
+                    const statusEl = document.getElementById('connection-status');
+                    if (statusEl) {
+                        statusEl.innerText = 'Stolen';
+                        statusEl.style.color = '#c82424';
+                    }
+                }
                 setTimeout(() => { fitTerminal(tab); tab.term.focus(); }, 50);
             } else { 
                 toolbarInfo.style.display = 'none'; 
@@ -1420,20 +1440,32 @@
             }
         }
 
+        function reclaimStolenSession() {
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (tab && tab.stolen) {
+                tab.stolen = false;
+                const reclaimBtn = document.getElementById('reclaim-btn');
+                if (reclaimBtn) reclaimBtn.style.display = 'none';
+                if (tab.socket) {
+                    tab.socket.connect();
+                    updateStatus(tab.session.ssh_target, tab.session.ssh_dir);
+                }
+            }
+        }
+
         function restartActiveTab() {
             const tab = tabs.find(t => t.id === activeTabId);
             if (tab && tab.state === 'terminal') {
                 const { ssh_target, ssh_dir, resume } = tab.session;
-                tab.term.clear(); 
+                // tab.term.clear(); 
                 tab.socket.emit('restart', { 
                     tab_id: tab.id, 
                     resume: resume, 
                     cols: tab.term.cols, 
                     rows: tab.term.rows, 
-                    ssh_target: ssh_target, 
-                    ssh_dir: ssh_dir 
-                });
-                updateStatus(ssh_target, ssh_dir);
+                    ssh_target: ssh_target,
+                    ssh_dir: ssh_dir
+                });                updateStatus(ssh_target, ssh_dir);
             }
         }
 
