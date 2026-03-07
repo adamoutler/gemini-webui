@@ -745,7 +745,7 @@
             if (useCache) query.set('cache', 'true');
             query.set('bg', 'true'); // ALWAYS use background fetching to avoid blocking server
 
-            if (!useCache || isPolling) {
+            if (!useCache) {
                 HostStateManager.triggerPulse(tabId, conn.label);
             }
 
