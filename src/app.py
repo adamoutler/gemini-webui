@@ -395,6 +395,11 @@ def read_and_forward_pty_output():
                         else:
                             filtered_output = decoded_output
                         if filtered_output:
+                            try:
+                                with open(f'/tmp/session-{tab_id}-DEBUG.log', 'a', encoding='utf-8') as debug_log:
+                                    debug_log.write(filtered_output)
+                            except Exception as e:
+                                logger.error(f"Failed to write to debug log: {e}")
                             session.append_buffer(filtered_output)
                             if sid:
                                 socketio.emit('pty-output', {'output': filtered_output}, room=sid)
