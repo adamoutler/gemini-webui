@@ -388,7 +388,7 @@
                     const statusLabel = s.is_orphaned ? 'Orphaned' : 'Active';
 
                     let flashClass = '';
-                    let pulseHtml = '<div class="pulse-indicator superbright pulsing"></div>';
+                    let pulseHtml = '<div class="pulse-indicator"></div>';
                     if (backendSessionLastSeen[s.tab_id] && backendSessionLastSeen[s.tab_id] !== s.last_active) {
                         flashClass = 'flash';
                     }
