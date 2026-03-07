@@ -55,7 +55,6 @@ def test_share_lifecycle(client):
         assert "<span class='test'>Hello Terminal</span>" in html
         assert "My Test Session" in html
         assert "terminal-wrapper" in html
-        assert "max-width: 1200px" in html
         
         # Delete share
         del_resp = client.delete(f'/api/shares/{share_id}')

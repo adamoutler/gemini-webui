@@ -6,14 +6,18 @@
 <title>Shared Terminal Session: {{ session_name }}</title>
 <style>
   :root {
-    --bg-color: #000000;
-    --text-color: #ffffff;
+    --bg-color: #1e1e1e; /* Dark (default) */
+    --text-color: #cccccc;
   }
   body.theme-light {
     --bg-color: #ffffff;
-    --text-color: #000000;
+    --text-color: #333333; /* Dark Grey text */
   }
-  body.theme-color {
+  body.theme-dark {
+    --bg-color: #1e1e1e; /* Dark Grey background */
+    --text-color: #cccccc; /* Light Grey text */
+  }
+  body.theme-full {
     --bg-color: #1e1e1e;
     --text-color: #cccccc;
   }
@@ -21,21 +25,29 @@
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
-    padding: 20px;
+    padding: 0;
     font-family: 'Courier New', Courier, monospace;
     display: flex;
     justify-content: center;
     box-sizing: border-box;
+    min-height: 100vh;
   }
   .terminal-wrapper {
     width: 100%;
-    max-width: 1200px;
-    overflow-x: auto;
+    /* No max-width, make it full screen */
     background-color: var(--bg-color);
-    border-radius: 8px;
     padding: 10px;
+    box-sizing: border-box;
+    overflow-x: auto;
   }
+
   .terminal-wrapper pre, .terminal-wrapper div {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: inherit;
+    line-height: 1.2;
+}
     margin: 0;
     padding: 0;
     box-sizing: border-box;

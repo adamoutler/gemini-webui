@@ -179,16 +179,18 @@
                 <div style="margin-top: 15px;">
                     <label for="share-theme-select"><strong>Theme:</strong></label>
                     <select id="share-theme-select" style="margin-left: 10px; padding: 5px; background: #1e1e1e; color: #fff; border: 1px solid #3c3c3c; border-radius: 4px;">
-                        <option value="dark" selected>Dark (Default)</option>
+                        <option value="dark">Dark (Default)</option>
                         <option value="light">Light</option>
-                        <option value="color">Full Color</option>
+                        <option value="full">Full Color</option>
                     </select>
                 </div>
 
                 <div id="share-result" style="margin-top: 15px; display: none;">
-                    <input type="text" id="share-link-input" readonly style="width: 100%; margin-bottom: 10px; color: #0dbc79;">
-                    <button class="small" onclick="copyShareLink()">Copy Link</button>
-                    <a id="share-link-anchor" href="#" target="_blank" style="margin-left: 10px; color: #3b8eea; text-decoration: none;">Open Link</a>
+                    <input type="text" id="share-link-input" readonly style="width: 100%; margin-bottom: 10px; color: #0dbc79; padding: 5px; background: #1e1e1e; border: 1px solid #3c3c3c; border-radius: 4px;">
+                    <div style="display: flex; gap: 10px;">
+                        <button class="primary" style="flex: 1;" onclick="copyShareLink()">Copy Link</button>
+                        <button class="success" style="flex: 1;" onclick="window.open(document.getElementById('share-link-input').value, '_blank')">Open Link</button>
+                    </div>
                 </div>
                 <button id="confirm-share-btn" class="primary" style="width: 100%; margin-top: 15px;" onclick="confirmShareSession()">Generate Share Link</button>
             </div>

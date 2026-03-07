@@ -1721,10 +1721,10 @@
                             <div style="flex-grow: 1; overflow: hidden; margin-right: 15px;">
                                 <div style="color: #3b8eea; font-weight: bold; margin-bottom: 5px;">${sessionName}</div>
                                 <div style="font-size: 11px; color: #888; margin-bottom: 5px;">Created: ${dateStr}</div>
-                                <div style="font-size: 11px; color: #0dbc79; cursor: pointer; text-decoration: underline;" onclick="copyToClipboard('${linkUrl}')">Copy Link</div>
                             </div>
-                            <div style="display: flex; gap: 5px;">
+                            <div style="display: flex; gap: 5px; align-items: center;">
                                 <button class="primary small" onclick="viewSharedSession('${shareId}')">View</button>
+                                <button class="success small" onclick="copyToClipboard('${linkUrl}')">Copy</button>
                                 <button class="danger small" onclick="deleteSharedSession('${shareId}')">Delete</button>
                             </div>
                         `;
@@ -2145,10 +2145,12 @@
             document.getElementById('share-result').style.display = 'none';
             document.getElementById('confirm-share-btn').style.display = 'block';
             document.getElementById('share-modal').style.display = 'block';
+            if(document.getElementById('share-theme-select')) document.getElementById('share-theme-select').disabled = false;
         }
 
         function closeShareModal() {
             document.getElementById('share-modal').style.display = 'none';
+            if(document.getElementById('share-theme-select')) document.getElementById('share-theme-select').disabled = false;
         }
 
         async function confirmShareSession() {
@@ -2156,6 +2158,7 @@
             if (!tab || !tab.term) return;
 
             document.getElementById('confirm-share-btn').style.display = 'none';
+            if(document.getElementById('share-theme-select')) document.getElementById('share-theme-select').disabled = true;
 
             let serializeAddon;
             try {
@@ -2171,26 +2174,37 @@
             const selectedTheme = themeElement ? themeElement.value : 'dark';
 
             let htmlDump = serializeAddon.serializeAsHTML({
-                includeGlobalBackground: selectedTheme === 'color'
+                includeGlobalBackground: selectedTheme === 'full'
             });
 
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlDump;
+
+            // Xterm serialization usually wraps in a single root element
+            const rootEl = tempDiv.firstElementChild || tempDiv;
+            const lines = Array.from(rootEl.children);
+            
+            // Trim trailing empty lines to prevent massive whitespace
+            while (lines.length > 0) {
+                const lastLine = lines[lines.length - 1];
+                if (!lastLine.textContent || !lastLine.textContent.replace(/\u00a0/g, ' ').trim()) {
+                    lastLine.remove();
+                    lines.pop();
+                } else {
+                    break;
+                }
+            }
+
             if (selectedTheme === 'light' || selectedTheme === 'dark') {
-                // Remove explicit color and background-color styles from the root elements 
-                // so that the CSS themes in share.html can apply properly.
-                // We do a light cleanup to ensure it inherits from the body theme wrapper.
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = htmlDump;
-                
-                // Usually xterm serialization wraps everything in a root div or pre.
-                // We'll strip global colors from the immediate children.
+                // Remove explicit color styles so CSS themes can apply
                 for (const child of tempDiv.children) {
                     if (child.style) {
                         child.style.backgroundColor = '';
                         child.style.color = '';
                     }
                 }
-                htmlDump = tempDiv.innerHTML;
             }
+            htmlDump = tempDiv.innerHTML;
 
             try {
                 const response = await fetch('/api/shares/create', {
@@ -2210,7 +2224,6 @@
                 if (response.ok && result.share_url) {
                     document.getElementById('share-result').style.display = 'block';
                     document.getElementById('share-link-input').value = window.location.origin + result.share_url;
-                    document.getElementById('share-link-anchor').href = result.share_url;
                 } else {
                     alert('Failed to share: ' + (result.error || 'Unknown error'));
                     document.getElementById('confirm-share-btn').style.display = 'block';

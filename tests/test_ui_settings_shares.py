@@ -55,7 +55,7 @@ def test_ui_settings_shared_sessions(page, server):
     session_item = shared_list.locator('.session-item').first
     expect(session_item).to_be_visible(timeout=5000)
     expect(session_item).to_contain_text("Delete")
-    expect(session_item).to_contain_text("Copy Link")
+    expect(session_item).to_contain_text("Copy")
     expect(session_item).to_contain_text("View")
     
     # Click View and ensure the preview modal opens
@@ -87,5 +87,5 @@ def test_ui_settings_shared_sessions(page, server):
     
     # Verify the item is gone or empty state is shown
     # (could be "No session snapshots." if it was the only one)
-    empty_text = shared_list.locator('div', has_text="No session snapshots.")
-    expect(empty_text).to_be_visible(timeout=5000)
+    # We will just verify the item we clicked is hidden, as other tests may leave shares
+    expect(session_item).to_be_hidden(timeout=5000)
