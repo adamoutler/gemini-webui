@@ -1,15 +1,16 @@
 import pytest
 import time
-from playwright.sync_api import expect
+from playwright.sync_api import sync_playwright, expect
 
 @pytest.fixture(scope="module")
-def browser_context(playwright):
-    device = playwright.devices['Desktop Chrome']
-    browser = playwright.chromium.launch(headless=True)
-    context = browser.new_context()
-    yield context
-    context.close()
-    browser.close()
+def browser_context():
+    with sync_playwright() as playwright:
+        device = playwright.devices['Desktop Chrome']
+        browser = playwright.chromium.launch(headless=True)
+        context = browser.new_context()
+        yield context
+        context.close()
+        browser.close()
 
 @pytest.fixture(scope="function")
 def page(server, browser_context):
