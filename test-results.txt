@@ -6,21 +6,21 @@ plugins: playwright-0.4.4, anyio-4.12.1, timeout-2.4.0, base-url-2.1.0, cov-7.0.
 collected 1 item
 
 tests/test_ui_share_color_average.py Generating public/private ed25519 key pair.
-Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-1124/data0/.ssh/id_ed25519
-Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-1124/data0/.ssh/id_ed25519.pub
+Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-1128/data0/.ssh/id_ed25519
+Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-1128/data0/.ssh/id_ed25519.pub
 The key fingerprint is:
-SHA256:AlyZHM6wh/2VB/lj3In6t2w68HwruqormC5z/K4pi1U gemini-webui-inferrence1-20260308
+SHA256:NukZMymuxGSseFwdrkFKWLY9uQsfP/+eU3dUZyLHcqE gemini-webui-inferrence1-20260308
 The key's randomart image is:
 +--[ED25519 256]--+
-|    ..o+  ..     |
-|   . O+   .o     |
-|    = =   oo.o . |
-|     o . . .* o  |
-|    E . S  o .   |
-|   .   .  o      |
-| ..o       =     |
-|=.=..       *.+  |
-|oB++o.oo..oo.B+o |
+|  o          ... |
+| + o .      o.= +|
+|. o = .     E= oo|
+| . + = . o      .|
+|  o O + S      . |
+| o O B + *  . . .|
+|. + * + o  . . . |
+| . . . o  ..     |
+|    .   .o+.     |
 +----[SHA256]-----+
 \nComputed body background for theme light: rgb(255, 255, 255)
 \nSaved screenshot for light mode to public/qa-screenshots/test_share_light.png
@@ -30,7 +30,7 @@ The key's randomart image is:
 Dark mode average color: (30, 30, 30), luminance: 30.0
 \nComputed body background for theme full: rgb(30, 30, 30)
 \nSaved screenshot for full mode to public/qa-screenshots/test_share_full.png
-Full mode average color: (30, 30, 30), luminance: 30.0
+Full mode average color: (238, 238, 238), luminance: 238.0
 .
 
-============================== 1 passed in 6.82s ===============================
+============================== 1 passed in 7.05s ===============================

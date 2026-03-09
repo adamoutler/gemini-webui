@@ -2351,7 +2351,7 @@
             const selectedTheme = themeElement ? themeElement.value : 'dark';
 
             let htmlDump = serializeAddon.serializeAsHTML({
-                includeGlobalBackground: selectedTheme === 'full'
+                includeGlobalBackground: selectedTheme === 'dark'
             });
 
             const tempDiv = document.createElement('div');

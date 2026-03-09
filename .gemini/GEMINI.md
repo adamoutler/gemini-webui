@@ -185,6 +185,7 @@ Once a ticket enters **In Progress**, it enters the automated execution pipeline
 ## 9. Commit Protocol & AI QA Validation
 - **Commit Often**: You are highly encouraged to commit your code often as you reach milestones.
 - **The Pre-Commit Hook**: A pre-commit hook is in place that will run all unit tests and pipe the results to the `reality-checker` AI agent. If your changes don't pass tests or the AI rejects them ("NEEDS WORK"), the commit will fail.
+- **Empirical Evidence Required**: Tests must output empirical evidence (screenshots, test results, logs). These can go to `/tmp` (or be tracked if appropriate) and they must clearly show the job is done, otherwise the `reality-checker` will fail the commit checks.
 - **Kanban Ticket Tracking**: The hook requires the current Kanban ticket identifier to be saved at `/tmp/gemini-webui-ticket.txt`.
 - **Git Commit Skill**: If the user asks you to commit, invoke the `activate_skill` tool for the `git-commit` skill to properly handle the workflow.
 
