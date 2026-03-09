@@ -29,7 +29,7 @@
   "hooks": {
     "BeforeTool": [
       {
-        "matcher": ".*run_shell_command.*",
+        "matcher": "run_shell_command|Bash|shell",
         "hooks": [
           {
             "name": "qa-gate-check",
