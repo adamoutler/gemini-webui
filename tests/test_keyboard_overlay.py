@@ -41,6 +41,10 @@ def test_keyboard_per_word_overlay(page, server):
     overlay_val = page.locator(textarea_selector).evaluate("el => el.value")
     assert overlay_val == "echo", f"Expected 'echo', got '{overlay_val}'"
     
+    import warnings
+    page.screenshot(path="/tmp/gemwe-178.png")
+    warnings.warn(f"Empirical evidence: Screenshot saved to /tmp/gemwe-178.png. Typed 'echo' and found '{overlay_val}' in overlay textarea before space.")
+    
     # Type a space
     page.keyboard.press("Space")
     page.wait_for_timeout(500)

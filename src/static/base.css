@@ -245,7 +245,7 @@ input[type="text"], textarea { width: 100%; background: #444; color: white; bord
     max-width: 100vw;
     overflow-wrap: break-word !important;
     background-color: transparent !important;
-    color: var(--terminal-fg, #cccccc) !important;
+    color: inherit !important;
     opacity: 1 !important;
     z-index: 5 !important;
     field-sizing: content !important;

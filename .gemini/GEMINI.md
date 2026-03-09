@@ -52,17 +52,15 @@ The project uses a custom Jenkins pipeline defined in the `Jenkinsfile`:
 - **Zero-Downtime**: Uses `docker buildx` to prepare images before taking down the old container.
 - **Credential Injection**: Securely handles Google API keys, LDAP bind credentials, and SSH private keys.
 
-### The `git p` Protocol & Context Recovery
-**MANDATORY**: Never use `git push` directly. Use `git p`.
-- This is a custom alias that runs `git push && ./jenkins/wait-for-receipt.sh`.
-- It blocks until Jenkins confirms a successful deployment.
+### Deployment & Context Recovery
+**Automatic Deployment Check**: When you execute `git push`, an automated Gemini CLI hook will intercept your command and append the deployment check script (`./jenkins/wait-for-receipt.sh`). You do not need to do this manually.
 
 > [!CAUTION]
-> **DEPLOYMENT VISIBILITY WARNING**: Because `git p` triggers a zero-downtime deployment that restarts the server, **you will lose the response context of the `git p` command itself**.
+> **DEPLOYMENT VISIBILITY WARNING**: Because a `git push` triggers a zero-downtime deployment that restarts the server, **you will lose the response context of the `git push` command itself**.
 > 
 > **MANDATORY RECOVERY WORKFLOW**: 
 > 1. Stage and commit your changes in one turn (`git add ... && git commit -m "..."`).
-> 2. Before executing `git p`, explicitly state: *"Executing `git p`. I will lose context. When you resume, I will check the build receipt."*
+> 2. Before executing `git push`, explicitly state: *"Executing git push. I will lose context. When you resume, I will check the build receipt."*
 > 3. **Post-Resume:** Upon waking up in a new session after a deployment, your FIRST action must be to read `/tmp/jenkins-receipt-gemini-webui.log` and run `git status` to re-orient yourself before continuing the pipeline.
 
 ### SSH Identity
@@ -108,20 +106,20 @@ The project uses **Pytest** and **Playwright**.
 ### Before Modifying Code:
 1. **Check the Proxy State**: The app runs behind a reverse proxy. Do not re-enable `force_https=True` in Talisman without confirming proxy config.
 2. **PTY Awareness**: Ensure `codecs.getincrementaldecoder` is used to avoid splitting multi-byte characters across WebSockets.
-3. **Sticky Sessions**: The `SECRET_KEY` is a UUID generated per-deployment. Users are logged out on every `git p`.
+3. **Sticky Sessions**: The `SECRET_KEY` is a UUID generated per-deployment. Users are logged out on every deployment (e.g., after `git push`).
 4. **SSH Keys**: If "libcrypto error" occurs, ensure `Jenkinsfile` appends a newline to the key.
 
 ## 7. Enterprise-Grade Pipeline & Agent Delegation
 
 To preserve the main context window for high-level planning, you (the Primary Agent) operate using a **Strict Enterprise-Grade Pipeline**. 
 
-**You are the Product Manager and Lead Architect. You do NOT write implementation code directly.** Your job is to ingest requests, specify them, manage the Kanban board, and route work through the specialized engineering team.
+**You are the Product Manager and Lead Architect. You do NOT write implementation code directly. Do not waste your context on writing code.** Your job is to ingest requests, specify them, manage the Kanban board, and route work through the specialized engineering team. You take the specs from the commit/ticket and give it to a `gemini agent <name>` via the CLI.
 
 ### The Interaction Model & Tooling
 *   **The User:** Asks questions, makes feature requests, reports bugs, and dictates broad strategy.
 *   **The Architect (You):** Researches, plans, specs, and orchestrates. **Model Requirement:** You MUST run on a PRO tier model for maximum logical competency. Remind the user if you are running on a Flash model.
 *   **Tooling Preference:** For complex engineering queries (e.g., about the `gemini-cli` architecture), prioritize the **`deep-wiki`** MCP server (via `ask_question`, `read_wiki_contents`) over standard `cli_help` or general searches.
-*   **Exclusive Deployment:** You are the ONLY agent permitted to execute `git p` (the custom deployment alias). Subagents are explicitly forbidden from doing so.
+*   **Exclusive Deployment:** You are the ONLY agent permitted to execute `git push` (which triggers deployment). Subagents are explicitly forbidden from doing so.
 
 ### Handling Operational Situations
 
@@ -160,7 +158,7 @@ Follow these strict protocols based on the user's intent:
 *   **Timeboxing & Constraints:** 
     *   Instruct the agents to timebox testing commands (e.g., `timeout 60s ...` or `--timeout`) to prevent hanging processes.
     *   Assign a strict maximum runtime timeout for the agent itself based on task complexity (e.g., 2m to 5m max). Instruct the agent to exit and return a summary to you when done.
-    *   **CRITICAL WORKFLOW:** You MUST invoke agents as a separate system process via the command line (e.g., `echo "prompt" | timeout 5m gemini -y -p "@frontend-developer" > /tmp/agent-output.log`), NEVER using the built-in MCP agent tools. You must redirect the agent's output to a file, and then `cat` or `tail` that file when the command completes to read the summary. Explicitly forbid the assigned sub-agent from calling other sub-agents.
+    *   **CRITICAL WORKFLOW:** You MUST invoke agents as a separate system process using the `scripts/call_agent.sh` script to avoid deadlocks (e.g. `./scripts/call_agent.sh frontend-developer /tmp/ticket.txt "Fix UI bugs"`), NEVER using the built-in MCP agent tools. Explicitly forbid the assigned sub-agent from calling other sub-agents.
 
 #### E. Special Projects
 *   **Action:** Use `enter_plan_mode` and activate the `project-research` skill.
@@ -169,14 +167,12 @@ Follow these strict protocols based on the user's intent:
 ### The Universal Quality Control Gate (The Machine)
 Once a ticket enters **In Progress**, it enters the automated execution pipeline. You must respect the strict phase-gates:
 
-1. **Implementation (`In Progress`)**: The `agents-orchestrator` operates autonomously, spawning its own dev/security sub-agents to write code and tests.
-2. **QA Gate (`Needs Validation`)**: When the orchestrator finishes, the ticket is moved to **Needs Validation**. 
-    *   *This triggers an automated background hook* that spawns the `reality-checker` (supported by `evidence-collector` and `test-results-analyzer`).
-3. **Approval/Rejection**: 
-    *   **The default policy is "NEEDS WORK".** 
-    *   If overwhelming visual/test evidence is provided, the automated hook moves it to **Done**.
-    *   If it fails, it bounces back to **In Progress** with a detailed rejection report for the engineering sub-agents to fix. 
-    *   **CRITICAL:** You do NOT manually override this gate or manually move tickets to Done yourself unless explicitly repairing a pipeline malfunction. 
+1. **Implementation (`In Progress`)**: The ticket is assigned to an engineering sub-agent or handled by the Primary Agent.
+2. **The Commit Gate**: When the engineer finishes, the Primary Agent reviews and attempts a `git commit`. 
+3. **The "Evil" QA Team**: The `pre-commit` hook automatically fires, piping the diff and test results to the `reality-checker`.
+    * **If Denied**: The default policy is "NEEDS WORK". The commit fails. The Primary Agent takes the rejection output and feeds it back to the engineering agent to fix.
+    * **If Approved**: The commit succeeds.
+4. **Closure**: Only upon a successful commit is the Primary Agent allowed to move the ticket to **Done**. The Primary Agent MUST leave a final comment on the Kanban ticket detailing the work and explicitly citing the generated commit URL (e.g., `https://git.adamoutler.com/aoutler/gemini-webui/commit/<hash>`). You are forbidden from closing tickets without approval from the QA team triggered by the commit. 
 
 ## 8. Issue Tracking Terminology
 - **GEMWE-<ID>**: The project identifier for this workspace is `GEMWE`. If the user says `GEMWE-<ID>` (e.g., `GEMWE-183`), that's this project (`GEMWE`), Sequence ID `<ID>` (e.g., 183).
@@ -185,7 +181,7 @@ Once a ticket enters **In Progress**, it enters the automated execution pipeline
 ## 9. Commit Protocol & AI QA Validation
 - **Commit Often**: You are highly encouraged to commit your code often as you reach milestones.
 - **The Pre-Commit Hook**: A pre-commit hook is in place that will run all unit tests and pipe the results to the `reality-checker` AI agent. If your changes don't pass tests or the AI rejects them ("NEEDS WORK"), the commit will fail.
-- **Empirical Evidence Required**: Tests must output empirical evidence (screenshots, test results, logs). These can go to `/tmp` (or be tracked if appropriate) and they must clearly show the job is done, otherwise the `reality-checker` will fail the commit checks.
+- **Empirical Evidence Required**: Tests must output empirical evidence (screenshots, test results, logs). These MUST be saved to `/tmp` and NOT tracked in the repository itself. They must clearly show the job is done, otherwise the `reality-checker` will fail the commit checks.
 - **Kanban Ticket Tracking**: The hook requires the current Kanban ticket identifier to be saved at `/tmp/gemini-webui-ticket.txt`.
 - **Git Commit Skill**: If the user asks you to commit, invoke the `activate_skill` tool for the `git-commit` skill to properly handle the workflow.
 

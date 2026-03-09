@@ -32,20 +32,19 @@ def test_overlay_box_colors_match_terminal_theme(page):
             fg: style.color
         };
     }''')
-    
-    # We expect them to match the terminal theme which is #1e1e1e and #cccccc in hex.
-    # In Playwright evaluate, getComputedStyle returns rgb() values.
-    # #1e1e1e is rgb(30, 30, 30).
-    # #cccccc is rgb(204, 204, 204)
-    # The default JS might use different defaults if not careful, but our goal is 
-    # to avoid stark black (#000000) and white (#ffffff) or #444/white.
+
+    term_style = page.evaluate('''() => {
+        const terminal = document.querySelector(".terminal");
+        if (!terminal) return { bg: 'rgb(0, 0, 0)', fg: 'rgb(212, 212, 212)' };
+        const style = window.getComputedStyle(terminal);
+        return { bg: style.backgroundColor, fg: style.color };
+    }''')
     
     # Check that it's definitively not black and white
     assert colors['bg'] != 'rgb(0, 0, 0)', "Regression: Background is stark black!"
     assert colors['fg'] != 'rgb(255, 255, 255)', "Regression: Foreground is stark white!"
     
-    # Check that it matches the transparent background and light gray foreground
-    # Allowing for rgba(0, 0, 0, 0) and #cccccc (204,204,204) or #d4d4d4 (212,212,212)
+    # Check that it matches the transparent background and dynamic foreground
     assert colors['bg'] in ['rgba(0, 0, 0, 0)', 'transparent'], f"Expected transparent background, got {colors['bg']}"
-    assert colors['fg'] in ['rgb(204, 204, 204)', 'rgb(212, 212, 212)', 'rgb(229, 229, 229)'], f"Expected light gray foreground, got {colors['fg']}"
+    assert colors['fg'] == term_style['fg'], f"Expected terminal foreground {term_style['fg']}, got {colors['fg']}"
 

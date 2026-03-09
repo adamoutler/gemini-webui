@@ -16,3 +16,7 @@ When asked to commit code, you MUST follow these steps:
     *   Pipe test results to the `reality-checker` agent.
     *   Wait for AI validation of your changes against the Kanban ticket requirements.
 4.  **Handling Rejection**: If the commit is rejected (the pre-commit hook fails), read the output from the hook, particularly the contents of `/tmp/gemini-webui-reality-results.txt` which will explain why `reality-checker` rejected the changes (e.g., missing tests, incomplete features). Fix the issues and try committing again.
+5.  **Successful Commit & Closure**: Once the commit succeeds (QA approved), you must:
+    *   Add a comment to the Kanban ticket detailing the work done.
+    *   Annotate the comment with the full Git commit URL (e.g., `https://git.adamoutler.com/aoutler/gemini-webui/commit/<hash>`).
+    *   Move the ticket to the **Done** state. (You are forbidden from closing tickets without approval from the QA team triggered by the commit).

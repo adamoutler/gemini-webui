@@ -35,6 +35,13 @@ def test_input_overlay_colors(page):
         };
     }''')
     
+    term_style = page.evaluate('''() => {
+        const terminal = document.querySelector(".terminal");
+        if (!terminal) return { bg: 'rgb(0, 0, 0)', fg: 'rgb(212, 212, 212)' };
+        const style = window.getComputedStyle(terminal);
+        return { bg: style.backgroundColor, fg: style.color };
+    }''')
+    
     import os
     import time
     from PIL import Image
@@ -65,7 +72,6 @@ def test_input_overlay_colors(page):
     assert css_colors['bg'] != 'rgb(0, 0, 0)', "Regression detected: Overlay background is stark black."
     assert css_colors['fg'] != 'rgb(255, 255, 255)', "Regression detected: Overlay text is stark white."
     
-    # Ensure it uses transparent background and light gray matching the terminal's theme
-    # Default terminal theme foreground: #d4d4d4 (212,212,212) or #cccccc (204,204,204)
+    # Ensure it uses transparent background and matches the terminal's theme foreground
     assert css_colors['bg'] in ['rgba(0, 0, 0, 0)', 'transparent'], f"Expected transparent background, got {css_colors['bg']}"
-    assert css_colors['fg'] in ['rgb(204, 204, 204)', 'rgb(212, 212, 212)'], f"Expected light gray foreground, got {css_colors['fg']}"
+    assert css_colors['fg'] == term_style['fg'], f"Expected terminal foreground {term_style['fg']}, got {css_colors['fg']}"

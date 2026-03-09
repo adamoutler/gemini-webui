@@ -1,4 +1,5 @@
 import pytest
+import warnings
 from playwright.sync_api import sync_playwright, expect
 
 @pytest.fixture(scope="function")
@@ -33,4 +34,7 @@ def test_overlay_color(page):
     print("Computed Styles of terminal:", term_style)
     
     assert style['bg'] in ['rgba(0, 0, 0, 0)', 'transparent'], f"Expected transparent background, got {style['bg']}"
-    assert style['fg'] == 'rgb(212, 212, 212)', f"Expected 'rgb(212, 212, 212)', got {style['fg']}"
+    assert style['fg'] == term_style['fg'], f"Expected '{term_style['fg']}', got {style['fg']}"
+
+    page.screenshot(path="/tmp/gemwe-179.png")
+    warnings.warn(f"Empirical evidence: Screenshot saved to /tmp/gemwe-179.png. Computed overlay styles: background={style['bg']}, foreground={style['fg']}. Computed terminal styles: background={term_style['bg']}, foreground={term_style['fg']}.")

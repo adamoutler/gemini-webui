@@ -30,5 +30,12 @@ def test_stt_color(page):
     }''')
     print("Computed Styles during STT:", style)
 
+    term_style = page.evaluate('''() => {
+        const terminal = document.querySelector(".terminal");
+        if (!terminal) return { bg: 'rgb(0, 0, 0)', fg: 'rgb(212, 212, 212)' };
+        const style = window.getComputedStyle(terminal);
+        return { bg: style.backgroundColor, fg: style.color };
+    }''')
+
     assert style['bg'] in ['rgba(0, 0, 0, 0)', 'transparent'], f"Expected transparent background, got {style['bg']}"
-    assert style['fg'] == 'rgb(212, 212, 212)', f"Expected 'rgb(212, 212, 212)', got {style['fg']}"
+    assert style['fg'] == term_style['fg'], f"Expected {term_style['fg']}, got {style['fg']}"

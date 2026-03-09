@@ -27,15 +27,21 @@
     }
   },
   "hooks": {
-    "AfterTool": [
+    "BeforeTool": [
       {
-        "matcher": "update_work_item",
+        "matcher": "run_shell_command",
         "hooks": [
           {
-            "name": "validate-ticket",
+            "name": "qa-gate-check",
             "type": "command",
-            "command": "./.gemini/hooks/validate-ticket.sh",
-            "description": "Trigger validation pipeline when ticket moves to Needs Validation"
+            "command": "./.gemini/hooks/qa-gate.sh",
+            "description": "Intercepts AI commits to run tests and reality-checker before allowing."
+          },
+          {
+            "name": "git-push-intercept",
+            "type": "command",
+            "command": "./.gemini/hooks/git-push-intercept.sh",
+            "description": "Automatically appends receipt wait to git push"
           }
         ]
       }
