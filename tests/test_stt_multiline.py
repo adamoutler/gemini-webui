@@ -1,5 +1,6 @@
 import pytest
 import time
+import warnings
 from playwright.sync_api import sync_playwright, expect
 
 @pytest.fixture(scope="function")
@@ -52,6 +53,12 @@ def test_stt_multiline_overflow(page):
     print(f"Textarea Bounding Box: {box}")
     print(f"Viewport: {viewport}")
     
+    screenshot_path = "/tmp/gemwe-181.png"
+    page.screenshot(path=screenshot_path)
+    warnings.warn(f"Empirical Evidence: Saved STT textarea screenshot to {screenshot_path}. Textarea dims: {box['width']}x{box['height']}, Viewport: {viewport['width']}x{viewport['height']}")
+
+    expect(textarea).to_be_visible()
+    assert box['height'] > 16, f"Textarea height did not expand: {box['height']}"
     assert box['width'] <= viewport['width'], f"Textarea exceeds viewport width: {box['width']} > {viewport['width']}"
     assert box['height'] <= viewport['height'], f"Textarea exceeds viewport height: {box['height']} > {viewport['height']}"
     
@@ -62,3 +69,4 @@ def test_stt_multiline_overflow(page):
     page.wait_for_timeout(1000)
     
     assert len(errors) == 0, f"Page threw errors: {errors}"
+
