@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# This script supports the ticket-audit skill.
 import os
 import json
 import urllib.request
