@@ -1,3 +1,4 @@
+# Resolves Tickets GEMWEBUI-174, GEMWEBUI-175
 import pytest
 import time
 from playwright.sync_api import sync_playwright, expect
