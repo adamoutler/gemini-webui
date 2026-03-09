@@ -1,3 +1,4 @@
+# Ticket 188: Implement full color properly
 import pytest
 import time
 from playwright.sync_api import sync_playwright, expect
