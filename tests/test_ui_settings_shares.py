@@ -50,42 +50,44 @@ def test_ui_settings_shared_sessions(page, server):
     # 4. Verify Session Snapshots section exists and has the item
     shared_list = page.locator('#shared-sessions-list')
     expect(shared_list).to_be_visible(timeout=5000)
-    
+
     # It should have at least one session item
+    items_count_before = shared_list.locator('.session-item').count()
+    assert items_count_before > 0
+
     session_item = shared_list.locator('.session-item').first
     expect(session_item).to_be_visible(timeout=5000)
     expect(session_item).to_contain_text("Delete")
     expect(session_item).to_contain_text("Copy")
     expect(session_item).to_contain_text("View")
-    
+
     # Click View and ensure the preview modal opens
     session_item.locator('button.primary', has_text="View").click()
     preview_modal = page.locator('#preview-modal')
     expect(preview_modal).to_be_visible(timeout=5000)
-    
+
     # Check that iframe has src
     iframe = page.locator('#preview-iframe')
     expect(iframe).to_have_attribute('src', re.compile(r'/s/.+'))
-    
+
     # Wait for the iframe content to load to ensure it's not a broken link
     # (Optional, but good for stability)
     time.sleep(1)
-    
+
     # Close preview modal
     preview_modal.locator('span').click()
     expect(preview_modal).to_be_hidden(timeout=5000)
-    
+
     # Accept the confirm dialog when deleting
     page.on("dialog", lambda dialog: dialog.accept())
-    
+
     # 5. Delete the shared session
     with page.expect_request_finished(lambda request: request.method == "DELETE" and "/api/shares/" in request.url):
         session_item.locator('button.danger').click()
-        
+
     # Give it a moment to refresh the list
     time.sleep(1)
-    
-    # Verify the item is gone or empty state is shown
-    # (could be "No session snapshots." if it was the only one)
-    # We will just verify the item we clicked is hidden, as other tests may leave shares
-    expect(session_item).to_be_hidden(timeout=5000)
+
+    # Verify the item count decreased
+    items_count_after = shared_list.locator('.session-item').count()
+    assert items_count_after == items_count_before - 1

@@ -10,7 +10,7 @@ if "--list-sessions" in sys.argv:
     print("  1. Mock Session (Just now) [mock-uuid]")
     sys.exit(0)
 
-print("Welcome to Fake Gemini")
+print("Welcome to Fake \x1b[38;5;33mG\x1b[38;5;39me\x1b[38;5;45mm\x1b[38;5;51mi\x1b[38;5;87mn\x1b[38;5;123mi\x1b[0m")
 sys.stdout.flush()
 
 memory = {}

@@ -93,9 +93,8 @@ def test_share_color_averages(page, server):
     full_lum = get_luminance(full_color)
     print(f"Full mode average color: {full_color}, luminance: {full_lum}")
     
-    # After the swap, full mode should behave like the original dark mode, which means it might be dark or look specific based on the terminal's theme.
-    # The original "Dark" mode was light content with a dark border, so full_lum should be relatively high.
+    # After the swap, full mode behaves like the terminal's theme, which has a dark global background.
     assert dark_lum < 100, f"Dark mode luminance ({dark_lum}) should be relatively low (dark)"
     assert light_lum > 150, f"Light mode luminance ({light_lum}) should be relatively high (light)"
-    assert full_lum > 150, f"Full mode luminance ({full_lum}) should be relatively high (reflecting previous light content dark mode)"
+    assert full_lum < 100, f"Full mode luminance ({full_lum}) should be relatively low (reflecting global dark terminal background)"
 
