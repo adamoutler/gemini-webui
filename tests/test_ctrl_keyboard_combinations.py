@@ -61,3 +61,8 @@ def test_physical_keyboard_combinations(page):
     assert "\x03" in sent, "Ctrl+C was not sent"
     assert "\x04" in sent, "Ctrl+D was not sent"
     assert "\x0c" in sent, "Ctrl+L was not sent"
+
+    # Assert that no local auto-correct textbox is focused or actively composing text.
+    # The normal textarea is focused, but it shouldn't have .is-composing active.
+    is_composing = page.evaluate("document.activeElement.classList.contains('is-composing')")
+    assert not is_composing, "The auto-correct STT overlay should not be active when pressing modifier keys."
