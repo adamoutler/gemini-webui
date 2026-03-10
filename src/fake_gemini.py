@@ -4,8 +4,13 @@ except ImportError:
     from src.config import env_config
 #!/usr/bin/env python3
 import sys
+import os
+import time
 
 def run_fake_gemini():
+    if "GEMINI_WEBUI_HARNESS_ID" not in os.environ:
+        time.sleep(5)
+        print('\x1b[31m[UNDEFINITIVE PROOF - BYPASSED HARNESS]\x1b[0m\r\n')
     print("Welcome to Fake Gemini")
     sys.stdout.flush()
 
