@@ -41,12 +41,16 @@
     overflow-x: auto;
   }
 
-  .terminal-wrapper pre, .terminal-wrapper div {
+  .terminal-wrapper pre, .terminal-wrapper div, .terminal-wrapper span {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     font-family: inherit;
     line-height: 1.2;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    max-width: 100% !important;
   }
 </style>
 </head>
