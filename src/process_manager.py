@@ -127,8 +127,12 @@ def _wrap_with_multiplexer(cmd):
     
     return cmd
 
-def build_terminal_command(ssh_target, ssh_dir, resume, ssh_dir_path, gemini_bin='gemini', env_vars=None):
+def build_terminal_command(ssh_target, ssh_dir, resume, ssh_dir_path, gemini_bin='gemini', env_vars=None, is_fake=False):
     """Builds the shell/ssh command array for os.execvp when starting a PTY."""
+    if is_fake:
+        cmd = shlex.split(gemini_bin)
+        return cmd
+        
     if ssh_target:
         if not validate_ssh_target(ssh_target):
             return None # Invalid target

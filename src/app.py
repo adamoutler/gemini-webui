@@ -26,8 +26,9 @@ import shlex
 import socket
 import datetime
 import threading
+import uuid
 from functools import wraps
-from flask import Flask, render_template, request, Response, session, jsonify, send_from_directory
+from flask import Flask, render_template, request, Response, session, jsonify, send_from_directory, redirect
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO
 from flask_talisman import Talisman
@@ -90,6 +91,10 @@ share_manager = ShareManager()
 # Background session cache: key -> {"output": str, "error": str, "timestamp": float}
 session_results_cache = {}
 session_results_cache_lock = threading.Lock()
+
+fake_sessions_map = {}
+active_fake_sockets = {}
+active_fake_sockets_lock = threading.Lock()
 
 # Precompile terminal ID regex for performance
 IDENTIFICATION_REGEX = re.compile(r'\x1b\[\??\d+(?:;\d+)*c')
@@ -335,6 +340,14 @@ def handle_connect(auth=None):
 def handle_disconnect():
     sid = request.sid
     tab_id = session_manager.sid_to_tabid.pop(sid, None)
+    
+    with active_fake_sockets_lock:
+        for t_id, active_sid in list(active_fake_sockets.items()):
+            if active_sid == sid:
+                logger.info(f"Fake session {t_id} disconnected, purging to prevent reuse.")
+                active_fake_sockets.pop(t_id, None)
+                fake_sessions_map.pop(t_id, None)
+                
     if tab_id:
         session_manager.orphan_session(tab_id)
         logger.info(f"Session {tab_id} orphaned on disconnect (sid: {sid})")
@@ -487,9 +500,23 @@ def pty_restart(data):
     sid = data.get('sid') or getattr(request, 'sid', None)
     user_id = session.get('user_id') or ('admin' if env_config.BYPASS_AUTH_FOR_TESTING else None)
     tab_id = data.get('tab_id')
+    mode = data.get('mode')
     if not tab_id:
         return
     
+    is_fake = mode == 'fake' or tab_id in fake_sessions_map
+    if is_fake:
+        if tab_id not in fake_sessions_map:
+            socketio.emit('pty-output', {'output': '\r\n\x1b[31m[Error: Invalid or expired fake session. Please start a fresh test.]\x1b[0m\r\n'}, room=sid)
+            return
+        
+        with active_fake_sockets_lock:
+            if tab_id in active_fake_sockets and active_fake_sockets[tab_id] != sid:
+                logger.warning(f"Rejecting overlapping connection to fake session {tab_id}")
+                socketio.emit('pty-output', {'output': '\r\n\x1b[31m[Error: This fake session is already active in another window.]\x1b[0m\r\n'}, room=sid)
+                return
+            active_fake_sockets[tab_id] = sid
+            
     reclaim = data.get('reclaim', False)
     if reclaim:
         def handle_steal(t_id, old_sid):
@@ -499,15 +526,13 @@ def pty_restart(data):
         session_obj = session_manager.reclaim_session(tab_id, sid, user_id, on_steal=handle_steal)
         if session_obj:
             logger.info(f"Reattached to session: {tab_id} (sid: {sid})")
-            # Flush the scrollback buffer to the new client in chunks
             if session_obj.buffer:
                 full_buffer = "".join(session_obj.buffer)
-                chunk_size = 1024 * 64 # 64KB
+                chunk_size = 1024 * 64
                 for i in range(0, len(full_buffer), chunk_size):
                     socketio.emit('pty-output', {'output': full_buffer[i:i+chunk_size]}, room=sid)
                     socketio.sleep(0.01)
             
-            # Re-sync terminal size
             try:
                 set_winsize(session_obj.fd, data.get('rows', 24), data.get('cols', 80))
             except Exception as e:
@@ -517,9 +542,7 @@ def pty_restart(data):
             logger.warning(f"Reclaim failed for session {tab_id}. Creating a fresh session.")
             socketio.emit('pty-output', {'output': '\r\n\x1b[2m[Session not found on server. Starting fresh...]\x1b[0m\r\n'}, room=sid)
 
-    # LRU EVICTION POLICY: Limit to 10 total active sessions
     if len(session_manager.sessions) >= 10 and tab_id not in session_manager.sessions:
-        # Find the least recently used session
         oldest_session = None
         oldest_time = time.time()
         
@@ -530,8 +553,6 @@ def pty_restart(data):
         
         if oldest_session:
             logger.info(f"LRU Eviction: Dropping session {oldest_session.tab_id} (last seen {oldest_time}) to make room.")
-            
-            # Inform the client that their session was evicted if they are still connected
             sid_to_notify = session_manager.tabid_to_sid.get(oldest_session.tab_id)
             if sid_to_notify:
                 socketio.emit('pty-output', {'output': '\r\n\x1b[2m[Warning: This session was evicted to make room for a new one.]\x1b[0m\r\n'}, room=sid_to_notify)
@@ -543,7 +564,6 @@ def pty_restart(data):
             except Exception as e:
                 logger.warning(f"Failed to kill evicted session {oldest_session.pid}: {e}")
     
-    # Explicit restart or session not found: Clean up old one first
     old_session = session_manager.remove_session(tab_id, user_id)
     if old_session:
         logger.info(f"Killing old session {tab_id} for fresh restart")
@@ -565,12 +585,21 @@ def pty_restart(data):
     ssh_target = data.get('ssh_target')
     ssh_dir = data.get('ssh_dir')
     
-    env_vars = None
+    env_vars = {}
     if ssh_target:
         for host in get_config().get('HOSTS', []):
             if host.get('target') == ssh_target:
-                env_vars = host.get('env_vars')
+                env_vars = host.get('env_vars') or {}
                 break
+                
+    if is_fake:
+        env_vars['GEMINI_WEBUI_HARNESS_ID'] = tab_id
+        scenario = fake_sessions_map.get(tab_id, '')
+        fake_bin = f"python3 src/fake_gemini.py --scenario {shlex.quote(scenario)}"
+        gemini_bin_override = fake_bin
+        ssh_target = None
+    else:
+        gemini_bin_override = GEMINI_BIN
     
     (child_pid, fd) = pty.fork()
     if child_pid == 0:
@@ -578,8 +607,11 @@ def pty_restart(data):
         os.environ['COLORTERM'] = 'truecolor'
         os.environ['FORCE_COLOR'] = '3'
         
+        if is_fake:
+            os.environ['GEMINI_WEBUI_HARNESS_ID'] = tab_id
+        
         _, _, ssh_dir_path = get_config_paths()
-        cmd = build_terminal_command(ssh_target, ssh_dir, resume, ssh_dir_path, GEMINI_BIN, env_vars=env_vars)
+        cmd = build_terminal_command(ssh_target, ssh_dir, resume, ssh_dir_path, gemini_bin_override, env_vars=env_vars, is_fake=is_fake)
         
         if not cmd:
             print("\r\nInvalid SSH target format\r\n")
@@ -609,6 +641,17 @@ def pty_restart(data):
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/test-launcher')
+def test_launcher():
+    return render_template('test_launcher.html')
+
+@app.route('/fake_session_init')
+def fake_session_init():
+    scenario = request.args.get('scenario', '')
+    session_id = str(uuid.uuid4())
+    fake_sessions_map[session_id] = scenario
+    return redirect(f'/?session_id={session_id}&mode=fake')
 
 @app.route('/favicon.ico')
 @app.route('/favicon.svg')
