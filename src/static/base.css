@@ -245,7 +245,7 @@ input[type="text"], textarea { width: 100%; background: #444; color: white; bord
     max-width: 100vw;
     overflow-wrap: break-word !important;
     background-color: transparent !important;
-    color: inherit !important;
+    color: transparent !important;
     opacity: 1 !important;
     z-index: 5 !important;
     field-sizing: content !important;
@@ -255,5 +255,9 @@ input[type="text"], textarea { width: 100%; background: #444; color: white; bord
     min-height: 20px !important;
     max-height: 80vh !important;
     overflow-y: auto !important;
+}
+
+.xterm-helper-textarea.is-composing {
+    color: inherit !important;
 }
 
