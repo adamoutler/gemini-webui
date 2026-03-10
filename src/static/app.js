@@ -1384,9 +1384,13 @@
                             input = String.fromCharCode(code - 64);
                         }
                         toggleCtrl(false);
+                    } else if (ctrlActive) {
+                        toggleCtrl(false);
                     }
                     if (altActive && data.length === 1) {
                         input = '\x1b' + input;
+                        toggleAlt(false);
+                    } else if (altActive) {
                         toggleAlt(false);
                     }
                     emitPtyInput(tab, input);
@@ -1494,6 +1498,8 @@
         }
 
         function sendToTerminal(data) {
+            if (ctrlActive) toggleCtrl(false);
+            if (altActive) toggleAlt(false);
             const tab = tabs.find(t => t.id === activeTabId);
             if (tab && tab.socket && tab.state === 'terminal') {
                 emitPtyInput(tab, data);
