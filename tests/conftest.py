@@ -23,6 +23,7 @@ def server(test_data_dir):
     env["ALLOWED_ORIGINS"] = "*"
     env["DATA_DIR"] = str(test_data_dir)
     env["GEMINI_BIN"] = "gemini"
+    env["GEMWEBUI_HARNESS"] = "1"
     env["FLASK_USE_RELOADER"] = "false"
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false" # Server SHOULD monkeypatch

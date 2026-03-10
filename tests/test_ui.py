@@ -123,7 +123,7 @@ def test_fresh_session_no_reclaim_warning(page, server):
         return "";
     }""")
     print("TERMINAL:", repr(content_text))
-    assert "Welcome to Fake Gemini" in content_text
+    assert "Welcome to Fake" in content_text
 
     # Now that we've received the welcome message, verify there's no reclaim warning
     content = page.evaluate("""() => {

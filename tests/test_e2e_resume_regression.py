@@ -17,6 +17,7 @@ def custom_server(test_data_dir):
     env["ALLOWED_ORIGINS"] = "*"
     env["DATA_DIR"] = str(test_data_dir)
     env["FLASK_USE_RELOADER"] = "false"
+    env["GEMWEBUI_HARNESS"] = "1"
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
     
