@@ -37,10 +37,21 @@ def test_input_overlay_colors(page):
     }''')
     
     term_style = page.evaluate('''() => {
-        const terminal = document.querySelector(".terminal");
-        if (!terminal) return { bg: 'rgb(0, 0, 0)', fg: 'rgb(212, 212, 212)' };
-        const style = window.getComputedStyle(terminal);
-        return { bg: style.backgroundColor, fg: style.color };
+        const style = window.getComputedStyle(document.documentElement);
+        // The default light mode fallback is rgb(0,0,0) if not set, but we expect #d4d4d4 -> rgb(212, 212, 212) 
+        // We'll just read the variable or default
+        const termFg = style.getPropertyValue('--terminal-fg').trim() || '#d4d4d4';
+        
+        // Convert hex to rgb for easy comparison if it comes out as hex
+        // Actually, getComputedStyle(textarea).color is always rgb/rgba in Playwright.
+        // Let's just create a dummy element to let the browser convert it.
+        const div = document.createElement('div');
+        div.style.color = termFg;
+        document.body.appendChild(div);
+        const rgbColor = window.getComputedStyle(div).color;
+        div.remove();
+        
+        return { fg: rgbColor };
     }''')
     
     import os
@@ -76,3 +87,18 @@ def test_input_overlay_colors(page):
     # Ensure it uses transparent background and matches the terminal's theme foreground
     assert css_colors['bg'] in ['rgba(0, 0, 0, 0)', 'transparent'], f"Expected transparent background, got {css_colors['bg']}"
     assert css_colors['fg'] == term_style['fg'], f"Expected terminal foreground {term_style['fg']}, got {css_colors['fg']}"
+
+    # Now verify dynamic theme change to Light mode
+    page.evaluate('''() => {
+        document.documentElement.style.setProperty('--terminal-bg', '#ffffff');
+        document.documentElement.style.setProperty('--terminal-fg', '#333333');
+    }''')
+    time.sleep(0.5)
+
+    light_css_colors = page.evaluate('''() => {
+        const textarea = document.querySelector(".xterm-helper-textarea");
+        const style = window.getComputedStyle(textarea);
+        return { fg: style.color };
+    }''')
+    
+    assert light_css_colors['fg'] == 'rgb(51, 51, 51)', f"Expected light theme text rgb(51, 51, 51) (#333333), got {light_css_colors['fg']}"

@@ -258,6 +258,6 @@ input[type="text"], textarea { width: 100%; background: #444; color: white; bord
 }
 
 .xterm-helper-textarea.is-composing {
-    color: inherit !important;
+    color: var(--terminal-fg, inherit) !important;
 }
 
