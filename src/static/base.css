@@ -261,6 +261,17 @@ input[type="text"], textarea { width: 100%; background: #444; color: white; bord
     color: var(--terminal-fg, inherit) !important;
 }
 
+@media (min-width: 769px) {
+    .xterm-helper-textarea {
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        z-index: -1 !important;
+    }
+}
+
 /* Fake Session Theme */
 .theme-fake-session {
     --terminal-bg: repeating-linear-gradient(45deg, #111, #111 10px, #220000 10px, #220000 20px) !important;
