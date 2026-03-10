@@ -68,6 +68,10 @@
         let titleFlashInterval = null;
         let originalPageTitle = 'Gemini WebUI';
 
+        const urlParams = new URLSearchParams(window.location.search);
+        const mode = urlParams.get('mode');
+        const sessionId = urlParams.get('session_id');
+
         const HostStateManager = {
             states: {},
             
@@ -1312,6 +1316,13 @@
                     statusEl.style.color = '#e5e510'; // yellow
                 }
                 // Socket.io handles reconnection natively
+                if (mode === 'fake') {
+                    const modal = document.getElementById('friction-modal');
+                    if (modal) {
+                        modal.style.display = 'flex';
+                    }
+                    tab.socket.disconnect(); // prevent auto-reconnect loops if we want friction modal interaction
+                }
             });
 
             let reloadTimeout = null;
@@ -1686,7 +1697,50 @@
             // Also initialize with the current height
             document.body.style.height = `${window.appVisualViewport.height}px`;
         }
-        if (!loadTabsFromStorage()) {
+        if (mode === 'fake' && sessionId) {
+            document.body.classList.add('theme-fake-session');
+            const id = 'tab_' + (Date.now() + Math.floor(Math.random() * 1000));
+            const tab = { id, term: null, fitAddon: null, socket: null, session: null, title: 'Test Session', state: 'terminal' };
+            tabs.push(tab);
+            
+            const container = document.createElement('div');
+            container.id = id + '_instance'; 
+            container.className = 'tab-instance active';
+            document.getElementById('terminal-container').appendChild(container);
+            
+            activeTabId = id;
+            renderTabs();
+            startSession(id, 'local', '', '', sessionId, 'Test Session', true);
+            
+            const modalHtml = `
+                <div id="friction-modal" class="friction-modal" style="display: none;">
+                    <div class="friction-modal-content">
+                        <h2>Session Disconnected</h2>
+                        <p>The test session has ended or disconnected.</p>
+                        <div class="friction-actions">
+                            <button class="primary" onclick="window.location.href='/test-launcher'">Start Fresh Test</button>
+                            <button class="danger" onclick="forceReconnect()">Force Reconnect</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            window.forceReconnect = () => {
+                document.getElementById('friction-modal').style.display = 'none';
+                const currentTab = tabs.find(t => t.id === activeTabId);
+                if (currentTab && currentTab.socket) {
+                    currentTab.socket.connect();
+                }
+            };
+            
+            window.addEventListener('beforeunload', (e) => {
+                document.getElementById('friction-modal').style.display = 'flex';
+                e.preventDefault();
+                e.returnValue = '';
+            });
+            
+        } else if (!loadTabsFromStorage()) {
             addNewTab(true);
         }
 

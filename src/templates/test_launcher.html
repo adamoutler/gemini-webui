@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake Gemini Test Launcher</title>
+    <link rel="stylesheet" href="/static/base.css">
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .launcher-container {
+            background-color: #1e1e1e;
+            padding: 2rem;
+            border-radius: 8px;
+            border: 2px solid #ffcc00;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.2);
+            text-align: center;
+        }
+        h1 {
+            color: #ffcc00;
+            margin-top: 0;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 15px 0;
+            background: #000;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #ffcc00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #e6b800;
+        }
+    </style>
+</head>
+<body>
+    <div class="launcher-container">
+        <h1>⚠️ TEST LAUNCHER ⚠️</h1>
+        <p>Start an Ephemeral Fake Gemini Session</p>
+        <form action="/fake_session_init" method="GET">
+            <input type="text" name="scenario" placeholder="Scenario Query String (e.g. basic_test)" required>
+            <br>
+            <button type="submit">Launch Fake Session</button>
+        </form>
+    </div>
+</body>
+</html>
