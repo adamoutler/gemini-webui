@@ -31,10 +31,16 @@ def test_stt_color(page):
     print("Computed Styles during STT:", style)
 
     term_style = page.evaluate('''() => {
-        const terminal = document.querySelector(".terminal");
-        if (!terminal) return { bg: 'rgb(0, 0, 0)', fg: 'rgb(212, 212, 212)' };
-        const style = window.getComputedStyle(terminal);
-        return { bg: style.backgroundColor, fg: style.color };
+        const style = window.getComputedStyle(document.documentElement);
+        const termFg = style.getPropertyValue('--terminal-fg').trim() || '#d4d4d4';
+        
+        const div = document.createElement('div');
+        div.style.color = termFg;
+        document.body.appendChild(div);
+        const rgbColor = window.getComputedStyle(div).color;
+        div.remove();
+        
+        return { fg: rgbColor };
     }''')
 
     assert style['bg'] in ['rgba(0, 0, 0, 0)', 'transparent'], f"Expected transparent background, got {style['bg']}"
