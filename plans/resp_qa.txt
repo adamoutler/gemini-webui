@@ -1,0 +1,34 @@
+As a Testing & QA Expert, my primary objective is to eliminate the variance between your test environment and the production environment. When tests pass but production fails, it means our test harness is bypassing the actual execution paths (like WebSocket streaming, `xterm.js` rendering, and PTY handling). 
+
+To solve this, we must shift from "mocking the backend logic" to **"containerized, full-stack E2E testing using a controllable synthetic binary."** 
+
+Here is the Testing & QA technical plan to accomplish your goal of a high-fidelity Fake Gemini session:
+
+### 1. Architectural Test Parity (The "No Variance" Rule)
+To ensure Fake Gemini uses *all* the same resources as Real Gemini:
+*   **The Swap Must Happen at the Process Level:** Instead of bypassing `process_manager.py` or mocking Flask routes, the web application must boot up exactly as it does in production. The only difference should be that the PTY executes `python3 fake_gemini.py` instead of the actual `gemini` binary.
+*   **Identical Transport Layer:** All input/output must flow through the exact same WebSocket events (`pty-input`, `pty-output`) and be rendered by the exact same `xterm.js` instance on the frontend. 
+*   **Production UI Usage:** The test must interact with the real `index.html` frontend, not a slimmed-down mock DOM.
+
+### 2. Ephemeral Session Provisioning & Friction
+The request states: *"...after providing a query string once, it should give a gemini session string to use which is ephemeral. I want friction on reusing the session..."*
+
+*   **Session Token Generation:** Accessing a specific route (e.g., `/?mock_mode=true&scenario=timeout`) should provision a short-lived, cryptographically signed JWT or a UUID stored in an ephemeral Redis/in-memory cache. 
+*   **Test Isolation (Friction):** To prevent test pollution (state leaking between test runs), the session string must be strictly bound to a single PTY lifecycle. If a test tries to reconnect to an old mock session without explicitly providing a complex override, the backend should reject it. This forces tests to spin up clean, deterministic states every time, mimicking a fresh user connection.
+
+### 3. Implementation Plan for QA Automation
+From a QA perspective, we will implement this using **Playwright** for true E2E testing:
+
+1.  **The Trigger Mechanism:**
+    *   Create a hidden or query-param triggered route (e.g., `GET /mock-terminal?scenario=X`).
+    *   This route sets an ephemeral session cookie/token and redirects the browser to the main `/` interface, but flags the backend session to use the `fake_gemini.py` binary.
+2.  **The Synthetic Binary (`fake_gemini.py`):**
+    *   This script must not just print text; it must behave like a real terminal application. It should flush output buffers, emit raw ANSI escape codes (for colors and box-drawing), and read from `stdin` character-by-character.
+    *   It will read the `scenario` provided during the ephemeral session generation to know what script to play back (e.g., simulate a network timeout, simulate a large multi-line code block, simulate an interactive prompt).
+3.  **Playwright E2E Integration:**
+    *   **Action:** The Playwright test navigates to `/?mock=true&scenario=basic_chat`.
+    *   **Validation:** Playwright waits for the WebSocket connection to establish, types text into the real `xterm.js` `<textarea>`, and asserts that the simulated response is actually rendered in the DOM's terminal rows.
+    *   **Failure Catching:** Because we are using the real xterm.js and WebSockets, if an ANSI parsing issue or a WebSocket race condition exists in production, this test will naturally catch it.
+
+### Summary of the QA Strategy
+By moving the "fake" boundary all the way down to the PTY binary execution and forcing tests to flow through the real browser UI and WebSocket backend, we eliminate the "mocking gap." You will have a true, high-fidelity Fake Gemini session that acts as an exact replica of production behavior, governed by strict, ephemeral session constraints to guarantee deterministic test results.

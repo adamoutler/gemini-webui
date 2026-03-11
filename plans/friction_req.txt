@@ -1,0 +1,12 @@
+Please review the following feature request and architectural plan. The user has a specific follow-up question regarding adding more "friction" to the use of fake gemini to prevent test pollution and ensure developers rely on the proper test harness.
+
+Original Request:
+I want fake gemini accessed via new screen with a query string. after providing a query string once, it should give a gemini session string to use which is ephemeral. i want friction on reusing the session, not closing the session. The overall goal here is to make Fake Gemini use all the same resources as real gemini. the idea i want, to summarize, is how to ensure all fake gemini responses are as close to a real session as possible because we keep having problems and variances when using fake gemini such as not using xterm, input differences, and fake gemini in prod. we also have problems with fake gemini testing working when prod does not. so we need a true fake gemini session and way to test.
+
+Final Ticket Plan (Excerpt):
+Create an ephemeral session generation route that uses a UUID, runs `python3 src/fake_gemini.py <args>` in `pty.fork()`, creates single-use WebSockets, and shows a visual 'TEST MODE' indicator.
+
+Follow-up Request:
+"How might we increase friction on calling fake gemini directly? e.g., might make any test involving fake gemini present itself as undefinitive proof when called without the gemini webui session harness, notes in fake gemini, and other techniques are welcomed."
+
+Please provide a concise plan on how to implement this increased friction and clearly mark "undefinitive proof" or test pollution if fake_gemini is used improperly (e.g., bypassing the new harness). Focus on UX, console output, and integration with the QA pipeline.
