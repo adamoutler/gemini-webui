@@ -87,3 +87,17 @@ html, body {
     white-space: nowrap;
     word-wrap: normal;
 }
+
+/* Mobile Viewport Overrides (GEMWEBUI-197) */
+@media (max-width: 768px) and (pointer: coarse) {
+  .mobile-input-overlay,
+  #mobile-proxy-input {
+    display: block !important; /* Adjust to flex if container requires it */
+    opacity: 1; /* Hide visually using opacity/clipping if needed, but must be interactable */
+    pointer-events: auto;
+    
+    z-index: 100;
+    width: 100%;
+    bottom: 0;
+  }
+}

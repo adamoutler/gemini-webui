@@ -348,4 +348,11 @@ input[type="text"], textarea { width: 100%; background: #444; color: white; bord
     background-color: #ff0000;
 }
 
-
+/* Proxy Input Foundation - Hidden by default for desktop (GEMWEBUI-197) */
+.mobile-input-overlay,
+#mobile-proxy-input {
+  display: none !important;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
