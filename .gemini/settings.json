@@ -29,19 +29,41 @@
   "hooks": {
     "BeforeTool": [
       {
-        "matcher": "run_shell_command|Bash|shell",
+        "matcher": ".*(run_shell_command|Bash|shell).*",
         "hooks": [
-          {
-            "name": "qa-gate-check",
-            "type": "command",
-            "command": "./.gemini/hooks/qa-gate.sh",
-            "description": "Intercepts AI commits to run tests and reality-checker before allowing."
-          },
           {
             "name": "git-push-intercept",
             "type": "command",
             "command": "./.gemini/hooks/git-push-intercept.sh",
             "description": "Automatically appends receipt wait to git push"
+          },
+          {
+            "name": "prevent-curl-bypass",
+            "type": "command",
+            "command": "./.gemini/hooks/prevent-curl-bypass.sh",
+            "timeout": 5000
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__kanban__update_work_item",
+        "hooks": [
+          {
+            "name": "qa-gate",
+            "type": "command",
+            "command": "./.gemini/hooks/qa-gate.sh",
+            "timeout": 10000
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__kanban__create_work_item_comment",
+        "hooks": [
+          {
+            "name": "comment-gate",
+            "type": "command",
+            "command": "./.gemini/hooks/comment-gate.sh",
+            "timeout": 60000
           }
         ]
       }
