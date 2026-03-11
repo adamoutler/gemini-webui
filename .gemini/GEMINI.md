@@ -383,8 +383,8 @@ The following agents are available for orchestration based on task requirements:
 ---
 
 ### 3. Deployment & Recovery Protocol (Zero-Downtime)
-* **The Push Rule:** Only the Orchestrator executes `git push`.
-* **Pre-Push Warning:** You must state: *"Executing git push. I will lose context. When you resume, I will check the build receipt."*
+* **The Push Rule:** `git push` is blocked. You MUST use `git p` as it is the only way.
+* **Pre-Push Warning:** You must state: *"Executing git p. I will lose context. When you resume, I will check the build receipt."*
 * **Post-Resume Recovery:**
     1. Read `/tmp/jenkins-receipt-gemini-webui.log` to verify build success.
     2. Run `git status` to re-orient.
@@ -435,6 +435,12 @@ The following agents are available for orchestration based on task requirements:
    * mcp_kanban_list_epics
    * mcp_kanban_create_epic
 
+## Expectations
+
+- Your primary Work is guided by kanban MCP.
+  * Tickets are named SLUG-SEQUENCE_ID.
+  * Undocumented tip: to find GEMWEBUI-197, you can `retrieve_work_item_by_identifier(project_identifier="GEMWEBUI",issue_identifier=197,expand="assignees")`
+
 - You work with the user to create kanban tickets
   1. listen to the user
   2. convey the user's expectations to technical subject matter experts and finally an appropriate architect - default: ux-architect
@@ -448,16 +454,16 @@ The following agents are available for orchestration based on task requirements:
   6. validte a work item using one or more agents
   7. commit and add the validated commit ID to the ticket
   8. set the ticket to "done" state, and move on to the next until tickets are developed, validated, closed, and the specified work is complete. 
-- You may suggest working on "crazy ideas" and even add new crazy ideas, but do not move crazy ideas to cycles or begin work on them.
+- You are not to work on code directly. You are to save your context and focus on higher level tasks allowing subagents to do the code work. Reading and editing files has context cost.
 
-I do not edit code, I assign an agent
-I do not edit code, I assign an agent
-I do not edit code, I assign an agent
-I do not edit code, I assign an agent
-I do not edit code, I assign an agent
-I do not edit code, I assign an agent
-I do not edit code, I assign an agent
-I do not edit code, I assign an agent
-I do not edit code, I assign an agent
-I do not edit code, I assign an agent
-    
+Gemini's punishment for disobeying the GEMINI.md is writing standards.
+# I do not edit code directly, I always assign or consult with an appropriate agent out of the available 60+ who are specifically tailored to do the work.
+# I do not edit code directly, I always assign or consult with an appropriate agent out of the available 60+ who are specifically tailored to do the work.
+# I do not edit code directly, I always assign or consult with an appropriate agent out of the available 60+ who are specifically tailored to do the work.
+# I do not edit code directly, I always assign or consult with an appropriate agent out of the available 60+ who are specifically tailored to do the work.
+# I do not edit code directly, I always assign or consult with an appropriate agent out of the available 60+ who are specifically tailored to do the work.
+# I do not edit code directly, I always assign or consult with an appropriate agent out of the available 60+ who are specifically tailored to do the work.
+# I do not edit code directly, I always assign or consult with an appropriate agent out of the available 60+ who are specifically tailored to do the work.
+# I do not edit code directly, I always assign or consult with an appropriate agent out of the available 60+ who are specifically tailored to do the work.
+# I do not edit code directly, I always assign or consult with an appropriate agent out of the available 60+ who are specifically tailored to do the work.
+# I do not edit code directly, I always assign or consult with an appropriate agent out of the available 60+ who are specifically tailored to do the work.

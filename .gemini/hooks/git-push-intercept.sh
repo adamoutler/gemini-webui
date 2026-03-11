@@ -5,11 +5,9 @@ tool_name=$(echo "$input" | jq -r '.tool_name')
 if [[ "$tool_name" =~ run_shell_command|Bash|shell ]]; then
     command=$(echo "$input" | jq -r '.tool_input.command')
     
-    # Check if command is exactly "git push" or starts with "git push "
-    if [[ "$command" =~ ^git[[:space:]]+push ]] && [[ ! "$command" =~ wait-for-receipt ]]; then
-        # Append the wait script
-        modified_cmd="$command && ./jenkins/wait-for-receipt.sh"
-        jq -n --arg cmd "$modified_cmd" '{decision: "modify", modified_args: {command: $cmd}}'
+    # Block 'git push'
+    if [[ "$command" =~ ^git[[:space:]]+push ]]; then
+        jq -n -c '{decision: "deny", reason: "git push is blocked. git p is the only way."}'
         exit 0
     fi
 fi
