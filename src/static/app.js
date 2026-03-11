@@ -1,4 +1,78 @@
 
+class MobileInputProxy {
+  constructor(tab) {
+    this.tab = tab;
+    // Utilize the existing xterm textarea or dynamically create a mobile proxy if needed
+    this.proxyInput = tab.term.textarea;
+    
+    // Feature Detection (GEMWEBUI-197)
+    this.isMobile = window.matchMedia('(max-width: 768px) and (pointer: coarse)').matches 
+                    || 'ontouchstart' in window;
+    
+    if (this.isMobile && this.proxyInput) {
+      this.init();
+    }
+  }
+
+  init() {
+    this.proxyInput.setAttribute('autocomplete', 'on');
+    this.proxyInput.setAttribute('autocorrect', 'on');
+    this.proxyInput.setAttribute('spellcheck', 'true');
+    this.proxyInput.setAttribute('autocapitalize', 'sentences');
+
+    let isComposing = false;
+    this.proxyInput.addEventListener('compositionstart', () => { 
+        isComposing = true; 
+        this.proxyInput.classList.add('is-composing');
+    });
+    this.proxyInput.addEventListener('compositionend', () => {
+        isComposing = false;
+        this.proxyInput.classList.remove('is-composing');
+        setTimeout(() => { if (this.proxyInput.value.length > 0) this.proxyInput.value = ''; }, 200);
+    });
+
+    this.proxyInput.addEventListener('input', (e) => this.handleInput(e, isComposing));
+    this.proxyInput.addEventListener('keydown', this.handleKeyDown.bind(this));
+  }
+
+  handleInput(e, isComposing) {
+    if (isComposing || e.inputType === 'deleteContentBackward') return;
+    const value = this.proxyInput.value;
+    const boundaryRegex = /[\s.,?!;-]/;
+    if (boundaryRegex.test(value)) {
+      this.emitToTerminal(value);
+      this.proxyInput.value = '';
+    }
+  }
+
+  handleKeyDown(e) {
+    const value = this.proxyInput.value;
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.key === 'Backspace' || e.keyCode === 8) {
+      if (value.length === 0) {
+        e.preventDefault();
+        this.emitToTerminal('\x7f');
+      }
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      this.emitToTerminal(value + '\r');
+      this.proxyInput.value = '';
+    }
+  }
+
+  emitToTerminal(data) {
+     if (!this.tab || !this.tab.socket || data == null) return;
+     const chunkSize = 1024;
+     const strData = String(data).replace(/\n/g, '\r');
+     for (let i = 0; i < strData.length; i += chunkSize) {
+         const chunk = strData.slice(i, i + chunkSize);
+         this.tab.socket.emit('pty-input', {input: chunk});
+     }
+  }
+}
+
+
         const originalFetch = window.fetch;
         window.fetch = async function() {
             const currentCsrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -343,8 +417,8 @@
                     tab.term.options.theme = terminalTheme;
                     tab.term.options.fontSize = currentFontSize;
                     if (tab.term.textarea) {
-                        tab.term.textarea.style.backgroundColor = 'transparent';
-                        tab.term.textarea.style.color = terminalTheme.foreground;
+                        
+                        
                     }
                     fitTerminal(tab);
                 }
@@ -1152,11 +1226,11 @@
             
             // Initialize Proxy Input Foundation for Mobile keyboards
             if (tab.term.textarea) {
-                tab.term.textarea.style.backgroundColor = 'transparent';
-                tab.term.textarea.style.color = terminalTheme.foreground;
+                
+                
                 tab.mobileProxy = new MobileInputProxy(tab);
                 // Handle image paste and text paste buffer clearing
-                textarea.addEventListener('paste', async (e) => {
+                tab.term.textarea.addEventListener('paste', async (e) => {
                     const items = (e.clipboardData || window.clipboardData)?.items;
                     if (!items) return;
                     let hasImage = false;
@@ -1194,7 +1268,7 @@
                     }
                     if (!hasImage && !isComposing) {
                         // Normal text paste needs more time to process in xterm before clearing buffer
-                        setTimeout(() => { if (textarea && textarea.value.length > 0) textarea.value = ''; }, 100);
+                        setTimeout(() => { if (tab.term.textarea && tab.term.textarea.value.length > 0) tab.term.textarea.value = ''; }, 100);
                     }
                 });
             }
@@ -2714,98 +2788,4 @@
                 }
             }
         });
-    
-// Mobile Input Architecture System
-class MobileInputProxy {
-  constructor(tab) {
-    this.tab = tab;
-    // Utilize the existing xterm textarea or dynamically create a mobile proxy if needed
-    this.proxyInput = tab.term.textarea;
-    
-    // Feature Detection (GEMWEBUI-197)
-    this.isMobile = window.matchMedia('(max-width: 768px) and (pointer: coarse)').matches 
-                    || 'ontouchstart' in window;
-    
-    if (this.isMobile && this.proxyInput) {
-      this.proxyInput.classList.add('mobile-input-overlay');
-      this.proxyInput.id = 'mobile-proxy-input';
-      this.init();
-    }
-  }
-
-  init() {
-    // Ensure native keyboard features are enabled for the proxy
-    this.proxyInput.setAttribute('autocomplete', 'on');
-    this.proxyInput.setAttribute('autocorrect', 'on');
-    this.proxyInput.setAttribute('spellcheck', 'true');
-    this.proxyInput.setAttribute('autocapitalize', 'sentences');
-
-    // Track composition states for STT/swipe typing
-    let isComposing = false;
-    this.proxyInput.addEventListener('compositionstart', () => { 
-        isComposing = true; 
-        this.proxyInput.classList.add('is-composing');
-    });
-    this.proxyInput.addEventListener('compositionend', () => {
-        isComposing = false;
-        this.proxyInput.classList.remove('is-composing');
-        setTimeout(() => { if (this.proxyInput.value.length > 0) this.proxyInput.value = ''; }, 200);
-    });
-
-    // Bind Events
-    this.proxyInput.addEventListener('input', (e) => this.handleInput(e, isComposing));
-    this.proxyInput.addEventListener('keydown', this.handleKeyDown.bind(this));
-  }
-
-  // GEMWEBUI-209: Word-Level Buffer Handling
-  handleInput(e, isComposing) {
-    if (isComposing || e.inputType === 'deleteContentBackward') return;
-    
-    const value = this.proxyInput.value;
-    // Define word boundaries: Space, Punctuation
-    const boundaryRegex = /[\s.,?!;-]/;
-    
-    if (boundaryRegex.test(value)) {
-      // Flush buffered word and boundary to terminal
-      this.emitToTerminal(value);
-      this.proxyInput.value = '';
-    }
-  }
-
-  // GEMWEBUI-210 & GEMWEBUI-183: Backspace and Modifiers
-  handleKeyDown(e) {
-    const value = this.proxyInput.value;
-
-    // Modifier combinations bypass buffer entirely
-    if (e.altKey || e.ctrlKey || e.metaKey) {
-      // Handled natively by xterm event loop
-      return;
-    }
-
-    // Handle Backspace
-    if (e.key === 'Backspace' || e.keyCode === 8) {
-      if (value.length === 0) {
-        // Buffer is empty, user intends to delete terminal characters
-        e.preventDefault();
-        this.emitToTerminal('\x7f');
-      }
-    }
-    
-    // Handle Enter as a hard boundary
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      this.emitToTerminal(value + '\r');
-      this.proxyInput.value = '';
-    }
-  }
-
-  emitToTerminal(data) {
-     if (!this.tab || !this.tab.socket || data == null) return;
-     const chunkSize = 1024;
-     const strData = String(data).replace(/\n/g, '\r');
-     for (let i = 0; i < strData.length; i += chunkSize) {
-         const chunk = strData.slice(i, i + chunkSize);
-         this.tab.socket.emit('pty-input', {input: chunk});
-     }
-  }
-}
+ 
