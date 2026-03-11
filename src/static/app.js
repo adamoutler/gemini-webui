@@ -5,16 +5,20 @@ class MobileInputProxy {
     // Utilize the existing xterm textarea or dynamically create a mobile proxy if needed
     this.proxyInput = tab.term.textarea;
     
-    // Feature Detection (GEMWEBUI-197)
+    // Feature Detection (GEMWEBUI-197) - we no longer restrict init to mobile because desktop needs STT/composition support too
     this.isMobile = window.matchMedia('(max-width: 768px) and (pointer: coarse)').matches 
                     || 'ontouchstart' in window;
     
-    if (this.isMobile && this.proxyInput) {
+    if (this.proxyInput) {
       this.init();
     }
   }
 
   init() {
+    this.proxyInput.id = 'terminal-input-' + this.tab.id;
+    this.proxyInput.style.setProperty('background-color', 'transparent', 'important');
+    this.proxyInput.style.setProperty('color', terminalTheme.foreground, 'important');
+    
     this.proxyInput.setAttribute('autocomplete', 'on');
     this.proxyInput.setAttribute('autocorrect', 'on');
     this.proxyInput.setAttribute('spellcheck', 'true');
@@ -36,7 +40,12 @@ class MobileInputProxy {
   }
 
   handleInput(e, isComposing) {
-    if (isComposing || e.inputType === 'deleteContentBackward') return;
+    if (e.inputType === 'deleteContentBackward') {
+        this.emitToTerminal('\x7f');
+        return;
+    }
+    if (isComposing) return;
+
     const value = this.proxyInput.value;
     const boundaryRegex = /[\s.,?!;-]/;
     if (boundaryRegex.test(value)) {
