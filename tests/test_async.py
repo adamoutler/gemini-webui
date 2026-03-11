@@ -97,7 +97,7 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
             mock_execvp.assert_called_once_with('bash', ['bash'])
             import os
             from src.app import GEMINI_BIN
-            mock_build_cmd.assert_called_once_with('test@host', '/remote/dir', True, '/data/.ssh', GEMINI_BIN, env_vars={'MY_VAR': '123'})
+            mock_build_cmd.assert_called_once_with('test@host', '/remote/dir', True, '/data/.ssh', GEMINI_BIN, env_vars={'MY_VAR': '123'}, is_fake=False)
             assert os.environ.get('TERM') == 'xterm-256color'
             assert os.environ.get('COLORTERM') == 'truecolor'
             assert os.environ.get('FORCE_COLOR') == '3'
