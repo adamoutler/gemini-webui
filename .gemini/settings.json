@@ -41,29 +41,33 @@
             "name": "prevent-curl-bypass",
             "type": "command",
             "command": "./.gemini/hooks/prevent-curl-bypass.sh",
+            "description": "Prevents the AI from bypassing the verification pipeline by closing Kanban tickets via CLI tools like curl or gh.",
             "timeout": 5000
           }
         ]
       },
       {
-        "matcher": "mcp__kanban__update_work_item",
+        "matcher": ".*mcp_kanban_update_work_item.*",
         "hooks": [
           {
             "name": "qa-gate",
             "type": "command",
             "command": "./.gemini/hooks/qa-gate.sh",
-            "timeout": 10000
+            "description": "Prevents the AI Orchestrator from directly closing tickets via update_work_item to enforce the verification pipeline.",
+            "timeout": 180000
           }
         ]
-      },
+      }
+    ],
+    "AfterTool": [
       {
-        "matcher": "mcp__kanban__create_work_item_comment",
+        "matcher": ".*mcp_kanban_update_work_item.*",
         "hooks": [
           {
-            "name": "comment-gate",
+            "name": "remind-comment",
             "type": "command",
-            "command": "./.gemini/hooks/comment-gate.sh",
-            "timeout": 60000
+            "command": "echo '{\"message\": \"REMINDER: If you just updated the ticket, do not forget to add a comment detailing your changes using mcp_kanban_create_work_item_comment.\"}'",
+            "description": "Reminds the AI to add a comment after updating a ticket."
           }
         ]
       }

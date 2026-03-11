@@ -1,0 +1,44 @@
+Here is the technical plan from a UX Architecture and Frontend perspective. 
+
+To solve the core problem—discrepancies between testing and production—**the frontend must treat Fake Gemini exactly like Real Gemini**. We will use the exact same `xterm.js` instance, the exact same `SocketIO` event pipeline, and the exact same input handling (`app.js`). 
+
+Here is how we accomplish the requested flow and UX friction:
+
+### 1. The "Identical Pipes" Architecture
+The frontend will not possess custom logic for *running* the fake session. It will use the standard terminal UI. The only difference is how the session is *initialized* via the socket handshake.
+*   **Mechanism:** When the frontend emits `socket.emit('start_terminal', {...})`, it will pass a new parameter: `mode: 'fake'`. 
+*   **Result:** The backend provisions the `fake_gemini.py` PTY instead of the real one, but pipes the standard in/out through the exact same WebSocket events (`pty-output`, `pty-input`). This guarantees 100% fidelity with production rendering and input behaviors.
+
+### 2. The New Entry Screen (`/test-launcher`)
+Instead of cluttering the main connection picker, we introduce a dedicated UI for launching tests.
+*   **UX Flow:**
+    1. User navigates to `/test-launcher`.
+    2. A clean, focused UI presents an input field for the "Query String" (test scenario parameters).
+    3. User submits the form. The frontend calls a new backend endpoint (e.g., `POST /api/fake-session`).
+    4. The backend generates a unique, one-time **Ephemeral Session ID** and returns it.
+    5. The frontend automatically redirects the browser to the main UI with URL parameters: `/?session=<ephemeral_id>&mode=fake`.
+
+### 3. Main UI Initialization & Visual Distinction
+When `app.js` loads the main `index.html` interface, it will check the URL parameters.
+*   **Auto-Boot:** If `?session=` and `?mode=fake` are present, `app.js` bypasses the standard connection launcher and instantly opens a terminal tab bound to that ephemeral session.
+*   **Visual Distinction:** To ensure the user always knows they are in a test state, the frontend will apply a specific CSS class (e.g., `.theme-fake-session`) to that terminal tab. This will add a persistent visual indicator, such as a subtle striped background behind the terminal, a colored border, or a "TEST MODE" watermark.
+
+### 4. UX Friction on Session Reuse
+The user explicitly requested *friction* on reusing the session, rather than outright preventing it. We want to guide users toward clean tests without blocking them.
+*   **Implementation:** We will intercept two specific frontend events for tabs marked as `mode: 'fake'`:
+    1. **Page Reloads:** If `app.js` attempts to restore a fake session from `sessionStorage` on a page refresh.
+    2. **Socket Disconnects:** If the WebSocket drops and attempts an automatic reconnection.
+*   **The Friction UI:** When either of these events occurs, instead of silently reconnecting, the UI will obscure the terminal with an overlay modal:
+    > ⚠️ **Ephemeral Test Session**
+    > This test session has already been initialized. Reusing test state may lead to polluted or inaccurate test results.
+    > 
+    > [ **Start Fresh Test** (Recommended) ]  [ *Force Reconnect* ]
+*   **Behavior:** 
+    *   Clicking "Start Fresh" routes them back to `/test-launcher`. 
+    *   Clicking "Force Reconnect" dismisses the modal and allows the socket to emit the `restart` event, continuing the session.
+
+### Summary of Required Frontend Changes
+1.  **New Route:** Create `/test-launcher` HTML template and minimal JS to handle the API call and redirect.
+2.  **`app.js` Routing:** Update initialization logic to parse `?session=` and `?mode=fake` to bypass the connection list and auto-start a specific tab.
+3.  **CSS:** Add `.theme-fake-session` styles for visual test-mode indicators.
+4.  **`app.js` Friction Logic:** Inject the warning modal logic into the `loadTabsFromStorage` function and the `socket.on('disconnect')` / `socket.on('reconnect')` handlers for fake sessions.

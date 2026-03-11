@@ -58,5 +58,21 @@ def test_mobile_backspace_removes_characters(mobile_page):
     print("Checking expect")
     # Verify the terminal has output
     expect(mobile_page.locator('.xterm-screen')).to_be_visible(timeout=5000)
+    
+    # Read text from xterm.js buffer
+    start_time = time.time()
+    found_hell = False
+    terminal_text = ""
+    while time.time() - start_time < 5:
+        terminal_text = mobile_page.evaluate("() => { const tab = tabs.find(t => t.id === activeTabId); return (tab && tab.term) ? Array.from({length: tab.term.buffer.active.length}).map((_, i) => tab.term.buffer.active.getLine(i)?.translateToString()).join('\\n') : ''; }")
+        if "You said: hell" in terminal_text and "You said: hello" not in terminal_text:
+            found_hell = True
+            break
+        time.sleep(0.5)
+        
+    print("FULL TERMINAL TEXT:", repr(terminal_text))
+    
+    assert found_hell, f"Expected 'You said: hell' without 'You said: hello' in terminal output. Got: {terminal_text}"
+    
     print("Test done")
 

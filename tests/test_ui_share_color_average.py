@@ -62,6 +62,8 @@ def test_share_color_averages(page, server):
         body_bg = new_page.evaluate("window.getComputedStyle(document.body).backgroundColor")
         print(f"\\nComputed body background for theme {theme}: {body_bg}")
 
+        has_inline_bg = new_page.evaluate("!!document.querySelector('.terminal-wrapper [style*=\"background-color\"]')")
+
         screenshot_path = f"public/qa-screenshots/test_share_{theme}.png"
         import os
         os.makedirs("public/qa-screenshots", exist_ok=True)
@@ -71,16 +73,16 @@ def test_share_color_averages(page, server):
         
         # Close modal for next iteration
         page.locator('#share-modal .modal-content span').click()
-        return screenshot_bytes
+        return screenshot_bytes, has_inline_bg
 
     # Get screenshot for light mode
-    light_screenshot = get_share_screenshot('light')
+    light_screenshot, light_has_inline = get_share_screenshot('light')
     light_color = get_average_color(light_screenshot)
     light_lum = get_luminance(light_color)
     print(f"\\nLight mode average color: {light_color}, luminance: {light_lum}")
 
     # Get screenshot for dark mode
-    dark_screenshot = get_share_screenshot('dark')
+    dark_screenshot, dark_has_inline = get_share_screenshot('dark')
     dark_color = get_average_color(dark_screenshot)
     dark_lum = get_luminance(dark_color)
     print(f"Dark mode average color: {dark_color}, luminance: {dark_lum}")
@@ -89,11 +91,15 @@ def test_share_color_averages(page, server):
     assert dark_lum < light_lum, f"Dark mode ({dark_lum}) should be darker than light mode ({light_lum})"
 
     # Get screenshot for full mode
-    full_screenshot = get_share_screenshot('full')
+    full_screenshot, full_has_inline = get_share_screenshot('full')
     full_color = get_average_color(full_screenshot)
     full_lum = get_luminance(full_color)
     print(f"Full mode average color: {full_color}, luminance: {full_lum}")
     
+    assert dark_has_inline, "Dark mode should keep explicit inline background-color styles."
+    assert not full_has_inline, "Full mode should have explicit inline background-color styles stripped."
+    assert not light_has_inline, "Light mode should have explicit inline background-color styles stripped."
+
     # After the swap, full mode behaves like the terminal's theme, which has a dark global background.
     assert dark_lum < 100, f"Dark mode luminance ({dark_lum}) should be relatively low (dark)"
     assert light_lum > 150, f"Light mode luminance ({light_lum}) should be relatively high (light)"
