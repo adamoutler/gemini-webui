@@ -21,7 +21,7 @@ pipeline {
                 sh '''
                     echo "--- DEPLOYMENT STARTING #$BUILD_NUMBER ---" > deployment.log
                     echo "Build Number: $BUILD_NUMBER" >> deployment.log
-                    echo "Deployment Started: $(date)" >> deployment.log
+                    echo "Gemini WebUI Build Started: $(date)" >> deployment.log
                     cp deployment.log /tmp/jenkins-receipt-gemini-webui.log
                     sync
                 '''
@@ -73,7 +73,7 @@ pipeline {
                 sh 'docker compose ps'
                 sh '''
                     curl -sL -u "adamoutler@gmail.com:$ADAM_TOKEN" "${BUILD_URL}consoleText" > /tmp/jenkins-receipt-gemini-webui.log
-                    echo "Finished: $BUILD_RESULT #$BUILD_NUMBER" >> /tmp/jenkins-receipt-gemini-webui.log
+                    echo "Gemini WebUI Build Finished: $BUILD_RESULT #$BUILD_NUMBER" >> /tmp/jenkins-receipt-gemini-webui.log
                 '''
             }
         }
