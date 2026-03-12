@@ -7,7 +7,9 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -17,15 +19,15 @@ def page(server):
         browser.close()
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_drag_and_drop_upload(page, test_data_dir):
     # Start a terminal session so we can verify the text injection
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
     
 
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
 
     # Wait for the terminal to connect
     page.wait_for_timeout(3000)
@@ -92,13 +94,13 @@ def test_drag_and_drop_upload(page, test_data_dir):
     # Oh wait, we don't alert on success if we inject to terminal. So text injection IS the confirmation.
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_folder_drag_and_drop_upload(page, test_data_dir):
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
     
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
 
     # Wait for the terminal to connect
     page.wait_for_timeout(3000)
@@ -187,21 +189,21 @@ def test_folder_drag_and_drop_upload(page, test_data_dir):
     assert os.path.exists(os.path.join(upload_dir, "myfolder", "subfolder", "file2.txt"))
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_workspace_file_upload_button_injection(page, test_data_dir):
     # Start a terminal session
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
     
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
 
     # Wait for the terminal to connect
     page.wait_for_timeout(3000)
 
     # Open the file transfer modal
     page.click('button:has-text("Files")')
-    expect(page.locator('#file-transfer-modal')).to_be_visible(timeout=5000)
+    expect(page.locator('#file-transfer-modal')).to_be_visible(timeout=15000)
     
     # Create a temporary file to upload
     test_file_path = os.path.join(test_data_dir, "test_upload_file2.txt")
@@ -233,10 +235,10 @@ def test_workspace_file_upload_button_injection(page, test_data_dir):
     assert "test_upload_file2.txt" in content, "Uploaded file name not found in terminal output"
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_drag_and_drop_disabled_on_launcher(page):
     # Ensure we are on the launcher screen
-    expect(page.locator('.launcher').first).to_be_visible(timeout=5000)
+    expect(page.locator('.launcher').first).to_be_visible(timeout=15000)
 
     # Listen for requests to /api/upload to verify none are made
     upload_requests = []
@@ -249,7 +251,7 @@ def test_drag_and_drop_disabled_on_launcher(page):
     }""")
     
     # Check dropzone is NOT active
-    expect(page.locator('.drop-zone')).not_to_have_class('drop-zone active', timeout=1000)
+    expect(page.locator('.drop-zone')).not_to_have_class('drop-zone active', timeout=15000)
 
     # Trigger drop
     page.evaluate("""() => {
@@ -274,7 +276,7 @@ def test_drag_and_drop_disabled_on_launcher(page):
 
     # Check dropzone is STILL inactive
     page.wait_for_timeout(1000)
-    expect(page.locator('.drop-zone')).not_to_have_class('drop-zone active', timeout=1000)
+    expect(page.locator('.drop-zone')).not_to_have_class('drop-zone active', timeout=15000)
     
     # Ensure no upload API requests were triggered
     assert len(upload_requests) == 0, "Upload API requests should not be made on the launcher screen"

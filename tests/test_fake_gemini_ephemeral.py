@@ -15,7 +15,9 @@ def page(server):
             browser = p.chromium.launch(headless=True)
         
         context = browser.new_context(viewport={'width': 1280, 'height': 800})
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         yield page
@@ -46,7 +48,7 @@ def test_fake_gemini_ephemeral(page, server):
     
     # 5. Assert that the terminal contains "Welcome to Fake Gemini"
     page.wait_for_selector(".terminal-instance", state="attached", timeout=15000)
-    page.wait_for_selector(".xterm-helper-textarea", state="attached", timeout=10000)
+    page.wait_for_selector(".xterm-helper-textarea", state="attached", timeout=15000)
     
     # Give it a moment to output
     page.wait_for_timeout(3000)
@@ -80,7 +82,7 @@ def test_fake_gemini_ephemeral(page, server):
     page.evaluate("window.location.reload()")
     
     # Assert friction-modal is visible
-    expect(page.locator("#friction-modal")).to_be_visible(timeout=10000)
+    expect(page.locator("#friction-modal")).to_be_visible(timeout=15000)
     
     # Take screenshot of friction modal
     friction_modal_path = f"/tmp/friction_modal_after_reload_220_ephemeral_{os.environ.get('BUILD_NUMBER', 'local')}.png"

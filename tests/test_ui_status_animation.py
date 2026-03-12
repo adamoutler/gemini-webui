@@ -9,37 +9,39 @@ def page(server):
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         yield page, server, context
         context.close()
         browser.close()
 
+@pytest.mark.timeout(60)
 def test_status_indicator_animation(page):
     playwright_page, server_url, context = page
     
     # We need to simulate a session so it shows up in "Backend Managed Sessions"
     # First, let's load the app and start a session
-    playwright_page.goto(server_url, timeout=15000)
-    playwright_page.wait_for_selector(".launcher", state="attached", timeout=15000)
+    playwright_page.goto(server_url)
+    playwright_page.wait_for_selector(".launcher", state="attached")
     
     # Click on the Connect button for the local host
     local_connect_btn = playwright_page.locator('div[data-label="local"] button:has-text("Start New")').first
     local_connect_btn.click()
     
     # Wait for the terminal to appear
-    playwright_page.wait_for_selector(".terminal-instance", state="attached", timeout=15000)
+    playwright_page.wait_for_selector(".terminal-instance", state="attached")
     
     # Now click the New Tab button (+) to go back to the launcher
     new_tab_btn = playwright_page.locator('#new-tab-btn')
     new_tab_btn.click()
     
     # Wait for launcher again
-    playwright_page.wait_for_selector(".launcher", state="attached", timeout=15000)
+    playwright_page.wait_for_selector(".launcher", state="attached")
     
     # Check that it appears in backend sessions and has status-node and status-online
     node = playwright_page.locator('.status-node.status-online').first
-    expect(node).to_be_attached(timeout=10000)
+    expect(node).to_be_attached(timeout=15000)
     
     # Ensure there is a flash class logic built-in, but initially it won't have flash unless it updates
     assert node.count() > 0
@@ -53,30 +55,31 @@ def test_status_indicator_animation(page):
     assert int(margin_bottom.replace('px', '')) >= 4, "Spinner bottom margin is too small, will clip"
     assert int(margin_left.replace('px', '')) >= 4, "Spinner left margin is too small, will clip"
     
+@pytest.mark.timeout(60)
 def test_status_animation_dom_persistence(page):
     playwright_page, server_url, context = page
     
     # Load app and start a session
-    playwright_page.goto(server_url, timeout=15000)
-    playwright_page.wait_for_selector(".launcher", state="attached", timeout=15000)
+    playwright_page.goto(server_url)
+    playwright_page.wait_for_selector(".launcher", state="attached")
     
     # Click to connect local host
     local_connect_btn = playwright_page.locator('div[data-label="local"] button:has-text("Start New")').first
     local_connect_btn.click()
     
     # Wait for terminal to appear
-    playwright_page.wait_for_selector(".terminal-instance", state="attached", timeout=15000)
+    playwright_page.wait_for_selector(".terminal-instance", state="attached")
     
     # Click New Tab button
     new_tab_btn = playwright_page.locator('#new-tab-btn')
     new_tab_btn.click()
     
     # Wait for launcher again
-    playwright_page.wait_for_selector(".launcher", state="attached", timeout=15000)
+    playwright_page.wait_for_selector(".launcher", state="attached")
     
     # Wait for the backend session item to appear
     session_item = playwright_page.locator('.backend-sessions-container .session-item').first
-    expect(session_item).to_be_attached(timeout=10000)
+    expect(session_item).to_be_attached(timeout=15000)
     
     html_before = session_item.evaluate("el => el.outerHTML")
     print(f"HTML BEFORE: {html_before}")

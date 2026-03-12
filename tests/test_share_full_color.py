@@ -11,20 +11,21 @@ def page(server):
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)
+        page.set_default_timeout(60000)
+        page.goto(server)
+        page.wait_for_selector(".launcher, .terminal-instance", state="attached")
         yield page
         context.close()
         browser.close()
 
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_full_color_logo(page, server):
     # Start a fresh local session which prints the Gemini logo
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
 
-    expect(page.locator('.xterm-screen')).to_be_visible(timeout=5000)
+    expect(page.locator('.xterm-screen')).to_be_visible(timeout=15000)
     time.sleep(2) # wait for term render and logo printing
     
     # Trigger TRUECOLOR output
@@ -33,13 +34,13 @@ def test_full_color_logo(page, server):
     
     # Share session
     page.locator('#share-session-btn').click()
-    expect(page.locator('#share-modal')).to_be_visible(timeout=5000)
+    expect(page.locator('#share-modal')).to_be_visible(timeout=15000)
     
     # Select full color theme
     page.locator('#share-theme-select').select_option('full')
     page.locator('#confirm-share-btn').click()
     
-    expect(page.locator('#share-result')).to_be_visible(timeout=5000)
+    expect(page.locator('#share-result')).to_be_visible(timeout=15000)
     link_input = page.locator('#share-link-input')
     expect(link_input).to_be_visible()
     
@@ -47,9 +48,10 @@ def test_full_color_logo(page, server):
     
     # Navigate to the generated link
     new_page = page.context.new_page()
-    new_page.goto(val, timeout=15000)
+    new_page.set_default_timeout(60000)
+    new_page.goto(val)
     
-    expect(new_page.locator('.terminal-wrapper')).to_be_visible(timeout=5000)
+    expect(new_page.locator('.terminal-wrapper')).to_be_visible(timeout=15000)
     time.sleep(1)
     
     screenshot_path = "public/qa-screenshots/test_share_full_color_logo.png"

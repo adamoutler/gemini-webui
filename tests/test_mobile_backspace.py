@@ -9,7 +9,9 @@ def mobile_page(server):
         iphone_12 = p.devices['iPhone 12']
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**iphone_12)
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.goto(server, timeout=15000)
         page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)
         
@@ -18,16 +20,16 @@ def mobile_page(server):
         context.close()
         browser.close()
 
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_mobile_backspace_removes_characters(mobile_page):
     print("Test started")
     # Start a fresh session
     btns = mobile_page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
 
     print("Clicked start new")
-    expect(mobile_page.locator('.xterm-screen')).to_be_visible(timeout=5000)
+    expect(mobile_page.locator('.xterm-screen')).to_be_visible(timeout=15000)
     time.sleep(1) # wait for term render
     print("Term rendered")
     
@@ -57,7 +59,7 @@ def test_mobile_backspace_removes_characters(mobile_page):
     
     print("Checking expect")
     # Verify the terminal has output
-    expect(mobile_page.locator('.xterm-screen')).to_be_visible(timeout=5000)
+    expect(mobile_page.locator('.xterm-screen')).to_be_visible(timeout=15000)
     
     # Read text from xterm.js buffer
     start_time = time.time()

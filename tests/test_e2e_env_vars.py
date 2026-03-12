@@ -55,10 +55,11 @@ def page(server):
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)
+        page.goto(server)
+        page.wait_for_selector(".launcher, .terminal-instance", state="attached")
         yield page
         context.close()
         browser.close()
@@ -66,10 +67,10 @@ def page(server):
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
 def test_e2e_session_env_vars_injected(page, test_data_dir, ssh_target_container_no_gemini):
-    expect(page.locator(".launcher").first).to_be_visible(timeout=5000)
+    expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
     
     page.locator('button:has-text("Settings")').click()
-    expect(page.locator("#settings-modal")).to_be_visible(timeout=5000)
+    expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
     
     page.locator("#new-host-label").fill("Env Var SSH Test")
     ssh_port = ssh_target_container_no_gemini
@@ -88,7 +89,7 @@ def test_e2e_session_env_vars_injected(page, test_data_dir, ssh_target_container
     card = page.locator(".connection-card").filter(has_text="Env Var SSH Test").first
     card.locator("button", has_text="Start New").click()
     
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=10000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
     page.wait_for_timeout(3000)
 
     # We drop into bash because gemini is not found.

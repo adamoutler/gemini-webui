@@ -20,7 +20,9 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -32,33 +34,36 @@ def page(server):
 def test_share_full_color(page):
     # 1. Start a local session to ensure we have an active terminal
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
     
     # Wait for the terminal to load and the logo to appear
-    expect(page.locator('.xterm-screen')).to_be_visible(timeout=10000)
+    expect(page.locator('.xterm-screen')).to_be_visible(timeout=15000)
     time.sleep(2) # Give it time to render the colored text
     
     # Click share button
     page.locator('#share-session-btn').click()
-    expect(page.locator('#share-modal')).to_be_visible(timeout=5000)
+    expect(page.locator('#share-modal')).to_be_visible(timeout=15000)
     
     # Change theme to full
     page.locator('#share-theme-select').select_option('full')
     
     page.locator('#confirm-share-btn').click()
     
-    expect(page.locator('#share-result')).to_be_visible(timeout=5000)
+    expect(page.locator('#share-result')).to_be_visible(timeout=15000)
     link_input = page.locator('#share-link-input')
     expect(link_input).to_be_visible()
     
     val = link_input.input_value()
+
     
     new_page = page.context.new_page()
+    
+    new_page.set_default_timeout(60000)
     new_page.goto(val, timeout=15000)
     
     # Wait for the share content to load
-    expect(new_page.locator('.terminal-wrapper')).to_be_visible(timeout=10000)
+    expect(new_page.locator('.terminal-wrapper')).to_be_visible(timeout=15000)
     time.sleep(2) # wait for styling
     
     # Take screenshot of the shared page

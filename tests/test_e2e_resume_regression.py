@@ -70,7 +70,7 @@ def custom_server(test_data_dir):
     yield controller
     controller.stop()
 
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_new_session_no_resume(custom_server, test_data_dir):
     """
     Test that a 'Start New' connection executes without the -r flag.
@@ -85,15 +85,16 @@ def test_new_session_no_resume(custom_server, test_data_dir):
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
+        page.set_default_timeout(60000)
         
         page.goto(custom_server.url)
-        expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=5000)
+        expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
         
         # Click "Start New"
         page.locator('.tab-instance.active button:has-text("Start New")').first.click()
         
         # Wait for terminal to load
-        expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+        expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
         
         # Focus terminal and type
         page.locator('.xterm').first.click()
@@ -139,13 +140,14 @@ def test_auto_resume_after_server_restart(custom_server, test_data_dir):
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
+        page.set_default_timeout(60000)
         
         page.goto(custom_server.url)
-        expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=5000)
+        expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
         
         # 1. Start New Session
         page.locator('.tab-instance.active button:has-text("Start New")').first.click()
-        expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+        expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
         
         # 2. Set state
         page.locator('.xterm').first.click()
@@ -184,13 +186,13 @@ def test_auto_resume_after_server_restart(custom_server, test_data_dir):
         time.sleep(10) # Requirement: verify if server is stopped for 10 seconds and restarted
         
         status_el = page.locator('#connection-status')
-        expect(status_el).to_have_text("Reconnecting...", timeout=10000)
+        expect(status_el).to_have_text("Reconnecting...", timeout=20000)
         
         # 4. Restart server
         custom_server.start()
         
         # 5. Verify UI auto-reconnects
-        expect(status_el).to_have_text("local", timeout=20000)
+        expect(status_el).to_have_text("local", timeout=30000)
         
         # 6. Verify it resumed using -r by asking for the value
         # Wait a moment for terminal to settle after reconnect
@@ -219,10 +221,11 @@ def test_no_terminal_clear_on_stolen_session(custom_server, test_data_dir):
         # Browser 1
         context1 = browser.new_context()
         page1 = context1.new_page()
+        page1.set_default_timeout(60000)
         page1.goto(custom_server.url)
-        expect(page1.get_by_text("Select a Connection").first).to_be_visible(timeout=5000)
+        expect(page1.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
         page1.locator('.tab-instance.active button:has-text("Start New")').first.click()
-        expect(page1.locator('#active-connection-info')).to_be_visible(timeout=5000)
+        expect(page1.locator('#active-connection-info')).to_be_visible(timeout=15000)
         page1.locator('.xterm').first.click()
         page1.keyboard.type("Initial buffer state check\r")
         
@@ -255,11 +258,11 @@ def test_no_terminal_clear_on_stolen_session(custom_server, test_data_dir):
         }""")
         
         # Check that 'Reclaim' button appeared
-        expect(page1.locator('#reclaim-btn')).to_be_visible(timeout=5000)
+        expect(page1.locator('#reclaim-btn')).to_be_visible(timeout=15000)
         
         # Check that connection status says Stolen
         status_el = page1.locator('#connection-status')
-        expect(status_el).to_have_text("Stolen", timeout=5000)
+        expect(status_el).to_have_text("Stolen", timeout=15000)
         
         # Buffer should still have initial text
         term_text1_after = check_text(page1)

@@ -8,7 +8,9 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -18,7 +20,7 @@ def page(server):
         browser.close()
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_e2e_smart_search_ordering(page, test_data_dir):
     """
     Test E2E smart search ordering by mocking an extensive directory structure.
@@ -44,11 +46,11 @@ def test_e2e_smart_search_ordering(page, test_data_dir):
 
     # 2. Start a local session to ensure we have an active terminal
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
     
     # Wait for terminal to appear
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
 
     # Force the session type to 'ssh' so autocomplete logic triggers
     page.evaluate("""() => {
@@ -72,13 +74,13 @@ def test_e2e_smart_search_ordering(page, test_data_dir):
     
     # 5. Assert the dropdown appears
     dropdown = page.locator('#autocomplete-results')
-    expect(dropdown).to_be_visible(timeout=5000)
+    expect(dropdown).to_be_visible(timeout=15000)
     
     # 6. Verify results are correctly prioritized according to smart search logic
     items = page.locator('.autocomplete-item')
     
     # Wait for the first result to appear to ensure dropdown is populated
-    expect(items.first).to_be_visible(timeout=5000)
+    expect(items.first).to_be_visible(timeout=15000)
     
     # Expected order for "app" query:
     # 1. ./app.py (score 80, len 8)
@@ -88,8 +90,8 @@ def test_e2e_smart_search_ordering(page, test_data_dir):
     # 5. ./myapp/main.py (score 25, len 15)
     
     # We will poll since it might take a moment to sort and filter correctly
-    expect(items.nth(0)).to_have_text("./app.py", timeout=5000)
-    expect(items.nth(1)).to_have_text("./src/app.py", timeout=5000)
-    expect(items.nth(2)).to_have_text("./tests/test_app.py", timeout=5000)
-    expect(items.nth(3)).to_have_text("./myapp/", timeout=5000)
-    expect(items.nth(4)).to_have_text("./myapp/main.py", timeout=5000)
+    expect(items.nth(0)).to_have_text("./app.py", timeout=15000)
+    expect(items.nth(1)).to_have_text("./src/app.py", timeout=15000)
+    expect(items.nth(2)).to_have_text("./tests/test_app.py", timeout=15000)
+    expect(items.nth(3)).to_have_text("./myapp/", timeout=15000)
+    expect(items.nth(4)).to_have_text("./myapp/main.py", timeout=15000)

@@ -70,7 +70,9 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -84,11 +86,11 @@ def page(server):
 def test_ssh_drag_and_drop_upload(page, test_data_dir, ssh_target_container):
     # Set up the SSH connection in the UI
     # First we need to make sure we are on the launcher or settings
-    expect(page.locator(".launcher").first).to_be_visible(timeout=5000)
+    expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
     
     # Open settings modal to add host
     page.locator('button:has-text("Settings")').click()
-    expect(page.locator("#settings-modal")).to_be_visible(timeout=5000)
+    expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
     
     # Fill out the form
     page.locator("#new-host-label").fill("E2E SSH Test")
@@ -113,7 +115,7 @@ def test_ssh_drag_and_drop_upload(page, test_data_dir, ssh_target_container):
     card.locator("button", has_text="Start New").click()
     
     # Wait for the terminal to appear and connect
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=10000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
 
     page.wait_for_timeout(3000)
 

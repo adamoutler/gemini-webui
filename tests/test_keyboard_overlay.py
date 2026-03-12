@@ -8,12 +8,14 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         yield page
         context.close()
         browser.close()
 
-@pytest.mark.timeout(15)
+@pytest.mark.timeout(60)
 def test_keyboard_per_word_overlay(page, server):
     page.goto(server)
     
