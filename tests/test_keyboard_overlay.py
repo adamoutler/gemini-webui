@@ -26,22 +26,27 @@ def test_keyboard_per_word_overlay(page, server):
     # Wait for the terminal to be ready
     page.wait_for_selector('.xterm')
     
+    # Wait for active tab ID to be available from the global variable
+    page.wait_for_function("() => typeof activeTabId !== 'undefined' && activeTabId !== null", timeout=30000)
+    active_tab_id = page.evaluate("activeTabId")
+    
+    # The overlay textarea selector
+    textarea_selector = f"#terminal-input-{active_tab_id}"
+    
+    # Ensure it exists and is visible
+    textarea = page.locator(textarea_selector)
+    textarea.wait_for(state="attached", timeout=30000)
+    
     # Click to focus
-    page.click('.xterm')
+    textarea.click()
     page.wait_for_timeout(1000)
-    
-    # The overlay textarea
-    textarea_selector = '.xterm-helper-textarea'
-    
-    # Ensure it exists
-    page.wait_for_selector(textarea_selector, state="attached")
     
     # Type a word without space
     page.keyboard.type("echo")
     page.wait_for_timeout(500)
     
     # Assert the value is "echo"
-    overlay_val = page.locator(textarea_selector).evaluate("el => el.value")
+    overlay_val = textarea.evaluate("el => el.value")
     assert overlay_val == "echo", f"Expected 'echo', got '{overlay_val}'"
     
     import warnings
@@ -54,12 +59,12 @@ def test_keyboard_per_word_overlay(page, server):
     page.wait_for_timeout(500)
     
     # Assert the value is cleared
-    overlay_val = page.locator(textarea_selector).evaluate("el => el.value")
+    overlay_val = textarea.evaluate("el => el.value")
     assert overlay_val == "", f"Expected empty string after space, got '{overlay_val}'"
     
     # Type another word
     page.keyboard.type("hello")
     page.wait_for_timeout(500)
     
-    overlay_val = page.locator(textarea_selector).evaluate("el => el.value")
+    overlay_val = textarea.evaluate("el => el.value")
     assert overlay_val == "hello", f"Expected 'hello', got '{overlay_val}'"
