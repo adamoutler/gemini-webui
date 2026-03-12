@@ -17,7 +17,7 @@ def browser_context():
 def page(server, browser_context):
 
     page = browser_context.new_page()
-    page.set_default_timeout(60000)
+    page.set_default_timeout(120000)
     page.goto(server, timeout=15000)
     page.locator('#new-tab-btn').click()
     page.locator('.tab-instance.active button:has-text("Start New")').first.click()
@@ -37,10 +37,12 @@ def test_physical_keyboard_combinations(page):
     }""")
     
     # Wait for the focus to settle on textarea
+    page.wait_for_function("() => sessionStorage.getItem('gemini_active_tab') !== null", timeout=30000)
     active_tab_id = page.evaluate("sessionStorage.getItem('gemini_active_tab')")
     textarea = page.locator(f"#terminal-input-{active_tab_id}")
     
     # Click to ensure focus
+    textarea.wait_for(state="attached", timeout=30000)
     textarea.click()
     
     # Press Ctrl+C

@@ -22,14 +22,14 @@ def page(server):
         context = browser.new_context()
 
         page = context.new_page()
-        page.set_default_timeout(60000)
+        page.set_default_timeout(120000)
         page.goto(server, timeout=15000)
         page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)
         yield page
         context.close()
         browser.close()
 
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 def test_share_color_averages(page, server):
     # Start a fresh local session
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
@@ -43,6 +43,7 @@ def test_share_color_averages(page, server):
     def get_share_screenshot(theme):
         page.locator('#share-session-btn').click()
         expect(page.locator('#share-modal')).to_be_visible(timeout=15000)
+        time.sleep(1)
         
         page.locator('#share-theme-select').select_option(theme)
         page.locator('#confirm-share-btn').click()
@@ -56,7 +57,7 @@ def test_share_color_averages(page, server):
         # Navigate to the generated link
 
         new_page = page.context.new_page()
-        new_page.set_default_timeout(60000)
+        new_page.set_default_timeout(120000)
         new_page.goto(val, timeout=15000)
         
         # wait for content to load

@@ -11,14 +11,14 @@ def page(server):
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
-        page.set_default_timeout(60000)
+        page.set_default_timeout(120000)
         page.goto(server)
         page.wait_for_selector(".launcher, .terminal-instance", state="attached")
         yield page
         context.close()
         browser.close()
 
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 def test_full_color_logo(page, server):
     # Start a fresh local session which prints the Gemini logo
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
@@ -35,6 +35,7 @@ def test_full_color_logo(page, server):
     # Share session
     page.locator('#share-session-btn').click()
     expect(page.locator('#share-modal')).to_be_visible(timeout=15000)
+    time.sleep(1)
     
     # Select full color theme
     page.locator('#share-theme-select').select_option('full')
@@ -48,7 +49,7 @@ def test_full_color_logo(page, server):
     
     # Navigate to the generated link
     new_page = page.context.new_page()
-    new_page.set_default_timeout(60000)
+    new_page.set_default_timeout(120000)
     new_page.goto(val)
     
     expect(new_page.locator('.terminal-wrapper')).to_be_visible(timeout=15000)

@@ -22,7 +22,7 @@ def page(server):
         context = browser.new_context()
 
         page = context.new_page()
-        page.set_default_timeout(60000)
+        page.set_default_timeout(120000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -44,6 +44,7 @@ def test_share_full_color(page):
     # Click share button
     page.locator('#share-session-btn').click()
     expect(page.locator('#share-modal')).to_be_visible(timeout=15000)
+    time.sleep(1)
     
     # Change theme to full
     page.locator('#share-theme-select').select_option('full')

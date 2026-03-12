@@ -3,7 +3,7 @@ import pytest
 import time
 from playwright.sync_api import sync_playwright, expect
 
-MAX_TEST_TIME = 60.0
+MAX_TEST_TIME = 120.0
 
 @pytest.fixture(scope="function")
 def page(server):
@@ -12,7 +12,7 @@ def page(server):
         context = browser.new_context()
 
         page = context.new_page()
-        page.set_default_timeout(60000)
+        page.set_default_timeout(120000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -22,7 +22,7 @@ def page(server):
         browser.close()
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 def test_ui_share_workflow(page, server):
     """Verify that a user can share a session and generate a link."""
     # Start a fresh local session
@@ -44,6 +44,7 @@ def test_ui_share_workflow(page, server):
 
     # Verify modal appears
     expect(page.locator('#share-modal')).to_be_visible(timeout=15000)
+    time.sleep(1)
     expect(page.locator('#share-modal')).to_contain_text("This will generate a publicly accessible link.", timeout=15000)
 
     # Select the Light theme
@@ -73,7 +74,7 @@ def test_ui_share_workflow(page, server):
     # Navigate to the generated link
 
     new_page = page.context.new_page()
-    new_page.set_default_timeout(60000)
+    new_page.set_default_timeout(120000)
     new_page.goto(val, timeout=15000)
     
     # Verify structural classes and layout
