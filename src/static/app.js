@@ -1318,7 +1318,8 @@ class MobileInputProxy {
                     cols: tab.term.cols, 
                     rows: tab.term.rows, 
                     ssh_target: target, 
-                    ssh_dir: dir 
+                    ssh_dir: dir,
+                    mode: mode
                 });
                 tab.shouldReclaim = true; // All subsequent reconnects should attempt reclaim
 
@@ -1660,13 +1661,14 @@ class MobileInputProxy {
             if (tab && tab.state === 'terminal') {
                 const { ssh_target, ssh_dir, resume } = tab.session;
                 // tab.term.clear(); 
-                tab.socket.emit('restart', { 
-                    tab_id: tab.id, 
-                    resume: resume, 
-                    cols: tab.term.cols, 
-                    rows: tab.term.rows, 
+                tab.socket.emit('restart', {
+                    tab_id: tab.id,
+                    resume: resume,
+                    cols: tab.term.cols,
+                    rows: tab.term.rows,
                     ssh_target: ssh_target,
-                    ssh_dir: ssh_dir
+                    ssh_dir: ssh_dir,
+                    mode: mode
                 });                updateStatus(ssh_target, ssh_dir);
             }
         }
