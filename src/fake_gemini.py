@@ -26,6 +26,7 @@ def run_fake_gemini():
     # Initial Welcome
     sys.stdout.write("\x1b[2J\x1b[H") # Clear screen and home
     sys.stdout.write("\x1b[1;36m[Fake Gemini v2.0 - High Fidelity Mode]\x1b[0m\r\n")
+    sys.stdout.write("Welcome to Fake Gemini\r\n")
     sys.stdout.write(f"\x1b[1;34mScenario: {args.scenario}\x1b[0m\r\n")
     
     if "GEMINI_WEBUI_HARNESS_ID" not in os.environ:

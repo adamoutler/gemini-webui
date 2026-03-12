@@ -28,8 +28,8 @@ def test_fake_gemini_ephemeral(page, server):
     expect(page.locator("h1:has-text('TEST LAUNCHER')")).to_be_visible()
     
     # Take screenshot of launcher page
-    page.screenshot(path="/tmp/launcher_page_220.png")
-    print("Saved screenshot to /tmp/launcher_page_220.png")
+    page.screenshot(path="/tmp/launcher_page_220_ephemeral.png")
+    print("Saved screenshot to /tmp/launcher_page_220_ephemeral.png")
 
     # 2. Fill scenario input with ansi_stress_test
     page.locator("input[name='scenario']").fill("ansi_stress_test")
@@ -63,8 +63,8 @@ def test_fake_gemini_ephemeral(page, server):
     assert has_class, "document.body should have 'theme-fake-session' class"
     
     # Take screenshot of active fake session terminal
-    page.screenshot(path="/tmp/active_fake_session_220.png")
-    print("Saved screenshot to /tmp/active_fake_session_220.png")
+    page.screenshot(path="/tmp/active_fake_session_220_ephemeral.png")
+    print("Saved screenshot to /tmp/active_fake_session_220_ephemeral.png")
 
     # 7. Trigger a page reload and assert that the friction-modal is visible
     # Note: reload might trigger beforeunload dialog if playwright doesn't auto-dismiss it.
@@ -81,8 +81,8 @@ def test_fake_gemini_ephemeral(page, server):
     expect(page.locator("#friction-modal")).to_be_visible(timeout=10000)
     
     # Take screenshot of friction modal
-    page.screenshot(path="/tmp/friction_modal_after_reload_220.png")
-    print("Saved screenshot to /tmp/friction_modal_after_reload_220.png")
+    page.screenshot(path="/tmp/friction_modal_after_reload_220_ephemeral.png")
+    print("Saved screenshot to /tmp/friction_modal_after_reload_220_ephemeral.png")
 
     # 8. Check backend rejection logic
     # Try to open a second tab with the same session_id
@@ -103,6 +103,6 @@ def test_fake_gemini_ephemeral(page, server):
                "This ephemeral session has already been used" in second_rows or \
                "Invalid or expired ephemeral session" in second_rows        
         # Take screenshot of the rejection
-        second_page.screenshot(path="/tmp/backend_rejection_220.png")
-        print("Saved screenshot to /tmp/backend_rejection_220.png")
+        second_page.screenshot(path="/tmp/backend_rejection_220_ephemeral.png")
+        print("Saved screenshot to /tmp/backend_rejection_220_ephemeral.png")
 

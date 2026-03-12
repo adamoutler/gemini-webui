@@ -15,7 +15,6 @@ class MobileInputProxy {
   }
 
   init() {
-    this.proxyInput.id = 'terminal-input-' + this.tab.id;
     this.proxyInput.style.setProperty('background-color', 'transparent', 'important');
     this.proxyInput.style.setProperty('color', 'var(--terminal-fg)', 'important');
     
@@ -41,14 +40,22 @@ class MobileInputProxy {
 
   handleInput(e, isComposing) {
     if (e.inputType === 'deleteContentBackward') {
+        if (!this.isMobile) return; // Desktop xterm handles backspace
         this.emitToTerminal('\x7f');
         return;
     }
     if (isComposing) return;
 
     const value = this.proxyInput.value;
+    
+    // On desktop, ignore single character inserts as xterm.js handles them
+    if (!this.isMobile && e.inputType === 'insertText' && e.data && e.data.length === 1 && value.length <= 1) {
+        this.proxyInput.value = '';
+        return;
+    }
+
     const boundaryRegex = /[\s.,?!;-]/;
-    if (boundaryRegex.test(value)) {
+    if (boundaryRegex.test(value) || (!this.isMobile && value.length > 1)) {
       this.emitToTerminal(value);
       this.proxyInput.value = '';
     }
@@ -56,14 +63,23 @@ class MobileInputProxy {
 
   handleKeyDown(e) {
     const value = this.proxyInput.value;
-    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.altKey || e.ctrlKey || e.metaKey) {
+        // If we have a buffered value, send it before the modifier key takes effect
+        if (value.length > 0) {
+            this.emitToTerminal(value);
+            this.proxyInput.value = '';
+        }
+        return;
+    }
     if (e.key === 'Backspace' || e.keyCode === 8) {
       if (value.length === 0) {
+        if (!this.isMobile) return; // Desktop xterm handles backspace
         e.preventDefault();
         this.emitToTerminal('\x7f');
       }
     }
     if (e.key === 'Enter') {
+      if (!this.isMobile && value.length === 0) return; // Desktop xterm handles enter
       e.preventDefault();
       this.emitToTerminal(value + '\r');
       this.proxyInput.value = '';
@@ -72,11 +88,6 @@ class MobileInputProxy {
 
   emitToTerminal(data) {
      if (!this.tab || !this.tab.socket || data == null) return;
-     // Only emit from proxy if we are on mobile OR in a composition
-     // Standard desktop keyboard input is handled by xterm.js onData
-     const isComposing = this.proxyInput.classList.contains('is-composing');
-     if (!this.isMobile && !isComposing) return;
-
      const chunkSize = 1024;
      const strData = String(data).replace(/\n/g, '\r');
      for (let i = 0; i < strData.length; i += chunkSize) {

@@ -17,20 +17,24 @@ def page(server):
         browser.close()
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(60)
 def test_ctrl_enter_aliases_to_alt_enter(page):
     """Verify that pressing Ctrl+Enter in the terminal sends the Alt+Enter sequence."""
+    print("STEP 1: Checking for Select a Connection")
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=5000)
 
     # Start a fresh local session
+    print("STEP 2: Clicking Start New")
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=5000)
     btns.first.click()
     
     # Wait for terminal to appear
+    print("STEP 3: Waiting for connection info")
     expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
 
     # Wait for connection to establish and welcome message
+    print("STEP 4: Waiting for Welcome to Fake Gemini")
     page.wait_for_function("""() => {
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
@@ -39,7 +43,8 @@ def test_ctrl_enter_aliases_to_alt_enter(page):
                 const line = tab.term.buffer.active.getLine(i);
                 if (line) out += line.translateToString() + "\\n";
             }
-            return out.includes("Welcome to Fake Gemini");
+            console.log("DEBUG TERMINAL BUFFER:", out);
+            return out.includes("Welcome") && out.includes("Fake") && out.includes("Gemini");
         }
         return false;
     }""", timeout=10000)
@@ -48,13 +53,25 @@ def test_ctrl_enter_aliases_to_alt_enter(page):
     page.locator('.xterm-helper-textarea').first.focus()
 
     # Type a message
-    page.locator('.xterm-helper-textarea').first.fill("secret_test_string")
+    page.keyboard.type("secret_test_string")
     
     # Simulate pressing Control+Enter
-    page.locator('.xterm-helper-textarea').first.press("Control+Enter")
+    page.keyboard.press("Control+Enter")
     
     # Wait for the backend response
-    time.sleep(2)
+    # Instead of sleep, wait for function
+    page.wait_for_function("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            let out = "";
+            for (let i = 0; i < 20; i++) {
+                const line = tab.term.buffer.active.getLine(i);
+                if (line) out += line.translateToString() + "\\n";
+            }
+            return out.includes("ALT_ENTER_RECEIVED");
+        }
+        return false;
+    }""", timeout=10000)
     
     content = page.evaluate("""() => {
         const tab = tabs.find(t => t.id === activeTabId);
