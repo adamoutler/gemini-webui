@@ -1,6 +1,7 @@
 import pytest
 import time
 import warnings
+import os
 from playwright.sync_api import sync_playwright, expect
 
 def run_test_with_viewport(server, width, height, expect_visible):
@@ -44,7 +45,7 @@ def run_test_with_viewport(server, width, height, expect_visible):
         print(f"Textarea Bounding Box: {box}")
         print(f"Viewport: {viewport}")
         
-        screenshot_path = f"/tmp/gemwe-stt-{width}x{height}.png"
+        screenshot_path = f"/tmp/gemwe-stt-{width}x{height}_{os.environ.get('BUILD_NUMBER', 'local')}.png"
         page.screenshot(path=screenshot_path)
         warnings.warn(f"Empirical Evidence: Saved STT textarea screenshot to {screenshot_path}. Textarea dims: {box['width']}x{box['height']}, Viewport: {viewport['width']}x{viewport['height']}")
 

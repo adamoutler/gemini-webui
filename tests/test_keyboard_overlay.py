@@ -1,4 +1,5 @@
 import pytest
+import os
 from playwright.sync_api import sync_playwright, expect
 import time
 
@@ -42,8 +43,9 @@ def test_keyboard_per_word_overlay(page, server):
     assert overlay_val == "echo", f"Expected 'echo', got '{overlay_val}'"
     
     import warnings
-    page.screenshot(path="/tmp/gemwe-178.png")
-    warnings.warn(f"Empirical evidence: Screenshot saved to /tmp/gemwe-178.png. Typed 'echo' and found '{overlay_val}' in overlay textarea before space.")
+    screenshot_path = f"/tmp/gemwe-178_{os.environ.get('BUILD_NUMBER', 'local')}.png"
+    page.screenshot(path=screenshot_path)
+    warnings.warn(f"Empirical evidence: Screenshot saved to {screenshot_path}. Typed 'echo' and found '{overlay_val}' in overlay textarea before space.")
     
     # Type a space
     page.keyboard.press("Space")

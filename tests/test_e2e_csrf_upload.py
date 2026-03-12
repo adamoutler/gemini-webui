@@ -246,9 +246,10 @@ def test_csrf_upload_stale_cache_recovery(csrf_enabled_server, test_data_dir):
         assert resp.status != 400, "CSRF validation failed on backend! The token was not recovered."
         assert resp.status == 200, f"Upload failed for another reason: {resp.status}"
         
-        page.screenshot(path="/tmp/gemwe-180.png")
+        screenshot_path = f"/tmp/gemwe-180_{os.environ.get('BUILD_NUMBER', 'local')}.png"
+        page.screenshot(path=screenshot_path)
         import warnings
-        warnings.warn("Empirical Evidence: Stale CSRF cache upload succeeded. Visual proof saved to /tmp/gemwe-180.png")
+        warnings.warn(f"Empirical Evidence: Stale CSRF cache upload succeeded. Visual proof saved to {screenshot_path}")
 
         context.close()
         browser.close()
