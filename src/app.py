@@ -92,7 +92,7 @@ share_manager = ShareManager()
 session_results_cache = {}
 session_results_cache_lock = threading.Lock()
 
-fake_sessions_map = {}
+ephemeral_sessions = {}
 active_fake_sockets = {}
 active_fake_sockets_lock = threading.Lock()
 
@@ -344,9 +344,9 @@ def handle_disconnect():
     with active_fake_sockets_lock:
         for t_id, active_sid in list(active_fake_sockets.items()):
             if active_sid == sid:
-                logger.info(f"Fake session {t_id} disconnected, purging to prevent reuse.")
+                logger.info(f"Ephemeral session {t_id} disconnected, purging to prevent reuse.")
                 active_fake_sockets.pop(t_id, None)
-                fake_sessions_map.pop(t_id, None)
+                ephemeral_sessions.pop(t_id, None)
                 
     if tab_id:
         session_manager.orphan_session(tab_id)
@@ -433,6 +433,7 @@ def read_and_forward_pty_output():
             except (OSError, IOError, EOFError):
                 logger.info(f"Removing session {tab_id} due to I/O error")
                 session_manager.remove_session(tab_id)
+                ephemeral_sessions.pop(tab_id, None)
 
 
 def background_session_preloader():
@@ -501,21 +502,39 @@ def pty_restart(data):
     user_id = session.get('user_id') or ('admin' if env_config.BYPASS_AUTH_FOR_TESTING else None)
     tab_id = data.get('tab_id')
     mode = data.get('mode')
+    
+    if mode == 'fake':
+        # For ephemeral sessions, the UUID is passed in the 'resume' field
+        ephemeral_id = data.get('resume')
+        if ephemeral_id in ephemeral_sessions:
+            tab_id = ephemeral_id
+
     if not tab_id:
         return
     
-    is_fake = mode == 'fake' or tab_id in fake_sessions_map
+    is_fake = (mode == 'fake') or (tab_id in ephemeral_sessions)
+    executable_override = None
     if is_fake:
-        if tab_id not in fake_sessions_map:
-            socketio.emit('pty-output', {'output': '\r\n\x1b[31m[Error: Invalid or expired fake session. Please start a fresh test.]\x1b[0m\r\n'}, room=sid)
+        if tab_id not in ephemeral_sessions:
+            socketio.emit('pty-output', {'output': '\r\n\x1b[31m[Error: Invalid or expired ephemeral session. Please start a fresh test.]\x1b[0m\r\n'}, room=sid)
             return
         
+        session_info = ephemeral_sessions[tab_id]
+        if session_info.get('used'):
+            socketio.emit('pty-output', {'output': '\r\n\x1b[31m[Error: This ephemeral session has already been used.]\x1b[0m\r\n'}, room=sid)
+            return
+
         with active_fake_sockets_lock:
             if tab_id in active_fake_sockets and active_fake_sockets[tab_id] != sid:
-                logger.warning(f"Rejecting overlapping connection to fake session {tab_id}")
-                socketio.emit('pty-output', {'output': '\r\n\x1b[31m[Error: This fake session is already active in another window.]\x1b[0m\r\n'}, room=sid)
+                logger.warning(f"Rejecting overlapping connection to ephemeral session {tab_id}")
+                socketio.emit('pty-output', {'output': '\r\n\x1b[31m[Error: This ephemeral session is already active in another window.]\x1b[0m\r\n'}, room=sid)
                 return
             active_fake_sockets[tab_id] = sid
+        
+        session_info['used'] = True
+        executable_base = session_info.get('executable', 'python3 src/fake_gemini.py')
+        scenario = session_info.get('args', 'default')
+        executable_override = f"{executable_base} --scenario {shlex.quote(scenario)}"
             
     reclaim = data.get('reclaim', False)
     if reclaim:
@@ -593,11 +612,10 @@ def pty_restart(data):
                 break
                 
     if is_fake:
+        os.environ['GEMINI_WEBUI_HARNESS_ID'] = tab_id
         env_vars['GEMINI_WEBUI_HARNESS_ID'] = tab_id
-        scenario = fake_sessions_map.get(tab_id, '')
-        fake_bin = f"python3 src/fake_gemini.py --scenario {shlex.quote(scenario)}"
-        gemini_bin_override = fake_bin
         ssh_target = None
+        gemini_bin_override = GEMINI_BIN # not used if executable_override is set
     else:
         gemini_bin_override = GEMINI_BIN
     
@@ -611,7 +629,7 @@ def pty_restart(data):
             os.environ['GEMINI_WEBUI_HARNESS_ID'] = tab_id
         
         _, _, ssh_dir_path = get_config_paths()
-        cmd = build_terminal_command(ssh_target, ssh_dir, resume, ssh_dir_path, gemini_bin_override, env_vars=env_vars, is_fake=is_fake)
+        cmd = build_terminal_command(ssh_target, ssh_dir, resume, ssh_dir_path, gemini_bin_override, env_vars=env_vars, is_fake=is_fake, executable_override=executable_override)
         
         if not cmd:
             print("\r\nInvalid SSH target format\r\n")
@@ -648,9 +666,13 @@ def test_launcher():
 
 @app.route('/fake_session_init')
 def fake_session_init():
-    scenario = request.args.get('scenario', '')
+    scenario = request.args.get('scenario', 'default')
     session_id = str(uuid.uuid4())
-    fake_sessions_map[session_id] = scenario
+    ephemeral_sessions[session_id] = {
+        "executable": "python3 src/fake_gemini.py", 
+        "args": scenario, 
+        "used": False
+    }
     return redirect(f'/?session_id={session_id}&mode=fake')
 
 @app.route('/favicon.ico')
@@ -686,6 +708,7 @@ def terminate_managed_session(tab_id):
     session_obj = session_manager.remove_session(tab_id, user_id)
     if session_obj:
         logger.info(f"Terminating managed session {tab_id}")
+        ephemeral_sessions.pop(tab_id, None)
         try:
             os.kill(session_obj.pid, signal.SIGKILL)
             os.waitpid(session_obj.pid, 0)
