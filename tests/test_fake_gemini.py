@@ -22,7 +22,7 @@ def test_fake_gemini_e2e_flow(page, server):
     expect(page.locator("h1:has-text('TEST LAUNCHER')")).to_be_visible()
     
     # Capture UI Distinction Screenshot (Test Launcher)
-    launcher_ss_path = "/tmp/gemini-webui-test-launcher.png"
+    launcher_ss_path = "/tmp/gemini-webui-test-launcher_220.png"
     page.screenshot(path=launcher_ss_path)
     warnings.warn(f"Empirical Evidence: Saved test-launcher screenshot to {launcher_ss_path}")
     
@@ -40,7 +40,7 @@ def test_fake_gemini_e2e_flow(page, server):
     page.wait_for_selector(".xterm-helper-textarea", state="attached", timeout=10000)
     
     # Capture UI Distinction Screenshot (Fake Session Theme)
-    theme_ss_path = "/tmp/gemini-webui-fake-theme.png"
+    theme_ss_path = "/tmp/gemini-webui-fake-theme_220.png"
     page.screenshot(path=theme_ss_path)
     warnings.warn(f"Empirical Evidence: Saved fake session theme screenshot to {theme_ss_path}")
     
@@ -58,7 +58,7 @@ def test_fake_gemini_e2e_flow(page, server):
     rows = page.evaluate("() => { const tab = tabs.find(t => t.id === activeTabId); return (tab && tab.term) ? Array.from({length: tab.term.buffer.active.length}).map((_, i) => tab.term.buffer.active.getLine(i)?.translateToString()).join('\\n') : ''; }")
     print("Terminal Content:")
     print(rows)
-    assert "Welcome to Fake Gemini" in rows or "Hello Fake Gemini" in rows, f"Expected Fake Gemini output not found. Got: {rows}"
+    assert "[Fake Gemini v2.0 - High Fidelity Mode]" in rows or "Welcome to Fake Gemini" in rows or "Hello Fake Gemini" in rows, f"Expected Fake Gemini output not found. Got: {rows}"
     
     # 5. Trigger UX Friction Modal by disconnecting the socket
     page.evaluate("tabs.find(t => t.id === activeTabId).socket.disconnect()")
@@ -68,7 +68,7 @@ def test_fake_gemini_e2e_flow(page, server):
     expect(page.locator("h2:has-text('Session Disconnected')")).to_be_visible()
     
     # Capture UX Friction Modal Screenshot
-    modal_ss_path = "/tmp/gemini-webui-friction-modal.png"
+    modal_ss_path = "/tmp/gemini-webui-friction-modal_220.png"
     page.screenshot(path=modal_ss_path)
     warnings.warn(f"Empirical Evidence: Saved friction modal screenshot to {modal_ss_path}")
     

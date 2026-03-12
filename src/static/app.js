@@ -17,7 +17,7 @@ class MobileInputProxy {
   init() {
     this.proxyInput.id = 'terminal-input-' + this.tab.id;
     this.proxyInput.style.setProperty('background-color', 'transparent', 'important');
-    this.proxyInput.style.setProperty('color', terminalTheme.foreground, 'important');
+    this.proxyInput.style.setProperty('color', 'var(--terminal-fg)', 'important');
     
     this.proxyInput.setAttribute('autocomplete', 'on');
     this.proxyInput.setAttribute('autocorrect', 'on');
@@ -72,6 +72,11 @@ class MobileInputProxy {
 
   emitToTerminal(data) {
      if (!this.tab || !this.tab.socket || data == null) return;
+     // Only emit from proxy if we are on mobile OR in a composition
+     // Standard desktop keyboard input is handled by xterm.js onData
+     const isComposing = this.proxyInput.classList.contains('is-composing');
+     if (!this.isMobile && !isComposing) return;
+
      const chunkSize = 1024;
      const strData = String(data).replace(/\n/g, '\r');
      for (let i = 0; i < strData.length; i += chunkSize) {
