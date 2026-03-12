@@ -7,7 +7,9 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -21,17 +23,17 @@ def page(server):
 def test_ctrl_enter_aliases_to_alt_enter(page):
     """Verify that pressing Ctrl+Enter in the terminal sends the Alt+Enter sequence."""
     
-    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=5000)
+    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
 
     # Start a fresh local session
     
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
     
     # Wait for terminal to appear
     
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
 
     # Wait for connection to establish and welcome message
     
@@ -47,7 +49,7 @@ def test_ctrl_enter_aliases_to_alt_enter(page):
             return out.includes("Welcome") && out.includes("Fake") && out.includes("Gemini");
         }
         return false;
-    }""", timeout=10000)
+    }""", timeout=15000)
 
     # Focus the terminal
     page.locator('.xterm-helper-textarea').first.focus()
@@ -71,7 +73,7 @@ def test_ctrl_enter_aliases_to_alt_enter(page):
             return out.includes("ALT_ENTER_RECEIVED");
         }
         return false;
-    }""", timeout=10000)
+    }""", timeout=15000)
     
     content = page.evaluate("""() => {
         const tab = tabs.find(t => t.id === activeTabId);

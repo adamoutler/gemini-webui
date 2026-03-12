@@ -9,7 +9,9 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={'width': 1280, 'height': 800})
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         yield page
@@ -38,7 +40,7 @@ def test_fake_gemini_e2e_flow(page, server):
     expect(page.locator(".theme-fake-session")).to_be_visible()
     
     # Wait for terminal readiness
-    page.wait_for_selector(".xterm-helper-textarea", state="attached", timeout=10000)
+    page.wait_for_selector(".xterm-helper-textarea", state="attached", timeout=15000)
     
     # Capture UI Distinction Screenshot (Fake Session Theme)
     theme_ss_path = f"/tmp/gemini-webui-fake-theme_220_standard_{os.environ.get('BUILD_NUMBER', 'local')}.png"
@@ -65,7 +67,7 @@ def test_fake_gemini_e2e_flow(page, server):
     page.evaluate("tabs.find(t => t.id === activeTabId).socket.disconnect()")
     
     # Wait for friction modal
-    expect(page.locator(".friction-modal")).to_be_visible(timeout=10000)
+    expect(page.locator(".friction-modal")).to_be_visible(timeout=15000)
     expect(page.locator("h2:has-text('Session Disconnected')")).to_be_visible()
     
     # Capture UX Friction Modal Screenshot

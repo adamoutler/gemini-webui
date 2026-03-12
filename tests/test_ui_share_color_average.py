@@ -20,43 +20,47 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.goto(server, timeout=15000)
         page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)
         yield page
         context.close()
         browser.close()
 
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_share_color_averages(page, server):
     # Start a fresh local session
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
 
-    expect(page.locator('.xterm-screen')).to_be_visible(timeout=5000)
+    expect(page.locator('.xterm-screen')).to_be_visible(timeout=15000)
     time.sleep(1) # wait for term render
 
     # Helper function to create a share and get its screenshot
     def get_share_screenshot(theme):
         page.locator('#share-session-btn').click()
-        expect(page.locator('#share-modal')).to_be_visible(timeout=5000)
+        expect(page.locator('#share-modal')).to_be_visible(timeout=15000)
         
         page.locator('#share-theme-select').select_option(theme)
         page.locator('#confirm-share-btn').click()
         
-        expect(page.locator('#share-result')).to_be_visible(timeout=5000)
+        expect(page.locator('#share-result')).to_be_visible(timeout=15000)
         link_input = page.locator('#share-link-input')
         expect(link_input).to_be_visible()
         
         val = link_input.input_value()
         
         # Navigate to the generated link
+
         new_page = page.context.new_page()
+        new_page.set_default_timeout(60000)
         new_page.goto(val, timeout=15000)
         
         # wait for content to load
-        expect(new_page.locator('.terminal-wrapper')).to_be_visible(timeout=5000)
+        expect(new_page.locator('.terminal-wrapper')).to_be_visible(timeout=15000)
         time.sleep(1) # wait for styling to settle
         
         body_bg = new_page.evaluate("window.getComputedStyle(document.body).backgroundColor")

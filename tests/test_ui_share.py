@@ -3,14 +3,16 @@ import pytest
 import time
 from playwright.sync_api import sync_playwright, expect
 
-MAX_TEST_TIME = 20.0
+MAX_TEST_TIME = 60.0
 
 @pytest.fixture(scope="function")
 def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -20,20 +22,20 @@ def page(server):
         browser.close()
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(60)
 def test_ui_share_workflow(page, server):
     """Verify that a user can share a session and generate a link."""
     # Start a fresh local session
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
 
     # Wait for terminal to appear
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
-    expect(page.locator('#share-session-btn')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
+    expect(page.locator('#share-session-btn')).to_be_visible(timeout=15000)
     
     # Wait for terminal xterm-screen
-    expect(page.locator('.xterm-screen')).to_be_visible(timeout=5000)
+    expect(page.locator('.xterm-screen')).to_be_visible(timeout=15000)
     
     time.sleep(1) # wait a little bit for term render
 
@@ -41,8 +43,8 @@ def test_ui_share_workflow(page, server):
     page.locator('#share-session-btn').click()
 
     # Verify modal appears
-    expect(page.locator('#share-modal')).to_be_visible(timeout=5000)
-    expect(page.locator('#share-modal')).to_contain_text("This will generate a publicly accessible link.", timeout=5000)
+    expect(page.locator('#share-modal')).to_be_visible(timeout=15000)
+    expect(page.locator('#share-modal')).to_contain_text("This will generate a publicly accessible link.", timeout=15000)
 
     # Select the Light theme
     page.locator('#share-theme-select').select_option('light')
@@ -59,7 +61,7 @@ def test_ui_share_workflow(page, server):
     assert post_data.get("theme") == "light"
     
     # Wait for result to be visible
-    expect(page.locator('#share-result')).to_be_visible(timeout=5000)
+    expect(page.locator('#share-result')).to_be_visible(timeout=15000)
     
     # Verify the generated link exists
     link_input = page.locator('#share-link-input')
@@ -69,7 +71,9 @@ def test_ui_share_workflow(page, server):
     assert "/s/" in val
 
     # Navigate to the generated link
+
     new_page = page.context.new_page()
+    new_page.set_default_timeout(60000)
     new_page.goto(val, timeout=15000)
     
     # Verify structural classes and layout

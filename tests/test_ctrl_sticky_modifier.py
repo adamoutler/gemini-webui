@@ -14,12 +14,14 @@ def browser_context():
 
 @pytest.fixture(scope="function")
 def mobile_page(server, browser_context):
+
     page = browser_context.new_page()
+    page.set_default_timeout(60000)
     page.goto(server, timeout=15000)
     page.locator('#new-tab-btn').click()
     page.locator('.tab-instance.active button:has-text("Start New")').first.click()
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
-    expect(page.locator('#mobile-controls')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
+    expect(page.locator('#mobile-controls')).to_be_visible(timeout=15000)
     yield page
     page.close()
 

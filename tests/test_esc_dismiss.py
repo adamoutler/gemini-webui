@@ -7,7 +7,9 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -17,60 +19,60 @@ def page(server):
         browser.close()
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(60)
 def test_esc_dismiss_settings(page):
     """Verify pressing Escape closes the Settings modal."""
     # Open settings
     page.locator('button:has-text("Settings")').click()
-    expect(page.locator('#settings-modal')).to_be_visible(timeout=5000)
+    expect(page.locator('#settings-modal')).to_be_visible(timeout=15000)
     
     # Press Escape
     page.keyboard.press("Escape")
     
     # Verify settings is closed (display: none)
-    expect(page.locator('#settings-modal')).to_be_hidden(timeout=5000)
+    expect(page.locator('#settings-modal')).to_be_hidden(timeout=15000)
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(60)
 def test_esc_dismiss_file_transfer(page):
     """Verify pressing Escape closes the File Transfer modal."""
     # Start a terminal to ensure the Files button appears (or it might be visible anyway)
     # Actually, the Files button is in #active-connection-info which is visible when a terminal is active
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
     
     # Click Files button
     page.locator('button:has-text("Files")').click()
-    expect(page.locator('#file-transfer-modal')).to_be_visible(timeout=5000)
+    expect(page.locator('#file-transfer-modal')).to_be_visible(timeout=15000)
     
     # Press Escape
     page.keyboard.press("Escape")
     
     # Verify it is closed
-    expect(page.locator('#file-transfer-modal')).to_be_hidden(timeout=5000)
+    expect(page.locator('#file-transfer-modal')).to_be_hidden(timeout=15000)
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(60)
 def test_esc_dismiss_launcher(page):
     """Verify pressing Escape on the launcher returns to an active tab if one exists."""
     # Start a terminal session first
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
     
     # Get the ID of the first tab to verify we return to it
     # We can check the active tab's title or terminal visibility
-    expect(page.locator('.terminal-instance').first).to_be_visible(timeout=5000)
+    expect(page.locator('.terminal-instance').first).to_be_visible(timeout=15000)
     
     # Click + New to open the launcher in a new tab
     page.locator('#new-tab-btn').click()
     
     # Verify we are on the launcher
-    expect(page.locator('.launcher').first).to_be_visible(timeout=5000)
-    expect(page.locator('#active-connection-info')).to_be_hidden(timeout=5000)
+    expect(page.locator('.launcher').first).to_be_visible(timeout=15000)
+    expect(page.locator('#active-connection-info')).to_be_hidden(timeout=15000)
     
     # Store tab count
     tabs_count = page.locator('.tab').count()

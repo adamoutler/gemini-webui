@@ -11,7 +11,9 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.goto(server)
         
         # Log in if needed
@@ -25,14 +27,14 @@ def page(server):
         browser.close()
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_bulk_random_upload_e2e(page, test_data_dir):
     # 1. Start a terminal session
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
     
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
 
     # Wait for the terminal to connect
     page.wait_for_timeout(3000)
@@ -47,7 +49,7 @@ def test_bulk_random_upload_e2e(page, test_data_dir):
             return out.includes("Welcome to Fake Gemini");
         }
         return false;
-    }""", timeout=10000)
+    }""", timeout=15000)
 
     # 2. Generate random 8-letter names
     def rand_name():

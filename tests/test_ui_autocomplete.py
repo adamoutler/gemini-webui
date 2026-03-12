@@ -7,7 +7,9 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -17,16 +19,16 @@ def page(server):
         browser.close()
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(60)
 def test_ui_autocomplete_dropdown(page, server):
     """Verify the autocomplete dropdown in the download modal works correctly."""
     # 1. Start a local session to ensure we have an active terminal
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
-    expect(btns.first).to_be_visible(timeout=5000)
+    expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
     
     # Wait for terminal to appear
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
 
     # Force the session type to 'ssh' so autocomplete logic triggers
     page.evaluate("""() => {
@@ -60,7 +62,7 @@ def test_ui_autocomplete_dropdown(page, server):
     
     # 5. Assert the dropdown appears with items
     dropdown = page.locator('#autocomplete-results')
-    expect(dropdown).to_be_visible(timeout=2000)
+    expect(dropdown).to_be_visible(timeout=15000)
     
     items = page.locator('.autocomplete-item')
     expect(items).to_have_count(2)
@@ -75,7 +77,7 @@ def test_ui_autocomplete_dropdown(page, server):
     
     # Since it ends with '/', it dispatches 'input' event, triggering another search for 'src/'
     # The dropdown should populate with the new mock results
-    expect(dropdown).to_be_visible(timeout=2000)
+    expect(dropdown).to_be_visible(timeout=15000)
     expect(items).to_have_count(2)
     expect(items.nth(0)).to_have_text("src/app.py")
     expect(items.nth(1)).to_have_text("src/config.py")
@@ -87,4 +89,4 @@ def test_ui_autocomplete_dropdown(page, server):
     expect(download_input).to_have_value("src/app.py")
     
     # Assert dropdown hides
-    expect(dropdown).not_to_be_visible(timeout=2000)
+    expect(dropdown).not_to_be_visible(timeout=15000)

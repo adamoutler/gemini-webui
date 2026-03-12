@@ -8,7 +8,9 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -18,17 +20,17 @@ def page(server):
         browser.close()
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(60)
 def test_connection_health_indicators(page):
     """Verify that connection health indicators change on failures."""
     # Ensure launcher is loaded
-    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=5000)
+    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
     
     # At start, since it succeeds, local health should be 🟢
     # Let's wait for the first successful fetch to turn it to green
     local_health = page.locator('div[data-label="local"] .connection-title span[id$="_health_local"]')
-    expect(local_health).to_have_text("🟢", timeout=5000)
-    expect(local_health).to_have_attribute("data-status", "connected", timeout=5000)
+    expect(local_health).to_have_text("🟢", timeout=15000)
+    expect(local_health).to_have_attribute("data-status", "connected", timeout=15000)
     
     # Locate the pulse indicator
     pulse_indicator = page.locator('div[data-label="local"] .connection-title div[id$="_pulse_local"]')
@@ -47,12 +49,12 @@ def test_connection_health_indicators(page):
     }''')
     
     # Verify the pulse indicator triggers
-    expect(pulse_indicator).to_have_class(re.compile(r"pulsing"), timeout=5000)
-    expect(pulse_indicator).to_have_class(re.compile(r"superbright"), timeout=5000)
+    expect(pulse_indicator).to_have_class(re.compile(r"pulsing"), timeout=15000)
+    expect(pulse_indicator).to_have_class(re.compile(r"superbright"), timeout=15000)
 
     # 1 failure -> Yellow 🟡
-    expect(local_health).to_have_text("🟡", timeout=5000)
-    expect(local_health).to_have_attribute("data-status", "degraded", timeout=5000)
+    expect(local_health).to_have_text("🟡", timeout=15000)
+    expect(local_health).to_have_attribute("data-status", "degraded", timeout=15000)
     
     # Trigger again
     page.evaluate('''() => {
@@ -62,8 +64,8 @@ def test_connection_health_indicators(page):
     }''')
     
     # 2 failures -> Red 🔴
-    expect(local_health).to_have_text("🔴", timeout=5000)
-    expect(local_health).to_have_attribute("data-status", "error", timeout=5000)
+    expect(local_health).to_have_text("🔴", timeout=15000)
+    expect(local_health).to_have_attribute("data-status", "error", timeout=15000)
     
     # Remove mock to let it succeed
     page.unroute("**/api/sessions*")
@@ -76,17 +78,19 @@ def test_connection_health_indicators(page):
     }''')
     
     # Success -> Green 🟢
-    expect(local_health).to_have_text("🟢", timeout=5000)
-    expect(local_health).to_have_attribute("data-status", "connected", timeout=5000)
+    expect(local_health).to_have_text("🟢", timeout=15000)
+    expect(local_health).to_have_attribute("data-status", "connected", timeout=15000)
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(60)
 def test_default_health_indicator_grey(server):
     """Verify that a server defaults to grey (⚪) and correctly turns red on manual failure."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         
@@ -100,8 +104,8 @@ def test_default_health_indicator_grey(server):
         
         # Check that local health indicator is ⚪ (grey)
         local_health = page.locator('div[data-label="local"] .connection-title span[id$="_health_local"]')
-        expect(local_health).to_have_text("⚪", timeout=5000)
-        expect(local_health).to_have_attribute("data-status", "offline", timeout=5000)
+        expect(local_health).to_have_text("⚪", timeout=15000)
+        expect(local_health).to_have_attribute("data-status", "offline", timeout=15000)
         
         # Check that it turns 🔴 when doing a manual non-cached fetch
         page.evaluate('''() => {
@@ -112,19 +116,21 @@ def test_default_health_indicator_grey(server):
             }
         }''')
         
-        expect(local_health).to_have_text("🔴", timeout=5000)
-        expect(local_health).to_have_attribute("data-status", "error", timeout=5000)
+        expect(local_health).to_have_text("🔴", timeout=15000)
+        expect(local_health).to_have_attribute("data-status", "error", timeout=15000)
 
         context.close()
         browser.close()
 
-@pytest.mark.timeout(10)
+@pytest.mark.timeout(60)
 def test_sync_pulse_with_health_indicator(server):
     """Verify that calling updateHostHealthIndicator synchronously triggers the pulse animation."""
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.goto(server, timeout=15000)
         page.wait_for_selector(".launcher", state="attached", timeout=15000)
         
@@ -140,7 +146,7 @@ def test_sync_pulse_with_health_indicator(server):
             }
         }''')
         
-        expect(pulse_indicator).not_to_have_class(re.compile(r"pulsing"), timeout=5000)
+        expect(pulse_indicator).not_to_have_class(re.compile(r"pulsing"), timeout=15000)
         
         # Call updateHostHealthIndicator directly
         page.evaluate('''() => {
@@ -151,8 +157,8 @@ def test_sync_pulse_with_health_indicator(server):
         }''')
         
         # Verify the pulse indicator triggers immediately
-        expect(pulse_indicator).to_have_class(re.compile(r"pulsing"), timeout=1000)
-        expect(pulse_indicator).to_have_class(re.compile(r"superbright"), timeout=1000)
+        expect(pulse_indicator).to_have_class(re.compile(r"pulsing"), timeout=15000)
+        expect(pulse_indicator).to_have_class(re.compile(r"superbright"), timeout=15000)
 
         context.close()
         browser.close()

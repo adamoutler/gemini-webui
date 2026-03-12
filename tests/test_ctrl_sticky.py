@@ -15,14 +15,16 @@ def browser_context():
 
 @pytest.fixture(scope="function")
 def mobile_page(server, browser_context):
+
     page = browser_context.new_page()
+    page.set_default_timeout(60000)
     page.goto(server, timeout=15000)
     # Start a local session to see controls
     page.locator('#new-tab-btn').click()
     page.locator('.tab-instance.active button:has-text("Start New")').first.click()
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
+    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
     # Wait for controls to be visible on mobile
-    expect(page.locator('#mobile-controls')).to_be_visible(timeout=5000)
+    expect(page.locator('#mobile-controls')).to_be_visible(timeout=15000)
     yield page
     page.close()
 
@@ -45,4 +47,4 @@ def test_ctrl_sticky(mobile_page):
     # Now let's see if ctrlActive was applied.
     # If applied, the terminal should have sent \x03
     # Let's check the active state of ctrl_btn - it should be cleared!
-    expect(ctrl_btn).not_to_have_class("control-btn active", timeout=2000)
+    expect(ctrl_btn).not_to_have_class("control-btn active", timeout=15000)

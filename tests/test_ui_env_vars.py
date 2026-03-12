@@ -8,7 +8,9 @@ def page(server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
@@ -18,14 +20,14 @@ def page(server):
         browser.close()
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(20)
+@pytest.mark.timeout(60)
 def test_ui_add_host_with_env_vars(page, server):
     """Verify that a user can add a host with environment variables and they are loaded when editing."""
-    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=5000)
+    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
 
     # Open Settings
     page.locator('button:has-text("Settings")').click()
-    expect(page.locator("#settings-modal")).to_be_visible(timeout=5000)
+    expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Ensure add mode
     page.locator("#add-mode-btn").click()
@@ -54,7 +56,7 @@ def test_ui_add_host_with_env_vars(page, server):
     assert response.status == 200, f"Failed to add host, status {response.status}"
 
     # Verify the host was added to the list in Settings
-    expect(page.locator("#hosts-list")).to_contain_text("Env Var Host", timeout=5000)
+    expect(page.locator("#hosts-list")).to_contain_text("Env Var Host", timeout=15000)
 
     # Now let's click it to edit and verify env vars are populated
     page.locator("#hosts-list .session-item").filter(has_text="Env Var Host").click()

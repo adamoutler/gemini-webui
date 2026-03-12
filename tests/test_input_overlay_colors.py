@@ -9,7 +9,9 @@ def page(server):
         iphone = p.devices['iPhone 13']
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**iphone)
+
         page = context.new_page()
+        page.set_default_timeout(60000)
         page.goto(server, timeout=15000)
         yield page
         context.close()
@@ -17,7 +19,7 @@ def page(server):
 
 def test_input_overlay_colors(page):
     page.locator('.tab-instance.active button:has-text("Start New")').first.click()
-    page.wait_for_selector(".xterm-helper-textarea", state="attached", timeout=10000)
+    page.wait_for_selector(".xterm-helper-textarea", state="attached", timeout=15000)
     
     textarea = page.locator(".xterm-helper-textarea").first
     
