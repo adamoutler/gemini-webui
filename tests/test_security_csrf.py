@@ -117,7 +117,7 @@ def csrf_enabled_server_csrf(test_data_dir):
     env["WTF_CSRF_ENABLED"] = "true"
     env["FLASK_USE_RELOADER"] = "false"
     import random
-    port = str(random.randint(9000, 10000))
+    port = str(random.randint(10000, 20000))
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
     env["DATA_DIR"] = str(test_data_dir)

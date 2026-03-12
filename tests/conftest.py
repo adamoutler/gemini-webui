@@ -18,7 +18,7 @@ def server(test_data_dir):
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
     import random
-    port = str(random.randint(5000, 9000))
+    port = str(random.randint(10000, 20000))
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
     env["DATA_DIR"] = str(test_data_dir)
