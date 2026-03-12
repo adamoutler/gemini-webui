@@ -15,6 +15,7 @@ class MobileInputProxy {
   }
 
   init() {
+    this.proxyInput.id = 'terminal-input-' + this.tab.id;
     this.proxyInput.style.setProperty('background-color', 'transparent', 'important');
     this.proxyInput.style.setProperty('color', 'var(--terminal-fg)', 'important');
     
@@ -47,14 +48,22 @@ class MobileInputProxy {
     if (isComposing) return;
 
     const value = this.proxyInput.value;
+    const boundaryRegex = /[\s.,?!;-]/;
     
-    // On desktop, ignore single character inserts as xterm.js handles them
-    if (!this.isMobile && e.inputType === 'insertText' && e.data && e.data.length === 1 && value.length <= 1) {
-        this.proxyInput.value = '';
+    // On desktop, xterm.js handles single character and paste emissions via onData.
+    // We only want to EMIT from the proxy if:
+    // 1. We are on a mobile device (where onData is unreliable)
+    // 2. We are in a composition (STT/IME)
+    // 3. It's a multi-character programmatic input (like Playwright's .fill())
+    if (!this.isMobile && !isComposing && e.inputType === 'insertText' && e.data && e.data.length === 1) {
+        // Just let the buffer grow for the overlay, but don't emit and don't clear
+        // UNLESS it's a boundary character, in which case we clear to reset overlay.
+        if (boundaryRegex.test(e.data)) {
+            this.proxyInput.value = '';
+        }
         return;
     }
 
-    const boundaryRegex = /[\s.,?!;-]/;
     if (boundaryRegex.test(value) || (!this.isMobile && value.length > 1)) {
       this.emitToTerminal(value);
       this.proxyInput.value = '';
@@ -65,7 +74,7 @@ class MobileInputProxy {
     const value = this.proxyInput.value;
     if (e.altKey || e.ctrlKey || e.metaKey) {
         // If we have a buffered value, send it before the modifier key takes effect
-        if (value.length > 0) {
+        if (value.length > 0 && (this.isMobile || value.length > 1)) {
             this.emitToTerminal(value);
             this.proxyInput.value = '';
         }
@@ -79,7 +88,8 @@ class MobileInputProxy {
       }
     }
     if (e.key === 'Enter') {
-      if (!this.isMobile && value.length === 0) return; // Desktop xterm handles enter
+      // Desktop xterm handles enter. Only emit if we have a buffer we need to flush.
+      if (!this.isMobile && value.length === 0) return; 
       e.preventDefault();
       this.emitToTerminal(value + '\r');
       this.proxyInput.value = '';
