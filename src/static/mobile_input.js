@@ -209,6 +209,26 @@ class MobileInputUI {
     this.proxyInput.addEventListener('input', (e) => {
         const newValue = inputHandler(e, this.isComposing, this.proxyInput.value);
         if (newValue !== undefined) this.proxyInput.value = newValue;
+
+        // Ticket 5: Dictation detection & auto-commit
+        if (this.dictationTimer) clearTimeout(this.dictationTimer);
+        
+        if (this.proxyInput.value.length > 0) {
+            const isDictation = e.inputType === 'insertDictationResult' || (e.data && e.data.length > 5 && e.inputType !== 'insertFromPaste');
+            if (isDictation) {
+                this.proxyInput.style.width = 'calc(100vw - 20px)';
+                this.proxyInput.style.left = '10px';
+            }
+            
+            // Auto-commit buffer after pause
+            this.dictationTimer = setTimeout(() => {
+                if (this.proxyInput.value.length > 0) {
+                    // force flush by appending a space
+                    inputHandler({data: ' '}, false, this.proxyInput.value + ' ');
+                    this.proxyInput.value = '';
+                }
+            }, isDictation ? 800 : 2000);
+        }
     });
     this.proxyInput.addEventListener('keydown', (e) => {
         const newValue = keyDownHandler(e, this.proxyInput.value, this.isComposing);
