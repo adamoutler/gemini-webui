@@ -11,13 +11,17 @@ class MobileModifierState {
     const bindBtn = (btn, toggleFn) => {
         if (!btn) return;
         const handler = (e) => {
-            if (e.type === 'touchstart') e.preventDefault();
-            if (window.triggerHapticFeedback) window.triggerHapticFeedback();
-            toggleFn();
-            const activeProxy = document.querySelector('.mobile-proxy-input');
-            if (activeProxy) activeProxy.focus();
+            if (e.type === 'touchstart' || e.type === 'touchend') e.preventDefault();
+            // only toggle on touchstart or mousedown, avoid double toggle
+            if (e.type === 'touchstart' || e.type === 'mousedown') {
+                if (window.triggerHapticFeedback) window.triggerHapticFeedback();
+                toggleFn();
+                const activeProxy = document.querySelector('.mobile-proxy-input');
+                if (activeProxy) activeProxy.focus();
+            }
         };
         btn.addEventListener('touchstart', handler, { passive: false });
+        btn.addEventListener('touchend', handler, { passive: false });
         btn.addEventListener('mousedown', handler);
     };
     bindBtn(this.ctrlBtn, () => this.toggleCtrl());
@@ -86,8 +90,8 @@ class MobileInputBuffer {
         this.emitCallback('\x7f');
         return undefined;
     }
-    if (isComposing) return undefined;
-
+    
+    // If modifiers are active, consume exactly 1 char from data, apply modifiers, emit, clear buffer
     if (this.modifierState && (this.modifierState.ctrlActive || this.modifierState.altActive)) {
         if (e.data && e.data.length > 0) {
              const char = e.data[e.data.length - 1]; 
@@ -96,6 +100,8 @@ class MobileInputBuffer {
              return ''; 
         }
     }
+
+    if (isComposing) return undefined;
 
     const boundaryRegex = /[\s.,?!;-]/;
     
@@ -115,12 +121,37 @@ class MobileInputBuffer {
     return undefined;
   }
 
+  handleKeyDown(e, value, isComposing) {
+    if (isComposing) return undefined;
 
-  handleKeyDown(e, value) {
+    const passthroughKeys = {
+      'Tab': '\t',
+      'Escape': '\x1b'
+    };
+
+    if (passthroughKeys[e.key]) {
+      e.preventDefault();
+      if (e.key === 'Escape') {
+          this.emitCallback(passthroughKeys[e.key]);
+          return ''; // clear buffer without sending current value
+      } else {
+          // send current buffer + the passthrough key
+          this.emitCallback(value + passthroughKeys[e.key]);
+          return ''; 
+      }
+    }
+
     if (e.altKey || e.ctrlKey || e.metaKey) {
+        // e.g. real physical keyboard Ctrl+C on mobile
+        if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+            e.preventDefault();
+            this.emitCallback('\x03');
+            return ''; // clear buffer
+        }
         if (!this.isMobile) return '';
         return undefined;
     }
+    
     if (e.key === 'Backspace' || e.keyCode === 8) {
       if (value.length === 0) {
         if (!this.isMobile) return undefined; 
@@ -171,7 +202,7 @@ class MobileInputUI {
         if (newValue !== undefined) this.proxyInput.value = newValue;
     });
     this.proxyInput.addEventListener('keydown', (e) => {
-        const newValue = keyDownHandler(e, this.proxyInput.value);
+        const newValue = keyDownHandler(e, this.proxyInput.value, this.isComposing);
         if (newValue !== undefined) this.proxyInput.value = newValue;
     });
   }
