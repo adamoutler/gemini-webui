@@ -432,8 +432,19 @@ def read_and_forward_pty_output():
                                 socketio.emit('pty-output', {'output': filtered_output}, room=sid)
             except (OSError, IOError, EOFError):
                 logger.info(f"Removing session {tab_id} due to I/O error")
-                session_manager.remove_session(tab_id)
+                old_session = session_manager.remove_session(tab_id)
                 ephemeral_sessions.pop(tab_id, None)
+                if old_session and old_session.pid is not None:
+                    try:
+                        # Process might already be dead, but we must reap it to prevent zombies
+                        os.kill(old_session.pid, signal.SIGKILL)
+                    except OSError:
+                        pass
+                    try:
+                        os.waitpid(old_session.pid, 0)
+                    except OSError:
+                        pass
+
 
 
 def background_session_preloader():
