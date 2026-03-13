@@ -122,35 +122,44 @@ class MobileInputBuffer {
   }
 
   handleKeyDown(e, value, isComposing) {
-    if (isComposing) return undefined;
-
     const passthroughKeys = {
       'Tab': '\t',
       'Escape': '\x1b'
     };
 
+    // If it's an explicit control key, process it even if composing.
     if (passthroughKeys[e.key]) {
       e.preventDefault();
       if (e.key === 'Escape') {
           this.emitCallback(passthroughKeys[e.key]);
-          return ''; // clear buffer without sending current value
+          return ''; // clear buffer
       } else {
-          // send current buffer + the passthrough key
-          this.emitCallback(value + passthroughKeys[e.key]);
-          return ''; 
+          // Tab completely bypasses buffer, but does not clear it
+          this.emitCallback(passthroughKeys[e.key]);
+          return undefined; // leave buffer intact
       }
     }
 
     if (e.altKey || e.ctrlKey || e.metaKey) {
-        // e.g. real physical keyboard Ctrl+C on mobile
-        if (e.ctrlKey && e.key.toLowerCase() === 'c') {
+        if (e.key && e.key.length === 1 && !e.metaKey) {
             e.preventDefault();
-            this.emitCallback('\x03');
-            return ''; // clear buffer
+            let input = e.key;
+            if (e.ctrlKey) {
+                const code = input.charCodeAt(0);
+                if (code >= 97 && code <= 122) input = String.fromCharCode(code - 96);
+                else if (code >= 65 && code <= 90) input = String.fromCharCode(code - 64);
+            }
+            if (e.altKey) {
+                input = '\x1b' + input;
+            }
+            this.emitCallback(input);
+            return ''; // Ctrl/Alt clear buffer
         }
         if (!this.isMobile) return '';
         return undefined;
     }
+
+    if (isComposing) return undefined;
     
     if (e.key === 'Backspace' || e.keyCode === 8) {
       if (value.length === 0) {
