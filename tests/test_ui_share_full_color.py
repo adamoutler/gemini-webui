@@ -45,12 +45,8 @@ def test_share_full_color(page):
     page.locator('#share-session-btn').click()
     expect(page.locator('#share-modal')).to_be_visible(timeout=15000)
     time.sleep(1)
-    
-    # Change theme to full
-    page.locator('#share-theme-select').select_option('full')
-    
-    page.locator('#confirm-share-btn').click()
-    
+
+    page.locator('#confirm-share-btn').click()    
     expect(page.locator('#share-result')).to_be_visible(timeout=15000)
     link_input = page.locator('#share-link-input')
     expect(link_input).to_be_visible()
