@@ -53,16 +53,21 @@ class MobileInputBuffer {
 }
 
 class MobileInputUI {
-  constructor(proxyInput, tabId, inputHandler, keyDownHandler) {
-    this.proxyInput = proxyInput;
+  constructor(tabId, inputHandler, keyDownHandler) {
+    this.proxyInput = document.createElement('input');
     this.proxyInput.id = 'terminal-input-' + tabId;
     this.proxyInput.classList.add('mobile-proxy-input');
-    this.proxyInput.style.cssText = 'border: none; background: transparent !important; outline: none; color: var(--terminal-fg) !important;';
+    this.proxyInput.style.cssText = 'position: absolute; border: none; background: transparent !important; outline: none; color: var(--terminal-fg) !important; width: 1px; height: 1px; opacity: 0;';
     
     this.proxyInput.setAttribute('autocomplete', 'on');
     this.proxyInput.setAttribute('autocorrect', 'on');
     this.proxyInput.setAttribute('spellcheck', 'true');
     this.proxyInput.setAttribute('autocapitalize', 'sentences');
+
+    // Basic DOM attachment (will be fully positioned in Ticket 4)
+    if (document.body) {
+        document.body.appendChild(this.proxyInput);
+    }
 
     this.isComposing = false;
     this.proxyInput.addEventListener('compositionstart', () => { 
@@ -89,14 +94,13 @@ class MobileInputUI {
 class MobileTerminalController {
   constructor(tab) {
     this.tab = tab;
-    this.proxyInput = tab.term.textarea;
     
     this.isMobile = window.matchMedia('(max-width: 768px) and (pointer: coarse)').matches 
                     || 'ontouchstart' in window;
     
-    if (this.proxyInput) {
+    if (this.isMobile) {
       this.buffer = new MobileInputBuffer(this.emitToTerminal.bind(this), this.isMobile);
-      this.ui = new MobileInputUI(this.proxyInput, this.tab.id, this.buffer.handleInput.bind(this.buffer), this.buffer.handleKeyDown.bind(this.buffer));
+      this.ui = new MobileInputUI(this.tab.id, this.buffer.handleInput.bind(this.buffer), this.buffer.handleKeyDown.bind(this.buffer));
     }
   }
 
