@@ -87,15 +87,22 @@ assert.strictEqual(mockCtrlBtn.classes.includes('active'), false); // active cla
 // TEST TICKET 3: Passthrough
 emitted = [];
 let keydownRet = bufferWithMod.handleKeyDown({key: 'Tab', preventDefault: ()=>{}}, 'hello', false);
-assert.strictEqual(keydownRet, ''); // buffer cleared
+assert.strictEqual(keydownRet, undefined); // buffer untouched
 assert.strictEqual(emitted.length, 1);
-assert.strictEqual(emitted[0], 'hello\t');
+assert.strictEqual(emitted[0], '\t'); // passed directly
 
 emitted = [];
-keydownRet = bufferWithMod.handleKeyDown({key: 'Escape', preventDefault: ()=>{}}, 'hello', false);
+keydownRet = bufferWithMod.handleKeyDown({key: 'Escape', preventDefault: ()=>{}}, 'hello', true); // even if composing!
 assert.strictEqual(keydownRet, ''); // buffer cleared
 assert.strictEqual(emitted.length, 1);
 assert.strictEqual(emitted[0], '\x1b');
+
+// Physical keyboard Ctrl-C
+emitted = [];
+keydownRet = bufferWithMod.handleKeyDown({key: 'c', ctrlKey: true, preventDefault: ()=>{}}, 'hello', false);
+assert.strictEqual(keydownRet, ''); // buffer cleared
+assert.strictEqual(emitted.length, 1);
+assert.strictEqual(emitted[0], '\x03');
 
 // Composition
 emitted = [];
