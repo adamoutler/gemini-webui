@@ -38,9 +38,14 @@ pipeline {
                 sh '''
                     # Setup virtual environment and install dependencies
                     ./setup_dev.sh
-                    # Run tests
-                    PYTHONPATH=. .venv/bin/pytest -s tests/
+                    # Generate JUnit XML for sound evidence
+                    PYTHONPATH=. .venv/bin/pytest -s tests/ --junitxml=results.xml
                 '''
+            }
+            post {
+                always {
+                    junit 'results.xml'
+                }
             }
         }
         
@@ -72,7 +77,8 @@ pipeline {
             ]) {
                 sh 'docker compose ps'
                 sh '''
-                    curl -sL -u "adamoutler@gmail.com:$ADAM_TOKEN" "${BUILD_URL}consoleText" > /tmp/jenkins-receipt-gemini-webui.log
+                    echo "--- FINALIZING LOGS ---" >> /tmp/jenkins-receipt-gemini-webui.log
+                    curl -sL -u "adamoutler@gmail.com:$ADAM_TOKEN" "${BUILD_URL}consoleText" >> /tmp/jenkins-receipt-gemini-webui.log
                     echo "Gemini WebUI Build Finished: $BUILD_RESULT #$BUILD_NUMBER" >> /tmp/jenkins-receipt-gemini-webui.log
                 '''
             }
