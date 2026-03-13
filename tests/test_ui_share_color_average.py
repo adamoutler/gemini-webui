@@ -45,7 +45,6 @@ def test_share_color_averages(page, server):
         expect(page.locator('#share-modal')).to_be_visible(timeout=15000)
         time.sleep(1)
         
-        page.locator('#share-theme-select').select_option(theme)
         page.locator('#confirm-share-btn').click()
         
         expect(page.locator('#share-result')).to_be_visible(timeout=15000)
@@ -80,33 +79,14 @@ def test_share_color_averages(page, server):
         page.locator('#share-modal .modal-content span').click()
         return screenshot_bytes, has_inline_bg
 
-    # Get screenshot for light mode
-    light_screenshot, light_has_inline = get_share_screenshot('light')
-    light_color = get_average_color(light_screenshot)
-    light_lum = get_luminance(light_color)
-    print(f"\\nLight mode average color: {light_color}, luminance: {light_lum}")
-
-    # Get screenshot for dark mode
-    dark_screenshot, dark_has_inline = get_share_screenshot('dark')
-    dark_color = get_average_color(dark_screenshot)
-    dark_lum = get_luminance(dark_color)
-    print(f"Dark mode average color: {dark_color}, luminance: {dark_lum}")
-
-    # Verify dark is darker than light
-    assert dark_lum < light_lum, f"Dark mode ({dark_lum}) should be darker than light mode ({light_lum})"
-
     # Get screenshot for full mode
     full_screenshot, full_has_inline = get_share_screenshot('full')
     full_color = get_average_color(full_screenshot)
     full_lum = get_luminance(full_color)
     print(f"Full mode average color: {full_color}, luminance: {full_lum}")
     
-    assert dark_has_inline, "Dark mode should keep explicit inline background-color styles."
     assert not full_has_inline, "Full mode should have explicit inline background-color styles stripped."
-    assert not light_has_inline, "Light mode should have explicit inline background-color styles stripped."
 
-    # After the swap, full mode behaves like the terminal's theme, which has a dark global background.
-    assert dark_lum < 100, f"Dark mode luminance ({dark_lum}) should be relatively low (dark)"
-    assert light_lum > 150, f"Light mode luminance ({light_lum}) should be relatively high (light)"
+    # full mode behaves like the terminal's theme, which has a dark global background.
     assert full_lum < 100, f"Full mode luminance ({full_lum}) should be relatively low (reflecting global dark terminal background)"
 

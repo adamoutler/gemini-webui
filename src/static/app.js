@@ -16,6 +16,7 @@ class MobileInputProxy {
 
   init() {
     this.proxyInput.id = 'terminal-input-' + this.tab.id;
+    this.proxyInput.classList.add('mobile-proxy-input');
     this.proxyInput.style.setProperty('background-color', 'transparent', 'important');
     this.proxyInput.style.setProperty('color', 'var(--terminal-fg)', 'important');
     
@@ -57,8 +58,8 @@ class MobileInputProxy {
     // 3. It's a multi-character programmatic input or paste (to support automation/pasting)
     if (!this.isMobile && !isComposing) {
         // If it's single character, let xterm.js handle it
-        if (e.data && e.data.length === 1 && value.length === 1) {
-            // Clear buffer on boundary to reset overlay
+        if (e.data && e.data.length === 1) {
+            // Clear buffer on boundary to reset overlay. This can happen when value is "echo "
             if (boundaryRegex.test(e.data)) {
                 this.proxyInput.value = '';
             }

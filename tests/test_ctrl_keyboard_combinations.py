@@ -43,7 +43,7 @@ def test_physical_keyboard_combinations(page):
     
     # Click to ensure focus
     textarea.wait_for(state="attached", timeout=30000)
-    textarea.click()
+    textarea.focus()
     
     # Press Ctrl+C
     page.keyboard.press("Control+c")

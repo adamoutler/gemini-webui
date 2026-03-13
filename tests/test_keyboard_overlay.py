@@ -26,19 +26,15 @@ def test_keyboard_per_word_overlay(page, server):
     # Wait for the terminal to be ready
     page.wait_for_selector('.xterm')
     
-    # Wait for active tab ID to be available from the global variable
-    page.wait_for_function("() => typeof activeTabId !== 'undefined' && activeTabId !== null", timeout=30000)
-    active_tab_id = page.evaluate("activeTabId")
-    
     # The overlay textarea selector
-    textarea_selector = f"#terminal-input-{active_tab_id}"
+    textarea_selector = ".mobile-proxy-input"
     
     # Ensure it exists and is visible
-    textarea = page.locator(textarea_selector)
-    textarea.wait_for(state="attached", timeout=30000)
+    textarea = page.locator(textarea_selector).last
+    textarea.wait_for(state="attached", timeout=10000)
     
     # Click to focus
-    textarea.click()
+    textarea.focus()
     page.wait_for_timeout(1000)
     
     # Type a word without space
