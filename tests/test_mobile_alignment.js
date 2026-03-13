@@ -59,7 +59,7 @@ global.document = {
 
 global.window = {
   matchMedia: function(q) { return { matches: true }; },
-  visualViewport: { offsetTop: 10, offsetLeft: 5 },
+  visualViewport: { pageTop: 10, pageLeft: 5 },
   scrollY: 20,
   scrollX: 10,
   getComputedStyle: function(el) {
@@ -75,8 +75,8 @@ let mockTerm = { element: new MockElement('div', 'term') };
 // Test alignWithCursor calculation
 ui.alignWithCursor(mockTerm);
 
-// top = cursor.top(100) + scrollY(20) - vv.offsetTop(10) = 110
-// left = cursor.left(50) + scrollX(10) - vv.offsetLeft(5) = 55
+// top = cursor.top(100) + vv.pageTop(10) = 110
+// left = cursor.left(50) + vv.pageLeft(5) = 55
 assert.strictEqual(ui.proxyInput.style.transform, 'translate(55px, 110px)');
 assert.strictEqual(ui.proxyInput.style.fontSize, '14px');
 assert.strictEqual(ui.proxyInput.style.opacity, '0'); // because value is empty
