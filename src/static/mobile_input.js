@@ -190,7 +190,7 @@ class MobileInputUI {
     this.proxyInput.setAttribute('spellcheck', 'true');
     this.proxyInput.setAttribute('autocapitalize', 'sentences');
 
-    // Basic DOM attachment (will be fully positioned in Ticket 4)
+    // DOM attachment
     if (document.body) {
         document.body.appendChild(this.proxyInput);
     }
@@ -215,6 +215,44 @@ class MobileInputUI {
         if (newValue !== undefined) this.proxyInput.value = newValue;
     });
   }
+
+  alignWithCursor(term) {
+    if (!term || !term.element) return;
+    const cursor = term.element.querySelector('.xterm-cursor');
+    if (!cursor) return;
+    
+    const cursorRect = cursor.getBoundingClientRect();
+    const vv = window.visualViewport;
+    
+    // We get terminal typography
+    const screenElement = term.element.querySelector('.xterm-screen');
+    if (screenElement) {
+        const computedStyle = window.getComputedStyle(screenElement);
+        this.proxyInput.style.fontSize = computedStyle.fontSize;
+        this.proxyInput.style.fontFamily = computedStyle.fontFamily;
+        this.proxyInput.style.letterSpacing = computedStyle.letterSpacing;
+        this.proxyInput.style.lineHeight = computedStyle.lineHeight;
+    }
+
+    // Set position
+    // getBoundingClientRect is relative to the visual viewport.
+    // To get document-absolute coordinates, we add the visual viewport's page offset.
+    const pageTop = vv ? vv.pageTop : window.scrollY;
+    const pageLeft = vv ? vv.pageLeft : window.scrollX;
+    
+    const top = cursorRect.top + pageTop;
+    const left = cursorRect.left + pageLeft;
+    
+    this.proxyInput.style.transform = `translate(${left}px, ${top}px)`;
+    
+    if (this.proxyInput.value.length > 0) {
+        this.proxyInput.style.opacity = '1';
+        this.proxyInput.style.width = `calc(100vw - ${left}px - 20px)`;
+    } else {
+        this.proxyInput.style.opacity = '0';
+        this.proxyInput.style.width = '1px';
+    }
+  }
 }
 
 class MobileTerminalController {
@@ -228,6 +266,38 @@ class MobileTerminalController {
       this.modifierState = new MobileModifierState();
       this.buffer = new MobileInputBuffer(this.emitToTerminal.bind(this), this.isMobile, this.modifierState);
       this.ui = new MobileInputUI(this.tab.id, this.buffer.handleInput.bind(this.buffer), this.buffer.handleKeyDown.bind(this.buffer));
+      
+      this.setupFocusManagement();
+    }
+  }
+
+  setupFocusManagement() {
+    if (!this.tab.term) return;
+    
+    // Intercept touch events on terminal to focus our proxy instead
+    this.tab.term.element.addEventListener('touchstart', (e) => {
+        if (!e.target.closest('.xterm-viewport')) {
+            e.preventDefault(); // disable xterm's native textarea behavior
+            this.ui.proxyInput.focus();
+            this.ui.alignWithCursor(this.tab.term);
+        }
+    });
+
+    // Update alignment when cursor moves
+    this.tab.term.onCursorMove(() => {
+        this.ui.alignWithCursor(this.tab.term);
+    });
+    
+    // Update alignment when proxy input changes (in case width/opacity needs changing)
+    this.ui.proxyInput.addEventListener('input', () => {
+        this.ui.alignWithCursor(this.tab.term);
+    });
+    
+    // Re-align on resize or scroll
+    window.addEventListener('resize', () => this.ui.alignWithCursor(this.tab.term));
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => this.ui.alignWithCursor(this.tab.term));
+        window.visualViewport.addEventListener('scroll', () => this.ui.alignWithCursor(this.tab.term));
     }
   }
 
