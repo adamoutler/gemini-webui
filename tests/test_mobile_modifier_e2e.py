@@ -26,6 +26,7 @@ def test_mobile_modifier_ctrl(server):
         page.screenshot(path="public/qa-screenshots/modifier_active.png")
 
         # Create test-results.json
+        os.makedirs("docs/qa/test_results", exist_ok=True)
         with open("docs/qa/test_results/test-results.json", "w") as f:
             json.dump({"tests": [{"name": "test_mobile_modifier_ctrl", "status": "passed"}]}, f)
 
