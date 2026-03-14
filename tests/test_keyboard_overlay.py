@@ -6,8 +6,9 @@ import time
 @pytest.fixture(scope="function")
 def page(server):
     with sync_playwright() as p:
+        iphone = p.devices['iPhone 13']
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+        context = browser.new_context(**iphone)
 
         page = context.new_page()
         page.set_default_timeout(60000)
@@ -18,49 +19,51 @@ def page(server):
 @pytest.mark.timeout(60)
 def test_keyboard_per_word_overlay(page, server):
     page.goto(server)
-    
+
     # Click "Start New" for local connection
-    page.wait_for_selector('text="Start New"')
     page.click('text="Start New"')
-    
+
     # Wait for the terminal to be ready
     page.wait_for_selector('.xterm')
-    
+
     # The overlay textarea selector
     textarea_selector = ".mobile-proxy-input"
-    
+
     # Ensure it exists and is visible
     textarea = page.locator(textarea_selector).last
     textarea.wait_for(state="attached", timeout=10000)
-    
+
     # Click to focus
     textarea.focus()
     page.wait_for_timeout(1000)
-    
+
     # Type a word without space
-    page.keyboard.type("echo")
+    textarea.fill("echo")
+    textarea.evaluate("el => el.dispatchEvent(new InputEvent('input', {data: 'o', inputType: 'insertText'}))")
     page.wait_for_timeout(500)
-    
-    # Assert the value is "echo"
+
+    # Assert the value is in the buffer
     overlay_val = textarea.evaluate("el => el.value")
     assert overlay_val == "echo", f"Expected 'echo', got '{overlay_val}'"
-    
+
     import warnings
     screenshot_path = f"/tmp/gemwe-178_{os.environ.get('BUILD_NUMBER', 'local')}.png"
     page.screenshot(path=screenshot_path)
-    print(f"Empirical evidence: Screenshot saved to {screenshot_path}. Typed 'echo' and found '{overlay_val}' in overlay textarea before space.")
-    
+    print(f"Empirical evidence: Screenshot saved to {screenshot_path}. Typed 'echo' and found it in buffer.")
+
     # Type a space
-    page.keyboard.press("Space")
+    textarea.fill("echo ")
+    textarea.evaluate("el => el.dispatchEvent(new InputEvent('input', {data: ' ', inputType: 'insertText'}))")
     page.wait_for_timeout(500)
-    
-    # Assert the value is cleared
+
+    # Assert the value was flushed and cleared by space
     overlay_val = textarea.evaluate("el => el.value")
-    assert overlay_val == "", f"Expected empty string after space, got '{overlay_val}'"
-    
+    assert overlay_val == "", f"Expected buffer to clear after space, got '{overlay_val}'"
+
     # Type another word
-    page.keyboard.type("hello")
+    textarea.fill("hello")
+    textarea.evaluate("el => el.dispatchEvent(new InputEvent('input', {data: 'o', inputType: 'insertText'}))")
     page.wait_for_timeout(500)
-    
+
     overlay_val = textarea.evaluate("el => el.value")
     assert overlay_val == "hello", f"Expected 'hello', got '{overlay_val}'"

@@ -93,14 +93,13 @@ class MobileInputBuffer {
     
     // If modifiers are active, consume exactly 1 char from data, apply modifiers, emit, clear buffer
     if (this.modifierState && (this.modifierState.ctrlActive || this.modifierState.altActive)) {
-        if (e.data && e.data.length > 0) {
-             const char = e.data[e.data.length - 1]; 
+        const char = (e.data && e.data.length > 0) ? e.data[e.data.length - 1] : (value ? value.slice(-1) : null);
+        if (char) {
              const modified = this.modifierState.applyModifiers(char);
              this.emitCallback(modified);
-             return ''; 
+             return '';
         }
     }
-
     if (isComposing) return undefined;
 
     const boundaryRegex = /[\s.,?!;-]/;
@@ -323,11 +322,15 @@ class MobileTerminalController {
 
   emitToTerminal(data) {
      if (!this.tab || !this.tab.socket || data == null) return;
-     const chunkSize = 1024;
-     const strData = String(data).replace(/\n/g, '\r');
-     for (let i = 0; i < strData.length; i += chunkSize) {
-         const chunk = strData.slice(i, i + chunkSize);
-         this.tab.socket.emit('pty-input', {input: chunk});
+     if (window.emitPtyInput) {
+         window.emitPtyInput(this.tab, data);
+     } else {
+         const chunkSize = 1024;
+         const strData = String(data).replace(/\n/g, '\r');
+         for (let i = 0; i < strData.length; i += chunkSize) {
+             const chunk = strData.slice(i, i + chunkSize);
+             this.tab.socket.emit('pty-input', {input: chunk});
+         }
      }
   }
 }

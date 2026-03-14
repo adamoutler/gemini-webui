@@ -60,6 +60,8 @@
 
         let tabs = [];
         let activeTabId = null;
+        let ctrlActive = false;
+        let altActive = false;
         let initialAutoResumeDone = false;
         let launcherRefreshInterval = null;
         let titleFlashInterval = null;
@@ -1371,14 +1373,14 @@
                     if (reclaimBtn) reclaimBtn.style.display = 'inline-block';
                 }
             });
-            tab.term.onData((data) => { 
+            tab.term.onData((data) => {
                 if (tab.socket) {
                     // Mobile modifiers are handled by MobileModifierState
                     // Desktop modifiers are handled natively by xterm.js via e.ctrlKey
-                    emitPtyInput(tab, data);
+                    if (window.emitPtyInput) window.emitPtyInput(tab, data);
+                    else emitPtyInput(tab, data);
                 }
-            });
-            tab.term.onTitleChange((title) => {
+            });            tab.term.onTitleChange((title) => {
                 tab.title = title;
                 if (tab.socket) {
                     tab.socket.emit('update_title', { tab_id: tab.id, title: title });
@@ -1413,7 +1415,7 @@
                     if (tab.socket) emitPtyInput(tab, '\x1b\r');
                     return false;
                 }
-                
+
                 // Allow printable characters and backspace to pass through to the textarea overlay
                 // so they populate the autocorrect buffer instead of being swallowed by xterm's keydown handler.
                 if (e.type === 'keydown' && !e.ctrlKey && !e.metaKey && !e.altKey && e.key.length === 1) {
@@ -1422,10 +1424,9 @@
                 if (e.type === 'keydown' && e.key === 'Backspace') {
                     return false;
                 }
-                
+
                 return true;
-            });
-            renderTabs(); switchTab(tabId);
+            });            renderTabs(); switchTab(tabId);
         }
 
         function fitTerminal(tab) {
@@ -1478,16 +1479,25 @@
                 tab.socket.emit('pty-input', {input: chunk});
             }
         }
+        window.emitPtyInput = emitPtyInput;
 
         function sendToTerminal(data) {
-            if (ctrlActive) toggleCtrl(false);
-            if (altActive) toggleAlt(false);
             const tab = tabs.find(t => t.id === activeTabId);
+            let finalData = data;
+            
+            if (tab && tab.mobileProxy && tab.mobileProxy.modifierState) {
+                finalData = tab.mobileProxy.modifierState.applyModifiers(data);
+            } else {
+                if (ctrlActive) toggleCtrl(false);
+                if (altActive) toggleAlt(false);
+            }
+            
             if (tab && tab.socket && tab.state === 'terminal') {
-                emitPtyInput(tab, data);
+                emitPtyInput(tab, finalData);
                 tab.term.focus();
             }
         }
+        window.sendToTerminal = sendToTerminal;
 
         function adjustFontSize(delta) {
             const tab = tabs.find(t => t.id === activeTabId);

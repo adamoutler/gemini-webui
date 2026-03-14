@@ -29,18 +29,16 @@ def test_physical_keyboard_combinations(page):
     # Override emitPtyInput to catch what is being sent
     page.evaluate("""() => {
         window.sentInputs = [];
-        const originalEmit = emitPtyInput;
+        const originalEmit = window.emitPtyInput;
         window.emitPtyInput = function(tab, data) {
             window.sentInputs.push(data);
-            originalEmit(tab, data);
+            if (originalEmit) originalEmit(tab, data);
         };
     }""")
     
     # Wait for the focus to settle on textarea
-    page.wait_for_function("() => sessionStorage.getItem('gemini_active_tab') !== null", timeout=30000)
-    active_tab_id = page.evaluate("sessionStorage.getItem('gemini_active_tab')")
-    textarea = page.locator(f"#terminal-input-{active_tab_id}")
-    
+    textarea = page.locator(".xterm-helper-textarea").last
+
     # Click to ensure focus
     textarea.wait_for(state="attached", timeout=30000)
     textarea.focus()

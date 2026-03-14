@@ -19,25 +19,24 @@ def page(server):
 
 def test_input_overlay_colors(page):
     page.locator('.tab-instance.active button:has-text("Start New")').first.click()
-    page.wait_for_selector(".xterm-helper-textarea", state="attached", timeout=15000)
-    
-    textarea = page.locator(".xterm-helper-textarea").first
-    
+    page.wait_for_selector(".mobile-proxy-input", state="attached", timeout=15000)
+
+    textarea = page.locator(".mobile-proxy-input").first
+
     # "invoke the overlay box" using STT composition which makes it visually hold text
     long_text = "Testing overlay colors with transparent background"
     textarea.evaluate("(el) => { el.dispatchEvent(new CompositionEvent('compositionstart')); }")
     textarea.evaluate(f"(el) => {{ el.value = `{long_text}`; el.dispatchEvent(new Event('input', {{ bubbles: true, inputType: 'insertCompositionText' }})); }}")
-    
+
     # Check computed CSS
     css_colors = page.evaluate('''() => {
-        const textarea = document.querySelector(".xterm-helper-textarea");
+        const textarea = document.querySelector(".mobile-proxy-input");
         const style = window.getComputedStyle(textarea);
         return {
             bg: style.backgroundColor,
             fg: style.color
         };
-    }''')
-    
+    }''')    
     term_style = page.evaluate('''() => {
         const style = window.getComputedStyle(document.documentElement);
         // The default light mode fallback is rgb(0,0,0) if not set, but we expect #d4d4d4 -> rgb(212, 212, 212) 
@@ -98,7 +97,7 @@ def test_input_overlay_colors(page):
     time.sleep(0.5)
 
     light_css_colors = page.evaluate('''() => {
-        const textarea = document.querySelector(".xterm-helper-textarea");
+        const textarea = document.querySelector(".mobile-proxy-input");
         const style = window.getComputedStyle(textarea);
         return { fg: style.color };
     }''')

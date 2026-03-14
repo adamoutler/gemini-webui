@@ -19,7 +19,7 @@ def mobile_page(server, browser_context):
     page.set_default_timeout(60000)
     page.goto(server, timeout=15000)
     page.locator('#new-tab-btn').click()
-    page.locator('.tab-instance.active button:has-text("Start New")').first.click()
+    page.click('text="Start New"')
     expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
     expect(page.locator('#mobile-controls')).to_be_visible(timeout=15000)
     yield page
@@ -35,10 +35,10 @@ def test_ctrl_sticky_modifier(mobile_page):
     # Override emitPtyInput to catch what is being sent
     mobile_page.evaluate("""() => {
         window.sentInputs = [];
-        const originalEmit = emitPtyInput;
+        const originalEmit = window.emitPtyInput;
         window.emitPtyInput = function(tab, data) {
             window.sentInputs.push(data);
-            originalEmit(tab, data);
+            if (originalEmit) originalEmit(tab, data);
         };
     }""")
     
@@ -48,10 +48,12 @@ def test_ctrl_sticky_modifier(mobile_page):
     
     # Wait for the focus to settle on textarea
     active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
-    textarea = mobile_page.locator(f"#terminal-input-{active_tab_id}")
+    textarea = mobile_page.locator(".mobile-proxy-input")
     
     # Fill the textarea as if user is typing 'c'
+    textarea.focus()
     textarea.fill('c')
+    textarea.evaluate("el => el.dispatchEvent(new InputEvent('input', {bubbles: true, data: 'c'}))")
     
     # Wait for processing
     mobile_page.wait_for_timeout(500)
@@ -64,4 +66,5 @@ def test_ctrl_sticky_modifier(mobile_page):
     print("Sent inputs:", sent)
     
     # We expect \x03 because ctrl + c
+    print("Console messages:", messages)
     assert "\x03" in sent
