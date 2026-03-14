@@ -13,7 +13,7 @@ pipeline {
     options {
         disableConcurrentBuilds()
     }
-    
+
     stages {
         stage('Initialize Build') {
             steps {
@@ -32,7 +32,16 @@ pipeline {
                 checkout scm
             }
         }
-        
+
+        stage('Lint') {
+            steps {
+                sh '''
+                    ./setup_dev.sh
+                    .venv/bin/pre-commit run --all-files
+                '''
+            }
+        }
+
         stage('Test') {
             steps {
                 sh '''
@@ -48,7 +57,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Deploy Gemini WebUI') {
             steps {
                 script {
@@ -65,7 +74,7 @@ pipeline {
             }
         }
     }
-    
+
     post {
         always {
             script {
