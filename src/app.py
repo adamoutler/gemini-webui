@@ -407,7 +407,7 @@ def read_and_forward_pty_output():
                         if output:
                             batched_output.append(output)
                         else:
-                            break
+                            raise EOFError("EOF reached")
                     else:
                         break
                 
