@@ -64,7 +64,7 @@ pipeline {
                     withCredentials([
                         usernamePassword(credentialsId: 'ldap-bind-auth-user', passwordVariable: 'LDAP_BIND_PASS', usernameVariable: 'LDAP_BIND_USER_DN')
                     ]) {
-                        sh "sed -i 's/\\\${USERNAME}/jenkins/g' src/GEMINI.md"
+                        sh "sed -i 's/\\\${USERNAME}/jenkins/g' .gemini/GEMINI.md || true"
                         sh 'docker pull python:3.11-slim'
                         sh "docker buildx build --load -t gemini-webui ."
                         sh 'docker compose down --remove-orphans || true'
