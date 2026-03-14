@@ -17,7 +17,7 @@ class MockElement {
   }
 
   setAttribute(k, v) { this[k] = v; }
-  
+
   focus() {}
 
   addEventListener(evt, cb) {

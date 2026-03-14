@@ -7,12 +7,12 @@ The core issue is that Fake Gemini and Real Gemini likely diverge in how their s
 
 **1. Unified Process Management (Zero Variance Execution)**
 *   **The Change:** Stop mocking internal Python functions or bypassing SocketIO for Fake Gemini tests.
-*   **Implementation:** Modify `process_manager.py` to allow dynamic injection of the target executable path on a per-session basis. By default, it uses the system `gemini` binary (or SSH command). For testing, it will explicitly execute `python3 src/fake_gemini.py <args>` within the `pty.fork()` wrapper. 
+*   **Implementation:** Modify `process_manager.py` to allow dynamic injection of the target executable path on a per-session basis. By default, it uses the system `gemini` binary (or SSH command). For testing, it will explicitly execute `python3 src/fake_gemini.py <args>` within the `pty.fork()` wrapper.
 *   **Why:** This ensures xterm.js, ANSI character encoding, latency, and WebSocket chunking behave identically to production because the transport layer is exactly the same.
 
 **2. Ephemeral Session Generation (The New Screen/Entrypoint)**
 *   **The Change:** Create a mechanism to spawn these isolated fake sessions via a query string.
-*   **Implementation:** 
+*   **Implementation:**
     *   Create a new backend route: `GET /fake_session_init?scenario=X&...`
     *   When hit, the backend generates a highly restrictive, cryptographically random `session_id` (e.g., UUIDv4).
     *   The `SessionManager` registers this `session_id` in memory, explicitly flagging it with `executable_override="src/fake_gemini.py"` and storing the requested query parameters as CLI arguments for the fake binary.

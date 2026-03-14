@@ -1,12 +1,12 @@
-Here is the technical plan from a UX Architecture and Frontend perspective. 
+Here is the technical plan from a UX Architecture and Frontend perspective.
 
-To solve the core problem—discrepancies between testing and production—**the frontend must treat Fake Gemini exactly like Real Gemini**. We will use the exact same `xterm.js` instance, the exact same `SocketIO` event pipeline, and the exact same input handling (`app.js`). 
+To solve the core problem—discrepancies between testing and production—**the frontend must treat Fake Gemini exactly like Real Gemini**. We will use the exact same `xterm.js` instance, the exact same `SocketIO` event pipeline, and the exact same input handling (`app.js`).
 
 Here is how we accomplish the requested flow and UX friction:
 
 ### 1. The "Identical Pipes" Architecture
 The frontend will not possess custom logic for *running* the fake session. It will use the standard terminal UI. The only difference is how the session is *initialized* via the socket handshake.
-*   **Mechanism:** When the frontend emits `socket.emit('start_terminal', {...})`, it will pass a new parameter: `mode: 'fake'`. 
+*   **Mechanism:** When the frontend emits `socket.emit('start_terminal', {...})`, it will pass a new parameter: `mode: 'fake'`.
 *   **Result:** The backend provisions the `fake_gemini.py` PTY instead of the real one, but pipes the standard in/out through the exact same WebSocket events (`pty-output`, `pty-input`). This guarantees 100% fidelity with production rendering and input behaviors.
 
 ### 2. The New Entry Screen (`/test-launcher`)
@@ -31,10 +31,10 @@ The user explicitly requested *friction* on reusing the session, rather than out
 *   **The Friction UI:** When either of these events occurs, instead of silently reconnecting, the UI will obscure the terminal with an overlay modal:
     > ⚠️ **Ephemeral Test Session**
     > This test session has already been initialized. Reusing test state may lead to polluted or inaccurate test results.
-    > 
+    >
     > [ **Start Fresh Test** (Recommended) ]  [ *Force Reconnect* ]
-*   **Behavior:** 
-    *   Clicking "Start Fresh" routes them back to `/test-launcher`. 
+*   **Behavior:**
+    *   Clicking "Start Fresh" routes them back to `/test-launcher`.
     *   Clicking "Force Reconnect" dismisses the modal and allows the socket to emit the `restart` event, continuing the session.
 
 ### Summary of Required Frontend Changes

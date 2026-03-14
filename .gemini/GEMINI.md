@@ -120,7 +120,7 @@ grep "^### \[x\]" project-tasks/*-tasklist.md
 - Ensure task is implemented completely
 - Verify developer marks task as complete
 
-### Step 2: Quality Validation  
+### Step 2: Quality Validation
 - Spawn EvidenceQA with task-specific testing
 - Require screenshot evidence for validation
 - Get clear PASS/FAIL decision with feedback
@@ -132,7 +132,7 @@ grep "^### \[x\]" project-tasks/*-tasklist.md
 - Reset retry counter
 
 **IF QA Result = FAIL:**
-- Increment retry counter  
+- Increment retry counter
 - If retries < 3: Loop back to dev with QA feedback
 - If retries >= 3: Escalate with detailed failure report
 - Keep current task focus
@@ -152,7 +152,7 @@ grep "^### \[x\]" project-tasks/*-tasklist.md
 - If persistent failure: Document and escalate
 - Continue with manual fallback procedures
 
-### Task Implementation Failures  
+### Task Implementation Failures
 - Maximum 3 retry attempts per task
 - Each retry includes specific QA feedback
 - After 3 failures: Mark task as blocked, continue pipeline
@@ -177,7 +177,7 @@ grep "^### \[x\]" project-tasks/*-tasklist.md
 
 ## 📊 Task Completion Status
 **Total Tasks**: [X]
-**Completed**: [Y] 
+**Completed**: [Y]
 **Current Task**: [Z] - [task description]
 **QA Status**: [PASS/FAIL/IN_PROGRESS]
 
@@ -259,7 +259,7 @@ Remember and build expertise in:
 
 ### Pattern Recognition
 - Which tasks typically require multiple QA cycles
-- How agent handoff quality affects downstream performance  
+- How agent handoff quality affects downstream performance
 - When to escalate vs. continue retry loops
 - What pipeline completion indicators predict success
 
@@ -369,7 +369,7 @@ Please spawn an agents-orchestrator to execute complete development pipeline for
 
 ## Kanban Tools and Usage
 - Your primary Work is guided by kanban MCP.
-  * Tickets are named SLUG-SEQUENCE_ID.       
+  * Tickets are named SLUG-SEQUENCE_ID.
   * To find tickets, you can use `retrieve_work_item_by_identifier(project_identifier="SLUG",issue_identifier=123,expand="assignees")`
     1. Project & State Discovery (The Basics)
       * `mcp_kanban_list_states`: (Used to get the UUIDs for Backlog, Todo, In Progress, Done).
@@ -399,14 +399,14 @@ Please spawn an agents-orchestrator to execute complete development pipeline for
   2. convey the user's expectations to technical subject matter experts and finally an appropriate architect - default: ux-architect
   3. Create a ticket.
 - When told to begin, you assume you are to work on all tickets unless othewise specified.
-  1. List projects, then list tickets in project. 
+  1. List projects, then list tickets in project.
   2. organize tickets into cycles
   3. move a cycle of tickets from backlog into todo
   4. transition work items from todo to in progress
   5. assign a work item to one or more agents
   6. validate a work item using one or more agents
   7. commit and add the validated commit ID to the ticket
-  8. set the ticket to "done" state, and move on to the next until tickets are developed, validated, closed, and the specified work is complete. 
+  8. set the ticket to "done" state, and move on to the next until tickets are developed, validated, closed, and the specified work is complete.
 - You are not to work on code directly. You are to save your context and focus on higher level tasks allowing subagents to do the code work. Reading and editing files has context cost.
 - **IMPORTANT**: If you have *any* questions about how Plane works, how to configure it, or its architecture, you are strongly encouraged to use the `mcp_deep-wiki_ask_question` tool with the repository `makeplane/plane` (or `makeplane/plane-mcp-server` for MCP specific queries) as much as possible before asking the user.
 
@@ -432,7 +432,7 @@ Please spawn an agents-orchestrator to execute complete development pipeline for
 
 ### 3. Deployment & Recovery Protocol (Zero-Downtime)
 * **The Push Rule:** `git push` is blocked. You MUST use `git p` as it is the only way.
-* **Pre-Push Warning:** You must state: *"Executing git p. I will lose context. When you resume, I will check the build receipt."*
+* **Pre-Push Warning:** You must state: *"Executing git p. I may lose context due to system restart severing the connection. When you resume, I will check the build receipt."*
 * **Post-Resume Recovery:**
     1. Read `/tmp/jenkins-receipt-gemini-webui.log` to verify build success.
     2. Run `git status` to re-orient.
@@ -458,3 +458,6 @@ Please spawn an agents-orchestrator to execute complete development pipeline for
 ## Project Specific
 - Timebox Everything! or you will get stuck and you will be non productive for hours while you wait, doing nothing.
 - Don't just write the code for complex items.  use Crawl-Walk-Run method. Validate your assertions, test the methodology, then write the code and run it.
+
+## Kanban Formatting
+**MANDATORY**: When creating or updating work items in Kanban, always use Markdown for the `description_html` field. The system processes Markdown correctly, but raw HTML may be rendered literally, making the tickets unreadable.

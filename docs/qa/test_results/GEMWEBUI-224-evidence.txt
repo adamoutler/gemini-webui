@@ -1,0 +1,1 @@
+Test results for Mobile Input Refactor: Passed. Node test script tests/test_mobile_input_buffer.js passes. Pytest tests tests/test_mobile_ui.py passes 10/10. Screenshots generated in public/qa-screenshots/test_mobile_input_overlay.png and test_mobile_backspace.png.

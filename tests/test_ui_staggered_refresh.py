@@ -1,6 +1,7 @@
 import pytest
 import time
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import sync_playwright
+
 
 @pytest.fixture(scope="function")
 def staggered_page(server):
@@ -8,25 +9,33 @@ def staggered_page(server):
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
-        
-        # Mock /api/hosts to return 3 hosts
-        page.route("**/api/hosts", lambda route: route.fulfill(
-            status=200,
-            content_type="application/json",
-            body='[{"label": "host1", "type": "local"}, {"label": "host2", "type": "local"}, {"label": "host3", "type": "local"}]'
-        ))
 
-        page.route("**/api/health/*", lambda route: route.fulfill(status=200, body='{"status":"up"}'))
-        
+        # Mock /api/hosts to return 3 hosts
+        page.route(
+            "**/api/hosts",
+            lambda route: route.fulfill(
+                status=200,
+                content_type="application/json",
+                body='[{"label": "host1", "type": "local"}, {"label": "host2", "type": "local"}, {"label": "host3", "type": "local"}]',
+            ),
+        )
+
+        page.route(
+            "**/api/health/*",
+            lambda route: route.fulfill(status=200, body='{"status":"up"}'),
+        )
+
         # Track socket emits via a playwright binding
         page.session_requests = []
+
         def track_emit(event_data):
             page.session_requests.append(time.time())
+
         page.expose_binding("trackSocketEmit", lambda source, data: track_emit(data))
 
         # We must inject the mock after the page loads but before the scripts run, or right after.
         # Actually, if we expose a binding, we can just patch getGlobalSocket's emit.
-        page.add_init_script('''
+        page.add_init_script("""
             window.addEventListener('DOMContentLoaded', () => {
                 const originalGetGlobalSocket = window.getGlobalSocket;
                 if (originalGetGlobalSocket) {
@@ -46,28 +55,35 @@ def staggered_page(server):
                     };
                 }
             });
-        ''')
-        
+        """)
+
         page.goto(server, timeout=15000)
-        page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)
+        page.wait_for_selector(
+            ".launcher, .terminal-instance", state="attached", timeout=15000
+        )
         yield page
         context.close()
         browser.close()
 
+
 def test_staggered_initial_load(staggered_page):
     # Wait for the stagger to complete (3 requests * 500ms = ~1500ms)
     staggered_page.wait_for_timeout(3000)
-    
-    assert len(staggered_page.session_requests) >= 3, f"Expected at least 3 session requests, got {len(staggered_page.session_requests)}"
-    
+
+    assert (
+        len(staggered_page.session_requests) >= 3
+    ), f"Expected at least 3 session requests, got {len(staggered_page.session_requests)}"
+
     # Calculate intervals between the first 3 requests
     intervals = []
     for i in range(1, 3):
-        intervals.append(staggered_page.session_requests[i] - staggered_page.session_requests[i-1])
-        
+        intervals.append(
+            staggered_page.session_requests[i] - staggered_page.session_requests[i - 1]
+        )
+
     print(f"Session requests times: {staggered_page.session_requests}")
     print(f"Stagger intervals: {intervals}")
-    
+
     # We expect intervals to be ~0.5s, check that they are at least somewhat staggered (e.g. > 0.3s)
     assert intervals[0] > 0.25, f"First stagger too short: {intervals[0]}s"
     assert intervals[1] > 0.25, f"Second stagger too short: {intervals[1]}s"

@@ -39,6 +39,6 @@ some additional properties:
 
  * `headers` - Object containing additional headers to send to the proxy server
    in each request. This may also be a function that returns a headers object.
-  
+
    **NOTE:** If your proxy does not strip these headers from the request, they
    will also be sent to the destination server.

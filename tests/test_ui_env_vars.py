@@ -1,7 +1,6 @@
 import pytest
-import time
 from playwright.sync_api import sync_playwright, expect
-import json
+
 
 @pytest.fixture(scope="function")
 def page(server):
@@ -14,10 +13,13 @@ def page(server):
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
-        page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)
+        page.wait_for_selector(
+            ".launcher, .terminal-instance", state="attached", timeout=15000
+        )
         yield page
         context.close()
         browser.close()
+
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
@@ -39,12 +41,12 @@ def test_ui_add_host_with_env_vars(page, server):
 
     # Add an environment variable
     page.locator("#add-env-var-btn").click()
-    
+
     # Fill in the environment variable details
     # The newly added inputs should be the last ones in the container
     env_keys = page.locator("#env-vars-list input[placeholder*='Key']")
     env_vals = page.locator("#env-vars-list input[placeholder='Value']")
-    
+
     env_keys.last.fill("MY_ENV_VAR")
     env_vals.last.fill("MY_VAL")
 
@@ -62,11 +64,17 @@ def test_ui_add_host_with_env_vars(page, server):
     page.locator("#hosts-list .session-item").filter(has_text="Env Var Host").click()
 
     # Verify it entered edit mode
-    expect(page.locator("#add-host-btn")).to_have_text(import_re:=__import__("re").compile(r"Update Host.*"))
+    expect(page.locator("#add-host-btn")).to_have_text(
+        import_re := __import__("re").compile(r"Update Host.*")
+    )
 
     # Verify the env var is populated
-    expect(page.locator("#env-vars-list input[placeholder*='Key']").first).to_have_value("MY_ENV_VAR")
-    expect(page.locator("#env-vars-list input[placeholder='Value']").first).to_have_value("MY_VAL")
+    expect(
+        page.locator("#env-vars-list input[placeholder*='Key']").first
+    ).to_have_value("MY_ENV_VAR")
+    expect(
+        page.locator("#env-vars-list input[placeholder='Value']").first
+    ).to_have_value("MY_VAL")
 
     # Remove the variable
     page.locator("#env-vars-list button.danger").first.click()

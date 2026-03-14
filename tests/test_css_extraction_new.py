@@ -1,6 +1,7 @@
 import pytest
 from playwright.sync_api import sync_playwright
 
+
 @pytest.fixture(scope="function")
 def css_page(server):
     with sync_playwright() as p:
@@ -12,6 +13,7 @@ def css_page(server):
         context.close()
         browser.close()
 
+
 def test_css_classes_exist_in_dom(css_page):
     """
     Ensure the classes targeted for extraction (.is-mobile, #mobile-controls, .mobile-scroll-proxy)
@@ -22,6 +24,8 @@ def test_css_classes_exist_in_dom(css_page):
         document.documentElement.classList.add('is-mobile');
         document.getElementById('mobile-controls').style.display = 'grid';
     """)
-    
-    display_style = css_page.evaluate("window.getComputedStyle(document.getElementById('mobile-controls')).display")
-    assert display_style in ['grid', 'flex', 'block']
+
+    display_style = css_page.evaluate(
+        "window.getComputedStyle(document.getElementById('mobile-controls')).display"
+    )
+    assert display_style in ["grid", "flex", "block"]

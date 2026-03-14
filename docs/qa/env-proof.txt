@@ -1,0 +1,3 @@
+PATH=.venv/bin:/home/adamoutler/.npm-global/bin:/usr/local/cuda/bin:/opt/bin/:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+PYTHONPATH=.
+pytest 8.0.2

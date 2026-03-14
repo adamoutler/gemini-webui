@@ -9,14 +9,14 @@
     flex-shrink: 0;
     padding-bottom: env(safe-area-inset-bottom);
 }
-.control-btn { 
-    background: #444; 
-    color: white; 
-    border: 1px solid #555; 
-    border-radius: 4px; 
-    padding: 8px 2px; 
-    text-align: center; 
-    font-weight: bold; 
+.control-btn {
+    background: #444;
+    color: white;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 8px 2px;
+    text-align: center;
+    font-weight: bold;
     font-size: 11px;
     cursor: pointer;
     user-select: none;
@@ -87,5 +87,3 @@ html, body {
     white-space: nowrap;
     word-wrap: normal;
 }
-
-

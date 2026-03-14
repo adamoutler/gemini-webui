@@ -6,13 +6,14 @@ from typing import List, Dict, Optional
 
 from src.config import env_config
 
+
 class ShareManager:
     def __init__(self, data_dir: Optional[str] = None):
         if data_dir is None:
             self.base_dir = Path(env_config.DATA_DIR)
         else:
             self.base_dir = Path(data_dir)
-            
+
         self.shares_dir = self.base_dir / "shares"
         self.shares_dir.mkdir(parents=True, exist_ok=True)
         self.db_path = self.shares_dir / "metadata.db"
@@ -35,36 +36,38 @@ class ShareManager:
                     theme TEXT DEFAULT 'dark'
                 )
             """)
-            
+
             # Try to add 'theme' column to existing table to support older databases
             try:
                 conn.execute("ALTER TABLE shares ADD COLUMN theme TEXT DEFAULT 'dark'")
             except sqlite3.OperationalError:
-                pass # Column already exists
-                
+                pass  # Column already exists
+
             conn.commit()
 
-    def create_share(self, html_content: str, session_name: str, theme: str = 'dark') -> str:
+    def create_share(
+        self, html_content: str, session_name: str, theme: str = "dark"
+    ) -> str:
         """
         Generates UUID, saves HTML to disk, updates metadata.
         Returns the new share ID.
         """
         share_id = str(uuid.uuid4())
         file_path = self.shares_dir / f"{share_id}.html"
-        
+
         # Write HTML content to disk
         file_path.write_text(html_content, encoding="utf-8")
-        
+
         created_at = time.time()
-        
+
         # Update metadata
         with self._get_connection() as conn:
             conn.execute(
                 "INSERT INTO shares (id, session_name, created_at, file_path, theme) VALUES (?, ?, ?, ?, ?)",
-                (share_id, session_name, created_at, str(file_path), theme)
+                (share_id, session_name, created_at, str(file_path), theme),
             )
             conn.commit()
-            
+
         return share_id
 
     def get_share_metadata(self, share_id: str) -> Optional[Dict]:
@@ -74,7 +77,7 @@ class ShareManager:
         with self._get_connection() as conn:
             cursor = conn.execute(
                 "SELECT id, session_name, created_at, file_path, theme FROM shares WHERE id = ?",
-                (share_id,)
+                (share_id,),
             )
             row = cursor.fetchone()
             if row:
@@ -96,19 +99,21 @@ class ShareManager:
         Removes HTML file and metadata entry. Returns True if deleted, False if not found.
         """
         with self._get_connection() as conn:
-            cursor = conn.execute("SELECT file_path FROM shares WHERE id = ?", (share_id,))
+            cursor = conn.execute(
+                "SELECT file_path FROM shares WHERE id = ?", (share_id,)
+            )
             row = cursor.fetchone()
             if not row:
                 return False
-                
-            file_path = Path(row['file_path'])
-            
+
+            file_path = Path(row["file_path"])
+
             # Delete file if exists
             if file_path.exists():
                 file_path.unlink()
-                
+
             # Delete metadata
             conn.execute("DELETE FROM shares WHERE id = ?", (share_id,))
             conn.commit()
-            
+
         return True

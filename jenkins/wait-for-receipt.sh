@@ -36,7 +36,7 @@ while [ $SECONDS -lt $end_time ]; do
         echo "----------------------------------------"
         cat "$RECEIPT"
         echo "----------------------------------------"
-        
+
         # Check if successful and sync with GitHub
         if grep -q "Gemini WebUI Build Finished: SUCCESS" "$RECEIPT"; then
             echo "Jenkins build succeeded. Syncing with GitHub..."
@@ -51,7 +51,7 @@ while [ $SECONDS -lt $end_time ]; do
             echo "3. Read the logs above to identify the root cause."
             echo "4. Formulate a fix, commit the changes, and execute 'git push' again."
         fi
-        
+
         exit 0
     fi
     sleep 2

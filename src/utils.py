@@ -1,5 +1,6 @@
 import os
 
+
 def smart_file_search(cache, query):
     """
     Search a list of file paths (cache) using a smart search algorithm.
@@ -8,7 +9,7 @@ def smart_file_search(cache, query):
     """
     if not query:
         return cache
-        
+
     query = query.lower()
     results = []
 
@@ -38,14 +39,14 @@ def smart_file_search(cache, query):
                     if idx == len(query):
                         score = 10
                         break
-        
+
         if score > 0:
             results.append((score, path))
-            
+
     # Sort results:
     # 1. Highest score first (descending) -> -score
     # 2. Shorter length first (ascending) -> len(path)
     # 3. Alphabetical order (ascending) -> path
     results.sort(key=lambda x: (-x[0], len(x[1]), x[1]))
-    
+
     return [item[1] for item in results]

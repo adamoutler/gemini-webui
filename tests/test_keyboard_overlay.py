@@ -1,12 +1,12 @@
 import pytest
 import os
-from playwright.sync_api import sync_playwright, expect
-import time
+from playwright.sync_api import sync_playwright
+
 
 @pytest.fixture(scope="function")
 def page(server):
     with sync_playwright() as p:
-        iphone = p.devices['iPhone 13']
+        iphone = p.devices["iPhone 13"]
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**iphone)
 
@@ -16,6 +16,7 @@ def page(server):
         context.close()
         browser.close()
 
+
 @pytest.mark.timeout(60)
 def test_keyboard_per_word_overlay(page, server):
     page.goto(server)
@@ -24,7 +25,7 @@ def test_keyboard_per_word_overlay(page, server):
     page.click('text="Start New"')
 
     # Wait for the terminal to be ready
-    page.wait_for_selector('.xterm')
+    page.wait_for_selector(".xterm")
 
     # The overlay textarea selector
     textarea_selector = ".mobile-proxy-input"
@@ -39,30 +40,39 @@ def test_keyboard_per_word_overlay(page, server):
 
     # Type a word without space
     textarea.fill("echo")
-    textarea.evaluate("el => el.dispatchEvent(new InputEvent('input', {data: 'o', inputType: 'insertText'}))")
+    textarea.evaluate(
+        "el => el.dispatchEvent(new InputEvent('input', {data: 'o', inputType: 'insertText'}))"
+    )
     page.wait_for_timeout(500)
 
     # Assert the value is in the buffer
     overlay_val = textarea.evaluate("el => el.value")
     assert overlay_val == "echo", f"Expected 'echo', got '{overlay_val}'"
 
-    import warnings
     screenshot_path = f"/tmp/gemwe-178_{os.environ.get('BUILD_NUMBER', 'local')}.png"
     page.screenshot(path=screenshot_path)
-    print(f"Empirical evidence: Screenshot saved to {screenshot_path}. Typed 'echo' and found it in buffer.")
+    print(
+        f"Empirical evidence: Screenshot saved to {screenshot_path}. Typed 'echo' and found it in buffer."
+    )
 
     # Type a space
     textarea.fill("echo ")
-    textarea.evaluate("el => el.dispatchEvent(new InputEvent('input', {data: ' ', inputType: 'insertText'}))")
+    textarea.evaluate(
+        "el => el.dispatchEvent(new InputEvent('input', {data: ' ', inputType: 'insertText'}))"
+    )
     page.wait_for_timeout(500)
 
     # Assert the value was flushed and cleared by space
     overlay_val = textarea.evaluate("el => el.value")
-    assert overlay_val == "", f"Expected buffer to clear after space, got '{overlay_val}'"
+    assert (
+        overlay_val == ""
+    ), f"Expected buffer to clear after space, got '{overlay_val}'"
 
     # Type another word
     textarea.fill("hello")
-    textarea.evaluate("el => el.dispatchEvent(new InputEvent('input', {data: 'o', inputType: 'insertText'}))")
+    textarea.evaluate(
+        "el => el.dispatchEvent(new InputEvent('input', {data: 'o', inputType: 'insertText'}))"
+    )
     page.wait_for_timeout(500)
 
     overlay_val = textarea.evaluate("el => el.value")

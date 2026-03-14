@@ -50,50 +50,50 @@ CONSOLE: [.WebGL-0x1400ca9400]GL Driver Message (OpenGL, Performance, GL_CLOSE_P
 Saved screenshot to /tmp/active_fake_session.png
 Saved screenshot to /tmp/friction_modal_after_reload.png
 Second Tab Terminal Content:
-                                                                                                                                                              
-[Connected to server]                                                                                                                                         
-                                                                                                                                                              
-[Error: Invalid or expired ephemeral session. Please start a fresh test.]                                                                                     
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
-                                                                                                                                                              
+
+[Connected to server]
+
+[Error: Invalid or expired ephemeral session. Please start a fresh test.]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Saved screenshot to /tmp/backend_rejection.png
 .
 

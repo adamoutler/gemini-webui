@@ -8,7 +8,7 @@ Here is the consolidated, comprehensive Kanban ticket specification combining th
 > "I want fake gemini accessed via new screen with a query string. after providing a query string once, it should give a gemini session string to use which is ephemeral. i want friction on reusing the session, not closing the session. The overall goal here is to make Fake Gemini use all the same resources as real gemini. the idea i want, to summarize, is how to ensure all fake gemini responses are as close to a real session as possible because we keep having problems and variances when using fake gemini such as not using xterm, input differences, and fake gemini in prod. we also have problems with fake gemini testing working when prod does not. so we need a true fake gemini session and way to test."
 
 ## 2. Problem Statement & Goal
-Currently, the test harness bypasses actual execution paths (like WebSocket streaming, `xterm.js` rendering, and PTY handling), creating a "mocking gap." Tests pass while production fails because Fake Gemini does not share the same resource pipeline as Real Gemini. 
+Currently, the test harness bypasses actual execution paths (like WebSocket streaming, `xterm.js` rendering, and PTY handling), creating a "mocking gap." Tests pass while production fails because Fake Gemini does not share the same resource pipeline as Real Gemini.
 
 **The Goal:** Eliminate testing variances by executing Fake Gemini as a standard binary within the exact same pseudo-terminal (PTY) lifecycle, WebSocket event loop, and frontend UI (`xterm.js`) as production. Test sessions must be ephemeral, explicitly isolated, and introduce intentional UX "friction" against state-polluting reuse.
 
@@ -20,7 +20,7 @@ This epic requires coordinated changes across the Backend, Frontend (UX), and QA
 
 ### Sub-task A: Backend & Process Management
 *   **Unified PTY Process:** Stop mocking internal Python functions or bypassing SocketIO. Modify `process_manager.py` to allow dynamic injection of the target executable path. For test sessions, execute `python3 src/fake_gemini.py <args>` within the standard `pty.fork()` wrapper.
-*   **Ephemeral Session Generation:** 
+*   **Ephemeral Session Generation:**
     *   Create a new backend route: `GET /fake_session_init?scenario=X` (or similar).
     *   Generate a highly restrictive, cryptographically random `session_id` (e.g., UUIDv4) upon access.
     *   Map this `session_id` in memory to `executable_override="src/fake_gemini.py"` with the provided query string arguments.
@@ -38,7 +38,7 @@ This epic requires coordinated changes across the Backend, Frontend (UX), and QA
     2.  `[ Force Reconnect ]` (Allows the socket to restart).
 
 ### Sub-task C: The Synthetic Binary (`fake_gemini.py`)
-*   **CLI Behavior Parity:** The fake script must act identically to a real CLI application. 
+*   **CLI Behavior Parity:** The fake script must act identically to a real CLI application.
 *   **I/O Handling:** It must read from `sys.stdin` character-by-character, parse passed scenario arguments, write to `sys.stdout`, and proactively flush output buffers.
 *   **Rich Formatting:** It must emit raw ANSI escape codes for colors and box-drawing to accurately test `xterm.js` parser fidelity.
 

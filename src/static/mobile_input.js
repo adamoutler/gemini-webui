@@ -6,7 +6,7 @@ class MobileModifierState {
     this.altBtn = document.getElementById('alt-toggle');
     this.setupListeners();
   }
-  
+
   setupListeners() {
     const bindBtn = (btn, toggleFn) => {
         if (!btn) return;
@@ -66,7 +66,7 @@ class MobileModifierState {
     } else if (this.ctrlActive) {
         this.toggleCtrl(false);
     }
-    
+
     if (this.altActive && data.length === 1) {
         input = '\x1b' + input;
         this.toggleAlt(false);
@@ -90,7 +90,7 @@ class MobileInputBuffer {
         this.emitCallback('\x7f');
         return undefined;
     }
-    
+
     // If modifiers are active, consume exactly 1 char from data, apply modifiers, emit, clear buffer
     if (this.modifierState && (this.modifierState.ctrlActive || this.modifierState.altActive)) {
         const char = (e.data && e.data.length > 0) ? e.data[e.data.length - 1] : (value ? value.slice(-1) : null);
@@ -103,7 +103,7 @@ class MobileInputBuffer {
     if (isComposing) return undefined;
 
     const boundaryRegex = /[\s.,?!;-]/;
-    
+
     if (!this.isMobile && !isComposing) {
         if (e.data && e.data.length === 1) {
             if (boundaryRegex.test(e.data)) {
@@ -159,10 +159,10 @@ class MobileInputBuffer {
     }
 
     if (isComposing) return undefined;
-    
+
     if (e.key === 'Backspace' || e.keyCode === 8) {
       if (value.length === 0) {
-        if (!this.isMobile) return undefined; 
+        if (!this.isMobile) return undefined;
         e.preventDefault();
         this.emitCallback('\x7f');
       }
@@ -183,7 +183,7 @@ class MobileInputUI {
     this.proxyInput.id = 'terminal-input-' + tabId;
     this.proxyInput.classList.add('mobile-proxy-input');
     this.proxyInput.style.cssText = 'position: absolute; border: none; background: transparent !important; outline: none; color: var(--terminal-fg) !important; width: 1px; height: 1px; opacity: 0;';
-    
+
     this.proxyInput.setAttribute('autocomplete', 'on');
     this.proxyInput.setAttribute('autocorrect', 'on');
     this.proxyInput.setAttribute('spellcheck', 'true');
@@ -195,8 +195,8 @@ class MobileInputUI {
     }
 
     this.isComposing = false;
-    this.proxyInput.addEventListener('compositionstart', () => { 
-        this.isComposing = true; 
+    this.proxyInput.addEventListener('compositionstart', () => {
+        this.isComposing = true;
         this.proxyInput.classList.add('is-composing');
     });
     this.proxyInput.addEventListener('compositionend', () => {
@@ -211,14 +211,14 @@ class MobileInputUI {
 
         // Ticket 5: Dictation detection & auto-commit
         if (this.dictationTimer) clearTimeout(this.dictationTimer);
-        
+
         if (this.proxyInput.value.length > 0) {
             const isDictation = e.inputType === 'insertDictationResult' || (e.data && e.data.length > 5 && e.inputType !== 'insertFromPaste');
             if (isDictation) {
                 this.proxyInput.style.width = 'calc(100vw - 20px)';
                 this.proxyInput.style.left = '10px';
             }
-            
+
             // Auto-commit buffer after pause
             this.dictationTimer = setTimeout(() => {
                 if (this.proxyInput.value.length > 0) {
@@ -239,10 +239,10 @@ class MobileInputUI {
     if (!term || !term.element) return;
     const cursor = term.element.querySelector('.xterm-cursor');
     if (!cursor) return;
-    
+
     const cursorRect = cursor.getBoundingClientRect();
     const vv = window.visualViewport;
-    
+
     // We get terminal typography
     const screenElement = term.element.querySelector('.xterm-screen');
     if (screenElement) {
@@ -258,12 +258,12 @@ class MobileInputUI {
     // To get document-absolute coordinates, we add the visual viewport's page offset.
     const pageTop = vv ? vv.pageTop : window.scrollY;
     const pageLeft = vv ? vv.pageLeft : window.scrollX;
-    
+
     const top = cursorRect.top + pageTop;
     const left = cursorRect.left + pageLeft;
-    
+
     this.proxyInput.style.transform = `translate(${left}px, ${top}px)`;
-    
+
     if (this.proxyInput.value.length > 0) {
         this.proxyInput.style.opacity = '1';
         this.proxyInput.style.width = `calc(100vw - ${left}px - 20px)`;
@@ -277,22 +277,22 @@ class MobileInputUI {
 class MobileTerminalController {
   constructor(tab) {
     this.tab = tab;
-    
-    this.isMobile = window.matchMedia('(max-width: 768px) and (pointer: coarse)').matches 
+
+    this.isMobile = window.matchMedia('(max-width: 768px) and (pointer: coarse)').matches
                     || 'ontouchstart' in window;
-    
+
     if (this.isMobile) {
       this.modifierState = new MobileModifierState();
       this.buffer = new MobileInputBuffer(this.emitToTerminal.bind(this), this.isMobile, this.modifierState);
       this.ui = new MobileInputUI(this.tab.id, this.buffer.handleInput.bind(this.buffer), this.buffer.handleKeyDown.bind(this.buffer));
-      
+
       this.setupFocusManagement();
     }
   }
 
   setupFocusManagement() {
     if (!this.tab.term) return;
-    
+
     // Intercept touch events on terminal to focus our proxy instead
     this.tab.term.element.addEventListener('touchstart', (e) => {
         if (!e.target.closest('.xterm-viewport')) {
@@ -306,12 +306,12 @@ class MobileTerminalController {
     this.tab.term.onCursorMove(() => {
         this.ui.alignWithCursor(this.tab.term);
     });
-    
+
     // Update alignment when proxy input changes (in case width/opacity needs changing)
     this.ui.proxyInput.addEventListener('input', () => {
         this.ui.alignWithCursor(this.tab.term);
     });
-    
+
     // Re-align on resize or scroll
     window.addEventListener('resize', () => this.ui.alignWithCursor(this.tab.term));
     if (window.visualViewport) {

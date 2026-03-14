@@ -61,14 +61,14 @@ new_version = '$new_version'
 if os.path.exists(sw_file):
     with open(sw_file, 'r') as f:
         content = f.read()
-    
+
     # Replace CACHE_NAME pattern
     new_content = re.sub(
         r\"const CACHE_NAME = 'gemini-webui-v[^']*';\",
         f\"const CACHE_NAME = 'gemini-webui-v{new_version}';\",
         content
     )
-    
+
     with open(sw_file, 'w') as f:
         f.write(new_content)
 "

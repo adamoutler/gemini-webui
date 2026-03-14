@@ -12,13 +12,13 @@ html, body {
 body { overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
 #toolbar { background-color: #333; padding: 10px; display: flex; gap: 10px; align-items: center; flex-shrink: 0; }
 #tab-bar { background-color: #222; display: flex; overflow-x: auto; padding: 0 5px; flex-shrink: 0; }
-.tab { 
-    padding: 8px 12px; 
-    background-color: #333; 
-    color: #ccc; 
-    cursor: pointer; 
-    border-right: 1px solid #222; 
-    font-size: 13px; 
+.tab {
+    padding: 8px 12px;
+    background-color: #333;
+    color: #ccc;
+    cursor: pointer;
+    border-right: 1px solid #222;
+    font-size: 13px;
     white-space: nowrap;
     display: flex;
     align-items: center;
@@ -30,16 +30,16 @@ body { overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe 
     position: relative;
 }
 .tab span { flex-grow: 1; overflow: hidden; text-overflow: ellipsis; }
-.tab.active { 
-    background-color: #1e1e1e; 
-    color: white; 
-    border-top: 2px solid #2472c8; 
+.tab.active {
+    background-color: #1e1e1e;
+    color: white;
+    border-top: 2px solid #2472c8;
     font-weight: bold;
     min-width: 132px;
     max-width: 220px;
 }
 .tab:hover { background-color: #444; }
-.tab-close { 
+.tab-close {
     font-weight: bold; font-size: 18px; cursor: pointer; color: #888; flex-shrink: 0; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
 }
 .tab-close:hover { color: #f14c4c; }
@@ -345,5 +345,3 @@ input[type="text"], textarea { width: 100%; background: #444; color: white; bord
 .friction-actions .danger:hover {
     background-color: #ff0000;
 }
-
-

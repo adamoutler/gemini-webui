@@ -1,7 +1,6 @@
 import pytest
 import time
 import os
-import sys
 import subprocess
 import signal
 import stat
@@ -10,19 +9,23 @@ from playwright.sync_api import sync_playwright, expect
 # Individual test execution MUST NOT exceed 20 seconds.
 MAX_TEST_TIME = 20.0
 
+
 @pytest.fixture(scope="function")
 def mobile_page(server):
     with sync_playwright() as p:
         # Emulate Pixel 5
-        device = p.devices['Pixel 5']
+        device = p.devices["Pixel 5"]
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**device)
         page = context.new_page()
         page.goto(server, timeout=15000)
-        page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)
+        page.wait_for_selector(
+            ".launcher, .terminal-instance", state="attached", timeout=15000
+        )
         yield page
         context.close()
         browser.close()
+
 
 @pytest.fixture(scope="function")
 def custom_server(tmp_path_factory):
@@ -50,13 +53,14 @@ done
 """
     mock_script.write_text(mock_script_content)
     mock_script.chmod(mock_script.stat().st_mode | stat.S_IEXEC)
-    
+
     data_dir = tmp_path_factory.mktemp("data")
-    
+
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
     import random
+
     port = str(random.randint(10000, 15000))
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
@@ -66,10 +70,10 @@ done
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
     env["SKIP_MULTIPLEXER"] = "true"
-    
+
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
-    
+
     log_file = open(os.path.join(str(data_dir), "server.log"), "w")
     process = subprocess.Popen(
         [python_bin, "-m", "src.app"],
@@ -77,10 +81,11 @@ done
         cwd=project_root,
         preexec_fn=os.setsid,
         stdout=log_file,
-        stderr=subprocess.STDOUT
+        stderr=subprocess.STDOUT,
     )
-    
+
     import requests
+
     max_retries = 20
     for i in range(max_retries):
         try:
@@ -94,32 +99,37 @@ done
             pytest.fail("Custom Server failed to start")
     else:
         pytest.fail("Custom Server health check timed out")
-    
+
     yield f"http://127.0.0.1:{port}"
-    
+
     try:
         os.killpg(os.getpgid(process.pid), signal.SIGKILL)
     except OSError:
         pass
     process.wait()
 
+
 @pytest.fixture(scope="function")
 def custom_mobile_page(custom_server):
     with sync_playwright() as p:
-        device = p.devices['Pixel 5']
+        device = p.devices["Pixel 5"]
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**device)
         page = context.new_page()
         page.goto(custom_server, timeout=15000)
-        page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)
+        page.wait_for_selector(
+            ".launcher, .terminal-instance", state="attached", timeout=15000
+        )
         yield page
         context.close()
         browser.close()
+
 
 @pytest.mark.timeout(20)
 def test_mobile_ui_exists(mobile_page):
     """Verify that mobile UI is functional."""
     mobile_page.wait_for_selector("#tab-bar", timeout=5000)
+
 
 @pytest.mark.timeout(20)
 def test_mobile_controls_buttons(mobile_page):
@@ -127,10 +137,26 @@ def test_mobile_controls_buttons(mobile_page):
     mobile_page.click("text=Start New")
     mobile_page.wait_for_selector(".terminal-instance", timeout=10000)
     mobile_page.wait_for_selector("#mobile-controls", state="visible", timeout=5000)
-    expected_buttons = ["Esc", "Tab", "Ctrl", "Alt", "▲", "▼", "◀", "▶", "A+", "A-", "Home", "End"]
+    expected_buttons = [
+        "Esc",
+        "Tab",
+        "Ctrl",
+        "Alt",
+        "▲",
+        "▼",
+        "◀",
+        "▶",
+        "A+",
+        "A-",
+        "Home",
+        "End",
+    ]
     for btn_text in expected_buttons:
-        btn = mobile_page.locator("#mobile-controls .control-btn").get_by_text(btn_text, exact=True)
+        btn = mobile_page.locator("#mobile-controls .control-btn").get_by_text(
+            btn_text, exact=True
+        )
         expect(btn.first).to_be_visible()
+
 
 @pytest.mark.timeout(40)
 def test_mobile_resume_latest(custom_mobile_page):
@@ -146,6 +172,7 @@ def test_mobile_resume_latest(custom_mobile_page):
 
     # Wait for the mock output to appear
     import time
+
     start_time = time.time()
     found = False
     while time.time() - start_time < 15:
@@ -165,31 +192,37 @@ def test_mobile_resume_latest(custom_mobile_page):
             found = True
             break
         time.sleep(0.5)
-    
-    assert found, f"Expected 'MOCK_EXECUTED: -r' not found in terminal content: {content}"
+
+    assert (
+        found
+    ), f"Expected 'MOCK_EXECUTED: -r' not found in terminal content: {content}"
+
 
 @pytest.mark.timeout(40)
 def test_mobile_resume_specific(custom_mobile_page):
     page = custom_mobile_page
     page.wait_for_selector(".launcher", state="attached", timeout=15000)
-    
+
     # Find the specific Resume button for this session
     resume_buttons = page.locator("button.small:has-text('Resume')")
     expect(resume_buttons.first).to_be_visible(timeout=10000)
     resume_buttons.first.click()
-    
+
     page.wait_for_selector(".terminal-instance", timeout=10000)
-    
+
     import time
+
     start_time = time.time()
     connected = False
     while time.time() - start_time < 5:
-        content = page.evaluate("() => { const tab = tabs.find(t => t.id === activeTabId); return (tab && tab.term && tab.term.buffer.active.getLine(0)) ? tab.term.buffer.active.getLine(0).translateToString() : ''; }")
-        if 'Connected' in content:
+        content = page.evaluate(
+            "() => { const tab = tabs.find(t => t.id === activeTabId); return (tab && tab.term && tab.term.buffer.active.getLine(0)) ? tab.term.buffer.active.getLine(0).translateToString() : ''; }"
+        )
+        if "Connected" in content:
             connected = True
             break
         time.sleep(0.5)
-    
+
     # The command should contain `-r 1` because the mock script session id is 1
     start_time = time.time()
     found = False
@@ -211,7 +244,10 @@ def test_mobile_resume_specific(custom_mobile_page):
             break
         time.sleep(0.5)
 
-    assert found, f"Expected 'MOCK_EXECUTED: -r 1' not found in terminal content: {content2}"
+    assert (
+        found
+    ), f"Expected 'MOCK_EXECUTED: -r 1' not found in terminal content: {content2}"
+
 
 @pytest.mark.timeout(20)
 def test_mobile_pull_to_refresh_enabled(mobile_page):
@@ -219,37 +255,54 @@ def test_mobile_pull_to_refresh_enabled(mobile_page):
     # Start a session to be in terminal mode
     mobile_page.click("text=Start New")
     mobile_page.wait_for_selector(".terminal-instance", timeout=10000)
-    
+
     # Check body styles
-    body_overflow = mobile_page.evaluate("window.getComputedStyle(document.body).getPropertyValue('overflow')")
-    body_overscroll = mobile_page.evaluate("window.getComputedStyle(document.body).getPropertyValue('overscroll-behavior')")
-    
+    body_overflow = mobile_page.evaluate(
+        "window.getComputedStyle(document.body).getPropertyValue('overflow')"
+    )
+    body_overscroll = mobile_page.evaluate(
+        "window.getComputedStyle(document.body).getPropertyValue('overscroll-behavior')"
+    )
+
     # Due to 'overflow: visible' allowing native PTR
     # we just check that it contains 'visible' or evaluates to it.
-    assert 'visible' in body_overflow
+    assert "visible" in body_overflow
 
     # Check html styles
-    html_overflow = mobile_page.evaluate("window.getComputedStyle(document.documentElement).getPropertyValue('overflow')")
+    html_overflow = mobile_page.evaluate(
+        "window.getComputedStyle(document.documentElement).getPropertyValue('overflow')"
+    )
 
-    assert 'visible' in html_overflow
+    assert "visible" in html_overflow
+
+
 @pytest.mark.timeout(20)
 def test_pull_to_refresh_styles(mobile_page):
     """Verify that overscroll-behavior is NOT none for body, html, and #toolbar on mobile."""
     mobile_page.click("text=Start New")
     mobile_page.wait_for_selector("#toolbar", timeout=10000)
-    
-    body_overscroll = mobile_page.evaluate("window.getComputedStyle(document.body).getPropertyValue('overscroll-behavior')")
-    assert 'none' not in body_overscroll
-    
-    html_overscroll = mobile_page.evaluate("window.getComputedStyle(document.documentElement).getPropertyValue('overscroll-behavior')")
-    assert 'none' not in html_overscroll
 
-    tabbar_touch = mobile_page.evaluate("window.getComputedStyle(document.getElementById('tab-bar')).getPropertyValue('touch-action')")
-    assert 'none' not in tabbar_touch and 'pan-x pan-y' not in tabbar_touch, f"tab-bar has restricted touch-action: {tabbar_touch}"
-    
+    body_overscroll = mobile_page.evaluate(
+        "window.getComputedStyle(document.body).getPropertyValue('overscroll-behavior')"
+    )
+    assert "none" not in body_overscroll
+
+    html_overscroll = mobile_page.evaluate(
+        "window.getComputedStyle(document.documentElement).getPropertyValue('overscroll-behavior')"
+    )
+    assert "none" not in html_overscroll
+
+    tabbar_touch = mobile_page.evaluate(
+        "window.getComputedStyle(document.getElementById('tab-bar')).getPropertyValue('touch-action')"
+    )
+    assert (
+        "none" not in tabbar_touch and "pan-x pan-y" not in tabbar_touch
+    ), f"tab-bar has restricted touch-action: {tabbar_touch}"
+
     # Toolbar might still have it if we decided to block it there, but user said NO difference.
     # toolbar_overscroll = mobile_page.evaluate("window.getComputedStyle(document.getElementById('toolbar')).getPropertyValue('overscroll-behavior')")
     # assert 'none' not in toolbar_overscroll
+
 
 @pytest.mark.timeout(20)
 def test_mobile_connection_button_size(mobile_page):
@@ -261,7 +314,9 @@ def test_mobile_connection_button_size(mobile_page):
         return window.getComputedStyle(btn).getPropertyValue('white-space');
     }""")
 
-    assert button_white_space == 'nowrap', f"white-space should be nowrap, but got {button_white_space}"
+    assert (
+        button_white_space == "nowrap"
+    ), f"white-space should be nowrap, but got {button_white_space}"
 
 
 @pytest.mark.timeout(40)
@@ -269,21 +324,25 @@ def test_mobile_large_paste(mobile_page):
     """Verify that pasting a large block of text works without breaking on mobile."""
     mobile_page.click("text=Start New")
     mobile_page.wait_for_selector(".terminal-instance", timeout=10000)
-    
+
     # Wait for bash prompt
     import time
+
     time.sleep(2)
-    
+
     large_text = "A" * 15000
-    
+
     # Execute a paste event
-    mobile_page.evaluate("""(text) => {
+    mobile_page.evaluate(
+        """(text) => {
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
             emitPtyInput(tab, text);
         }
-    }""", large_text)
-    
+    }""",
+        large_text,
+    )
+
     start_time = time.time()
     found = False
     while time.time() - start_time < 15:
@@ -303,14 +362,15 @@ def test_mobile_large_paste(mobile_page):
             found = True
             break
         time.sleep(0.5)
-        
+
     assert found, "Large paste text was not fully echoed back to the terminal"
+
 
 @pytest.mark.timeout(30)
 def test_mobile_link_tapping(custom_mobile_page):
     """Verify that tapping a link opens it instead of just focusing."""
     page = custom_mobile_page
-    
+
     page.wait_for_selector(".launcher", state="attached", timeout=15000)
     page.click("text=Start New", timeout=10000)
     page.wait_for_selector(".terminal-instance", timeout=10000)
@@ -321,42 +381,46 @@ def test_mobile_link_tapping(custom_mobile_page):
             tab.term.write('\\r\\nhttps://google.com\\r\\n');
         }
     }""")
-    
+
     import time
+
     time.sleep(1)
-    
-    page.evaluate("window.openedUrl = null; window.open = (url) => { window.openedUrl = url; return null; };")
-    
+
+    page.evaluate(
+        "window.openedUrl = null; window.open = (url) => { window.openedUrl = url; return null; };"
+    )
+
     page.evaluate("""() => {
         const proxy = document.querySelector(".mobile-scroll-proxy");
         if (proxy) {
             const rect = proxy.getBoundingClientRect();
             const startX = rect.left + rect.width / 2;
             const startY = rect.top + rect.height / 2;
-            
+
             const event = new Event("touchstart", { bubbles: true, cancelable: true });
             event.touches = [{clientX: startX, clientY: startY}];
             proxy.dispatchEvent(event);
-            
+
             const endEvent = new Event("touchend", { bubbles: true, cancelable: true });
             endEvent.changedTouches = [{clientX: startX, clientY: startY}];
             proxy.dispatchEvent(endEvent);
         }
     }""")
-    
+
     time.sleep(1)
+
 
 @pytest.mark.timeout(30)
 def test_mobile_pinch_zoom_no_resize(mobile_page):
     """Verify that pinch-to-zoom does not trigger layout recalculations that break the UI."""
     mobile_page.click("text=Start New")
     mobile_page.wait_for_selector(".terminal-instance", timeout=10000)
-    
+
     # Allow time for initial setup
     mobile_page.wait_for_timeout(1000)
-    
+
     initial_height = mobile_page.evaluate("document.body.style.height")
-    
+
     # We redefine the getters on the abstracted window.appVisualViewport object
     mobile_page.evaluate("""() => {
         if (window.appVisualViewport) {
@@ -366,7 +430,7 @@ def test_mobile_pinch_zoom_no_resize(mobile_page):
             Object.defineProperty(window.appVisualViewport, 'height', {
                 get: () => parseInt(document.body.style.height || "0") - 100 // simulate height changing
             });
-            
+
             // Trigger the resize event on the native visualViewport, which will call the app.js listener
             // that reads from window.appVisualViewport.
             if (window.visualViewport) {
@@ -374,15 +438,17 @@ def test_mobile_pinch_zoom_no_resize(mobile_page):
             }
         }
     }""")
-    
+
     # Wait to see if height is changed by the resize event listener
     # The timeout in app.js is 100ms
     mobile_page.wait_for_timeout(500)
-    
+
     new_height = mobile_page.evaluate("document.body.style.height")
-    
+
     # Because scale is 2.0 (> 1.05), it should return early and NOT change body height
-    assert new_height == initial_height, f"Height unexpectedly changed from {initial_height} to {new_height} despite zoom"
+    assert (
+        new_height == initial_height
+    ), f"Height unexpectedly changed from {initial_height} to {new_height} despite zoom"
 
     # Now let's test what happens when scale is 1.0 (no zoom) to ensure our test works
     mobile_page.evaluate("""() => {
@@ -395,11 +461,11 @@ def test_mobile_pinch_zoom_no_resize(mobile_page):
             }
         }
     }""")
-    
+
     mobile_page.wait_for_timeout(500)
-    
+
     final_height = mobile_page.evaluate("document.body.style.height")
     # This time it should have updated the height
-    assert final_height != initial_height, "Height should have changed when scale is 1.0"
-
-
+    assert (
+        final_height != initial_height
+    ), "Height should have changed when scale is 1.0"

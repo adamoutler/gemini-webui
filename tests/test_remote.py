@@ -3,61 +3,71 @@ import json
 from unittest.mock import patch, MagicMock
 from src.app import app
 
+
 @pytest.fixture
 def client(test_data_dir):
-    app.config['TESTING'] = True
-    app.config['DATA_DIR'] = str(test_data_dir)
-    app.config['SECRET_KEY'] = 'test-secret'
+    app.config["TESTING"] = True
+    app.config["DATA_DIR"] = str(test_data_dir)
+    app.config["SECRET_KEY"] = "test-secret"
     with app.test_client() as client:
-        with patch.dict('os.environ', {"BYPASS_AUTH_FOR_TESTING": "true"}):
+        with patch.dict("os.environ", {"BYPASS_AUTH_FOR_TESTING": "true"}):
             yield client
+
 
 @pytest.fixture(autouse=True)
 def disable_csrf():
     import os
     from src.app import app
-    app.config['WTF_CSRF_ENABLED'] = False
-    os.environ['WTF_CSRF_ENABLED'] = 'False'
+
+    app.config["WTF_CSRF_ENABLED"] = False
+    os.environ["WTF_CSRF_ENABLED"] = "False"
     yield
-    app.config['WTF_CSRF_ENABLED'] = True
-    os.environ.pop('WTF_CSRF_ENABLED', None)
+    app.config["WTF_CSRF_ENABLED"] = True
+    os.environ.pop("WTF_CSRF_ENABLED", None)
+
 
 def test_remote_sessions_list(client):
-    with patch('src.app.subprocess.run') as mock_run:
+    with patch("src.app.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(
-            returncode=0, 
+            returncode=0,
             stdout="""  1. SessionOne (active) [uuid1]
   2. SessionTwo (paused) [uuid2]""",
-            stderr=""
+            stderr="",
         )
-        
-        response = client.get('/api/sessions?ssh_target=user@host&ssh_dir=/tmp')
+
+        response = client.get("/api/sessions?ssh_target=user@host&ssh_dir=/tmp")
         assert response.status_code == 200
         data = json.loads(response.data)
         assert "output" in data
-        assert "SessionOne" in data['output']
-        assert "SessionTwo" in data['output']
+        assert "SessionOne" in data["output"]
+        assert "SessionTwo" in data["output"]
+
 
 def test_remote_sessions_terminate(client):
-    with patch('src.app.subprocess.run') as mock_run:
+    with patch("src.app.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout="Terminated", stderr="")
-        
-        response = client.post('/api/sessions/terminate', 
-                               data=json.dumps({
-                                   'ssh_target': 'user@host',
-                                   'ssh_dir': '/tmp',
-                                   'session_id': 'uuid1'
-                               }),
-                               content_type='application/json')
+
+        response = client.post(
+            "/api/sessions/terminate",
+            data=json.dumps(
+                {"ssh_target": "user@host", "ssh_dir": "/tmp", "session_id": "uuid1"}
+            ),
+            content_type="application/json",
+        )
         assert response.status_code == 200
         data = json.loads(response.data)
-        assert data['status'] == 'success'
+        assert data["status"] == "success"
+
 
 def test_remote_sessions_timeout(client):
     import subprocess
-    with patch('src.app.subprocess.run', side_effect=subprocess.TimeoutExpired(cmd=['ssh'], timeout=45)):
-        response = client.get('/api/sessions?ssh_target=user@host')
+
+    with patch(
+        "src.app.subprocess.run",
+        side_effect=subprocess.TimeoutExpired(cmd=["ssh"], timeout=45),
+    ):
+        response = client.get("/api/sessions?ssh_target=user@host")
         assert response.status_code == 200
         data = json.loads(response.data)
         assert "error" in data
-        assert "timed out" in data['error']
+        assert "timed out" in data["error"]

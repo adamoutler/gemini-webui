@@ -73,20 +73,20 @@
 
         const HostStateManager = {
             states: {},
-            
+
             updateState: function(label, isSuccess) {
                 if (!this.states[label]) this.states[label] = { failures: -1 };
-                
+
                 if (isSuccess) {
                     this.states[label].failures = 0;
                 } else {
                     if (this.states[label].failures < 0) this.states[label].failures = 2;
                     else this.states[label].failures++;
                 }
-                
+
                 return this.states[label].failures;
             },
-            
+
             getIndicator: function(failures) {
                 if (failures === 0) return '🟢';
                 if (failures === 1) return '🟡';
@@ -130,12 +130,12 @@
                 if (shouldPulse || prevClass !== newClass) {
                     this.triggerPulse(tabId, label);
                 }
-            },            
+            },
             getInitialIndicator: function(label) {
                 if (!this.states[label]) return '⚪';
                 return this.getIndicator(this.states[label].failures);
             },
-            
+
             getInitialStatusClass: function(label) {
                 if (!this.states[label]) return 'offline';
                 return this.getStatusClass(this.states[label].failures);
@@ -148,7 +148,7 @@
             if (!('wakeLock' in navigator)) return;
 
             const isActive = tabs.some(t => t.title && (t.title.includes('Working') || t.title.includes('✋')));
-            
+
             if (isActive && document.visibilityState === 'visible') {
                 if (!wakeLock) {
                     try {
@@ -181,7 +181,7 @@
             updateWakeLock();
             const hasActionRequired = tabs.some(t => t.title && t.title.includes('✋'));
             const baseTitle = hasActionRequired ? '✋ Gemini WebUI' : originalPageTitle;
-            
+
             if (!hasActionRequired) {
                 if (titleFlashInterval) {
                     clearInterval(titleFlashInterval);
@@ -276,12 +276,12 @@
             document.documentElement.classList.add('is-mobile');
         }
         // console.log("Environment detection: isMobile =", isMobile, "(UA:", navigator.userAgent, "Width:", window.innerWidth, "Touch:", ('ontouchstart' in window || navigator.maxTouchPoints > 0), ")");
-        
+
         // VisualViewport logic is handled at the bottom of the script
 
         window.addEventListener('popstate', (event) => {
             const activeTab = tabs.find(t => t.id === activeTabId);
-            // Only hijack if we are currently in a terminal. 
+            // Only hijack if we are currently in a terminal.
             // If we are already in launcher mode, let the back button work normally.
             if (activeTab && activeTab.state === 'terminal') {
                 addNewTab();
@@ -295,9 +295,9 @@
         let currentFontSize = customFontSize ? parseInt(customFontSize) : defaultFontSize;
 
         const terminalTheme = {
-            background: customTheme.background || '#1e1e1e', 
-            foreground: customTheme.foreground || '#d4d4d4', 
-            cursor: customTheme.cursor || '#ffffff', 
+            background: customTheme.background || '#1e1e1e',
+            foreground: customTheme.foreground || '#d4d4d4',
+            cursor: customTheme.cursor || '#ffffff',
             selection: '#264f78',
             black: '#000000', red: '#cd3131', green: '#0dbc79', yellow: '#e5e510',
             blue: '#2472c8', magenta: '#bc3fbc', cyan: '#11a8cd', white: '#e5e5e5',
@@ -342,8 +342,8 @@
                     tab.term.options.theme = terminalTheme;
                     tab.term.options.fontSize = currentFontSize;
                     if (tab.term.textarea) {
-                        
-                        
+
+
                     }
                     fitTerminal(tab);
                 }
@@ -358,7 +358,7 @@
             terminalTheme.cursor = '#ffffff';
             currentFontSize = defaultFontSize;
             initThemeUI();
-            
+
             // Apply immediately to terminals
             tabs.forEach(tab => {
                 if (tab.term) {
@@ -431,7 +431,7 @@
                     const lastSeenDate = s.last_active ? new Date(s.last_active * 1000).toLocaleString() : 'Unknown';
 
                     const existingNode = document.getElementById(`managed-session-${id}-${s.tab_id}`);
-                    
+
                     if (existingNode) {
                         const statusNode = existingNode.querySelector('.status-node');
                         if (statusNode) {
@@ -455,7 +455,7 @@
                         newNode.id = `managed-session-${id}-${s.tab_id}`;
                         newNode.className = 'session-item';
                         newNode.style.cssText = 'background: #252526; margin-bottom: 8px; padding: 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333;';
-                        
+
                         let flashClass = shouldFlash ? ' flash' : '';
                         newNode.innerHTML = `
                             <div class="session-info">
@@ -464,7 +464,7 @@
                                     <span style="font-weight: bold; display: flex; align-items: center; gap: 4px;">
                                         <span class="status-node ${statusClass}${flashClass}"></span>
                                         <span class="status-label">${statusLabel}</span>
-                                    </span> 
+                                    </span>
                                     <span style="color: #555;">|</span>
                                     <span class="session-id-display" style="font-family: monospace;">ID: ${s.tab_id}</span>
                                     <span style="color: #555;">|</span>
@@ -493,19 +493,19 @@
         async function renderLauncher(id) {
             const config = await (await fetch('/api/config')).json();
             const container = document.getElementById(id + '_instance');
-            
+
             let warningHtml = '';
             if (!config.DATA_WRITABLE && !config.TMP_WRITABLE) {
                 warningHtml = `
                     <div style="background: #cd3131; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; line-height: 1.4;">
                         <strong>CRITICAL: No writable storage found.</strong><br>
-                        Both /data and /tmp are read-only. Settings and keys cannot be saved. 
+                        Both /data and /tmp are read-only. Settings and keys cannot be saved.
                         Local sessions will not persist. Please mount a volume or enable tmpfs.
                     </div>`;
             } else if (!config.DATA_WRITABLE) {
                 warningHtml = `
                     <div style="background: #e5e510; color: #000; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 12px;">
-                        <strong>WARNING:</strong> Persistent storage (/data) is not writable. 
+                        <strong>WARNING:</strong> Persistent storage (/data) is not writable.
                         Using temporary storage. Settings will be lost on restart.
                     </div>`;
             }
@@ -514,7 +514,7 @@
                 <div class="launcher">
                     <h2>Select a Connection</h2>
                     <div style="font-size: 11px; color: #888; margin-bottom: 15px; background: #2a2d2e; padding: 10px; border-radius: 4px; border-left: 3px solid #3b8eea;">
-                        <strong>Note:</strong> Sessions are isolated by project directory and user. 
+                        <strong>Note:</strong> Sessions are isolated by project directory and user.
                         If you don't see your sessions, ensure the path below matches your host project.
                     </div>
                     ${warningHtml}
@@ -527,7 +527,7 @@
                     </div>
 
                     <div id="${id}_connections" class="connections-list"></div>
-                    
+
                     <div class="backend-sessions-container" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
                         <h3 style="color: #888; margin-bottom: 15px;">Backend Managed Sessions</h3>
                         <div style="font-size: 11px; color: #666; margin-bottom: 15px;">
@@ -565,11 +565,11 @@
                 const card = document.createElement('div');
                 card.className = 'connection-card';
                 card.dataset.label = conn.label;
-                
+
                 const sessionListId = `${id}_sessions_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
                 const healthId = `${id}_health_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
                 const pulseId = `${id}_pulse_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
-                
+
                 let initialIndicator = HostStateManager.getInitialIndicator(conn.label);
                 let initialStatus = HostStateManager.getInitialStatusClass(conn.label);
 
@@ -592,16 +592,16 @@
                         </div>
                     </div>
                     <div id="${sessionListId}" class="session-list-container"><div style="padding: 10px; color: #888; font-size: 11px;">Loading sessions...</div></div>`;
-                
+
                 const handle = card.querySelector('.connection-drag-handle');
-                
+
                 handle.addEventListener('contextmenu', (e) => e.preventDefault());
 
                 handle.addEventListener('dragstart', (e) => {
                     draggedCard = card;
                     e.dataTransfer.effectAllowed = 'move';
                     e.dataTransfer.setData('text/plain', conn.label);
-                    
+
                     // Set the drag image to the whole card instead of just the handle
                     const rect = card.getBoundingClientRect();
                     if (e.dataTransfer.setDragImage) {
@@ -623,7 +623,7 @@
                         placeholder.replaceWith(draggedCard);
                     }
                     draggedCard = null;
-                    
+
                     // Final background update
                     const newLabels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
                     fetch('/api/hosts/reorder', {
@@ -634,7 +634,7 @@
                 });
 
                 let dragOffset = { x: 0, y: 0 };
-                
+
                 // Touch support for mobile dragging
                 handle.addEventListener('touchstart', (e) => {
                     draggedCard = card;
@@ -642,7 +642,7 @@
                     const touch = e.touches[0];
                     dragOffset.x = touch.clientX - rect.left;
                     dragOffset.y = touch.clientY - rect.top;
-                    
+
                     card.style.width = rect.width + 'px';
                     card.classList.add('dragging-mobile');
                     card.style.position = 'fixed';
@@ -654,13 +654,13 @@
                     e.preventDefault();
                     if (!draggedCard) return;
                     const touch = e.touches[0];
-                    
+
                     draggedCard.style.left = (touch.clientX - dragOffset.x) + 'px';
                     draggedCard.style.top = (touch.clientY - dragOffset.y) + 'px';
-                    
+
                     const target = document.elementFromPoint(touch.clientX, touch.clientY);
                     const overCard = target ? target.closest('.connection-card') : null;
-                    
+
                     if (overCard && overCard !== draggedCard && !overCard.classList.contains('dragging-mobile')) {
                         const rect = overCard.getBoundingClientRect();
                         const midpoint = rect.top + rect.height / 2;
@@ -680,7 +680,7 @@
                     draggedCard.style.top = '';
                     draggedCard.style.width = '';
                     draggedCard = null;
-                    
+
                     const newLabels = Array.from(connContainer.querySelectorAll('.connection-card')).map(c => c.dataset.label);
                     fetch('/api/hosts/reorder', {
                         method: 'POST',
@@ -692,7 +692,7 @@
                 card.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     if (!draggedCard || draggedCard === card) return;
-                    
+
                     const rect = card.getBoundingClientRect();
                     const midpoint = rect.top + rect.height / 2;
                     if (e.clientY < midpoint) {
@@ -714,7 +714,7 @@
             try {
                 const response = await fetch(`/api/management/sessions/${tabId}`, {
                     method: 'DELETE',
-                    headers: { 
+                    headers: {
                         'Content-Type': 'application/json',
                         'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                     }
@@ -742,7 +742,7 @@
                     }
                     alert("Termination failed: " + errorMessage);
                 }
-            } catch (e) { 
+            } catch (e) {
                 console.error(e);
                 alert("Termination failed: " + e.message);
             }
@@ -750,22 +750,22 @@
 
         function reclaimBackendSession(id, tabId, title, session) {
             const tab = tabs.find(t => t.id === id); if (!tab) return;
-            
+
             // Update DOM ID to match new tab ID
             const container = document.getElementById(id + '_instance');
             if (container) container.id = tabId + '_instance';
-            
+
             if (activeTabId === id) activeTabId = tabId;
             tab.id = tabId; // Switch tab ID to the backend's ID
             tab.title = title;
             tab.state = 'terminal';
-            tab.session = { 
-                type: session.ssh_target ? 'ssh' : 'local', 
-                ssh_target: session.ssh_target, 
-                ssh_dir: session.ssh_dir, 
-                resume: session.resume 
+            tab.session = {
+                type: session.ssh_target ? 'ssh' : 'local',
+                ssh_target: session.ssh_target,
+                ssh_dir: session.ssh_dir,
+                resume: session.resume
             };
-            
+
             // Re-render tabs since we changed an ID
             renderTabs();
             saveTabsToStorage();
@@ -788,7 +788,7 @@
             if (window.expandedSessionLists.has(conn.label)) {
                 forceAll = true;
             }
-            
+
             const params = {};
             if (conn.type === 'ssh') { params.ssh_target = conn.target; if (conn.dir) params.ssh_dir = conn.dir; }
             if (useCache) params.cache = true;
@@ -797,7 +797,7 @@
             try {
                 console.log("FETCH SESSIONS START"); const data = await new Promise((resolve, reject) => {
                     const socket = getGlobalSocket();
-                    
+
                     const timeoutTimer = setTimeout(() => {
                         resolve({ error: "Timeout waiting for get_sessions" });
                     }, 5000);
@@ -823,7 +823,7 @@
                     return;
                 }
 
-                if (!useCache || isPolling) { console.log("ENTERED IF BLOCK"); 
+                if (!useCache || isPolling) { console.log("ENTERED IF BLOCK");
                     try { HostStateManager.updateHealth(tabId, conn.label, !data.error, false); } catch (e) { console.log("INNER ERROR: " + e.stack); }
                 }
 
@@ -866,7 +866,7 @@
                 }
                 if (useCache && !isPolling) fetchSessions(tabId, conn, targetId, forceAll, false); // Update after cache load
             } catch (e) {
-                if (!useCache || isPolling) { console.log("ENTERED IF BLOCK"); 
+                if (!useCache || isPolling) { console.log("ENTERED IF BLOCK");
                     HostStateManager.updateHealth(tabId, conn.label, false, false);
                 }
                 console.error(e);
@@ -891,33 +891,33 @@
             }
 
             const tab = tabs.find(t => t.id === tabId); if (!tab) return;
-            tab.state = 'terminal'; 
-            tab.session = { type, ssh_target: target, ssh_dir: dir, resume: resumeParam }; 
+            tab.state = 'terminal';
+            tab.session = { type, ssh_target: target, ssh_dir: dir, resume: resumeParam };
             tab.title = sessionName || (target ? target.split('@').pop() : 'Local');
             tab.shouldReclaim = shouldReclaim;
-            
+
             // Back button hijacking: push state so "back" has something to pop
             window.history.pushState({ terminal: true, tabId: tabId }, "");
             saveTabsToStorage();
-            
+
             const container = document.getElementById(tabId + '_instance'); container.innerHTML = '';
-            
-            const termDiv = document.createElement('div'); 
-            termDiv.className = 'terminal-instance'; 
+
+            const termDiv = document.createElement('div');
+            termDiv.className = 'terminal-instance';
             termDiv.id = 'rolling-log-' + tabId;
             termDiv.setAttribute('role', 'log');
             termDiv.setAttribute('aria-live', 'polite');
             termDiv.setAttribute('aria-relevant', 'additions');
             container.appendChild(termDiv);
-            
-            tab.term = new Terminal({ 
-                cursorBlink: true, 
-                cursorStyle: 'block', 
-                macOptionIsMeta: true, 
-                scrollback: 10000, 
-                fontSize: currentFontSize, 
-                fontFamily: 'Menlo, Monaco, "Courier New", monospace', 
-                allowProposedApi: true, 
+
+            tab.term = new Terminal({
+                cursorBlink: true,
+                cursorStyle: 'block',
+                macOptionIsMeta: true,
+                scrollback: 10000,
+                fontSize: currentFontSize,
+                fontFamily: 'Menlo, Monaco, "Courier New", monospace',
+                allowProposedApi: true,
                 theme: terminalTheme,
                 scrollOnUserInput: true,
                 scrollOnData: false
@@ -945,7 +945,7 @@
                 proxy.className = 'mobile-scroll-proxy';
                 const content = document.createElement('div');
                 content.className = 'mobile-scroll-content';
-                
+
                 const selectionOverlay = document.createElement('div');
                 selectionOverlay.className = 'mobile-selection-overlay';
                 selectionOverlay.style.position = 'absolute';
@@ -960,7 +960,7 @@
                 selectionOverlay.style.zIndex = '5';
                 selectionOverlay.style.overflow = 'hidden';
                 selectionOverlay.style.pointerEvents = 'auto'; // allow selection
-                
+
                 proxy.appendChild(content);
                 proxy.appendChild(selectionOverlay);
                 termDiv.appendChild(proxy);
@@ -972,15 +972,15 @@
                 // Sync: Ghost -> Terminal (Passive & Momentum-Safe)
                 proxy.addEventListener('scroll', () => {
                     if (isSyncing) return;
-                    
+
                     const deltaScroll = proxy.scrollTop - lastScrollTop;
                     const deltaLines = Math.round(deltaScroll / rowHeight);
-                    
+
                     if (deltaLines !== 0) {
                         tab.term.scrollLines(deltaLines);
                         lastScrollTop += deltaLines * rowHeight;
                         selectionOverlay.style.top = proxy.scrollTop + 'px';
-                        
+
                         // Recenter periodically to prevent hitting bounds
                         if (Math.abs(proxy.scrollTop - 50000) > 40000) {
                             isSyncing = true;
@@ -999,12 +999,12 @@
                                     startX = e.touches[0].clientX;
                                     startY = e.touches[0].clientY;
                                     touchStartTime = Date.now();
-                                    
+
                                     // Blur xterm's hidden textarea so the keyboard doesn't pop up instead of the selection menu
                                     if (tab.term && tab.term.textarea) {
                                         tab.term.textarea.blur();
                                     }
-                                    
+
                                     // Populate selection overlay with visible terminal text
                                     let cellHeight = 16;
                                     if (tab.term._core && tab.term._core._renderService && tab.term._core._renderService.dimensions) {
@@ -1013,7 +1013,7 @@
                                     selectionOverlay.style.lineHeight = cellHeight + 'px';
                                     selectionOverlay.style.fontSize = tab.term.options.fontSize + 'px';
                                     selectionOverlay.style.fontFamily = tab.term.options.fontFamily;
-                                    
+
                                     const screenElement = termDiv.querySelector('.xterm-screen');
                                     let offsetTop = 0;
                                     let offsetLeft = 0;
@@ -1029,7 +1029,7 @@
                                     selectionOverlay.style.paddingTop = '0px';
                                     selectionOverlay.style.left = offsetLeft + 'px';
                                     selectionOverlay.style.top = (proxy.scrollTop + offsetTop) + 'px';
-                                    
+
                                     const buffer = tab.term.buffer.active;
                                     const startRow = buffer.viewportY;
                                     const endRow = startRow + tab.term.rows;
@@ -1046,21 +1046,21 @@
                                     }
                                     selectionOverlay.textContent = textContent;
                                 }, {passive: true});
-                
+
                                 proxy.addEventListener('touchmove', (e) => {
                                     // Not doing much here now since selection uses native browser handling
                                 }, {passive: true});
-                
+
                                 proxy.addEventListener('touchend', (e) => {
                                     const deltaX = Math.abs(e.changedTouches[0].clientX - startX);
                                     const deltaY = Math.abs(e.changedTouches[0].clientY - startY);
                                     const duration = Date.now() - touchStartTime;
 
                                 if (deltaX < 10 && deltaY < 10 && duration < 300) {
-                                    // This was a quick tap. 
+                                    // This was a quick tap.
                                     // 1. Clear any active selection
                                     window.getSelection().removeAllRanges();
-                                    
+
                                     // Temporarily hide proxy to find what's underneath
                                     proxy.style.display = 'none';
                                     const underlying = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
@@ -1093,7 +1093,7 @@
                                     }, 150);
                                 }
                                 }, {passive: true});
-                
+
                 // Allow proxy to recover pointer events when clicking elsewhere or after selection
                 document.addEventListener('selectionchange', () => {
                     const selection = window.getSelection().toString();
@@ -1102,7 +1102,7 @@
                         proxy.style.pointerEvents = 'all';
                     }
                 });
-                
+
                 // Set initial position
                 proxy.scrollTop = 50000;
             }
@@ -1110,25 +1110,25 @@
             // Passive touch listener to ensure the browser doesn't wait for JS
             // before initiating a native scroll on the viewport.
             termDiv.addEventListener('touchmove', (e) => {}, {passive: true});
-            
+
             // Improved Web Links support with wrapped line handling
             try {
                 tab.term.registerLinkProvider({
                     provideLinks(y, callback) {
                         const buffer = tab.term.buffer.active;
                         let startY = y - 1;
-                        
+
                         // Find the start of the wrapped block
                         while (startY > 0 && buffer.getLine(startY).isWrapped) {
                             startY--;
                         }
-                        
+
                         // Assemble full text and keep track of line offsets
                         let fullText = "";
                         let lineOffsets = [0];
                         let lineTexts = [];
                         let currentY = startY;
-                        
+
                         while (currentY < buffer.length) {
                             const line = buffer.getLine(currentY);
                             const lineText = line.translateToString(true);
@@ -1140,7 +1140,7 @@
                             currentY++;
                             lineOffsets.push(fullText.length);
                         }
-                        
+
                         const urlRegex = /https?:\/\/[^\s"'<>^`]+[^\s"'<>^`.,!?;:]/g;
                         const links = [];
                         let match;
@@ -1148,15 +1148,15 @@
                             const uri = match[0];
                             const matchStart = match.index;
                             const matchEnd = match.index + uri.length;
-                            
+
                             const lineIdx = y - 1 - startY;
                             const lineStartOffset = lineOffsets[lineIdx];
                             const lineEndOffset = lineStartOffset + lineTexts[lineIdx].length;
-                            
+
                             if (matchEnd > lineStartOffset && matchStart < lineEndOffset) {
                                 const startX = Math.max(0, matchStart - lineStartOffset);
                                 const endX = Math.min(lineTexts[lineIdx].length, matchEnd - lineStartOffset);
-                                
+
                                 links.push({
                                     text: uri, // Report the FULL uri even for this segment
                                     range: {
@@ -1176,11 +1176,11 @@
             } catch (e) {
                 console.error("Failed to setup link provider:", e);
             }
-            
+
             // Initialize Proxy Input Foundation for Mobile keyboards
             if (tab.term.textarea) {
-                
-                
+
+
                 tab.mobileProxy = new MobileTerminalController(tab);
                 // Handle image paste and text paste buffer clearing
                 tab.term.textarea.addEventListener('paste', async (e) => {
@@ -1194,12 +1194,12 @@
                             e.preventDefault();
                             const file = item.getAsFile();
                             if (!file) continue;
-                            
+
                             const formData = new FormData();
                             // Generate a generic filename if missing
                             const ext = item.type.split('/')[1] || 'png';
                             formData.append('file', file, file.name || `pasted-image-${Date.now()}.${ext}`);
-                            
+
                             try {
                                 const response = await fetchWithCSRF('/api/upload', {
                                     method: 'POST',
@@ -1234,7 +1234,7 @@
                 reconnectionDelayMax: 5000,
                 timeout: 20000
             });
-            
+
             let disconnectTime = null;
             tab.socket.on('connect', async () => {
                 disconnectTime = null;
@@ -1254,14 +1254,14 @@
                 } catch (e) {
                     console.error('Failed to refresh CSRF token:', e);
                 }
-                tab.socket.emit('restart', { 
-                    tab_id: tabId, 
+                tab.socket.emit('restart', {
+                    tab_id: tabId,
                     reclaim: tab.shouldReclaim,
                     sid: tab.socket.id,
-                    resume: tab.session.resume, 
-                    cols: tab.term.cols, 
-                    rows: tab.term.rows, 
-                    ssh_target: target, 
+                    resume: tab.session.resume,
+                    cols: tab.term.cols,
+                    rows: tab.term.rows,
+                    ssh_target: target,
                     ssh_dir: dir,
                     mode: mode
                 });
@@ -1274,7 +1274,7 @@
                             if (target) params.ssh_target = target;
                             if (dir) params.ssh_dir = dir;
                             params.cache = false;
-                            
+
                             console.log("FETCH SESSIONS START"); const data = await new Promise((resolve, reject) => {
                                 const socket = getGlobalSocket();
                                 socket.emit('get_sessions', params, (response) => {
@@ -1282,7 +1282,7 @@
                                     else reject(new Error("No response from WebSocket"));
                                 });
                             });
-                            
+
                             const sessions = parseSessions(data.output || "");
                             if (sessions.length > 0) {
                                 let maxId = 0;
@@ -1349,7 +1349,7 @@
                 tab.socket.connect();
             });
 
-            tab.socket.on('pty-output', (data) => { 
+            tab.socket.on('pty-output', (data) => {
                 if (tab.term) {
                     const buffer = tab.term.buffer.active;
                     // If the user is at the bottom (or within 2 lines of it), we should ensure they stay at the bottom
@@ -1394,7 +1394,7 @@
                 }
                 renderTabs();
                 updatePageTitle();
-                
+
                 // Trigger notification if action required (✋)
                 if (title.includes('✋') && document.visibilityState !== 'visible') {
                     if ('Notification' in window && Notification.permission === 'granted') {
@@ -1491,14 +1491,14 @@
         function sendToTerminal(data) {
             const tab = tabs.find(t => t.id === activeTabId);
             let finalData = data;
-            
+
             if (tab && tab.mobileProxy && tab.mobileProxy.modifierState) {
                 finalData = tab.mobileProxy.modifierState.applyModifiers(data);
             } else {
                 if (ctrlActive) toggleCtrl(false);
                 if (altActive) toggleAlt(false);
             }
-            
+
             if (tab && tab.socket && tab.state === 'terminal') {
                 emitPtyInput(tab, finalData);
                 tab.term.focus();
@@ -1522,7 +1522,7 @@
 
         function switchTab(id) {
             activeTabId = id; const tab = tabs.find(t => t.id === id); if (!tab) return;
-            
+
             if (launcherRefreshInterval) {
                 clearInterval(launcherRefreshInterval);
                 launcherRefreshInterval = null;
@@ -1534,7 +1534,7 @@
                 const refreshBtn = document.getElementById(`${id}_backend_sessions`);
                 if (refreshBtn) {
                     refreshBackendSessionsList(id);
-                    
+
                     fetch('/api/hosts').then(r => r.json()).then(hosts => {
                         hosts.forEach((conn, index) => {
                             const sessionListId = `${id}_sessions_${conn.label.replace(/[^a-z0-9]/gi, '')}`;
@@ -1579,10 +1579,10 @@
                     }
                 }
                 setTimeout(() => { fitTerminal(tab); tab.term.focus(); }, 50);
-            } else { 
-                toolbarInfo.style.display = 'none'; 
+            } else {
+                toolbarInfo.style.display = 'none';
                 mobileControls.style.display = 'none';
-                updateStatus('picker'); 
+                updateStatus('picker');
             }
         }
 
@@ -1603,7 +1603,7 @@
             const tab = tabs.find(t => t.id === activeTabId);
             if (tab && tab.state === 'terminal') {
                 const { ssh_target, ssh_dir, resume } = tab.session;
-                // tab.term.clear(); 
+                // tab.term.clear();
                 tab.socket.emit('restart', {
                     tab_id: tab.id,
                     resume: resume,
@@ -1620,7 +1620,7 @@
             if (event) event.stopPropagation(); const index = tabs.findIndex(t => t.id === id); if (index === -1) return;
             const tab = tabs[index];
             if (tab.state === 'launcher') return; // Cannot close the launcher (+ New) tab
-            if (tab.socket) tab.socket.disconnect(); 
+            if (tab.socket) tab.socket.disconnect();
             if (tab.webglAddon) {
                 try { tab.webglAddon.dispose(); } catch(e) {}
             }
@@ -1691,16 +1691,16 @@
             const id = 'tab_' + (Date.now() + Math.floor(Math.random() * 1000));
             const tab = { id, term: null, fitAddon: null, socket: null, session: null, title: 'Test Session', state: 'terminal' };
             tabs.push(tab);
-            
+
             const container = document.createElement('div');
-            container.id = id + '_instance'; 
+            container.id = id + '_instance';
             container.className = 'tab-instance active';
             document.getElementById('terminal-container').appendChild(container);
-            
+
             activeTabId = id;
             renderTabs();
             startSession(id, 'local', '', '', sessionId, 'Test Session', true);
-            
+
             const modalHtml = `
                 <div id="friction-modal" class="friction-modal" style="display: none;">
                     <div class="friction-modal-content">
@@ -1714,7 +1714,7 @@
                 </div>
             `;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
+
             window.forceReconnect = () => {
                 document.getElementById('friction-modal').style.display = 'none';
                 const currentTab = tabs.find(t => t.id === activeTabId);
@@ -1722,13 +1722,13 @@
                     currentTab.socket.connect();
                 }
             };
-            
+
             window.addEventListener('beforeunload', (e) => {
                 document.getElementById('friction-modal').style.display = 'flex';
                 e.preventDefault();
                 e.returnValue = '';
             });
-            
+
         } else if (!loadTabsFromStorage()) {
             addNewTab(true);
         }
@@ -1740,7 +1740,7 @@
         function parseQuickInput(val) {
             if (!val) return null;
             // Format: user@host[:port] [directory]
-            
+
             let user = "";
             let host = "";
             let port = "";
@@ -1780,10 +1780,10 @@
         }
 
         async function saveHost(host) {
-            await fetch('/api/hosts', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(host) 
+            await fetch('/api/hosts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(host)
             });
         }
 
@@ -1816,10 +1816,10 @@
             if (!name || !text) return alert("Key name and text required");
 
             // 1. Save Key
-            await fetch('/api/keys/text', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ name, key: text }) 
+            await fetch('/api/keys/text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, key: text })
             });
 
             // 2. Save Host
@@ -1837,7 +1837,7 @@
                 const quickAddModal = document.getElementById('quick-add-key-modal');
                 const shareModal = document.getElementById('share-modal');
                 const previewModal = document.getElementById('preview-modal');
-        
+
                 [settingsModal, quickAddModal, shareModal, previewModal].forEach(modal => {
                     if (!modal) return;
                     modal.addEventListener('mousedown', (e) => { modalMouseDownTarget = e.target; });
@@ -1851,8 +1851,8 @@
                         modalMouseDownTarget = null;
                     });
                 });
-        
-                async function openSettings() { 
+
+                async function openSettings() {
          document.getElementById('settings-modal').style.display = 'block'; loadHosts(); loadKeys(); loadPublicKey(); initThemeUI(); loadSharedSessions(); }
 
         async function loadSharedSessions() {
@@ -1864,13 +1864,13 @@
                 if (response.ok) {
                     const data = await response.json();
                     const shares = data.shares || data; // handle if it's wrapped or array directly
-                    
+
                     list.innerHTML = '';
                     if (!shares || shares.length === 0) {
                         list.innerHTML = '<div style="padding: 10px; color: #666; font-size: 13px;">No session snapshots.</div>';
                         return;
                     }
-                    
+
                     // Note: API might return an object with keys or array, handle accordingly
                     const shareArray = Array.isArray(shares) ? shares : Object.keys(shares).map(k => ({id: k, ...shares[k]}));
 
@@ -1882,12 +1882,12 @@
                         item.style.alignItems = 'center';
                         item.style.borderBottom = '1px solid #444';
                         item.style.padding = '10px';
-                        
+
                         const dateStr = share.created_at ? new Date(share.created_at * 1000).toLocaleString() : 'Unknown';
                         const shareId = share.id || share.uuid; // handle both just in case
                         const linkUrl = window.location.origin + '/s/' + shareId;
                         const sessionName = share.session_name || 'Session Snapshot';
-                        
+
                         item.innerHTML = `
                             <div style="flex-grow: 1; overflow: hidden; margin-right: 15px;">
                                 <div style="color: #3b8eea; font-weight: bold; margin-bottom: 5px;">${sessionName}</div>
@@ -2016,7 +2016,7 @@
                 const row = document.createElement('div');
                 row.style.display = 'flex';
                 row.style.gap = '5px';
-                
+
                 const keyInput = document.createElement('input');
                 keyInput.type = 'text';
                 keyInput.placeholder = 'Key (e.g. PORT)';
@@ -2091,9 +2091,9 @@
             options.headers = options.headers || {};
             options.headers['X-CSRFToken'] = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             options.skipCsrfReload = true; // Prevent global fetch from reloading page on 400/403
-            
+
             let response = await fetch(url, options);
-            
+
             if (response.status === 400 || response.status === 403) {
                 try {
                     const csrfResponse = await fetch('/api/csrf');
@@ -2103,7 +2103,7 @@
                             const meta = document.querySelector('meta[name="csrf-token"]');
                             if (meta) meta.setAttribute('content', data.csrf_token);
                             options.headers['X-CSRFToken'] = data.csrf_token;
-                            
+
                             response = await fetch(url, options);
                         }
                     }
@@ -2144,7 +2144,7 @@
             const editBtn = document.getElementById('edit-mode-btn');
             const submitBtn = document.getElementById('add-host-btn');
             const labelInput = document.getElementById('new-host-label');
-            
+
             if (mode === 'edit') {
                 if (labelInput.value === 'local') {
                     alert("The default 'local' host cannot be edited. It will be used as a template for a new host.");
@@ -2172,11 +2172,11 @@
             setHostMode('add');
         }
         async function submitHostForm() {
-            const label = document.getElementById('new-host-label').value; 
-            const target = document.getElementById('new-host-target').value; 
+            const label = document.getElementById('new-host-label').value;
+            const target = document.getElementById('new-host-target').value;
             const dir = document.getElementById('new-host-dir').value;
             const submitBtn = document.getElementById('add-host-btn');
-            
+
             if (!label) return alert("Label required");
             if (label === 'local' && submitBtn.innerText === 'Update Host') {
                 return alert("Cannot update protected 'local' host.");
@@ -2189,18 +2189,18 @@
                 dir,
                 env_vars: envVarManager ? envVarManager.get() : {},
                 old_label: editingHostLabel // Pass to server for in-place update
-            };            
-            const response = await fetch('/api/hosts', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(host) 
+            };
+            const response = await fetch('/api/hosts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(host)
             });
 
             if (response.ok) {
                 const originalText = submitBtn.innerText;
                 submitBtn.innerText = originalText + " ✓";
                 setTimeout(() => { submitBtn.innerText = originalText; }, 2000);
-                
+
                 editingHostLabel = label; // Update current tracking
                 loadHosts();
             } else {
@@ -2232,7 +2232,7 @@
             const file = fileInput.files[0];
             const formData = new FormData();
             formData.append('file', file);
-            
+
             try {
                 const response = await fetchWithCSRF('/api/keys/upload', {
                     method: 'POST',
@@ -2241,7 +2241,7 @@
                     },
                     body: formData
                 });
-                
+
                 if (response.ok) {
                     fileInput.value = '';
                     loadKeys();
@@ -2310,12 +2310,12 @@
                 }
                 if (isActive) return;
                 isActive = true;
-                
+
                 // Add visual feedback
                 btn.style.opacity = '0.7';
-                
+
                 executeAction(e);
-                
+
                 // Delay before repeating
                 timeoutId = setTimeout(() => {
                     // Repeat rate
@@ -2336,7 +2336,7 @@
 
             btn.addEventListener('mousedown', startAction);
             btn.addEventListener('touchstart', startAction, { passive: false });
-            
+
             btn.addEventListener('mouseup', stopAction);
             btn.addEventListener('mouseleave', stopAction);
             btn.addEventListener('touchend', stopAction);
@@ -2394,7 +2394,7 @@
             // Xterm serialization usually wraps in a single root element
             const rootEl = tempDiv.firstElementChild || tempDiv;
             const lines = Array.from(rootEl.children);
-            
+
             // Trim trailing empty lines to prevent massive whitespace
             while (lines.length > 0) {
                 const lastLine = lines[lines.length - 1];
@@ -2460,10 +2460,10 @@
         async function uploadWorkspaceFile() {
             const fileInput = document.getElementById('workspace-upload-file');
             if (!fileInput.files.length) return alert("Please select a file to upload");
-            
+
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
-            
+
             const tab = tabs.find(t => t.id === activeTabId);
             if (tab && tab.session && tab.session.type === 'ssh') {
                if (!tab.session.ssh_target) {
@@ -2475,7 +2475,7 @@
                    formData.append('ssh_dir', tab.session.ssh_dir);
                }
             }
-            
+
             try {
                 const response = await fetchWithCSRF('/api/upload', {
                     method: 'POST',
@@ -2514,7 +2514,7 @@
             downloadDebounceTimer = setTimeout(async () => {
                 const q = wsDownloadInput.value;
                 const tab = tabs.find(t => t.id === activeTabId);
-                
+
                 if (!tab || tab.session.type !== 'ssh' || !q) {
                     return;
                 }
@@ -2523,7 +2523,7 @@
                     const response = await fetch(`/api/sessions/${tab.id}/search_files?q=${encodeURIComponent(q)}`);
                     if (!response.ok) throw new Error('Failed to fetch autocomplete');
                     const data = await response.json();
-                    
+
                     autocompleteResults.innerHTML = '';
                     if (data.matches && data.matches.length > 0) {
                         data.matches.forEach(match => {
@@ -2561,7 +2561,7 @@
             const filenameInput = document.getElementById('workspace-download-filename');
             const filename = filenameInput.value.trim();
             if (!filename) return alert("Please enter a filename");
-            
+
             window.location.href = `/api/download/${encodeURIComponent(filename)}`;
             closeFileTransfer();
             filenameInput.value = '';
@@ -2637,7 +2637,7 @@
             if (allFiles.length > 0) {
                 let successCount = 0;
                 let lastFilename = '';
-                
+
                 let uploadPrefix = '';
                 if (allFiles.length > 1) {
                     uploadPrefix = `upload-${Math.floor(Date.now() / 1000)}/`;
@@ -2647,7 +2647,7 @@
                     const finalPath = uploadPrefix + path;
                     const formData = new FormData();
                     formData.append('file', file, finalPath);
-                    
+
                     const tab = activeTab;
                     if (tab && tab.session && tab.session.type === 'ssh') {
                        if (!tab.session.ssh_target) {
@@ -2679,7 +2679,7 @@
                         alert(`Upload error for ${finalPath}: ` + err.message);
                     }
                 }
-                
+
                 if (successCount > 0) {
                     const tab = tabs.find(t => t.id === activeTabId);
                     if (tab && tab.socket && tab.state === 'terminal') {
@@ -2721,4 +2721,3 @@
                 }
             }
         });
- 

@@ -2,6 +2,7 @@ import pty
 import os
 import time
 
+
 def test_pty_overflow():
     pid, fd = pty.fork()
 
@@ -18,12 +19,12 @@ def test_pty_overflow():
     else:
         # Parent
         os.set_blocking(fd, False)
-        data = b'a' * 1000 + b'\n'
+        data = b"a" * 1000 + b"\n"
         try:
             written = os.write(fd, data)
         except OSError:
             pass
-        
+
         _, status = os.waitpid(pid, 0)
         os.close(fd)
         assert status == 0

@@ -1,6 +1,7 @@
 import os
 import subprocess
 import shlex
+
 try:
     from config import env_config
     from process_manager import build_ssh_args, get_remote_command_prefix
@@ -13,8 +14,19 @@ import collections
 import codecs
 import threading
 
+
 class Session:
-    def __init__(self, tab_id, fd, pid, user_id, title=None, ssh_target=None, ssh_dir=None, resume=True):
+    def __init__(
+        self,
+        tab_id,
+        fd,
+        pid,
+        user_id,
+        title=None,
+        ssh_target=None,
+        ssh_dir=None,
+        resume=True,
+    ):
         self.tab_id = tab_id
         self.fd = fd
         self.pid = pid
@@ -23,10 +35,10 @@ class Session:
         self.ssh_target = ssh_target
         self.ssh_dir = ssh_dir
         self.resume = resume
-        self.decoder = codecs.getincrementaldecoder('utf-8')(errors='replace')
-        self.buffer = collections.deque() # Store chunks
-        self.buffer_len = 0 # Track total string length
-        self.max_buffer_len = 1024 * 256 # 256KB max scrollback
+        self.decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
+        self.buffer = collections.deque()  # Store chunks
+        self.buffer_len = 0  # Track total string length
+        self.max_buffer_len = 1024 * 256  # 256KB max scrollback
         self.last_seen = time.time()
         self.orphaned_at = None
         self.file_cache = []
@@ -47,19 +59,22 @@ class Session:
             "resume": self.resume,
             "last_active": self.last_seen,
             "is_orphaned": self.orphaned_at is not None,
-            "file_cache": self.file_cache
+            "file_cache": self.file_cache,
         }
+
 
 class SessionManager:
     def __init__(self):
-        self.sessions = {} # tab_id -> Session
+        self.sessions = {}  # tab_id -> Session
         self.sid_to_tabid = {}
         self.tabid_to_sid = {}
         self._lock = threading.RLock()
 
     def add_session(self, session):
         with self._lock:
-            user_sessions = [s for s in self.sessions.values() if s.user_id == session.user_id]
+            user_sessions = [
+                s for s in self.sessions.values() if s.user_id == session.user_id
+            ]
             if len(user_sessions) >= 10:
                 user_sessions.sort(key=lambda s: s.last_seen)
                 while len(user_sessions) >= 10:
@@ -108,7 +123,8 @@ class SessionManager:
             if session:
                 self.sessions.pop(tab_id, None)
                 sid = self.tabid_to_sid.pop(tab_id, None)
-                if sid: self.sid_to_tabid.pop(sid, None)
+                if sid:
+                    self.sid_to_tabid.pop(sid, None)
             return session
 
     def orphan_session(self, tab_id):
@@ -129,7 +145,7 @@ class SessionManager:
                     if on_steal:
                         on_steal(tab_id, old_sid)
                     self.sid_to_tabid.pop(old_sid, None)
-                
+
                 session.orphaned_at = None
                 session.last_seen = time.time()
                 self.sid_to_tabid[sid] = tab_id
@@ -149,23 +165,22 @@ class SessionManager:
         find_cmd = 'find . -maxdepth 5 \\( -type d -printf "%p/\\n" -o -type f -print \\) | grep -v "/\\." | grep -v "node_modules" | grep -v "__pycache__"'
 
         if session.ssh_target:
-            ssh_dir_path = app_config.get('SSH_DIR', '~/.ssh')
+            ssh_dir_path = app_config.get("SSH_DIR", "~/.ssh")
             remote_prefix = get_remote_command_prefix(session.ssh_dir)
             remote_cmd = f"{remote_prefix} {find_cmd}"
             cmd = build_ssh_args(session.ssh_target, ssh_dir_path)
-            cmd.extend(['--', session.ssh_target, f"bash -c {shlex.quote(remote_cmd)}"])
+            cmd.extend(["--", session.ssh_target, f"bash -c {shlex.quote(remote_cmd)}"])
         else:
             data_dir = env_config.DATA_DIR
             work_dir = os.path.join(data_dir, "workspace")
             if os.path.exists(work_dir):
-                cmd = ['/bin/sh', '-c', f"cd {shlex.quote(work_dir)} && {find_cmd}"]
+                cmd = ["/bin/sh", "-c", f"cd {shlex.quote(work_dir)} && {find_cmd}"]
             else:
-                cmd = ['/bin/sh', '-c', find_cmd]
+                cmd = ["/bin/sh", "-c", find_cmd]
 
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
             if result.returncode == 0:
-                session.file_cache = result.stdout.strip().split('\n')
+                session.file_cache = result.stdout.strip().split("\n")
         except Exception:
             pass
-

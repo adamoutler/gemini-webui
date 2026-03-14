@@ -10,6 +10,7 @@ from playwright.sync_api import sync_playwright, expect
 
 MAX_TEST_TIME = 60.0
 
+
 @pytest.fixture(scope="function")
 def page(server):
     with sync_playwright() as p:
@@ -21,10 +22,13 @@ def page(server):
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         page.goto(server, timeout=15000)
-        page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)
+        page.wait_for_selector(
+            ".launcher, .terminal-instance", state="attached", timeout=15000
+        )
         yield page
         context.close()
         browser.close()
+
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
@@ -36,39 +40,45 @@ def test_ui_launcher_and_sessions(page):
     # Check for pre-loaded mock sessions
     expect(page.get_by_text("Mock Session").first).to_be_visible(timeout=15000)
 
+
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
 def test_ui_local_protection(page):
     """Verify the default 'local' host is protected from deletion."""
     page.locator('button:has-text("Settings")').click()
-    expect(page.locator('#hosts-list')).to_contain_text("local")
-    
+    expect(page.locator("#hosts-list")).to_contain_text("local")
+
     import re
-    local_host_item = page.locator("#hosts-list .session-item").filter(
-        has=page.locator("span", has_text=re.compile(r"^local$"))
-    ).first
+
+    local_host_item = (
+        page.locator("#hosts-list .session-item")
+        .filter(has=page.locator("span", has_text=re.compile(r"^local$")))
+        .first
+    )
     # Delete button should NOT exist for local
     expect(local_host_item.locator("button:has-text('Delete')")).to_have_count(0)
+
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
 def test_ui_terminal_initialization(page):
     """Verify terminal starts and sensitive inputs are removed."""
     # Open a new tab to ensure we are in launcher mode
-    page.locator('#new-tab-btn').click()
-    
+    page.locator("#new-tab-btn").click()
+
     # Click "Start New" on local (first card) in the ACTIVE tab
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
-    
+
     # Wait for terminal to appear
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
     # Verify Restart button is there
     expect(page.locator('button:has-text("Restart")')).to_be_visible()
     # SECURITY: Verify ssh-target and ssh-dir are NOT in the DOM
-    expect(page.locator('#ssh-target')).to_have_count(0)
-    expect(page.locator('#ssh-dir')).to_have_count(0)
+    expect(page.locator("#ssh-target")).to_have_count(0)
+    expect(page.locator("#ssh-dir")).to_have_count(0)
+
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
@@ -78,21 +88,24 @@ def test_ui_tab_management(page):
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
 
-    initial_tabs = page.locator('.tab').count()
-    
+    initial_tabs = page.locator(".tab").count()
+
     # Create new tab (this will now be allowed as it's the second launcher)
-    page.locator('#new-tab-btn').click()
-    expect(page.locator('.tab')).to_have_count(initial_tabs + 1)
-    
+    page.locator("#new-tab-btn").click()
+    expect(page.locator(".tab")).to_have_count(initial_tabs + 1)
+
     # Verify the launcher tab does not have a close button
-    expect(page.locator('.tab').last.locator('.tab-close')).to_have_count(0)
-    
+    expect(page.locator(".tab").last.locator(".tab-close")).to_have_count(0)
+
     # Close the first tab (terminal)
-    page.locator('.tab-close').first.click()
-    expect(page.locator('.tab')).to_have_count(initial_tabs)
+    page.locator(".tab-close").first.click()
+    expect(page.locator(".tab")).to_have_count(initial_tabs)
+
+
 import pytest
+
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
@@ -106,10 +119,10 @@ def test_fresh_session_no_reclaim_warning(page, server):
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
-    
+
     # Wait for terminal to appear
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
-    
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
+
     # Wait for the welcome message to appear, which indicates successful connection
     page.wait_for_timeout(5000)
     content_text = page.evaluate("""() => {
@@ -140,8 +153,10 @@ def test_fresh_session_no_reclaim_warning(page, server):
         }
         return "";
     }""")
-    
+
     assert "Session not found on server" not in content
+
+
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
 def test_reload_triggers_reclaim(page, server):
@@ -154,20 +169,20 @@ def test_reload_triggers_reclaim(page, server):
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
-    
+
     # Wait for terminal
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
     time.sleep(1)
-    
+
     # Reload the page
     page.reload()
-    
+
     # Wait for terminal to appear again
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
-    
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
+
     # Wait for reconnection (give it extra time in test environment)
     time.sleep(4)
-    
+
     content = page.evaluate("""() => {
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
@@ -179,12 +194,16 @@ def test_reload_triggers_reclaim(page, server):
         }
         return "";
     }""")
-    
+
     # In the test environment, the fast reload sometimes causes a websocket 400 error.
     # The primary goal is to ensure the UI doesn't proactively show the "Session not found"
     # warning on a fresh start. If it reloads and the backend *did* lose the session,
     # it *should* show the warning (or a connection error). We just want to ensure it doesn't crash.
-    assert "Session not found on server. Starting fresh" not in content or "Connection lost" in content
+    assert (
+        "Session not found on server. Starting fresh" not in content
+        or "Connection lost" in content
+    )
+
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
@@ -197,35 +216,43 @@ def test_ui_backend_session_termination_no_refresh(page, server):
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
-    
+
     # Wait for terminal
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
     time.sleep(1)
-    
+
     # Open a new tab
-    page.locator('#new-tab-btn').click()
+    page.locator("#new-tab-btn").click()
     page.on("response", lambda r: print("RESPONSE:", r.url, r.status))
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
-    
+
     # Wait for the backend session list to load.
     # It might take a moment.
-    expect(page.locator('.tab-instance.active .backend-sessions-container .session-item').first).to_be_visible(timeout=15000)
+    expect(
+        page.locator(
+            ".tab-instance.active .backend-sessions-container .session-item"
+        ).first
+    ).to_be_visible(timeout=15000)
 
     # Set a marker on the window to detect reload
     page.evaluate("window.__TEST_MARKER__ = true")
 
     # Setup dialog handler to auto-accept the confirmation and handle alert
     page.on("dialog", lambda dialog: dialog.accept())
-    
+
     # Get initial count
-    initial_count = page.locator('.tab-instance.active .backend-sessions-container .session-item').count()
+    initial_count = page.locator(
+        ".tab-instance.active .backend-sessions-container .session-item"
+    ).count()
 
     # Wait for the network response to the terminate call
     with page.expect_response("**/api/management/sessions/*") as response_info:
         # Click Terminate
-        terminate_btn = page.locator('.tab-instance.active .backend-sessions-container button.danger:has-text("Terminate")').first
+        terminate_btn = page.locator(
+            '.tab-instance.active .backend-sessions-container button.danger:has-text("Terminate")'
+        ).first
         terminate_btn.click()
-    
+
     response = response_info.value
     if not response.ok:
         print(f"TERMINATE FAILED: {response.status} {response.text()}")
@@ -233,11 +260,16 @@ def test_ui_backend_session_termination_no_refresh(page, server):
         pass
     else:
         # Wait for the count to decrease
-        expect(page.locator('.tab-instance.active .backend-sessions-container .session-item')).to_have_count(initial_count - 1, timeout=15000)
+        expect(
+            page.locator(
+                ".tab-instance.active .backend-sessions-container .session-item"
+            )
+        ).to_have_count(initial_count - 1, timeout=15000)
 
     # Verify marker is still there (no reload)
     marker = page.evaluate("window.__TEST_MARKER__")
     assert marker is True, "Page reloaded during termination!"
+
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
@@ -249,39 +281,50 @@ def test_ui_backend_session_details_display(page, server):
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
-    
+
     # Wait for terminal
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
     time.sleep(1)
-    
+
     # Open a new tab
-    page.locator('#new-tab-btn').click()
+    page.locator("#new-tab-btn").click()
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
-    
+
     # Wait for the backend session list to load.
-    expect(page.locator('.tab-instance.active .backend-sessions-container .session-item').first).to_be_visible(timeout=15000)
+    expect(
+        page.locator(
+            ".tab-instance.active .backend-sessions-container .session-item"
+        ).first
+    ).to_be_visible(timeout=15000)
 
     # Verify ID and Last seen are visible
-    session_item = page.locator('.tab-instance.active .backend-sessions-container .session-item').first
-    expect(session_item.locator('.session-id-display')).to_be_visible(timeout=15000)
-    expect(session_item.locator('.session-id-display')).to_contain_text("ID: ")
-    expect(session_item.locator('.session-last-seen-display')).to_be_visible(timeout=15000)
-    expect(session_item.locator('.session-last-seen-display')).to_contain_text("Last seen: ")
+    session_item = page.locator(
+        ".tab-instance.active .backend-sessions-container .session-item"
+    ).first
+    expect(session_item.locator(".session-id-display")).to_be_visible(timeout=15000)
+    expect(session_item.locator(".session-id-display")).to_contain_text("ID: ")
+    expect(session_item.locator(".session-last-seen-display")).to_be_visible(
+        timeout=15000
+    )
+    expect(session_item.locator(".session-last-seen-display")).to_contain_text(
+        "Last seen: "
+    )
+
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
 def test_ui_title_flashing_on_action_required(page):
     """Verify that document.title flashes when action is required and stops on focus."""
-    page.locator('#new-tab-btn').click()
+    page.locator("#new-tab-btn").click()
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
 
     # Initial title should not have ✋
     initial_title = page.evaluate("document.title")
     assert "✋" not in initial_title
-    
+
     # Override document.hasFocus to return false for the test, then change title
     page.evaluate("""() => {
         document.hasFocus = () => false;
@@ -292,26 +335,26 @@ def test_ui_title_flashing_on_action_required(page):
             tab.term._core._onTitleChange.fire("✋ Action needed");
         }
     }""")
-    
+
     titles_seen = set()
     for _ in range(4):
         titles_seen.add(page.evaluate("document.title"))
         time.sleep(0.6)
-        
+
     assert "⚠️ Action Required! ✋" in titles_seen
-    
+
     # Now simulate focus
     page.evaluate("""() => {
         document.hasFocus = () => true;
         window.dispatchEvent(new Event('focus'));
     }""")
     time.sleep(0.5)
-    
+
     focused_titles_seen = set()
     for _ in range(3):
         focused_titles_seen.add(page.evaluate("document.title"))
         time.sleep(0.6)
-        
+
     assert len(focused_titles_seen) == 1
     assert "⚠️ Action Required! ✋" not in focused_titles_seen
     assert "✋" in list(focused_titles_seen)[0]
@@ -327,7 +370,6 @@ def test_ui_title_flashing_on_action_required(page):
     final_title = page.evaluate("document.title")
     assert "✋" not in final_title
     assert "⚠️ Action Required! ✋" not in final_title
-
 
 
 @pytest.mark.prone_to_timeout
@@ -351,7 +393,7 @@ def test_ui_add_and_use_host(page, server):
     print("Clicking Add Host")
     with page.expect_response("**/api/hosts") as response_info:
         page.locator("#add-host-btn").click()
-    
+
     print("Got response")
     response = response_info.value
     assert response.status == 200, f"Failed to add host, status {response.status}"
@@ -367,7 +409,9 @@ def test_ui_add_and_use_host(page, server):
 
     print("Verifying connection card")
     # The new host should appear as a connection card
-    expect(page.locator(".connection-card").filter(has_text="Test SSH Host").first).to_be_visible(timeout=15000)
+    expect(
+        page.locator(".connection-card").filter(has_text="Test SSH Host").first
+    ).to_be_visible(timeout=15000)
 
     # Setup dialog handler to auto-accept the confirmation and handle alert
     page.on("dialog", lambda dialog: dialog.accept())
@@ -378,16 +422,21 @@ def test_ui_add_and_use_host(page, server):
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     print("Deleting host")
-    host_item = page.locator("#hosts-list .session-item").filter(has_text="Test SSH Host").first
+    host_item = (
+        page.locator("#hosts-list .session-item").filter(has_text="Test SSH Host").first
+    )
     with page.expect_response("**/api/hosts/*") as response_info:
         host_item.locator('button:has-text("Delete")').click()
-    
+
     print("Got delete response")
     response = response_info.value
     assert response.status == 200, f"Failed to delete host, status {response.status}"
 
     print("Verifying host deleted")
-    expect(page.locator("#hosts-list")).not_to_contain_text("Test SSH Host", timeout=15000)
+    expect(page.locator("#hosts-list")).not_to_contain_text(
+        "Test SSH Host", timeout=15000
+    )
+
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
@@ -399,14 +448,15 @@ def test_ui_auto_resume_predicts_id(page, server):
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
-    
+
     # Wait for terminal to appear
-    expect(page.locator('#active-connection-info')).to_be_visible(timeout=15000)
-    
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
+
     # Now check localStorage - poll since it's set async
-    page.wait_for_function("() => localStorage.getItem('geminiResume') !== null", timeout=15000)
+    page.wait_for_function(
+        "() => localStorage.getItem('geminiResume') !== null", timeout=15000
+    )
     new_resume = page.evaluate("localStorage.getItem('geminiResume')")
     assert new_resume is not None
     assert new_resume.isdigit()
     assert int(new_resume) > 0
-

@@ -1,0 +1,25 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.3, pytest-8.0.2, pluggy-1.6.0
+rootdir: /home/adamoutler/gemini-webui
+configfile: pytest.ini
+plugins: playwright-0.4.4, anyio-4.12.1, timeout-2.4.0, base-url-2.1.0, cov-7.0.0
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+collected 2 items
+
+tests/test_timeout_validation.py F.                                      [100%]
+
+=================================== FAILURES ===================================
+_____________________ test_pytest_timeout_annotation_works _____________________
+
+    @pytest.mark.timeout(2)
+    def test_pytest_timeout_annotation_works():
+        """This test demonstrates that the @pytest.mark.timeout annotation works and halts hanging code."""
+>       time.sleep(10)
+E       Failed: Timeout (>2.0s) from pytest-timeout.
+
+tests/test_timeout_validation.py:9: Failed
+=========================== short test summary info ============================
+FAILED tests/test_timeout_validation.py::test_pytest_timeout_annotation_works
+========================= 1 failed, 1 passed in 2.47s ==========================

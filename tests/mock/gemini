@@ -10,7 +10,9 @@ if "--list-sessions" in sys.argv:
     print("  1. Mock Session (Just now) [mock-uuid]")
     sys.exit(0)
 
-print("Welcome to Fake \x1b[38;5;33mG\x1b[38;5;39me\x1b[38;5;45mm\x1b[38;5;51mi\x1b[38;5;87mn\x1b[38;5;123mi\x1b[0m")
+print(
+    "Welcome to Fake \x1b[38;5;33mG\x1b[38;5;39me\x1b[38;5;45mm\x1b[38;5;51mi\x1b[38;5;87mn\x1b[38;5;123mi\x1b[0m"
+)
 sys.stdout.flush()
 
 memory = {}
@@ -18,7 +20,7 @@ memory = {}
 if "-r" in sys.argv:
     if os.path.exists(STATE_FILE):
         try:
-            with open(STATE_FILE, 'r') as f:
+            with open(STATE_FILE, "r") as f:
                 memory = json.load(f)
         except (json.JSONDecodeError, OSError) as e:
             print(f"Mock error loading state: {e}", file=sys.stderr)
@@ -31,22 +33,26 @@ while True:
     line = sys.stdin.readline()
     if not line:
         break
-    
+
     if "\x1b" in line:
         print(f"ALT_ENTER_RECEIVED: {repr(line)}")
         sys.stdout.flush()
 
     line = line.strip()
-    
+
     if "Remember this TEST_VALUE:" in line:
         val = line.split(":")[-1].strip()
-        memory['TEST_VALUE'] = val
-        with open(STATE_FILE, 'w') as f:
+        memory["TEST_VALUE"] = val
+        with open(STATE_FILE, "w") as f:
             json.dump(memory, f)
         print(f"I will remember TEST_VALUE: {val}")
         sys.stdout.flush()
-    elif "What is the TEST_VALUE" in line or "What was the TEST_VALUE" in line or "Do you still remember the TEST_VALUE" in line:
-        if 'TEST_VALUE' in memory:
+    elif (
+        "What is the TEST_VALUE" in line
+        or "What was the TEST_VALUE" in line
+        or "Do you still remember the TEST_VALUE" in line
+    ):
+        if "TEST_VALUE" in memory:
             print(f"The TEST_VALUE is {memory['TEST_VALUE']}")
         else:
             print("I don't know the TEST_VALUE.")

@@ -8,7 +8,7 @@ Here is the architectural plan to increase friction, prevent test pollution, and
 *   **Harness Injection:** The new ephemeral session route must generate a one-time UUID and pass it as an environment variable (e.g., `GEMINI_WEBUI_HARNESS_ID=<uuid>`) when executing `pty.fork()`.
 *   **Startup Friction:** Modify `src/fake_gemini.py` to check for this environment variable. If it is missing:
     *   **Time Penalty:** Introduce an artificial 5-to-10 second `time.sleep()` delay on startup.
-    *   **Console Warning:** Print a highly visible, colored stderr banner: 
+    *   **Console Warning:** Print a highly visible, colored stderr banner:
         ```text
         ======================================================================
         [WARNING] UNDEFINITIVE PROOF: BYPASSING TEST HARNESS
@@ -20,7 +20,7 @@ Here is the architectural plan to increase friction, prevent test pollution, and
 
 ### 2. UX & Visual Markers
 **Objective:** Ensure that visual evidence (screenshots) unmistakably reveals the context of the test.
-*   **Valid Harness Mode:** When the web interface detects it is running a valid ephemeral fake session, it should apply a persistent, unmistakable CSS overlay to the xterm.js container (e.g., a striped black-and-yellow hazard border and a `⚠️ HARNESS TEST MODE ⚠️` watermark in the corner). 
+*   **Valid Harness Mode:** When the web interface detects it is running a valid ephemeral fake session, it should apply a persistent, unmistakable CSS overlay to the xterm.js container (e.g., a striped black-and-yellow hazard border and a `⚠️ HARNESS TEST MODE ⚠️` watermark in the corner).
 *   **Bypassed Mode (Undefinitive):** Because of the "Payload Corruption" step above, any screenshot taken of `fake_gemini.py` running in a standard terminal (or without the web UI overlay) will be flooded with `[UNDEFINITIVE PROOF]` text, making the visual evidence obviously flawed and unusable.
 
 ### 3. QA Pipeline Integration (The "Machine" Gate)

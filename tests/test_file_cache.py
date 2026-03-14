@@ -1,13 +1,12 @@
-import os
-import pytest
 from unittest.mock import patch, MagicMock
 from src.session_manager import Session, SessionManager
-from src.app import app
+
 
 def test_session_init_file_cache():
     session = Session("tab1", 1, 1234, "user1")
     assert hasattr(session, "file_cache")
     assert session.file_cache == []
+
 
 def test_session_to_dict_file_cache():
     session = Session("tab1", 1, 1234, "user1")
@@ -16,7 +15,8 @@ def test_session_to_dict_file_cache():
     assert "file_cache" in d
     assert d["file_cache"] == ["file1.txt", "dir1/"]
 
-@patch('src.session_manager.subprocess.run')
+
+@patch("src.session_manager.subprocess.run")
 def test_update_file_cache_local(mock_run):
     manager = SessionManager()
     session = Session("tab1", 1, 1234, "user1")
@@ -36,10 +36,13 @@ def test_update_file_cache_local(mock_run):
     assert args[0] == "/bin/sh"
     assert "find ." in args[2]
 
-@patch('src.session_manager.subprocess.run')
+
+@patch("src.session_manager.subprocess.run")
 def test_update_file_cache_ssh(mock_run):
     manager = SessionManager()
-    session = Session("tab2", 1, 1234, "user1", ssh_target="user@host", ssh_dir="~/myproj")
+    session = Session(
+        "tab2", 1, 1234, "user1", ssh_target="user@host", ssh_dir="~/myproj"
+    )
     manager.add_session(session)
 
     mock_result = MagicMock()

@@ -107,15 +107,15 @@
                     <input type="text" id="ssh-key-name" placeholder="Label eg. Personal Key" style="margin-bottom: 5px;">
                     <textarea id="ssh-key-text" placeholder="-----BEGIN OPENSSH PRIVATE KEY----- ..." style="height: 80px; margin-bottom: 5px;"></textarea>
                     <button class="primary" style="width: 100%; margin-bottom: 15px;" onclick="savePastedKey()">Save Key</button>
-                    
+
                     <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0;">
-                    
+
                     <h4 style="margin: 0 0 10px 0; font-size: 13px;">Upload Key (File)</h4>
                     <input type="file" id="ssh-key-file" style="margin-bottom: 10px; width: 100%; color: #ccc;">
                     <button class="primary" style="width: 100%;" onclick="uploadKeyFile()">Upload File</button>
                 </div>
             </div>
-            
+
             <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0;">
             <div style="margin-top: 20px;">
                 <h3 style="font-size: 14px; text-transform: uppercase;">Theme & Font Settings</h3>
@@ -175,7 +175,7 @@
             <div style="background: #2a2d2e; padding: 15px; border-radius: 4px; margin-top: 15px;">
                 <p style="color: #e5a50a; font-weight: bold;">Warning!</p>
                 <p>This will generate a publicly accessible link. Ensure there are no passwords, API keys, or sensitive environment variables in the terminal scrollback before sharing.</p>
-                
+
                 <div id="share-result" style="margin-top: 15px; display: none;">
                     <input type="text" id="share-link-input" readonly style="width: 100%; margin-bottom: 10px; color: #0dbc79; padding: 5px; background: #1e1e1e; border: 1px solid #3c3c3c; border-radius: 4px;">
                     <div style="display: flex; gap: 10px;">
@@ -187,7 +187,7 @@
             </div>
         </div>
     </div>
-    
+
     <div id="preview-modal" class="modal">
         <div class="modal-content" style="width: 80%; height: 80%; display: flex; flex-direction: column;">
             <span onclick="closePreviewModal()" style="float: right; font-size: 28px; font-weight: bold; cursor: pointer; opacity: 0.7;">&times;</span>
@@ -197,7 +197,7 @@
             </div>
         </div>
     </div>
-    
+
     <div id="quick-add-key-modal" class="modal">
         <div class="modal-content">
             <span onclick="closeQuickAddKey()" style="float: right; font-size: 28px; font-weight: bold; cursor: pointer; opacity: 0.7;">&times;</span>
@@ -211,7 +211,7 @@
             </div>
         </div>
     </div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js" integrity="sha256-8K6g919IVZATrmZDwked1zfSbaQtVSTm0rcJFa5lI8c=" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js" integrity="sha256-EPMZTF8XwXhvt9XbhlweyFObZzajGAY/04var3xGhI8=" crossorigin="anonymous"></script>
     <script src="https://unpkg.com/xterm-addon-web-links@0.9.0/lib/xterm-addon-web-links.js"></script>

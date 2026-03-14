@@ -31,15 +31,25 @@ if [[ "$STATE" == "$DONE_STATE_ID" ]]; then
   TICKET_NAME=$(echo "$TICKET_JSON" | jq -r '.name // "Unknown Ticket"')
   TICKET_FILE="/tmp/ticket_${WORK_ITEM_ID}.md"
 
-  {
-    echo "---"
-    echo "name: $TICKET_NAME"
-    echo "description: The kanban ticket to be closed. This should be evaluated as the reference source for ticket completion and the criteria for evaluation."
-    echo "---"
-    echo "$TICKET_JSON"
-    echo "---"
-    echo "${TICKET_COMMENTS}"
-  } > "$TICKET_FILE"
+  cat <<EOF > "$TICKET_FILE"
+---
+name: $TICKET_NAME
+description: The kanban ticket to be closed. This should be evaluated as the reference source for ticket completion and the criteria for evaluation.
+---
+$TICKET_JSON
+
+---
+name: Kanban Ticket Comments
+description: The discussion and history on the ticket including any attachments.
+---
+${TICKET_COMMENTS}
+
+---
+name: Last 10 lines of Jenkins Build Receipt
+description: use this to determine current build status. It must show a Finished: <STATUS> #<build number>
+---
+$(tail -n 10 /tmp/jenkins-receipt-gemini-webui.log)
+EOF
 
   RESULT=$(cat "$TICKET_FILE" | gemini -p "@reality-checker Please verify if work item $WORK_ITEM_ID is completed. You don't get the work items from the filesystem. Use the list_files and read_file tool to find proof. You may request any additional information you need in a specific location. Be descriptive. Otherwise, respond with NEEDS WORK." 2>&1)
   GEMINI_EXIT_CODE=$?
@@ -54,7 +64,7 @@ if [[ "$STATE" == "$DONE_STATE_ID" ]]; then
     /# Integration Agent|The `reality-checker`/ {found=1}
     found {print}
   ')
-  
+
   # If our awk command failed to match, fallback to the full result
   if [[ -z "$CLEAN_RESULT" ]]; then
     CLEAN_RESULT="$RESULT"

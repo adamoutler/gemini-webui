@@ -5,12 +5,14 @@ import os
 import signal
 from playwright.sync_api import sync_playwright, expect
 
+
 @pytest.fixture(scope="function")
 def custom_server(test_data_dir):
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
     import random
+
     port = str(random.randint(10000, 20000))
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
@@ -18,18 +20,19 @@ def custom_server(test_data_dir):
     env["FLASK_USE_RELOADER"] = "false"
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
-    
+
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
-    
+
     def start_server():
         proc = subprocess.Popen(
             [python_bin, "-m", "src.app"],
             env=env,
             cwd=project_root,
-            preexec_fn=os.setsid
+            preexec_fn=os.setsid,
         )
         import requests
+
         for _ in range(20):
             try:
                 resp = requests.get(f"http://127.0.0.1:{port}/health", timeout=1)
@@ -42,20 +45,20 @@ def custom_server(test_data_dir):
 
     process = start_server()
     url = f"http://127.0.0.1:{port}"
-    
+
     class ServerController:
         def __init__(self, process, start_fn, url):
             self.process = process
             self.start_fn = start_fn
             self.url = url
-            
+
         def stop(self):
             try:
                 os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
                 self.process.wait()
             except OSError:
                 pass
-                
+
         def start(self):
             self.process = self.start_fn()
 
@@ -63,38 +66,41 @@ def custom_server(test_data_dir):
     yield controller
     controller.stop()
 
+
 @pytest.mark.timeout(40)
 def test_auto_reconnect_after_server_restart(custom_server):
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
-        
+
         # 1. Load page and connect
         page.goto(custom_server.url)
-        expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=5000)
-        
+        expect(page.get_by_text("Select a Connection").first).to_be_visible(
+            timeout=5000
+        )
+
         btns = page.locator('.tab-instance.active button:has-text("Start New")')
         expect(btns.first).to_be_visible(timeout=5000)
         btns.first.click()
-        
+
         # Wait for terminal to load and status to be connected
-        expect(page.locator('#active-connection-info')).to_be_visible(timeout=5000)
-        status_el = page.locator('#connection-status')
+        expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
+        status_el = page.locator("#connection-status")
         expect(status_el).to_have_text("local")
-        
+
         # 2. Stop server
         custom_server.stop()
-        
+
         # 3. Verify UI shows "Reconnecting..."
         expect(status_el).to_have_text("Reconnecting...", timeout=10000)
-        
+
         # 4. Wait a bit then restart server
         time.sleep(2)
         custom_server.start()
-        
+
         # 5. Verify UI auto-reconnects and shows "local" again (without manual refresh)
         expect(status_el).to_have_text("local", timeout=20000)
-        
+
         context.close()
         browser.close()

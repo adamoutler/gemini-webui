@@ -18,7 +18,7 @@ Gemini WebUI provides a high-fidelity, persistent web interface for the Gemini C
     Upload files directly through the UI via intuitive drag-and-drop or dedicated buttons, making your data immediately available to the AI.
     *   **Smart Bulk Uploads**: Dropping multiple files or a directory automatically groups them into a `upload-<timestamp>` folder, preserving their nested structure.
     *   **Terminal Auto-Injection**: File paths are automatically injected into your active terminal prompt (e.g., `> I uploaded @filename.txt` or `> I uploaded multiple files to @upload-1701234567/`) so the AI knows exactly where to look.
-    
+
     ![File Transfer Screen](docs/images/file-transfer-screen.png)
 
 *   **Share Terminal Sessions**
