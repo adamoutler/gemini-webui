@@ -28,7 +28,7 @@ def test_keyboard_per_word_overlay(page, server):
     page.wait_for_selector(".xterm")
 
     # The overlay textarea selector
-    textarea_selector = ".mobile-proxy-input"
+    textarea_selector = ".mobile-text-area"
 
     # Ensure it exists and is visible
     textarea = page.locator(textarea_selector).last

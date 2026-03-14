@@ -36,7 +36,7 @@ def test_ctrl_sticky_tap(mobile_page):
     expect(ctrl_btn).to_have_class("control-btn active")
 
     active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
-    textarea = mobile_page.locator(".mobile-proxy-input")
+    textarea = mobile_page.locator(".mobile-text-area")
 
     # Wait to ensure no immediate toggle off happens due to click
     mobile_page.wait_for_timeout(500)

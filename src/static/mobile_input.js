@@ -92,9 +92,11 @@ class MobileInputBuffer {
   }
 
   handleInput(e, isComposing, value) {
-    if (e.inputType === "deleteContentBackward") {
+    if (e.inputType === "deleteContentBackward" || e.inputType === "deleteWordBackward") {
       if (!this.isMobile) return undefined;
-      this.emitCallback("\x7f");
+      // We do not emit backspace here because deleting text within the visible buffer
+      // should not delete text already sent to the terminal.
+      // Backspacing an empty buffer is handled by handleKeyDown.
       return undefined;
     }
 
@@ -112,7 +114,8 @@ class MobileInputBuffer {
       if (char) {
         const modified = this.modifierState.applyModifiers(char);
         this.emitCallback(modified);
-        return "";
+        // Return the buffer without the consumed character
+        return value.slice(0, -1);
       }
     }
     if (isComposing) return undefined;
@@ -195,20 +198,32 @@ class MobileInputBuffer {
 
 class MobileInputUI {
   constructor(tabId, inputHandler, keyDownHandler) {
-    this.proxyInput = document.createElement("input");
-    this.proxyInput.id = "terminal-input-" + tabId;
-    this.proxyInput.classList.add("mobile-proxy-input");
-    this.proxyInput.style.cssText =
-      "position: absolute; border: none; background: transparent !important; outline: none; color: var(--terminal-fg) !important; width: 1px; height: 1px; opacity: 0;";
+    let container = document.getElementById("mobile-input-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "mobile-input-container";
+      container.className = "mobile-input-container";
+      const mobileControls = document.getElementById("mobile-controls");
+      if (mobileControls && mobileControls.parentNode) {
+        mobileControls.parentNode.insertBefore(container, mobileControls);
+      } else {
+        document.body.appendChild(container);
+      }
+    }
 
-    this.proxyInput.setAttribute("autocomplete", "on");
-    this.proxyInput.setAttribute("autocorrect", "on");
-    this.proxyInput.setAttribute("spellcheck", "true");
-    this.proxyInput.setAttribute("autocapitalize", "sentences");
+    this.proxyInput = document.getElementById("terminal-input-mobile");
+    if (!this.proxyInput) {
+      this.proxyInput = document.createElement("textarea");
+      this.proxyInput.id = "terminal-input-mobile";
+      this.proxyInput.className = "mobile-text-area";
+      this.proxyInput.placeholder = "Tap to type...";
+      
+      this.proxyInput.setAttribute("autocomplete", "on");
+      this.proxyInput.setAttribute("autocorrect", "on");
+      this.proxyInput.setAttribute("spellcheck", "true");
+      this.proxyInput.setAttribute("autocapitalize", "sentences");
 
-    // DOM attachment
-    if (document.body) {
-      document.body.appendChild(this.proxyInput);
+      container.appendChild(this.proxyInput);
     }
 
     this.isComposing = false;
@@ -228,19 +243,14 @@ class MobileInputUI {
       const newValue = inputHandler(e, this.isComposing, this.proxyInput.value);
       if (newValue !== undefined) this.proxyInput.value = newValue;
 
-      // Ticket 5: Dictation detection & auto-commit
+      // Auto-commit buffer after pause for dictation
       if (this.dictationTimer) clearTimeout(this.dictationTimer);
 
       if (this.proxyInput.value.length > 0) {
         const isDictation =
           e.inputType === "insertDictationResult" ||
           (e.data && e.data.length > 5 && e.inputType !== "insertFromPaste");
-        if (isDictation) {
-          this.proxyInput.style.width = "calc(100vw - 20px)";
-          this.proxyInput.style.left = "10px";
-        }
 
-        // Auto-commit buffer after pause
         this.dictationTimer = setTimeout(
           () => {
             if (this.proxyInput.value.length > 0) {
@@ -264,41 +274,8 @@ class MobileInputUI {
   }
 
   alignWithCursor(term) {
-    if (!term || !term.element) return;
-    const cursor = term.element.querySelector(".xterm-cursor");
-    if (!cursor) return;
-
-    const cursorRect = cursor.getBoundingClientRect();
-    const vv = window.visualViewport;
-
-    // We get terminal typography
-    const screenElement = term.element.querySelector(".xterm-screen");
-    if (screenElement) {
-      const computedStyle = window.getComputedStyle(screenElement);
-      this.proxyInput.style.fontSize = computedStyle.fontSize;
-      this.proxyInput.style.fontFamily = computedStyle.fontFamily;
-      this.proxyInput.style.letterSpacing = computedStyle.letterSpacing;
-      this.proxyInput.style.lineHeight = computedStyle.lineHeight;
-    }
-
-    // Set position
-    // getBoundingClientRect is relative to the visual viewport.
-    // To get document-absolute coordinates, we add the visual viewport's page offset.
-    const pageTop = vv ? vv.pageTop : window.scrollY;
-    const pageLeft = vv ? vv.pageLeft : window.scrollX;
-
-    const top = cursorRect.top + pageTop;
-    const left = cursorRect.left + pageLeft;
-
-    this.proxyInput.style.transform = `translate(${left}px, ${top}px)`;
-
-    if (this.proxyInput.value.length > 0) {
-      this.proxyInput.style.opacity = "1";
-      this.proxyInput.style.width = `calc(100vw - ${left}px - 20px)`;
-    } else {
-      this.proxyInput.style.opacity = "0";
-      this.proxyInput.style.width = "1px";
-    }
+    // We no longer align a floating proxy input with the cursor.
+    // The mobile-text-area remains fixed at the bottom.
   }
 }
 

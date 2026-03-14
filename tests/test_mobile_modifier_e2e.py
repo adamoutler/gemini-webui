@@ -34,8 +34,8 @@ def test_mobile_modifier_ctrl(server):
             )
 
         # Type 'c' into proxy input
-        page.fill(".mobile-proxy-input", "c")
-        page.dispatch_event(".mobile-proxy-input", "input")
+        page.fill(".mobile-text-area", "c")
+        page.dispatch_event(".mobile-text-area", "input")
 
         # Verify ctrl is inactive
         page.wait_for_selector("#ctrl-toggle:not(.active)")

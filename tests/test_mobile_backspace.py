@@ -39,7 +39,7 @@ def test_mobile_backspace_removes_characters(mobile_page):
 
     # Get active tab ID and find textarea
     active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
-    textarea = mobile_page.locator(".mobile-proxy-input")
+    textarea = mobile_page.locator(".mobile-text-area")
     textarea.focus()
 
     print("Focusing textarea")
