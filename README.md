@@ -8,32 +8,33 @@ Gemini WebUI provides a high-fidelity, persistent web interface for the Gemini C
 
 ## 🚀 Key Features
 
-*   **Multi-Environment Management**
-    Manage multiple Gemini CLI instances across various computers, projects, and workspaces from a single, unified dashboard.
-*   **Mobile-First Design**
-    Experience a fully responsive UI equipped with mobile-friendly controls, enabling full Gemini CLI functionality on the go. Upload mobile screenshots from your phone, and describe problems using your mic to communicate naturally with the Gemini CLI.
-*   **Session Persistence**
-    True cross-device persistence allows you to resume live sessions from your desktop directly on your phone or tablet without losing valuable context.
-*   **Seamless File Management**
-    Upload files directly through the UI via intuitive drag-and-drop or dedicated buttons, making your data immediately available to the AI.
-    *   **Smart Bulk Uploads**: Dropping multiple files or a directory automatically groups them into a `upload-<timestamp>` folder, preserving their nested structure.
-    *   **Terminal Auto-Injection**: File paths are automatically injected into your active terminal prompt (e.g., `> I uploaded @filename.txt` or `> I uploaded multiple files to @upload-1701234567/`) so the AI knows exactly where to look.
+- **Multi-Environment Management**
+  Manage multiple Gemini CLI instances across various computers, projects, and workspaces from a single, unified dashboard.
+- **Mobile-First Design**
+  Experience a fully responsive UI equipped with mobile-friendly controls, enabling full Gemini CLI functionality on the go. Upload mobile screenshots from your phone, and describe problems using your mic to communicate naturally with the Gemini CLI.
+- **Session Persistence**
+  True cross-device persistence allows you to resume live sessions from your desktop directly on your phone or tablet without losing valuable context.
+- **Seamless File Management**
+  Upload files directly through the UI via intuitive drag-and-drop or dedicated buttons, making your data immediately available to the AI.
 
-    ![File Transfer Screen](docs/images/file-transfer-screen.png)
+  - **Smart Bulk Uploads**: Dropping multiple files or a directory automatically groups them into a `upload-<timestamp>` folder, preserving their nested structure.
+  - **Terminal Auto-Injection**: File paths are automatically injected into your active terminal prompt (e.g., `> I uploaded @filename.txt` or `> I uploaded multiple files to @upload-1701234567/`) so the AI knows exactly where to look.
 
-*   **Share Terminal Sessions**
-    Easily export and share your terminal scrollback as a responsive, public HTML snapshot with a simple click. Review the data, confirm, and receive an instant, unauthenticated link to share context, bugs, or solutions with others.
-*   **Scoped Environments**
-    Robust support for scoped development or per-app system administrator setups, ensuring secure and isolated AI environments tailored to your needs.
-*   **Easy Deployment**
-    Experience a frictionless quick start and simple installation process leveraging Docker and Docker Compose.
+  ![File Transfer Screen](docs/images/file-transfer-screen.png)
+
+- **Share Terminal Sessions**
+  Easily export and share your terminal scrollback as a responsive, public HTML snapshot with a simple click. Review the data, confirm, and receive an instant, unauthenticated link to share context, bugs, or solutions with others.
+- **Scoped Environments**
+  Robust support for scoped development or per-app system administrator setups, ensuring secure and isolated AI environments tailored to your needs.
+- **Easy Deployment**
+  Experience a frictionless quick start and simple installation process leveraging Docker and Docker Compose.
 
 ## 💡 Example Use Cases
 
-*   **PDF Form Generation**: Upload a standard PDF document and ask Gemini to convert it into a fillable form.
-*   **Mobile Development Management**: Manage multiple software development chains, CI/CD pipelines, and remote deployments entirely from your phone.
-*   **Cross-Device Continuity**: Start a complex debugging or planning session on your desktop and seamlessly continue the exact same session on your phone or laptop while away from your desk.
-*   **Orchestrate Specialized AI Environments**: The "+New" screen provides a launchpad of environment cards. With a single tap, you can spin up and converse with dedicated, per-app Gemini instances—effectively granting you a menu of per-app system administrators to independently manage and scale your various projects and infrastructures.
+- **PDF Form Generation**: Upload a standard PDF document and ask Gemini to convert it into a fillable form.
+- **Mobile Development Management**: Manage multiple software development chains, CI/CD pipelines, and remote deployments entirely from your phone.
+- **Cross-Device Continuity**: Start a complex debugging or planning session on your desktop and seamlessly continue the exact same session on your phone or laptop while away from your desk.
+- **Orchestrate Specialized AI Environments**: The "+New" screen provides a launchpad of environment cards. With a single tap, you can spin up and converse with dedicated, per-app Gemini instances—effectively granting you a menu of per-app system administrators to independently manage and scale your various projects and infrastructures.
 
 ## 🏗 Architecture Overview
 
@@ -54,6 +55,7 @@ graph TD
 Gemini WebUI is highly customizable to fit both stand-alone and enterprise environments.
 
 ### Authentication Modes
+
 1.  **LDAP (Enterprise)**: If `LDAP_SERVER` is configured, it becomes the exclusive authentication method, perfect for corporate networks.
 2.  **Local Admin (Stand-alone)**: If LDAP is not configured, the application falls back to local authentication using `ADMIN_USER` and `ADMIN_PASS` (both default to `admin`).
 
@@ -61,19 +63,20 @@ Gemini WebUI is highly customizable to fit both stand-alone and enterprise envir
 
 ### Environment Variables
 
-| Variable | Description | Default |
-| :--- | :--- | :--- |
-| `LDAP_SERVER` | Address of the LDAP/AD server | - |
-| `LDAP_BASE_DN` | Base DN for user searches | - |
-| `LDAP_BIND_USER_DN` | Service account for LDAP lookups | - |
-| `LDAP_BIND_PASS` | Password for the service account | - |
-| `ADMIN_USER` | Local admin username | `admin` |
-| `ADMIN_PASS` | Local admin password | `admin` |
-| `ALLOWED_ORIGINS` | CORS whitelist (comma-separated) | `*` |
-| `GEMINI_BIN` | Path to the Gemini executable | `gemini` |
+| Variable            | Description                      | Default  |
+| :------------------ | :------------------------------- | :------- |
+| `LDAP_SERVER`       | Address of the LDAP/AD server    | -        |
+| `LDAP_BASE_DN`      | Base DN for user searches        | -        |
+| `LDAP_BIND_USER_DN` | Service account for LDAP lookups | -        |
+| `LDAP_BIND_PASS`    | Password for the service account | -        |
+| `ADMIN_USER`        | Local admin username             | `admin`  |
+| `ADMIN_PASS`        | Local admin password             | `admin`  |
+| `ALLOWED_ORIGINS`   | CORS whitelist (comma-separated) | `*`      |
+| `GEMINI_BIN`        | Path to the Gemini executable    | `gemini` |
 
 ### Volumes
-*   `data:/data`: Persists application configuration, SSH keys, and CLI state (linked internally to `/home/node/.gemini`).
+
+- `data:/data`: Persists application configuration, SSH keys, and CLI state (linked internally to `/home/node/.gemini`).
 
 ## 🚀 Quick Start & Easy Deployment
 

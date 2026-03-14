@@ -36,8 +36,11 @@ pipeline {
         stage('Lint') {
             steps {
                 sh '''
-                    ./setup_dev.sh
-                    .venv/bin/pre-commit run --all-files
+                    # Setup python env for pre-commit
+                    python3 -m venv .venv
+                    . .venv/bin/activate
+                    pip install pre-commit
+                    pre-commit run --all-files
                 '''
             }
         }

@@ -1,4 +1,4 @@
-const assert = require('assert');
+const assert = require("assert");
 
 // Mock DOM with Event Dispatching
 class MockElement {
@@ -7,16 +7,24 @@ class MockElement {
     this.id = id;
     this.classes = [];
     this.listeners = {};
-    this.style = { setProperty: function() {}, cssText: '' };
-    this.value = '';
+    this.style = { setProperty: function () {}, cssText: "" };
+    this.value = "";
     this.classList = {
-      add: (cls) => { this.classes.push(cls); },
-      remove: (cls) => { this.classes = this.classes.filter(c => c !== cls); },
-      contains: (cls) => { return this.classes.includes(cls); }
+      add: (cls) => {
+        this.classes.push(cls);
+      },
+      remove: (cls) => {
+        this.classes = this.classes.filter((c) => c !== cls);
+      },
+      contains: (cls) => {
+        return this.classes.includes(cls);
+      },
     };
   }
 
-  setAttribute(k, v) { this[k] = v; }
+  setAttribute(k, v) {
+    this[k] = v;
+  }
 
   focus() {}
 
@@ -34,54 +42,75 @@ class MockElement {
   }
 }
 
-let mockCtrlBtn = new MockElement('button', 'ctrl-toggle');
-let mockAltBtn = new MockElement('button', 'alt-toggle');
+let mockCtrlBtn = new MockElement("button", "ctrl-toggle");
+let mockAltBtn = new MockElement("button", "alt-toggle");
 
 global.document = {
   body: {
     children: [],
-    appendChild: function(child) { this.children.push(child); }
+    appendChild: function (child) {
+      this.children.push(child);
+    },
   },
-  getElementById: function(id) {
-    if (id === 'ctrl-toggle') return mockCtrlBtn;
-    if (id === 'alt-toggle') return mockAltBtn;
+  getElementById: function (id) {
+    if (id === "ctrl-toggle") return mockCtrlBtn;
+    if (id === "alt-toggle") return mockAltBtn;
     return null;
   },
-  createElement: function(tag) { return new MockElement(tag, ''); },
-  querySelector: function(sel) { return new MockElement('input', ''); }
+  createElement: function (tag) {
+    return new MockElement(tag, "");
+  },
+  querySelector: function (sel) {
+    return new MockElement("input", "");
+  },
 };
 
 global.window = {
-  matchMedia: function(q) { return { matches: true }; }
+  matchMedia: function (q) {
+    return { matches: true };
+  },
 };
 
-const { MobileInputBuffer, MobileInputUI, MobileTerminalController, MobileModifierState } = require('../src/static/mobile_input.js');
+const {
+  MobileInputBuffer,
+  MobileInputUI,
+  MobileTerminalController,
+  MobileModifierState,
+} = require("../src/static/mobile_input.js");
 
 let emitted = [];
 let modifierState = new MobileModifierState();
-let bufferWithMod = new MobileInputBuffer((data) => emitted.push(data), true, modifierState);
+let bufferWithMod = new MobileInputBuffer(
+  (data) => emitted.push(data),
+  true,
+  modifierState,
+);
 
 // Simulate "tap Ctrl" -> "tap c" sequence
 let preventDefaultCalled = false;
 mockCtrlBtn.dispatchEvent({
-  type: 'touchstart',
-  preventDefault: () => { preventDefaultCalled = true; }
+  type: "touchstart",
+  preventDefault: () => {
+    preventDefaultCalled = true;
+  },
 });
 mockCtrlBtn.dispatchEvent({
-  type: 'touchend',
-  preventDefault: () => { }
+  type: "touchend",
+  preventDefault: () => {},
 });
 
 assert.strictEqual(preventDefaultCalled, true);
 assert.strictEqual(modifierState.ctrlActive, true);
-assert.ok(mockCtrlBtn.classes.includes('active'));
+assert.ok(mockCtrlBtn.classes.includes("active"));
 
 // Tap c
-let inputRet = bufferWithMod.handleInput({data: 'c'}, false, 'c');
-assert.strictEqual(inputRet, ''); // buffer cleared
+let inputRet = bufferWithMod.handleInput({ data: "c" }, false, "c");
+assert.strictEqual(inputRet, ""); // buffer cleared
 assert.strictEqual(emitted.length, 1);
-assert.strictEqual(emitted[0], '\x03'); // \x03 emitted
+assert.strictEqual(emitted[0], "\x03"); // \x03 emitted
 assert.strictEqual(modifierState.ctrlActive, false); // state cleared
-assert.strictEqual(mockCtrlBtn.classes.includes('active'), false); // active class removed
+assert.strictEqual(mockCtrlBtn.classes.includes("active"), false); // active class removed
 
-console.log("All unit tests passed. Modifier State Machine verified with full Event Sequence.");
+console.log(
+  "All unit tests passed. Modifier State Machine verified with full Event Sequence.",
+);

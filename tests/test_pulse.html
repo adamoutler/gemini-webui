@@ -1,52 +1,91 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<style>
-@keyframes pulseFade {
-    0% { opacity: 0; box-shadow: 0 0 0 0 rgba(255,255,255,0); }
-    15% { opacity: 1; box-shadow: 0 0 6px 3px rgba(255,255,255,0.9); background-color: #ffffff; }
-    100% { opacity: 0; box-shadow: 0 0 0 0 rgba(255,255,255,0); background-color: rgba(255,255,255,0); }
-}
-.pulse-indicator {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 12px;
-    height: 12px;
-    background-color: white;
-    border-radius: 50%;
-    margin: 0;
-    opacity: 0;
-    pointer-events: none;
-    z-index: 2;
-}
-.pulse-indicator.pulsing {
-    animation: pulseFade 1s ease-in-out;
-}
-@keyframes pulseFadeSuperbright {
-    0% { opacity: 0; box-shadow: 0 0 0 0 rgba(255,255,255,0); }
-    15% { opacity: 1; box-shadow: 0 0 15px 8px rgba(255,255,255,1); background-color: #ffffff; }
-    100% { opacity: 0; box-shadow: 0 0 0 0 rgba(255,255,255,0); background-color: rgba(255,255,255,0); }
-}
-.pulse-indicator.superbright.pulsing {
-    animation: pulseFadeSuperbright 1s ease-in-out;
-}
-.status-node {
-    position: absolute; top: 0; left: 0; width: 10px; height: 10px; border-radius: 50%; background-color: green;
-}
-</style>
-</head>
-<body style="background: black;">
-    <span style="position: relative; display: inline-block; width: 10px; height: 10px; margin: 4px 12px 4px 4px;">
-        <span class="status-node" style="margin: 0; position: absolute; top: 0; left: 0;"></span>
-        <div id="pulse" class="pulse-indicator"></div>
+  <head>
+    <style>
+      @keyframes pulseFade {
+        0% {
+          opacity: 0;
+          box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+        }
+        15% {
+          opacity: 1;
+          box-shadow: 0 0 6px 3px rgba(255, 255, 255, 0.9);
+          background-color: #ffffff;
+        }
+        100% {
+          opacity: 0;
+          box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+          background-color: rgba(255, 255, 255, 0);
+        }
+      }
+      .pulse-indicator {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 12px;
+        height: 12px;
+        background-color: white;
+        border-radius: 50%;
+        margin: 0;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 2;
+      }
+      .pulse-indicator.pulsing {
+        animation: pulseFade 1s ease-in-out;
+      }
+      @keyframes pulseFadeSuperbright {
+        0% {
+          opacity: 0;
+          box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+        }
+        15% {
+          opacity: 1;
+          box-shadow: 0 0 15px 8px rgba(255, 255, 255, 1);
+          background-color: #ffffff;
+        }
+        100% {
+          opacity: 0;
+          box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+          background-color: rgba(255, 255, 255, 0);
+        }
+      }
+      .pulse-indicator.superbright.pulsing {
+        animation: pulseFadeSuperbright 1s ease-in-out;
+      }
+      .status-node {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: green;
+      }
+    </style>
+  </head>
+  <body style="background: black">
+    <span
+      style="
+        position: relative;
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        margin: 4px 12px 4px 4px;
+      "
+    >
+      <span
+        class="status-node"
+        style="margin: 0; position: absolute; top: 0; left: 0"
+      ></span>
+      <div id="pulse" class="pulse-indicator"></div>
     </span>
     <script>
-        setTimeout(() => {
-            const p = document.getElementById('pulse');
-            p.classList.add('pulsing', 'superbright');
-        }, 1000);
+      setTimeout(() => {
+        const p = document.getElementById("pulse");
+        p.classList.add("pulsing", "superbright");
+      }, 1000);
     </script>
-</body>
+  </body>
 </html>

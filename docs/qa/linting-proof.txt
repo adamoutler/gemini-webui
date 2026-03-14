@@ -1,0 +1,50 @@
+#12 37.15   dest: '/root/.gemini/projects.json'
+#12 37.15 }
+#12 37.15 0.33.1
+#12 DONE 37.3s
+
+#13 exporting to image
+#13 exporting layers
+#13 exporting layers 5.2s done
+#13 writing image sha256:1061223f8fcd49de5717cb2beaef0f4bde1217427f9b290a0cfad97d37e444ec done
+#13 naming to docker.io/library/gemini-webui done
+#13 DONE 5.2s
+[Pipeline] sh
++ docker compose down --remove-orphans
+ Container updates_gemini_webui_main-gemini-web-1 Stopping 
+ Container updates_gemini_webui_main-gemini-web-1 Stopped 
+ Container updates_gemini_webui_main-gemini-web-1 Removing 
+ Container updates_gemini_webui_main-gemini-web-1 Removed 
+ Network updates_gemini_webui_main_default Removing 
+ Network updates_gemini_webui_main_default Removed 
+[Pipeline] sh
++ docker compose up -d --force-recreate
+time="2026-03-14T16:49:39-04:00" level=warning msg="No services to build"
+ Network updates_gemini_webui_main_default Creating 
+ Network updates_gemini_webui_main_default Created 
+ Container updates_gemini_webui_main-gemini-web-1 Creating 
+ Container updates_gemini_webui_main-gemini-web-1 Created 
+ Container updates_gemini_webui_main-gemini-web-1 Starting 
+ Container updates_gemini_webui_main-gemini-web-1 Started 
+[Pipeline] }
+[Pipeline] // withCredentials
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] withCredentials
+Masking supported pattern matches of $ADAM_TOKEN or $LDAP_BIND_PASS
+[Pipeline] {
+[Pipeline] sh
++ docker compose ps
+NAME                                     IMAGE          COMMAND               SERVICE      CREATED        STATUS                           PORTS
+updates_gemini_webui_main-gemini-web-1   gemini-webui   "python src/app.py"   gemini-web   1 second ago   Up 1 second (health: starting)   0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp
+[Pipeline] sh
+This is the absolute, and final, build result for the code you just pushed to the repository.
+Gemini WebUI Build Finished: SUCCESS #399
