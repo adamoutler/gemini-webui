@@ -79,6 +79,7 @@ pipeline {
                 sh '''
                     echo "--- FINALIZING LOGS ---" >> /tmp/jenkins-receipt-gemini-webui.log
                     curl -sL -u "adamoutler@gmail.com:$ADAM_TOKEN" "${BUILD_URL}consoleText" >> /tmp/jenkins-receipt-gemini-webui.log
+                    echo "This is the absolute, and final, build result for the code you just pushed to the repository." >> /tmp/jenkins-receipt-gemini-webui.log
                     echo "Gemini WebUI Build Finished: $BUILD_RESULT #$BUILD_NUMBER" >> /tmp/jenkins-receipt-gemini-webui.log
                 '''
             }
