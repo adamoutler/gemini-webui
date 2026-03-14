@@ -16,21 +16,21 @@ new_buffer = """class MobileInputBuffer {
         this.emitCallback('\\x7f');
         return undefined;
     }
-    
+
     // If modifiers are active, consume exactly 1 char from data, apply modifiers, emit, clear buffer
     if (this.modifierState && (this.modifierState.ctrlActive || this.modifierState.altActive)) {
         if (e.data && e.data.length > 0) {
-             const char = e.data[e.data.length - 1]; 
+             const char = e.data[e.data.length - 1];
              const modified = this.modifierState.applyModifiers(char);
              this.emitCallback(modified);
-             return ''; 
+             return '';
         }
     }
 
     if (isComposing) return undefined;
 
     const boundaryRegex = /[\\s.,?!;-]/;
-    
+
     if (!this.isMobile && !isComposing) {
         if (e.data && e.data.length === 1) {
             if (boundaryRegex.test(e.data)) {
@@ -63,7 +63,7 @@ new_buffer = """class MobileInputBuffer {
       } else {
           // send current buffer + the passthrough key
           this.emitCallback(value + passthroughKeys[e.key]);
-          return ''; 
+          return '';
       }
     }
 
@@ -77,10 +77,10 @@ new_buffer = """class MobileInputBuffer {
         if (!this.isMobile) return '';
         return undefined;
     }
-    
+
     if (e.key === 'Backspace' || e.keyCode === 8) {
       if (value.length === 0) {
-        if (!this.isMobile) return undefined; 
+        if (!this.isMobile) return undefined;
         e.preventDefault();
         this.emitCallback('\\x7f');
       }
@@ -95,14 +95,23 @@ new_buffer = """class MobileInputBuffer {
   }
 }"""
 
-content = re.sub(r"class MobileInputBuffer \{.*?handleKeyDown\(e, value\) \{.*?return undefined;\n  \}\n\}", new_buffer, content, flags=re.DOTALL)
+content = re.sub(
+    r"class MobileInputBuffer \{.*?handleKeyDown\(e, value\) \{.*?return undefined;\n  \}\n\}",
+    new_buffer,
+    content,
+    flags=re.DOTALL,
+)
 
 ui_event_replace = """    this.proxyInput.addEventListener('keydown', (e) => {
         const newValue = keyDownHandler(e, this.proxyInput.value, this.isComposing);
         if (newValue !== undefined) this.proxyInput.value = newValue;
     });"""
 
-content = re.sub(r"    this\.proxyInput\.addEventListener\('keydown', \(e\) => \{\n        const newValue = keyDownHandler\(e, this\.proxyInput\.value\);\n        if \(newValue !== undefined\) this\.proxyInput\.value = newValue;\n    \}\);", ui_event_replace, content)
+content = re.sub(
+    r"    this\.proxyInput\.addEventListener\('keydown', \(e\) => \{\n        const newValue = keyDownHandler\(e, this\.proxyInput\.value\);\n        if \(newValue !== undefined\) this\.proxyInput\.value = newValue;\n    \}\);",
+    ui_event_replace,
+    content,
+)
 
 
 with open("src/static/mobile_input.js", "w") as f:

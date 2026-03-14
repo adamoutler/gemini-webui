@@ -1,6 +1,6 @@
 import re
 
-with open('src/static/app.js', 'r') as f:
+with open("src/static/app.js", "r") as f:
     content = f.read()
 
 # 3. Remove toggleCtrl / toggleAlt
@@ -27,7 +27,7 @@ content = content.replace("        let altActive = false;\n", "")
 # Actually, MobileTerminalController only attaches if isMobile is true.
 # The desktop input doesn't use MobileTerminalController anymore, so we don't need to clear `proxyInput.value` for modifiers there.
 
-with open('src/static/app.js', 'w') as f:
+with open("src/static/app.js", "w") as f:
     f.write(content)
 
 print("Done part 2")

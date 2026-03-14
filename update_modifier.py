@@ -2,7 +2,12 @@ with open("src/static/mobile_input.js", "r") as f:
     content = f.read()
 
 import re
-old_text = re.search(r"class MobileInputBuffer \{.*?handleInput\(e, isComposing, value\) \{.*?return undefined;\n  \}", content, re.DOTALL).group(0)
+
+old_text = re.search(
+    r"class MobileInputBuffer \{.*?handleInput\(e, isComposing, value\) \{.*?return undefined;\n  \}",
+    content,
+    re.DOTALL,
+).group(0)
 
 new_classes = """class MobileModifierState {
   constructor() {
@@ -12,7 +17,7 @@ new_classes = """class MobileModifierState {
     this.altBtn = document.getElementById('alt-toggle');
     this.setupListeners();
   }
-  
+
   setupListeners() {
     const bindBtn = (btn, toggleFn) => {
         if (!btn) return;
@@ -68,7 +73,7 @@ new_classes = """class MobileModifierState {
     } else if (this.ctrlActive) {
         this.toggleCtrl(false);
     }
-    
+
     if (this.altActive && data.length === 1) {
         input = '\\x1b' + input;
         this.toggleAlt(false);
@@ -96,15 +101,15 @@ class MobileInputBuffer {
 
     if (this.modifierState && (this.modifierState.ctrlActive || this.modifierState.altActive)) {
         if (e.data && e.data.length > 0) {
-             const char = e.data[e.data.length - 1]; 
+             const char = e.data[e.data.length - 1];
              const modified = this.modifierState.applyModifiers(char);
              this.emitCallback(modified);
-             return ''; 
+             return '';
         }
     }
 
     const boundaryRegex = /[\\s.,?!;-]/;
-    
+
     if (!this.isMobile && !isComposing) {
         if (e.data && e.data.length === 1) {
             if (boundaryRegex.test(e.data)) {
