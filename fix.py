@@ -9,7 +9,7 @@ new_ui = """class MobileInputUI {
     this.proxyInput.id = 'terminal-input-' + tabId;
     this.proxyInput.classList.add('mobile-proxy-input');
     this.proxyInput.style.cssText = 'position: absolute; border: none; background: transparent !important; outline: none; color: var(--terminal-fg) !important; width: 1px; height: 1px; opacity: 0;';
-    
+
     this.proxyInput.setAttribute('autocomplete', 'on');
     this.proxyInput.setAttribute('autocorrect', 'on');
     this.proxyInput.setAttribute('spellcheck', 'true');
@@ -21,8 +21,8 @@ new_ui = """class MobileInputUI {
     }
 
     this.isComposing = false;
-    this.proxyInput.addEventListener('compositionstart', () => { 
-        this.isComposing = true; 
+    this.proxyInput.addEventListener('compositionstart', () => {
+        this.isComposing = true;
         this.proxyInput.classList.add('is-composing');
     });
     this.proxyInput.addEventListener('compositionend', () => {
@@ -48,10 +48,10 @@ content = re.sub(r"class MobileInputUI \{.*?\}\n\}", new_ui, content, flags=re.D
 new_controller = """class MobileTerminalController {
   constructor(tab) {
     this.tab = tab;
-    
-    this.isMobile = window.matchMedia('(max-width: 768px) and (pointer: coarse)').matches 
+
+    this.isMobile = window.matchMedia('(max-width: 768px) and (pointer: coarse)').matches
                     || 'ontouchstart' in window;
-    
+
     if (this.isMobile) {
       this.buffer = new MobileInputBuffer(this.emitToTerminal.bind(this), this.isMobile);
       this.ui = new MobileInputUI(this.tab.id, this.buffer.handleInput.bind(this.buffer), this.buffer.handleKeyDown.bind(this.buffer));
@@ -68,7 +68,12 @@ new_controller = """class MobileTerminalController {
      }
   }
 }"""
-content = re.sub(r"class MobileTerminalController \{.*?\}\n\}", new_controller, content, flags=re.DOTALL)
+content = re.sub(
+    r"class MobileTerminalController \{.*?\}\n\}",
+    new_controller,
+    content,
+    flags=re.DOTALL,
+)
 
 with open("src/static/mobile_input.js", "w") as f:
     f.write(content)

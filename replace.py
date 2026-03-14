@@ -5,8 +5,7 @@ with open("src/static/app.js", "r") as f:
 
 # The class definition
 class_definition_pattern = re.compile(
-    r"class MobileInputProxy \{.*?emitToTerminal\(data\) \{.*?\}\n\}", 
-    re.DOTALL
+    r"class MobileInputProxy \{.*?emitToTerminal\(data\) \{.*?\}\n\}", re.DOTALL
 )
 
 new_classes = """class MobileInputBuffer {
@@ -24,7 +23,7 @@ new_classes = """class MobileInputBuffer {
     if (isComposing) return undefined;
 
     const boundaryRegex = /[\\s.,?!;-]/;
-    
+
     // On desktop, xterm.js handles single character and paste emissions via onData.
     if (!this.isMobile && !isComposing) {
         if (e.data && e.data.length === 1) {
@@ -71,15 +70,15 @@ class MobileInputUI {
     this.proxyInput.id = 'terminal-input-' + tabId;
     this.proxyInput.classList.add('mobile-proxy-input');
     this.proxyInput.style.cssText = 'border: none; background: transparent !important; outline: none; color: var(--terminal-fg) !important;';
-    
+
     this.proxyInput.setAttribute('autocomplete', 'on');
     this.proxyInput.setAttribute('autocorrect', 'on');
     this.proxyInput.setAttribute('spellcheck', 'true');
     this.proxyInput.setAttribute('autocapitalize', 'sentences');
 
     let isComposing = false;
-    this.proxyInput.addEventListener('compositionstart', () => { 
-        isComposing = true; 
+    this.proxyInput.addEventListener('compositionstart', () => {
+        isComposing = true;
         this.proxyInput.classList.add('is-composing');
     });
     this.proxyInput.addEventListener('compositionend', () => {
@@ -103,10 +102,10 @@ class MobileTerminalController {
   constructor(tab) {
     this.tab = tab;
     this.proxyInput = tab.term.textarea;
-    
-    this.isMobile = window.matchMedia('(max-width: 768px) and (pointer: coarse)').matches 
+
+    this.isMobile = window.matchMedia('(max-width: 768px) and (pointer: coarse)').matches
                     || 'ontouchstart' in window;
-    
+
     if (this.proxyInput) {
       this.buffer = new MobileInputBuffer(this.emitToTerminal.bind(this), this.isMobile);
       this.ui = new MobileInputUI(this.proxyInput, this.tab.id, this.buffer.handleInput.bind(this.buffer), this.buffer.handleKeyDown.bind(this.buffer));
@@ -125,7 +124,9 @@ class MobileTerminalController {
 }"""
 
 content = re.sub(class_definition_pattern, new_classes, content, count=1)
-content = content.replace("new MobileInputProxy(tab);", "new MobileTerminalController(tab);")
+content = content.replace(
+    "new MobileInputProxy(tab);", "new MobileTerminalController(tab);"
+)
 
 with open("src/static/app.js", "w") as f:
     f.write(content)

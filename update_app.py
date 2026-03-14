@@ -1,10 +1,10 @@
 import re
 
-with open('src/static/app.js', 'r') as f:
+with open("src/static/app.js", "r") as f:
     content = f.read()
 
 # 1. Remove the onData modifier logic
-old_ondata = """            tab.term.onData((data) => { 
+old_ondata = """            tab.term.onData((data) => {
                 if (tab.socket) {
                     let input = data;
                     if (ctrlActive && data.length === 1) {
@@ -28,7 +28,7 @@ old_ondata = """            tab.term.onData((data) => {
                 }
             });"""
 
-new_ondata = """            tab.term.onData((data) => { 
+new_ondata = """            tab.term.onData((data) => {
                 if (tab.socket) {
                     // Mobile modifiers are handled by MobileModifierState
                     // Desktop modifiers are handled natively by xterm.js via e.ctrlKey
@@ -49,7 +49,7 @@ setup_btns = """        // Setup sticky modifier buttons (Ctrl/Alt)
                 }
                 triggerHapticFeedback();
                 toggleFn();
-                
+
                 // Explicitly focus the terminal textarea to ensure the keyboard appears
                 const tab = tabs.find(t => t.id === activeTabId);
                 if (tab && tab.term && tab.term.textarea) {
@@ -64,7 +64,7 @@ setup_btns = """        // Setup sticky modifier buttons (Ctrl/Alt)
 
 content = content.replace(setup_btns, "")
 
-with open('src/static/app.js', 'w') as f:
+with open("src/static/app.js", "w") as f:
     f.write(content)
 
 print("Done updating app.js")
