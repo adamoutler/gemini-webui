@@ -83,7 +83,7 @@ def app_obj(test_data_dir):
 
 @pytest.fixture
 def client(test_data_dir):
-    from src.app import app
+    from src.app import app, init_app
 
     app.config["TESTING"] = True
     app.config["BYPASS_AUTH_FOR_TESTING"] = "true"
