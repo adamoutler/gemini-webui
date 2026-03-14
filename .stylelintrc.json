@@ -1,0 +1,16 @@
+{
+  "extends": "stylelint-config-standard",
+  "rules": {
+    "no-empty-source": null,
+    "no-descending-specificity": null,
+    "font-family-no-missing-generic-family-keyword": null,
+    "declaration-block-no-duplicate-properties": null,
+    "property-no-vendor-prefix": null,
+    "value-no-vendor-prefix": null,
+    "color-function-notation": null,
+    "alpha-value-notation": null,
+    "block-no-empty": null,
+    "keyframes-name-pattern": null,
+    "no-duplicate-selectors": null
+  }
+}

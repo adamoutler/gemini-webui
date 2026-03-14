@@ -24,3 +24,13 @@ repos:
     hooks:
       - id: shellcheck
         args: ["-e", "SC2034", "-e", "SC2002", "-e", "SC1091"]
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+  - repo: https://github.com/awebdeveloper/pre-commit-stylelint
+    rev: 0.0.2
+    hooks:
+      - id: stylelint
+        additional_dependencies: ["stylelint@16", "stylelint-config-standard"]
+        args: ["--fix"]
