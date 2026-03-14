@@ -4,8 +4,9 @@ from playwright.sync_api import sync_playwright
 @pytest.fixture(scope="function")
 def page(server):
     with sync_playwright() as p:
+        iphone = p.devices['iPhone 13']
         browser = p.chromium.launch()
-        context = browser.new_context()
+        context = browser.new_context(**iphone)
 
         page = context.new_page()
         page.set_default_timeout(60000)
@@ -16,25 +17,24 @@ def page(server):
 
 def test_overlay_box_colors_match_terminal_theme(page):
     page.locator('.tab-instance.active button:has-text("Start New")').first.click()
-    page.wait_for_selector(".xterm-helper-textarea", state="attached", timeout=15000)
-    
-    textarea = page.locator(".xterm-helper-textarea").first
-    
+    page.wait_for_selector(".mobile-proxy-input", state="attached", timeout=15000)
+
+    textarea = page.locator(".mobile-proxy-input").first
+
     # Simulate Voice Typing (STT) to invoke overlay
     long_text = "Testing STT"
     textarea.evaluate("(el) => { el.dispatchEvent(new CompositionEvent('compositionstart')); }")
     textarea.evaluate(f"(el) => {{ el.value = `{long_text}`; el.dispatchEvent(new Event('input', {{ bubbles: true, inputType: 'insertCompositionText' }})); }}")
-    
+
     # Get computed styles
     colors = page.evaluate('''() => {
-        const textarea = document.querySelector(".xterm-helper-textarea");
+        const textarea = document.querySelector(".mobile-proxy-input");
         const style = window.getComputedStyle(textarea);
         return {
             bg: style.backgroundColor,
             fg: style.color
         };
     }''')
-
     term_style = page.evaluate('''() => {
         const terminal = document.querySelector(".terminal");
         if (!terminal) return { bg: 'rgb(0, 0, 0)', fg: 'rgb(212, 212, 212)' };
