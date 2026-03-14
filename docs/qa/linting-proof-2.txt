@@ -11,21 +11,21 @@
 #13 DONE 4.2s
 [Pipeline] sh
 + docker compose down --remove-orphans
- Container updates_gemini_webui_main-gemini-web-1 Stopping 
- Container updates_gemini_webui_main-gemini-web-1 Stopped 
- Container updates_gemini_webui_main-gemini-web-1 Removing 
- Container updates_gemini_webui_main-gemini-web-1 Removed 
- Network updates_gemini_webui_main_default Removing 
- Network updates_gemini_webui_main_default Removed 
+ Container updates_gemini_webui_main-gemini-web-1 Stopping
+ Container updates_gemini_webui_main-gemini-web-1 Stopped
+ Container updates_gemini_webui_main-gemini-web-1 Removing
+ Container updates_gemini_webui_main-gemini-web-1 Removed
+ Network updates_gemini_webui_main_default Removing
+ Network updates_gemini_webui_main_default Removed
 [Pipeline] sh
 + docker compose up -d --force-recreate
 time="2026-03-14T17:15:41-04:00" level=warning msg="No services to build"
- Network updates_gemini_webui_main_default Creating 
- Network updates_gemini_webui_main_default Created 
- Container updates_gemini_webui_main-gemini-web-1 Creating 
- Container updates_gemini_webui_main-gemini-web-1 Created 
- Container updates_gemini_webui_main-gemini-web-1 Starting 
- Container updates_gemini_webui_main-gemini-web-1 Started 
+ Network updates_gemini_webui_main_default Creating
+ Network updates_gemini_webui_main_default Created
+ Container updates_gemini_webui_main-gemini-web-1 Creating
+ Container updates_gemini_webui_main-gemini-web-1 Created
+ Container updates_gemini_webui_main-gemini-web-1 Starting
+ Container updates_gemini_webui_main-gemini-web-1 Started
 [Pipeline] }
 [Pipeline] // withCredentials
 [Pipeline] }
