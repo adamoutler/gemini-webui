@@ -49,7 +49,7 @@ def test_ctrl_sticky_modifier(mobile_page):
 
     # Wait for the focus to settle on textarea
     active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
-    textarea = mobile_page.locator(".mobile-proxy-input")
+    textarea = mobile_page.locator(".mobile-text-area")
 
     # Fill the textarea as if user is typing 'c'
     textarea.focus()

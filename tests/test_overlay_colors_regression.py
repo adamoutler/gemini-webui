@@ -19,9 +19,9 @@ def page(server):
 
 def test_overlay_box_colors_match_terminal_theme(page):
     page.locator('.tab-instance.active button:has-text("Start New")').first.click()
-    page.wait_for_selector(".mobile-proxy-input", state="attached", timeout=15000)
+    page.wait_for_selector(".mobile-text-area", state="attached", timeout=15000)
 
-    textarea = page.locator(".mobile-proxy-input").first
+    textarea = page.locator(".mobile-text-area").first
 
     # Simulate Voice Typing (STT) to invoke overlay
     long_text = "Testing STT"
@@ -34,7 +34,7 @@ def test_overlay_box_colors_match_terminal_theme(page):
 
     # Get computed styles
     colors = page.evaluate("""() => {
-        const textarea = document.querySelector(".mobile-proxy-input");
+        const textarea = document.querySelector(".mobile-text-area");
         const style = window.getComputedStyle(textarea);
         return {
             bg: style.backgroundColor,

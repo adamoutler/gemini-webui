@@ -19,8 +19,8 @@ def page(server):
 
 def test_stt_color(page):
     page.locator('.tab-instance.active button:has-text("Start New")').first.click()
-    page.wait_for_selector(".mobile-proxy-input", state="attached", timeout=15000)
-    textarea = page.locator(".mobile-proxy-input").first
+    page.wait_for_selector(".mobile-text-area", state="attached", timeout=15000)
+    textarea = page.locator(".mobile-text-area").first
 
     # Simulate Voice Typing (STT)
     long_text = "Testing STT"
@@ -33,7 +33,7 @@ def test_stt_color(page):
 
     # Check computed style during composition
     style = page.evaluate("""() => {
-        const el = document.querySelector(".mobile-proxy-input");
+        const el = document.querySelector(".mobile-text-area");
         const style = window.getComputedStyle(el);
         return { bg: style.backgroundColor, fg: style.color };
     }""")

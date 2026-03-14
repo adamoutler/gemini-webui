@@ -47,7 +47,7 @@ def test_modifier_keyboard_focus(mobile_page):
     # Evaluate what the active element is right after tapping Ctrl
     is_textarea_focused, active_id = mobile_page.evaluate("""() => {
         const activeElement = document.activeElement;
-        const textarea = document.querySelector(".mobile-proxy-input");
+        const textarea = document.querySelector(".mobile-text-area");
         return [activeElement === textarea, activeElement ? activeElement.id || activeElement.tagName : "none"];
     }""")
 
@@ -62,7 +62,7 @@ def test_modifier_keyboard_focus(mobile_page):
 
     is_textarea_focused_alt = mobile_page.evaluate("""() => {
         const activeElement = document.activeElement;
-        const textarea = document.querySelector(".mobile-proxy-input");
+        const textarea = document.querySelector(".mobile-text-area");
         return activeElement === textarea;
     }""")
 

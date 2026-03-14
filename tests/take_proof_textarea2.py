@@ -65,7 +65,7 @@ def main():
             )
 
             # Assert phantom textbox is NOT visible
-            proxy_input = page.locator("#mobile-proxy-input")
+            proxy_input = page.locator("#terminal-input-mobile")
             is_visible = proxy_input.is_visible()
 
             results["tests"].append(
@@ -96,7 +96,7 @@ def main():
             page_m.wait_for_selector(".xterm-helper-textarea", timeout=5000)
 
             # Verify proxy is visible on mobile
-            proxy_m = page_m.locator("#mobile-proxy-input")
+            proxy_m = page_m.locator("#terminal-input-mobile")
             proxy_visible = proxy_m.is_visible()
 
             # Focus and type

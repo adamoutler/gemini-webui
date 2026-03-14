@@ -21,9 +21,9 @@ def page(server):
 
 def test_input_overlay_colors(page):
     page.locator('.tab-instance.active button:has-text("Start New")').first.click()
-    page.wait_for_selector(".mobile-proxy-input", state="attached", timeout=15000)
+    page.wait_for_selector(".mobile-text-area", state="attached", timeout=15000)
 
-    textarea = page.locator(".mobile-proxy-input").first
+    textarea = page.locator(".mobile-text-area").first
 
     # "invoke the overlay box" using STT composition which makes it visually hold text
     long_text = "Testing overlay colors with transparent background"
@@ -36,7 +36,7 @@ def test_input_overlay_colors(page):
 
     # Check computed CSS
     css_colors = page.evaluate("""() => {
-        const textarea = document.querySelector(".mobile-proxy-input");
+        const textarea = document.querySelector(".mobile-text-area");
         const style = window.getComputedStyle(textarea);
         return {
             bg: style.backgroundColor,
@@ -112,7 +112,7 @@ def test_input_overlay_colors(page):
     time.sleep(0.5)
 
     light_css_colors = page.evaluate("""() => {
-        const textarea = document.querySelector(".mobile-proxy-input");
+        const textarea = document.querySelector(".mobile-text-area");
         const style = window.getComputedStyle(textarea);
         return { fg: style.color };
     }""")
