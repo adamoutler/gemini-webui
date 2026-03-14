@@ -72,6 +72,10 @@ class SessionManager:
                     try:
                         if oldest.pid is not None:
                             os.kill(oldest.pid, signal.SIGKILL)
+                    except OSError:
+                        pass
+                    try:
+                        if oldest.pid is not None:
                             os.waitpid(oldest.pid, os.WNOHANG)
                     except OSError:
                         pass
