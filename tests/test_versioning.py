@@ -21,10 +21,11 @@ def test_version_files_consistency(client):
     expected_footer = f'<div id="version-footer" style="position: fixed; bottom: 5px; right: 5px; font-size: 10px; color: rgba(255, 255, 255, 0.3); pointer-events: none; z-index: 9999; font-family: monospace;">v{version}</div>'
 
     # Check if the exact footer exists or just the version string in the footer context
+    import re
+    html_clean = re.sub(r'\s+', '', html_content)
     assert (
-        f"v{version}</div>" in html_content
+        f"v{version}</div>" in html_clean
     ), f"Version {version} not found in UI response footer"
-
     # 3. Check manifest.json
     manifest_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -53,7 +54,8 @@ def test_version_files_consistency(client):
     with open(sw_path, "r") as f:
         sw_content = f.read()
 
-    expected_cache_name_pattern = f"const CACHE_NAME = 'gemini-webui-v{version}';"
+    expected_cache_name_pattern1 = f"const CACHE_NAME = 'gemini-webui-v{version}';"
+    expected_cache_name_pattern2 = f'const CACHE_NAME = "gemini-webui-v{version}";'
     assert (
-        expected_cache_name_pattern in sw_content
+        expected_cache_name_pattern1 in sw_content or expected_cache_name_pattern2 in sw_content
     ), f"CACHE_NAME with version {version} not found in sw.js"

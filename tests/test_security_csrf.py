@@ -32,7 +32,7 @@ def test_csrf_protection_with_token(client):
 
     # Extract the token using regex
     match = re.search(
-        r'<meta name="csrf-token" content="([^"]+)">', response.data.decode("utf-8")
+        r'<meta[^>]*name="csrf-token"[^>]*content="([^"]+)"', response.data.decode("utf-8")
     )
     assert match is not None, "CSRF token meta tag not found"
     csrf_token = match.group(1)

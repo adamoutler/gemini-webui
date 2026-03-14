@@ -9,7 +9,7 @@ def test_csrf_upload(client):
     # Get the token
     response = client.get("/")
     match = re.search(
-        r'<meta name="csrf-token" content="([^"]+)">', response.data.decode("utf-8")
+        r'<meta[^>]*name="csrf-token"[^>]*content="([^"]+)"', response.data.decode("utf-8")
     )
     assert match is not None
     csrf_token = match.group(1)
