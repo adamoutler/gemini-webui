@@ -22,7 +22,8 @@ def test_version_files_consistency(client):
 
     # Check if the exact footer exists or just the version string in the footer context
     import re
-    html_clean = re.sub(r'\s+', '', html_content)
+
+    html_clean = re.sub(r"\s+", "", html_content)
     assert (
         f"v{version}</div>" in html_clean
     ), f"Version {version} not found in UI response footer"
@@ -57,5 +58,6 @@ def test_version_files_consistency(client):
     expected_cache_name_pattern1 = f"const CACHE_NAME = 'gemini-webui-v{version}';"
     expected_cache_name_pattern2 = f'const CACHE_NAME = "gemini-webui-v{version}";'
     assert (
-        expected_cache_name_pattern1 in sw_content or expected_cache_name_pattern2 in sw_content
+        expected_cache_name_pattern1 in sw_content
+        or expected_cache_name_pattern2 in sw_content
     ), f"CACHE_NAME with version {version} not found in sw.js"
