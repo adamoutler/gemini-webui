@@ -41,4 +41,4 @@ def test_overlay_color(page):
 
     screenshot_path = f"/tmp/gemwe-179_{os.environ.get('BUILD_NUMBER', 'local')}.png"
     page.screenshot(path=screenshot_path)
-    warnings.warn(f"Empirical evidence: Screenshot saved to {screenshot_path}. Computed overlay styles: background={style['bg']}, foreground={style['fg']}. Computed terminal styles: background={term_style['bg']}, foreground={term_style['fg']}.")
+    print(f"Empirical evidence: Screenshot saved to {screenshot_path}. Computed overlay styles: background={style['bg']}, foreground={style['fg']}. Computed terminal styles: background={term_style['bg']}, foreground={term_style['fg']}.")

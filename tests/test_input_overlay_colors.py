@@ -80,7 +80,7 @@ def test_input_overlay_colors(page):
         f"---------------------------------\n"
     )
     import warnings
-    warnings.warn(evidence)
+    print(evidence)
     
     # We must definitively prevent a regression to black (rgb(0, 0, 0)) and white (rgb(255, 255, 255)).
     assert css_colors['bg'] != 'rgb(0, 0, 0)', "Regression detected: Overlay background is stark black."

@@ -47,7 +47,7 @@ def run_test_with_viewport(server, width, height, expect_visible):
         
         screenshot_path = f"/tmp/gemwe-stt-{width}x{height}_{os.environ.get('BUILD_NUMBER', 'local')}.png"
         page.screenshot(path=screenshot_path)
-        warnings.warn(f"Empirical Evidence: Saved STT textarea screenshot to {screenshot_path}. Textarea dims: {box['width']}x{box['height']}, Viewport: {viewport['width']}x{viewport['height']}")
+        print(f"Empirical Evidence: Saved STT textarea screenshot to {screenshot_path}. Textarea dims: {box['width']}x{box['height']}, Viewport: {viewport['width']}x{viewport['height']}")
 
         if expect_visible:
             expect(textarea).to_be_visible()

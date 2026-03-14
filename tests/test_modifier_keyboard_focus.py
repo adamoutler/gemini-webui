@@ -67,4 +67,4 @@ def test_modifier_keyboard_focus(mobile_page):
 
     screenshot_path = f"/tmp/gemwe-182_{os.environ.get('BUILD_NUMBER', 'local')}.png"
     mobile_page.screenshot(path=screenshot_path)
-    warnings.warn(f"EVIDENCE: The hidden textarea is focused/on-screen keyboard is triggered. Screenshot saved to {screenshot_path}")
+    print(f"EVIDENCE: The hidden textarea is focused/on-screen keyboard is triggered. Screenshot saved to {screenshot_path}")

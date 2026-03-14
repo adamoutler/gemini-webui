@@ -249,7 +249,7 @@ def test_csrf_upload_stale_cache_recovery(csrf_enabled_server, test_data_dir):
         screenshot_path = f"/tmp/gemwe-180_{os.environ.get('BUILD_NUMBER', 'local')}.png"
         page.screenshot(path=screenshot_path)
         import warnings
-        warnings.warn(f"Empirical Evidence: Stale CSRF cache upload succeeded. Visual proof saved to {screenshot_path}")
+        print(f"Empirical Evidence: Stale CSRF cache upload succeeded. Visual proof saved to {screenshot_path}")
 
         context.close()
         browser.close()

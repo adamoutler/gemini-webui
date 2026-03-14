@@ -27,7 +27,7 @@ def test_fake_gemini_e2e_flow(page, server):
     # Capture UI Distinction Screenshot (Test Launcher)
     launcher_ss_path = f"/tmp/gemini-webui-test-launcher_220_standard_{os.environ.get('BUILD_NUMBER', 'local')}.png"
     page.screenshot(path=launcher_ss_path)
-    warnings.warn(f"Empirical Evidence: Saved test-launcher screenshot to {launcher_ss_path}")
+    print(f"Empirical Evidence: Saved test-launcher screenshot to {launcher_ss_path}")
     
     # 2. Submit form
     page.locator("input[name='scenario']").fill("test_scenario=1")
@@ -45,7 +45,7 @@ def test_fake_gemini_e2e_flow(page, server):
     # Capture UI Distinction Screenshot (Fake Session Theme)
     theme_ss_path = f"/tmp/gemini-webui-fake-theme_220_standard_{os.environ.get('BUILD_NUMBER', 'local')}.png"
     page.screenshot(path=theme_ss_path)
-    warnings.warn(f"Empirical Evidence: Saved fake session theme screenshot to {theme_ss_path}")
+    print(f"Empirical Evidence: Saved fake session theme screenshot to {theme_ss_path}")
     
     # 4. Interact with the terminal (Send Enter to see if fake gemini is running)
     textarea = page.locator(".xterm-helper-textarea").first
@@ -73,7 +73,7 @@ def test_fake_gemini_e2e_flow(page, server):
     # Capture UX Friction Modal Screenshot
     modal_ss_path = f"/tmp/gemini-webui-friction-modal_220_standard_{os.environ.get('BUILD_NUMBER', 'local')}.png"
     page.screenshot(path=modal_ss_path)
-    warnings.warn(f"Empirical Evidence: Saved friction modal screenshot to {modal_ss_path}")
+    print(f"Empirical Evidence: Saved friction modal screenshot to {modal_ss_path}")
     
     # Assert successful completion
     assert True

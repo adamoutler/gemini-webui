@@ -48,7 +48,7 @@ def test_keyboard_per_word_overlay(page, server):
     import warnings
     screenshot_path = f"/tmp/gemwe-178_{os.environ.get('BUILD_NUMBER', 'local')}.png"
     page.screenshot(path=screenshot_path)
-    warnings.warn(f"Empirical evidence: Screenshot saved to {screenshot_path}. Typed 'echo' and found '{overlay_val}' in overlay textarea before space.")
+    print(f"Empirical evidence: Screenshot saved to {screenshot_path}. Typed 'echo' and found '{overlay_val}' in overlay textarea before space.")
     
     # Type a space
     page.keyboard.press("Space")
