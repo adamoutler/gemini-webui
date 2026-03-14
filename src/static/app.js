@@ -403,19 +403,19 @@
             const listEl = document.getElementById(`${id}_backend_sessions`);
             if (!listEl) return; // Tab closed or switched
 
-            fetch('/api/management/sessions').then(r => r.json()).then(sessions => {
+            const socket = getGlobalSocket();
+            socket.emit('get_management_sessions', (sessions) => {
                 if (!sessions || sessions.length === 0) {
                     listEl.innerHTML = '<div style="padding: 10px; color: #444; font-size: 11px;">No detached sessions found on the server.</div>';
                     return;
                 }
-                
+
                 const seenSessionIds = new Set();
                 if (listEl.innerHTML.includes('No detached sessions found on the server.')) {
                     listEl.innerHTML = '';
                 }
 
-                sessions.forEach(s => {
-                    seenSessionIds.add(s.tab_id);
+                sessions.forEach(s => {                    seenSessionIds.add(s.tab_id);
                     const statusClass = s.is_orphaned ? 'status-orphaned' : 'status-online';
                     const statusLabel = s.is_orphaned ? 'Orphaned' : 'Active';
 
@@ -485,7 +485,7 @@
                         }
                     }
                 });
-            }).catch(e => console.error("Session fetch failed", e));
+            });
         }
 
         async function renderLauncher(id) {
@@ -770,20 +770,41 @@
             recreateTerminalUI(tab, true);
         }
 
+        let globalSocket = null;
+        function getGlobalSocket() {
+            if (!globalSocket) {
+                globalSocket = io.connect(window.location.origin, {
+                    auth: { csrf_token: document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') },
+                    reconnection: true
+                });
+            }
+            return globalSocket;
+        }
+
         async function fetchSessions(tabId, conn, targetId, forceAll = false, useCache = false, isPolling = false) {
             if (!window.expandedSessionLists) window.expandedSessionLists = new Set();
             if (window.expandedSessionLists.has(conn.label)) {
                 forceAll = true;
             }
-            const query = new URLSearchParams();
-            if (conn.type === 'ssh') { query.set('ssh_target', conn.target); if (conn.dir) query.set('ssh_dir', conn.dir); }
-            if (useCache) query.set('cache', 'true');
-            query.set('bg', 'true'); // ALWAYS use background fetching to avoid blocking server
+            
+            const params = {};
+            if (conn.type === 'ssh') { params.ssh_target = conn.target; if (conn.dir) params.ssh_dir = conn.dir; }
+            if (useCache) params.cache = true;
+            params.bg = true;
 
             try {
-                const response = await fetch('/api/sessions?' + query.toString());
-                if (!response.ok) throw new Error("HTTP error " + response.status);
-                const data = await response.json();
+                const data = await new Promise((resolve, reject) => {
+                    const socket = getGlobalSocket();
+                    socket.emit('get_sessions', params, (response) => {
+                        if (response && response.error && !response.output && !response.sessions) {
+                            resolve(response); // Handle errors explicitly like API did
+                        } else if (response) {
+                            resolve(response);
+                        } else {
+                            reject(new Error("No response from WebSocket"));
+                        }
+                    });
+                });
 
                 if (data.status === "fetching") {
                     const listEl = document.getElementById(targetId);
@@ -1240,12 +1261,19 @@
                 if (tab.session.resume === 'new') {
                     setTimeout(async () => {
                         try {
-                            const query = new URLSearchParams();
-                            if (target) query.set('ssh_target', target);
-                            if (dir) query.set('ssh_dir', dir);
-                            query.set('cache', 'false');
-                            const res = await fetch(`/api/sessions?${query.toString()}`);
-                            const data = await res.json();
+                            const params = {};
+                            if (target) params.ssh_target = target;
+                            if (dir) params.ssh_dir = dir;
+                            params.cache = false;
+                            
+                            const data = await new Promise((resolve, reject) => {
+                                const socket = getGlobalSocket();
+                                socket.emit('get_sessions', params, (response) => {
+                                    if (response) resolve(response);
+                                    else reject(new Error("No response from WebSocket"));
+                                });
+                            });
+                            
                             const sessions = parseSessions(data.output || "");
                             if (sessions.length > 0) {
                                 let maxId = 0;

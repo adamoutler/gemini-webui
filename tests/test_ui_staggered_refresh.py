@@ -16,14 +16,37 @@ def staggered_page(server):
             body='[{"label": "host1", "type": "local"}, {"label": "host2", "type": "local"}, {"label": "host3", "type": "local"}]'
         ))
 
-        # Track session requests
-        page.session_requests = []
-        def track_request(request):
-            if "/api/sessions" in request.url and "cache=true" in request.url:
-                page.session_requests.append(time.time())
-        page.on("request", track_request)
-
         page.route("**/api/health/*", lambda route: route.fulfill(status=200, body='{"status":"up"}'))
+        
+        # Track socket emits via a playwright binding
+        page.session_requests = []
+        def track_emit(event_data):
+            page.session_requests.append(time.time())
+        page.expose_binding("trackSocketEmit", lambda source, data: track_emit(data))
+
+        # We must inject the mock after the page loads but before the scripts run, or right after.
+        # Actually, if we expose a binding, we can just patch getGlobalSocket's emit.
+        page.add_init_script('''
+            window.addEventListener('DOMContentLoaded', () => {
+                const originalGetGlobalSocket = window.getGlobalSocket;
+                if (originalGetGlobalSocket) {
+                    window.getGlobalSocket = function() {
+                        const socket = originalGetGlobalSocket();
+                        if (!socket._isMocked) {
+                            socket._isMocked = true;
+                            const origEmit = socket.emit.bind(socket);
+                            socket.emit = function(event, data, callback) {
+                                if (event === 'get_sessions' && data && data.cache === true) {
+                                    window.trackSocketEmit(data);
+                                }
+                                return origEmit(event, data, callback);
+                            };
+                        }
+                        return socket;
+                    };
+                }
+            });
+        ''')
         
         page.goto(server, timeout=15000)
         page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)

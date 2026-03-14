@@ -12,6 +12,16 @@ def client(test_data_dir):
         with patch.dict('os.environ', {"BYPASS_AUTH_FOR_TESTING": "true"}):
             yield client
 
+@pytest.fixture(autouse=True)
+def disable_csrf():
+    import os
+    from src.app import app
+    app.config['WTF_CSRF_ENABLED'] = False
+    os.environ['WTF_CSRF_ENABLED'] = 'False'
+    yield
+    app.config['WTF_CSRF_ENABLED'] = True
+    os.environ.pop('WTF_CSRF_ENABLED', None)
+
 def test_remote_sessions_list(client):
     with patch('src.app.subprocess.run') as mock_run:
         mock_run.return_value = MagicMock(

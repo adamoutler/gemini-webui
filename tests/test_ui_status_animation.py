@@ -131,20 +131,36 @@ def test_status_flash_on_update(page):
     node = session_item.locator('.status-node')
     expect(node).to_be_attached()
     
-    # We want to intercept the next fetch to /api/management/sessions
-    import json
-    
-    def handle_route(route):
-        print("ROUTE HIT!")
-        response = route.fetch()
-        data = response.json()
-        if data and len(data) > 0:
-            data[0]['last_active'] = data[0]['last_active'] + 100
-            route.fulfill(json=data)
-        else:
-            route.fulfill(response=response)
-            
-    playwright_page.route("**/api/management/sessions*", handle_route)
+    # We want to intercept the next fetch to get_management_sessions via WebSocket
+    playwright_page.evaluate('''() => {
+        const socket = getGlobalSocket();
+        const originalEmit = socket.emit.bind(socket);
+        socket.emit = (event, callback) => {
+            if (event === 'get_management_sessions') {
+                // We need to return a session that matches the existing one but with an updated time
+                // To do this simply, we will intercept and return the actual data + 100 on last_active
+                // However, since we mock it synchronously, we can just grab what's in the DOM
+                const activeTab = document.querySelector('.tab-instance.active');
+                if (activeTab) {
+                    const id = activeTab.id.replace('_instance', '');
+                    const existingRow = document.querySelector(`#${id}_backend_sessions .session-item`);
+                    if (existingRow && existingRow.id) {
+                        const tabId = existingRow.id.replace(`managed-session-${id}-`, '');
+                        callback([{
+                            tab_id: tabId,
+                            title: "Test",
+                            is_orphaned: false,
+                            last_active: Date.now() / 1000 + 100 // Future time to force flash
+                        }]);
+                        return socket;
+                    }
+                }
+                callback([]);
+                return socket;
+            }
+            return originalEmit(event, callback);
+        };
+    }''')
     
     # Trigger refresh
     playwright_page.evaluate('''() => {

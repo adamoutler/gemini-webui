@@ -8,12 +8,21 @@ def test_theory(server):
         context = browser.new_context()
         page = context.new_page()
         
-        def handle_route(route):
-            route.fulfill(status=500, body="Internal Server Error")
-        page.route("**/api/sessions*", handle_route)
-        
         page.goto(server, timeout=15000)
         page.wait_for_selector(".launcher", state="attached", timeout=15000)
+
+        # Intercept socket emit to simulate failure
+        page.evaluate('''() => {
+            const socket = getGlobalSocket();
+            const originalEmit = socket.emit.bind(socket);
+            socket.emit = (event, data, callback) => {
+                if (event === 'get_sessions') {
+                    if (callback) callback({ error: "Internal Server Error" });
+                    return socket;
+                }
+                return originalEmit(event, data, callback);
+            };
+        }''')
         
         local_health = page.locator('div[data-label="local"] .connection-title span[id$="_health_local"]')
         

@@ -708,6 +708,13 @@ def list_active_sessions():
     user_id = session.get('user_id') or ('admin' if env_config.BYPASS_AUTH_FOR_TESTING else None)
     return jsonify(session_manager.list_sessions(user_id))
 
+@socketio.on('get_management_sessions')
+def handle_get_management_sessions():
+    if not env_config.BYPASS_AUTH_FOR_TESTING and not session.get('authenticated'):
+        return {"error": "unauthenticated"}
+    user_id = session.get('user_id') or ('admin' if env_config.BYPASS_AUTH_FOR_TESTING else None)
+    return session_manager.list_sessions(user_id)
+
 @app.route('/api/management/sessions/<tab_id>', methods=['DELETE'])
 @authenticated_only
 def terminate_managed_session(tab_id):
@@ -754,10 +761,29 @@ def list_gemini_sessions():
     use_cache = request.args.get('cache') == 'true'
     bg = request.args.get('bg') == 'true'
 
+    res = _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg)
+    if isinstance(res, dict) and isinstance(res.get("error"), str) and "timeout" in res["error"].lower():
+        return jsonify(res), 504
+    return jsonify(res)
+
+@socketio.on('get_sessions')
+def handle_get_sessions(data):
+    if not env_config.BYPASS_AUTH_FOR_TESTING and not session.get('authenticated'):
+        return {"error": "unauthenticated"}
+        
+    ssh_target = data.get('ssh_target')
+    ssh_dir = data.get('ssh_dir')
+    cache_key = f"{'ssh' if ssh_target else 'local'}:{ssh_target or 'local'}:{ssh_dir or ''}"
+    use_cache = data.get('cache') is True
+    bg = data.get('bg') is True
+
+    return _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg)
+
+def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
     if use_cache:
         with session_results_cache_lock:
             if cache_key in session_results_cache:
-                return jsonify(session_results_cache[cache_key])
+                return session_results_cache[cache_key]
 
     if bg:
         with session_results_cache_lock:
@@ -785,18 +811,15 @@ def list_gemini_sessions():
 
             socketio.start_background_task(background_fetch, ssh_target, ssh_dir, cache_key)
 
-        return jsonify({"status": "fetching"})
+        return {"status": "fetching"}
 
     _, _, ssh_dir_path = get_config_paths()
     result = fetch_sessions_for_host({'target': ssh_target, 'dir': ssh_dir, 'type': 'ssh' if ssh_target else 'local'}, ssh_dir_path, GEMINI_BIN)
-    err = result.get('error')
-    if err and 'timeout' in err.lower():
-        return jsonify(result), 504
     
     with session_results_cache_lock:
         session_results_cache[cache_key] = result
         
-    return jsonify(result)
+    return result
 @app.route('/api/sessions/terminate', methods=['POST'])
 @authenticated_only
 def terminate_remote_session():
