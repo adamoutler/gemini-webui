@@ -17,7 +17,7 @@ class MobileModifierState {
         if (e.type === "touchstart" || e.type === "mousedown") {
           if (window.triggerHapticFeedback) window.triggerHapticFeedback();
           toggleFn();
-          const activeProxy = document.querySelector(".mobile-proxy-input");
+          const activeProxy = document.querySelector(".mobile-text-area");
           if (activeProxy) activeProxy.focus();
         }
       };
