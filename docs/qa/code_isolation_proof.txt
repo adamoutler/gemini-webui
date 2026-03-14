@@ -1,0 +1,1 @@
+Changes limited to src/static/mobile_input.js, src/static/mobile.css. No xterm.js core logic was modified. All modifications are guarded by isMobile flag or .is-mobile CSS class.

@@ -157,9 +157,9 @@ body {
   border: none;
   background: transparent;
   color: white;
-  
+
   /* Bug 4 Fix: Ensure voice transcription and long text wraps properly */
   white-space: pre-wrap;
-  word-wrap: break-word;
+  overflow-wrap: break-word;
   overflow-wrap: break-word;
 }
