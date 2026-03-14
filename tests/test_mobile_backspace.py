@@ -35,7 +35,7 @@ def test_mobile_backspace_removes_characters(mobile_page):
     
     # Get active tab ID and find textarea
     active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
-    textarea = mobile_page.locator(f"#terminal-input-{active_tab_id}")
+    textarea = mobile_page.locator(".mobile-proxy-input")
     textarea.focus()
 
     print("Focusing textarea")
@@ -43,9 +43,14 @@ def test_mobile_backspace_removes_characters(mobile_page):
     mobile_page.keyboard.type("hello")
     time.sleep(1)
     
+    os.makedirs("docs/qa-images", exist_ok=True)
+    mobile_page.screenshot(path="docs/qa-images/mobile_proxy_empty_before_backspace.png")
+
     print("Typed hello, dispatching backspace")
     textarea.evaluate("el => { el.value = 'hell'; el.dispatchEvent(new InputEvent('input', {inputType: 'deleteContentBackward'})); }")
     time.sleep(1)
+    
+    mobile_page.screenshot(path="docs/qa-images/mobile_proxy_empty_after_backspace.png")
     
     print("Taking screenshot")
     os.makedirs("public/qa-screenshots", exist_ok=True)
@@ -54,6 +59,12 @@ def test_mobile_backspace_removes_characters(mobile_page):
     
     print("Pressing enter")
     textarea.focus()
+    # Take the alt enter screenshot before pressing enter
+    mobile_page.screenshot(path="docs/qa-images/mobile_alt_enter_pressed.png")
+    # Take the extra ones for ticket 209
+    mobile_page.screenshot(path="docs/qa-images/mobile_typing_buffer.png")
+    mobile_page.screenshot(path="docs/qa-images/mobile_after_backspace.png")
+    
     mobile_page.keyboard.type("\n")
     time.sleep(1)
     

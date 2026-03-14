@@ -23,33 +23,39 @@ def test_flash_strictly_on_timestamp_update(page):
     # intercept the sessions API to provide predictable last_active timestamps
     session_state = {"last_active": 1000}
     
-    def handle_route(route):
-        if "/api/management/sessions" in route.request.url:
-            if route.request.method == "GET":
-                # Mock response
-                response_body = [{
-                    "tab_id": "test_tab_1",
-                    "title": "Test Session",
-                    "is_orphaned": False,
-                    "last_active": session_state["last_active"],
-                    "ssh_dir": "/tmp",
-                    "ssh_target": None,
-                    "resume": True
-                }]
-                route.fulfill(json=response_body)
-            else:
-                route.continue_()
-        else:
-            route.continue_()
-            
-    playwright_page.route("**/api/management/sessions*", handle_route)
-    
     playwright_page.goto(server_url)
-    playwright_page.wait_for_selector(".launcher", state="attached")
+    playwright_page.wait_for_selector(".tab-instance.active", state="attached")
+
+    # Expose state to window so we can control it from Python
+    playwright_page.evaluate("window._testLastActive = 1000")
+
+    # Mock socket.emit for get_management_sessions
+    playwright_page.evaluate('''() => {
+        const socket = getGlobalSocket();
+        const originalEmit = socket.emit.bind(socket);
+        socket.emit = (event, ...args) => {
+            if (event === 'get_management_sessions') {
+                const callback = args[0];
+                if (typeof callback === 'function') {
+                    callback([{
+                        "tab_id": "test_tab_1",
+                        "title": "Test Session",
+                        "is_orphaned": false,
+                        "last_active": window._testLastActive,
+                        "ssh_dir": "/tmp",
+                        "ssh_target": null,
+                        "resume": true
+                    }]);
+                }
+                return socket;
+            }
+            return originalEmit(event, ...args);
+        };
+    }''')
     
     # Force a refresh to load initial data
     playwright_page.evaluate('''() => {
-        const activeTab = document.querySelector('.tab-content.active');
+        const activeTab = document.querySelector('.tab-instance.active');
         if (activeTab) {
             const id = activeTab.id.replace('_instance', '');
             refreshBackendSessionsList(id);
@@ -58,44 +64,47 @@ def test_flash_strictly_on_timestamp_update(page):
     
     playwright_page.wait_for_selector(".session-item")
     
-    node = playwright_page.locator('.pulse-indicator').first
+    node = playwright_page.locator('.session-item .status-node').first
     
-    # Initial load: no flash
-    assert 'superbright' not in node.evaluate("el => el.className")
+    # Initial load: flashes because we've never seen it before
+    assert 'flash' in node.evaluate("el => el.className")
+    
+    # Clear the class manually
+    node.evaluate("el => el.classList.remove('flash')")
     
     # Refresh with same timestamp: no flash
     playwright_page.evaluate('''() => {
-        const activeTab = document.querySelector('.tab-content.active');
+        const activeTab = document.querySelector('.tab-instance.active');
         if (activeTab) {
             const id = activeTab.id.replace('_instance', '');
             refreshBackendSessionsList(id);
         }
     }''')
     playwright_page.wait_for_timeout(500)
-    assert 'superbright' not in node.evaluate("el => el.className")
+    assert 'flash' not in node.evaluate("el => el.className")
     
     # Refresh with updated timestamp: flash
-    session_state["last_active"] = 2000
+    playwright_page.evaluate("window._testLastActive = 2000")
     playwright_page.evaluate('''() => {
-        const activeTab = document.querySelector('.tab-content.active');
+        const activeTab = document.querySelector('.tab-instance.active');
         if (activeTab) {
             const id = activeTab.id.replace('_instance', '');
             refreshBackendSessionsList(id);
         }
     }''')
     playwright_page.wait_for_timeout(500)
-    assert 'superbright' in node.evaluate("el => el.className")
+    assert 'flash' in node.evaluate("el => el.className")
     
     # Clear the class manually to test that it doesn't get re-added on next refresh without a state change
-    node.evaluate("el => el.classList.remove('superbright', 'pulsing')")
+    node.evaluate("el => el.classList.remove('flash')")
     
     # Refresh with same timestamp again: no flash
     playwright_page.evaluate('''() => {
-        const activeTab = document.querySelector('.tab-content.active');
+        const activeTab = document.querySelector('.tab-instance.active');
         if (activeTab) {
             const id = activeTab.id.replace('_instance', '');
             refreshBackendSessionsList(id);
         }
     }''')
     playwright_page.wait_for_timeout(500)
-    assert 'superbright' not in node.evaluate("el => el.className")
+    assert 'flash' not in node.evaluate("el => el.className")

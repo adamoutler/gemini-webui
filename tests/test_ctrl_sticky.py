@@ -40,7 +40,7 @@ def test_ctrl_sticky(mobile_page):
     # Now type 'c' in the terminal
     # Find the active tab ID
     active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
-    textarea = mobile_page.locator(f"#terminal-input-{active_tab_id}")
+    textarea = mobile_page.locator(".mobile-proxy-input")
     
     textarea.fill('c')
 

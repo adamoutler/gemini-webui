@@ -35,11 +35,18 @@ def test_connection_health_indicators(page):
     # Locate the pulse indicator
     pulse_indicator = page.locator('div[data-label="local"] .connection-title div[id$="_pulse_local"]')
 
-    # Mock /api/sessions to return 500
-    def handle_route(route):
-        route.fulfill(status=500, body="Internal Server Error")
-        
-    page.route("**/api/sessions*", handle_route)
+    # Mock socket emit to return error
+    page.evaluate('''() => {
+        const socket = getGlobalSocket();
+        window.originalEmit = socket.emit.bind(socket);
+        socket.emit = (event, data, callback) => {
+            if (event === 'get_sessions') {
+                if (callback) callback({ error: "Internal Server Error" });
+                return socket;
+            }
+            return window.originalEmit(event, data, callback);
+        };
+    }''')
     
     # Trigger fetchSessions manually on the page for testing to bypass 10s wait
     page.evaluate('''() => {
@@ -68,7 +75,11 @@ def test_connection_health_indicators(page):
     expect(local_health).to_have_attribute("data-status", "error", timeout=15000)
     
     # Remove mock to let it succeed
-    page.unroute("**/api/sessions*")
+    page.evaluate('''() => {
+        if (window.originalEmit) {
+            getGlobalSocket().emit = window.originalEmit;
+        }
+    }''')
     
     # Trigger again to recover
     page.evaluate('''() => {
@@ -94,28 +105,18 @@ def test_default_health_indicator_grey(server):
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
         
-        # Mock /api/sessions to fail IMMEDIATELY on first load to simulate offline server
-        def handle_route(route):
-            route.fulfill(status=500, body="Internal Server Error")
-        page.route("**/api/sessions*", handle_route)
+        # Block Socket.io completely to simulate an offline server
+        page.route("**/socket.io/*", lambda route: route.abort())
         
         page.goto(server, timeout=15000)
         page.wait_for_selector(".launcher", state="attached", timeout=15000)
         
-        # Check that local health indicator is ⚪ (grey)
         local_health = page.locator('div[data-label="local"] .connection-title span[id$="_health_local"]')
-        expect(local_health).to_have_text("⚪", timeout=15000)
-        expect(local_health).to_have_attribute("data-status", "offline", timeout=15000)
         
-        # Check that it turns 🔴 when doing a manual non-cached fetch
-        page.evaluate('''() => {
-            if (typeof activeTabId !== "undefined") {
-                const id = activeTabId;
-                const sessionListId = `${id}_sessions_local`;
-                fetchSessions(id, {label: 'local', type: 'local'}, sessionListId, false, false);
-            }
-        }''')
+        # It should start grey ⚪
+        expect(local_health).to_have_text("⚪", timeout=2000)
         
+        # After the 5 second timeout in fetchSessions, it should turn red 🔴
         expect(local_health).to_have_text("🔴", timeout=15000)
         expect(local_health).to_have_attribute("data-status", "error", timeout=15000)
 

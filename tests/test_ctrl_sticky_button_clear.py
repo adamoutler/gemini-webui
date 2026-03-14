@@ -49,7 +49,7 @@ def test_ctrl_clears_on_paste(mobile_page):
     
     # Find the active tab ID
     active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
-    textarea = mobile_page.locator(f"#terminal-input-{active_tab_id}")
+    textarea = mobile_page.locator(".mobile-proxy-input")
     
     # Simulate typing multiple characters at once (like a paste or swipe type that emits multiple chars)
     # The term.onData event is triggered by textarea input
