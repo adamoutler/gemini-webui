@@ -26,8 +26,8 @@ def test_theory(server):
         
         local_health = page.locator('div[data-label="local"] .connection-title span[id$="_health_local"]')
         
-        # Initially white because the cache request fails and skips
-        expect(local_health).to_have_text("⚪", timeout=5000)
+        # Initially red because the websocket mock returns an explicit error
+        expect(local_health).to_have_text("🔴", timeout=5000)
         
         page.evaluate('''() => {
             if (typeof activeTabId !== "undefined") {

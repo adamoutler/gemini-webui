@@ -3,16 +3,6 @@ from playwright.sync_api import sync_playwright
 import os
 import json
 
-@pytest.fixture(scope="session")
-def server():
-    import subprocess
-    import time
-    # Start the local server
-    proc = subprocess.Popen(["python3", "src/app.py"], env=dict(os.environ, PORT="5002", BYPASS_AUTH_FOR_TESTING="true"))
-    time.sleep(3)
-    yield "http://127.0.0.1:5002"
-    proc.terminate()
-
 def test_mobile_modifier_ctrl(server):
     with sync_playwright() as p:
         device = p.devices['Pixel 5']

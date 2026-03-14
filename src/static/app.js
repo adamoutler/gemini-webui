@@ -123,7 +123,7 @@
             },
 
             updateHealth: function(tabId, label, isSuccess, shouldPulse = false) {
-                const prevClass = this.getInitialStatusClass(label);
+                const prevClass = this.getInitialStatusClass(label); console.log("UPDATE HEALTH CALLED WITH " + isSuccess);
                 const failures = this.updateState(label, isSuccess);
                 const newClass = this.getStatusClass(failures);
                 this.renderHealthUI(tabId, label, failures);
@@ -783,7 +783,7 @@
             return globalSocket;
         }
 
-        async function fetchSessions(tabId, conn, targetId, forceAll = false, useCache = false, isPolling = false) {
+        async function fetchSessions(tabId, conn, targetId, forceAll = false, useCache = false, isPolling = false) { console.log("FETCH SESSIONS CALLED WITH useCache=" + useCache + " isPolling=" + isPolling);
             if (!window.expandedSessionLists) window.expandedSessionLists = new Set();
             if (window.expandedSessionLists.has(conn.label)) {
                 forceAll = true;
@@ -795,9 +795,15 @@
             params.bg = true;
 
             try {
-                const data = await new Promise((resolve, reject) => {
+                console.log("FETCH SESSIONS START"); const data = await new Promise((resolve, reject) => {
                     const socket = getGlobalSocket();
+                    
+                    const timeoutTimer = setTimeout(() => {
+                        resolve({ error: "Timeout waiting for get_sessions" });
+                    }, 5000);
+
                     socket.emit('get_sessions', params, (response) => {
+                        clearTimeout(timeoutTimer);
                         if (response && response.error && !response.output && !response.sessions) {
                             resolve(response); // Handle errors explicitly like API did
                         } else if (response) {
@@ -808,7 +814,7 @@
                     });
                 });
 
-                if (data.status === "fetching") {
+                console.log("FETCH SESSIONS DATA: ", JSON.stringify(data)); if (data.status === "fetching") {
                     const listEl = document.getElementById(targetId);
                     if (listEl && listEl.innerHTML === '') {
                         listEl.innerHTML = `<div style="padding: 10px; color: #888; font-size: 11px;">Fetching sessions...</div>`;
@@ -817,8 +823,8 @@
                     return;
                 }
 
-                if (!useCache || isPolling) {
-                    HostStateManager.updateHealth(tabId, conn.label, !data.error, false);
+                if (!useCache || isPolling) { console.log("ENTERED IF BLOCK"); 
+                    try { HostStateManager.updateHealth(tabId, conn.label, !data.error, false); } catch (e) { console.log("INNER ERROR: " + e.stack); }
                 }
 
                 const listEl = document.getElementById(targetId); if (!listEl) return;
@@ -828,6 +834,7 @@
                         errorHtml += `<div style="padding: 0 10px 10px 10px;"><button class="small primary" onclick="openSettings()">Setup Keys</button></div>`;
                     }
                     listEl.innerHTML = errorHtml;
+                    if (useCache && !isPolling) fetchSessions(tabId, conn, targetId, forceAll, false); // Update after cache load
                     return;
                 }
                 const sessions = parseSessions(data.output || "");
@@ -859,7 +866,7 @@
                 }
                 if (useCache && !isPolling) fetchSessions(tabId, conn, targetId, forceAll, false); // Update after cache load
             } catch (e) {
-                if (!useCache || isPolling) {
+                if (!useCache || isPolling) { console.log("ENTERED IF BLOCK"); 
                     HostStateManager.updateHealth(tabId, conn.label, false, false);
                 }
                 console.error(e);
@@ -1268,7 +1275,7 @@
                             if (dir) params.ssh_dir = dir;
                             params.cache = false;
                             
-                            const data = await new Promise((resolve, reject) => {
+                            console.log("FETCH SESSIONS START"); const data = await new Promise((resolve, reject) => {
                                 const socket = getGlobalSocket();
                                 socket.emit('get_sessions', params, (response) => {
                                     if (response) resolve(response);

@@ -49,6 +49,11 @@ let ui = new MobileInputUI('test', buffer.handleInput.bind(buffer), buffer.handl
 
 // Test Dictation heuristics without spaces so it doesn't instantly flush
 ui.proxyInput.value = 'helloWorldNoSpaces';
+console.log('Dispatching event...');
+console.log('Dispatching event...');
+console.log('Dispatching event...');
+console.log('Dispatching event...');
+console.log('Dispatching event...');
 ui.proxyInput.dispatchEvent({
     type: 'input',
     inputType: 'insertDictationResult',
@@ -56,6 +61,11 @@ ui.proxyInput.dispatchEvent({
 });
 
 // Should expand visually immediately
+console.log('width:', ui.proxyInput.style.width);
+console.log('width:', ui.proxyInput.style.width);
+console.log('width:', ui.proxyInput.style.width);
+console.log('width:', ui.proxyInput.style.width);
+console.log('width:', ui.proxyInput.style.width);
 assert.strictEqual(ui.proxyInput.style.width, 'calc(100vw - 20px)');
 assert.strictEqual(ui.proxyInput.style.left, '10px');
 
