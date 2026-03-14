@@ -81,7 +81,7 @@ pipeline {
                     curl -sL -u "adamoutler@gmail.com:$ADAM_TOKEN" "${BUILD_URL}consoleText" >> /tmp/jenkins-receipt-gemini-webui.log
                     echo "This is the absolute, and final, build result for the code you just pushed to the repository." >> /tmp/jenkins-receipt-gemini-webui.log
                     echo "Gemini WebUI Build Finished: $BUILD_RESULT #$BUILD_NUMBER" >> /tmp/jenkins-receipt-gemini-webui.log
-                    test ""$BUILD_RESULT" == "FAILURE" && echo "You must fix your code. " >> /tmp/jenkins-receipt-gemini-webui.log
+                    test "$BUILD_RESULT" != "SUCCESS" && echo "You have committed faulty code. Fix it and recommit. " >> /tmp/jenkins-receipt-gemini-webui.log
                 '''
             }
         }
