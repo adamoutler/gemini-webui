@@ -1729,7 +1729,7 @@
             return {
                 label: host,
                 type: 'ssh',
-                target: port ? `${user}@${host} -p ${port}` : `${user}@${host}`,
+                target: port ? `${user}@${host}:${port}` : `${user}@${host}`,
                 dir: folder
             };
         }
