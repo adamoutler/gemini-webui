@@ -110,6 +110,9 @@ def cleanup_orphaned_ptys():
                 if session.orphaned_at is not None and (now - session.orphaned_at) > ttl:
                     try:
                         os.kill(session.pid, signal.SIGKILL)
+                    except OSError:
+                        pass
+                    try:
                         os.waitpid(session.pid, os.WNOHANG)
                     except OSError:
                         pass
@@ -407,7 +410,9 @@ def read_and_forward_pty_output():
                         if output:
                             batched_output.append(output)
                         else:
-                            raise EOFError("EOF reached")
+                            # Flush before raising EOFError
+                            break_eof = True
+                            break
                     else:
                         break
                 
@@ -415,8 +420,6 @@ def read_and_forward_pty_output():
                     combined_output = b"".join(batched_output)
                     decoded_output = decoder.decode(combined_output)
                     if decoded_output:
-                        # Filter out terminal identification responses (e.g. \x1b[?62;c or \x1b[0c)
-                        # These are often triggered by the terminal on reclaim and shouldn't be buffered.
                         if '\x1b[' in decoded_output and 'c' in decoded_output:
                             filtered_output = IDENTIFICATION_REGEX.sub('', decoded_output)
                         else:
@@ -430,6 +433,9 @@ def read_and_forward_pty_output():
                             session.append_buffer(filtered_output)
                             if sid:
                                 socketio.emit('pty-output', {'output': filtered_output}, room=sid)
+
+                if 'break_eof' in locals() and break_eof:
+                    raise EOFError("EOF reached")
             except (OSError, IOError, EOFError):
                 logger.info(f"Removing session {tab_id} due to I/O error")
                 old_session = session_manager.remove_session(tab_id)
@@ -590,19 +596,24 @@ def pty_restart(data):
             session_manager.remove_session(oldest_session.tab_id)
             try:
                 os.kill(oldest_session.pid, signal.SIGKILL)
+            except Exception as e:
+                pass
+            try:
                 os.waitpid(oldest_session.pid, 0)
             except Exception as e:
-                logger.warning(f"Failed to kill evicted session {oldest_session.pid}: {e}")
-    
+                pass
+
     old_session = session_manager.remove_session(tab_id, user_id)
     if old_session:
         logger.info(f"Killing old session {tab_id} for fresh restart")
         try:
             os.kill(old_session.pid, signal.SIGKILL)
+        except Exception as e:
+            pass
+        try:
             os.waitpid(old_session.pid, 0)
         except Exception as e:
-            logger.warning(f"Failed to kill old session {old_session.pid}: {e}")
-            
+            pass            
     resume = data.get('resume', True)
     if isinstance(resume, str):
         if resume.lower() == 'true':
@@ -729,9 +740,12 @@ def terminate_managed_session(tab_id):
         ephemeral_sessions.pop(tab_id, None)
         try:
             os.kill(session_obj.pid, signal.SIGKILL)
+        except Exception as e:
+            pass
+        try:
             os.waitpid(session_obj.pid, 0)
         except Exception as e:
-            logger.error(f"Error killing process {session_obj.pid}: {e}")
+            pass
             
         return jsonify({"status": "success"})
     
