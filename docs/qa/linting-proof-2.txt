@@ -1,0 +1,50 @@
+#12 24.69   path: '/root/.gemini/projects.json.tmp',
+#12 24.69   dest: '/root/.gemini/projects.json'
+#12 24.69 }
+#12 DONE 25.2s
+
+#13 exporting to image
+#13 exporting layers
+#13 exporting layers 4.2s done
+#13 writing image sha256:52ba1c6d57b5a08cd2a2bc61192cd792d8c0272c894bcd352b11bb809e94ab72 done
+#13 naming to docker.io/library/gemini-webui done
+#13 DONE 4.2s
+[Pipeline] sh
++ docker compose down --remove-orphans
+ Container updates_gemini_webui_main-gemini-web-1 Stopping 
+ Container updates_gemini_webui_main-gemini-web-1 Stopped 
+ Container updates_gemini_webui_main-gemini-web-1 Removing 
+ Container updates_gemini_webui_main-gemini-web-1 Removed 
+ Network updates_gemini_webui_main_default Removing 
+ Network updates_gemini_webui_main_default Removed 
+[Pipeline] sh
++ docker compose up -d --force-recreate
+time="2026-03-14T17:15:41-04:00" level=warning msg="No services to build"
+ Network updates_gemini_webui_main_default Creating 
+ Network updates_gemini_webui_main_default Created 
+ Container updates_gemini_webui_main-gemini-web-1 Creating 
+ Container updates_gemini_webui_main-gemini-web-1 Created 
+ Container updates_gemini_webui_main-gemini-web-1 Starting 
+ Container updates_gemini_webui_main-gemini-web-1 Started 
+[Pipeline] }
+[Pipeline] // withCredentials
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] }
+[Pipeline] // stage
+[Pipeline] stage
+[Pipeline] { (Declarative: Post Actions)
+[Pipeline] script
+[Pipeline] {
+[Pipeline] }
+[Pipeline] // script
+[Pipeline] withCredentials
+Masking supported pattern matches of $ADAM_TOKEN or $LDAP_BIND_PASS
+[Pipeline] {
+[Pipeline] sh
++ docker compose ps
+NAME                                     IMAGE          COMMAND               SERVICE      CREATED         STATUS                           PORTS
+updates_gemini_webui_main-gemini-web-1   gemini-webui   "python src/app.py"   gemini-web   2 seconds ago   Up 1 second (health: starting)   0.0.0.0:5000->5000/tcp, [::]:5000->5000/tcp
+[Pipeline] sh
+This is the absolute, and final, build result for the code you just pushed to the repository.
+Gemini WebUI Build Finished: SUCCESS #404

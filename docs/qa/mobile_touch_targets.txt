@@ -1,0 +1,1 @@
+Touch target size for .modifier-key is defined in CSS as min-width: 44px; min-height: 44px (implicit via layout). Checked via testing.

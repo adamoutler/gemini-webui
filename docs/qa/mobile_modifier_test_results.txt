@@ -1,4 +1,4 @@
-[1m============================= test session starts ==============================[0m
+============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-8.0.2, pluggy-1.6.0
 rootdir: /home/adamoutler/gemini-webui
 configfile: pytest.ini
@@ -6,11 +6,8 @@ plugins: playwright-0.4.4, anyio-4.12.1, timeout-2.4.0, base-url-2.1.0, cov-7.0.
 timeout: 60.0s
 timeout method: signal
 timeout func_only: False
-collected 16 items
+collected 1 item
 
-tests/test_mobile_backspace.py [32m.[0m[32m                                         [  6%][0m
-tests/test_mobile_modifier_e2e.py [32m.[0m[32m                                      [ 12%][0m
-tests/test_mobile_text_selection.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                 [ 37%][0m
-tests/test_mobile_ui.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                       [100%][0m
+tests/test_mobile_modifier_e2e.py .                                      [100%]
 
-[32m============================= [32m[1m16 passed[0m[32m in 35.92s[0m[32m ==============================[0m
+============================== 1 passed in 2.29s ===============================

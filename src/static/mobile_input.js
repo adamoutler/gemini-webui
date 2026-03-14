@@ -92,7 +92,10 @@ class MobileInputBuffer {
   }
 
   handleInput(e, isComposing, value) {
-    if (e.inputType === "deleteContentBackward" || e.inputType === "deleteWordBackward") {
+    if (
+      e.inputType === "deleteContentBackward" ||
+      e.inputType === "deleteWordBackward"
+    ) {
       if (!this.isMobile) return undefined;
       // We do not emit backspace here because deleting text within the visible buffer
       // should not delete text already sent to the terminal.
@@ -217,7 +220,7 @@ class MobileInputUI {
       this.proxyInput.id = "terminal-input-mobile";
       this.proxyInput.className = "mobile-text-area";
       this.proxyInput.placeholder = "Tap to type...";
-      
+
       this.proxyInput.setAttribute("autocomplete", "on");
       this.proxyInput.setAttribute("autocorrect", "on");
       this.proxyInput.setAttribute("spellcheck", "true");

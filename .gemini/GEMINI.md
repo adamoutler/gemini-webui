@@ -409,8 +409,11 @@ Please spawn an agents-orchestrator to execute complete development pipeline for
   8. set the ticket to "done" state, and move on to the next until tickets are developed, validated, closed, and the specified work is complete.
 - You are not to work on code directly. You are to save your context and focus on higher level tasks allowing subagents to do the code work. Reading and editing files has context cost.
 - **IMPORTANT**: If you have *any* questions about how Plane works, how to configure it, or its architecture, you are strongly encouraged to use the `mcp_deep-wiki_ask_question` tool with the repository `makeplane/plane` (or `makeplane/plane-mcp-server` for MCP specific queries) as much as possible before asking the user.
+- Comments help the user and future you to understand what was done.  Use them!
 
-# Project Specific Information## 🏗️ Gemini WebUI Technical Addendum
+# Project Specific Information
+
+## 🏗️ Gemini WebUI Technical Addendum
 
 ### 1. Architectural Mandates
 * **Connectivity:** Support both **Local PTY** (inside container) and **SSH Tunnels** (to target hosts).
@@ -421,22 +424,35 @@ Please spawn an agents-orchestrator to execute complete development pipeline for
 ---
 
 ### 2. The Universal Quality Control Gate ("The Machine")
-* **Commit Gate:** Every commit is intercepted by an automated QA agent.
-* **Ticket Tracking:** The current **Kanban ID** must be written to `/tmp/gemini-webui-ticket.txt` before any git commit attempt.
-* **Empirical Evidence:** QA requires visual proof (screenshots) or logs saved to `/tmp` or `docs/qa/`. These must **NOT** be tracked in the repo.
 * **Providing Proof via Comments:** To pass the QA gate, you must guide the checking agent to your evidence. When commenting on the ticket to signal completion, include a direct instruction for the agent.
   * *Example Comment:* `Ticket's done. read_file(file:docs/qa/test_results/evidence.txt)` or `list_files(dir_path:docs/qa-images/GEMWEBUI-123)`.
-* **Rejection Policy:** Default to **"NEEDS WORK"**. If a commit fails, feed the rejection reason back to the developer agent immediately.
+* **Rejection Policy:** Reality Checker AI defaults to **"NEEDS WORK"**. rejection reason back to the developer agent immediately.
+* **Artifacts:** You are encouraged to automatically generate properly named artifacts for QA during test time within docs/qa & docs/qa-images.
+* **Procedure For closing kanban tickets:**
+  The AI reviewer is the final quality gate. The ticket must have undeniable proof of completion. The AI reviewer's comment will appear in the ticket as well.
+  1. ensure you think the ticket is done.
+  2. commit the code.
+  3. git p - triggers a full jenkins build-test-deploy. You will be informed of any failures.
+  4. You may add a comment to the ticket for the AI reviewer. 
+  5. Don't commit if: 
+    * You speculate the ticket may be incomplete
+  6. "Done" or close a single ticket. A `reality-checker` AI will evaluate your work. They will be provided the ticket, comments, the full jenkins build log, and QA will refuse if:
+    * multiple tickets submitted at once.
+    * any uncommitted files.
+    * any commits not `git p`'d.
+    * Jenkins build receipt absent/failed.
+    * Code changes were ineffective.
+    * lack of evidence the code works.
+    * Network or timeout errors
+This is an intentionally rigorous process. Work until the ticket is closed and then continue to the next ticket. Slow but steady wins the race. Ask an Architect subagent to evaluate and continue for the most effective results. Don't search manually.
+
 
 ---
 
 ### 3. Deployment & Recovery Protocol (Zero-Downtime)
 * **The Push Rule:** `git push` is blocked. You MUST use `git p` as it is the only way.
 * **Pre-Push Warning:** You must state: *"Executing git p. I may lose context due to system restart severing the connection. When you resume, I will check the build receipt."*
-* **Post-Resume Recovery:**
-    1. Read `/tmp/jenkins-receipt-gemini-webui.log` to verify build success.
-    2. Run `git status` to re-orient.
-    3. Check `/tmp/gemini-webui-ticket.txt` to resume the active task.
+* **Post-Resume Recovery:** If you see the above message and no result; read `/tmp/jenkins-receipt-gemini-webui.log` to verify build success and continue.
 
 ---
 
@@ -460,4 +476,5 @@ Please spawn an agents-orchestrator to execute complete development pipeline for
 - Don't just write the code for complex items.  use Crawl-Walk-Run method. Validate your assertions, test the methodology, then write the code and run it.
 
 ## Kanban Formatting
-**MANDATORY**: When creating or updating work items in Kanban, always use Markdown for the `description_html` field. The system processes Markdown correctly, but raw HTML may be rendered literally, making the tickets unreadable.
+* Comments help evaluate what was done.  Your user reads them.
+
