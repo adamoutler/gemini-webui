@@ -110,7 +110,6 @@ class MobileInputBuffer {
     this.emitCallback = emitCallback;
     this.isMobile = isMobile;
     this.modifierState = modifierState;
-    this.lastEmittedText = "";
   }
 
   handleInput(
@@ -130,16 +129,9 @@ class MobileInputBuffer {
       // it means the user pressed backspace on an empty buffer.
       if (lastValue.length === 0) {
         this.emitCallback("\x7f");
-        // We also need to shrink lastEmittedText so commonPrefix logic doesn't break
-        if (this.lastEmittedText && this.lastEmittedText.length > 0) {
-          this.lastEmittedText = this.lastEmittedText.substring(
-            0,
-            this.lastEmittedText.length - 1,
-          );
-        }
-        return ""; // Force clear so Gboard's resurrected text is deleted
+        return ""; // Force clear
       }
-      return undefined;
+      return undefined; // Let normal backspace delete characters from the proxy buffer
     }
 
     // If modifiers are active, consume exactly 1 char from data, apply modifiers, emit, clear buffer
@@ -156,52 +148,29 @@ class MobileInputBuffer {
       if (char) {
         const modified = this.modifierState.applyModifiers(char);
         this.emitCallback(modified);
-        this.lastEmittedText = ""; // reset on modifier
         // Return the buffer without the consumed character
         return value.slice(0, -1);
       }
     }
 
-    // Gboard remembers the entire line of text and re-inserts it.
-    // Find the common prefix between what we previously emitted and what Gboard thinks is there.
-    let i = 0;
-    const prevEmit = this.lastEmittedText || "";
-    while (
-      i < prevEmit.length &&
-      i < value.length &&
-      prevEmit[i] === value[i]
-    ) {
-      i++;
-    }
-
-    // The actual text Gboard thinks is in the buffer up to the point it diverges
-    this.lastEmittedText = prevEmit.substring(0, i);
-
-    // The "new" text that hasn't been emitted yet
-    let workingValue = value.substring(i);
-
     const boundaryRegex = /[\s.,?!;—，。？！；]$/; // Match boundary at the END
 
-    // If it's a dictation (voice typing), we don't clear on every space.
-    // We let the dictationTimer or forceEmit handle the final flush.
+    // If it's dictation, don't clear on every space. Let the dictationTimer or forceEmit handle it.
     if (isDictation && !forceEmit) {
-      return workingValue !== value ? workingValue : undefined;
+      return undefined;
     }
 
-    // For normal typing, we check if the value ends with a boundary.
-    // We flush on boundary to enforce a single-word buffer.
+    // For normal typing, if we hit a boundary or it's forced, emit the whole value and clear.
     if (
       forceEmit ||
-      boundaryRegex.test(workingValue) ||
-      (!this.isMobile && workingValue.length > 1)
+      boundaryRegex.test(value) ||
+      (!this.isMobile && value.length > 1)
     ) {
-      this.emitCallback(workingValue);
-      this.lastEmittedText += workingValue;
-      return "";
+      this.emitCallback(value);
+      return ""; // Synchronously clear the buffer
     }
-
-    // If we stripped text, we must return the stripped version so the textarea updates
-    return workingValue !== value ? workingValue : undefined;
+    
+    return undefined; // Keep buffering the current word
   }
 
   handleKeyDown(e, value, isComposing) {

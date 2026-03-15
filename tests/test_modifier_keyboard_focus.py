@@ -26,8 +26,8 @@ def mobile_page(server, browser_context):
     expect(page.locator("#mobile-controls")).to_be_visible(timeout=5000)
 
     # Ensure there is a terminal created and visible
-    page.wait_for_selector(".xterm-helper-textarea", timeout=5000)
-
+    # On mobile, the native textarea is disabled, so wait for proxy input instead
+    page.wait_for_selector(".mobile-text-area", state="attached", timeout=5000)
     yield page
     page.close()
 

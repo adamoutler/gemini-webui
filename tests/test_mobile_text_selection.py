@@ -128,7 +128,7 @@ def test_mobile_quick_tap_focus(mobile_page):
     )
 
     # Verify textarea is focused (it should happen after touchend)
-    textarea = mobile_page.locator("textarea.xterm-helper-textarea")
+    textarea = mobile_page.locator(".mobile-text-area")
     expect(textarea.first).to_be_focused(timeout=5000)
 
 

@@ -412,7 +412,7 @@ def handle_connect(auth=None):
     try:
         if app.config.get("WTF_CSRF_ENABLED", True):
             validate_csrf(csrf_token)
-            logger.info("CSRF validation passed")
+            app.logger.debug("CSRF validation passed")
         else:
             logger.info("CSRF validation disabled via config")
     except ValidationError as e:
@@ -755,7 +755,7 @@ def pty_restart(data):
                 oldest_session = s
 
         if oldest_session:
-            logger.info(
+            logger.debug(
                 f"LRU Eviction: Dropping session {oldest_session.tab_id} (last seen {oldest_time}) to make room."
             )
             sid_to_notify = session_manager.tabid_to_sid.get(oldest_session.tab_id)
