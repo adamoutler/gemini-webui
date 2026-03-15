@@ -364,7 +364,9 @@ class MobileTerminalController {
   }
 
   emitToTerminal(data) {
-    const activeTab = window.tabs ? window.tabs.find((t) => t.id === window.activeTabId) : this.tab;
+    const activeTab = window.tabs
+      ? window.tabs.find((t) => t.id === window.activeTabId)
+      : this.tab;
     const targetTab = activeTab || this.tab;
 
     if (!targetTab || !targetTab.socket || data == null) return;
