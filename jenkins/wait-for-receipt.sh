@@ -19,9 +19,7 @@ while [ $SECONDS -lt $end_time ]; do
         echo -e "\nBuild started. Waiting for completion..."
         break
     fi
-    if [ $(( SECONDS % 10 )) -eq 0 ]; then
-        echo -n "."
-    fi
+    echo -n "."
     sleep 2
 done
 
@@ -57,9 +55,7 @@ while [ $SECONDS -lt $end_time ]; do
 
         exit 0
     fi
-    if [ $(( SECONDS % 10 )) -eq 0 ]; then
-        echo -n "."
-    fi
+    echo -n "."
     sleep 2
 done
 
