@@ -153,7 +153,7 @@ class MobileInputBuffer {
       }
     }
 
-    const boundaryRegex = /[\s.,?!;—，。？！；]$/; // Match boundary at the END
+    const boundaryRegex = /[\s.,?!;—，。？！；]/; // Match boundary ANYWHERE
 
     // If it's dictation, don't clear on every space. Let the dictationTimer or forceEmit handle it.
     if (isDictation && !forceEmit) {
