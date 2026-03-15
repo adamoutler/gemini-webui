@@ -331,12 +331,15 @@ class MobileInputUI {
 
     this.proxyInput.addEventListener("input", (e) => {
       const currentValue = this.proxyInput.value;
+      const isDictation = e.inputType === "insertDictationResult";
+
       const newValue = inputHandler(
         e,
         this.isComposing,
         currentValue,
         false,
         lastValue,
+        isDictation
       );
       if (newValue !== undefined) {
         this.proxyInput.value = newValue;
@@ -349,28 +352,22 @@ class MobileInputUI {
         this.dictationTimer = null;
       }
 
-      if (this.proxyInput.value.length > 0) {
-        const isDictation =
-          e.inputType === "insertDictationResult" ||
-          (e.data && e.data.length > 5 && e.inputType !== "insertFromPaste");
-
-        if (isDictation) {
-          this.dictationTimer = setTimeout(() => {
-            if (this.proxyInput.value.length > 0) {
-              // force flush
-              inputHandler(
-                { data: "" },
-                false,
-                this.proxyInput.value,
-                true,
-                this.proxyInput.value,
-                true,
-              );
-              this.proxyInput.value = "";
-              lastValue = "";
-            }
-          }, 800);
-        }
+      if (this.proxyInput.value.length > 0 && isDictation) {
+        this.dictationTimer = setTimeout(() => {
+          if (this.proxyInput.value.length > 0) {
+            // force flush
+            inputHandler(
+              { data: "" },
+              false,
+              this.proxyInput.value,
+              true,
+              this.proxyInput.value,
+              true,
+            );
+            this.proxyInput.value = "";
+            lastValue = "";
+          }
+        }, 800);
       }
     });
     this.proxyInput.addEventListener("keydown", (e) => {
