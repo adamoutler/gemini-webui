@@ -2,8 +2,23 @@ class MobileModifierState {
   constructor() {
     this.ctrlActive = false;
     this.altActive = false;
-    this.ctrlBtn = document.getElementById("ctrl-toggle");
-    this.altBtn = document.getElementById("alt-toggle");
+
+    // Clone and replace buttons to strip old event listeners from previous connections
+    const replaceBtn = (id) => {
+      const btn = document.getElementById(id);
+      if (!btn) return null;
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+      return newBtn;
+    };
+
+    this.ctrlBtn = replaceBtn("ctrl-toggle");
+    this.altBtn = replaceBtn("alt-toggle");
+
+    // Reset visual state on recreation
+    if (this.ctrlBtn) this.ctrlBtn.classList.remove("active");
+    if (this.altBtn) this.altBtn.classList.remove("active");
+
     this.setupListeners();
   }
 
@@ -214,21 +229,20 @@ class MobileInputUI {
       }
     }
 
-    this.proxyInput = document.getElementById("terminal-input-mobile");
-    if (!this.proxyInput) {
-      this.proxyInput = document.createElement("textarea");
-      this.proxyInput.id = "terminal-input-mobile";
-      this.proxyInput.className = "mobile-text-area";
-      this.proxyInput.placeholder = "Tap to type...";
+    let oldProxy = document.getElementById("terminal-input-mobile");
+    if (oldProxy) oldProxy.remove();
 
-      this.proxyInput.setAttribute("autocomplete", "on");
-      this.proxyInput.setAttribute("autocorrect", "on");
-      this.proxyInput.setAttribute("spellcheck", "true");
-      this.proxyInput.setAttribute("autocapitalize", "sentences");
+    this.proxyInput = document.createElement("textarea");
+    this.proxyInput.id = "terminal-input-mobile";
+    this.proxyInput.className = "mobile-text-area";
+    this.proxyInput.placeholder = "Tap to type...";
 
-      container.appendChild(this.proxyInput);
-    }
+    this.proxyInput.setAttribute("autocomplete", "on");
+    this.proxyInput.setAttribute("autocorrect", "on");
+    this.proxyInput.setAttribute("spellcheck", "true");
+    this.proxyInput.setAttribute("autocapitalize", "sentences");
 
+    container.appendChild(this.proxyInput);
     this.isComposing = false;
     this.proxyInput.addEventListener("compositionstart", () => {
       this.isComposing = true;
