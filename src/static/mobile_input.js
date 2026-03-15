@@ -442,26 +442,47 @@ class MobileTerminalController {
       nativeTextarea.style.display = "none";
     }
 
-    // Prevent default on touchstart/mousedown so tapping the terminal doesn't blur the input
-    const preventBlur = (e) => {
-      if (this.isMobile && e.target.closest(".xterm-viewport")) {
-        // Only prevent default if we're not tapping on something that naturally needs focus
+    // Handle paste directly on our proxy input since we disabled xterm's textarea
+    this.ui.proxyInput.addEventListener("paste", (e) => {
+      let pasteText = (e.clipboardData || window.clipboardData).getData("text");
+      if (pasteText) {
         e.preventDefault();
-        this.ui.proxyInput.focus();
-        this.ui.alignWithCursor(this.tab.term);
+        // Force flush the pasted text immediately
+        this.buffer.handleInput(
+          { data: pasteText, inputType: "insertFromPaste" },
+          false,
+          this.ui.proxyInput.value + pasteText,
+          true,
+          this.ui.proxyInput.value,
+          false,
+        );
       }
-    };
-
-    this.tab.term.element.addEventListener("touchstart", preventBlur, {
-      passive: false,
     });
-    this.tab.term.element.addEventListener("mousedown", preventBlur);
+
+    // Use a touchend listener on the terminal to focus our proxy input
+    // without using preventDefault() on touchstart (which breaks scrolling/long-press)
+    this.tab.term.element.addEventListener("touchend", (e) => {
+      if (this.isMobile && e.target.closest(".xterm-viewport")) {
+        this.ui.proxyInput.focus();
+
+        // Move proxyInput to touch coordinates so long-press opens paste menu on it
+        // and make it large enough to be easily tapped/long-pressed.
+        if (e.changedTouches && e.changedTouches.length > 0) {
+          const touch = e.changedTouches[0];
+          this.ui.proxyInput.style.left = `${touch.clientX - 25}px`;
+          this.ui.proxyInput.style.top = `${touch.clientY - 25}px`;
+          this.ui.proxyInput.style.width = "50px";
+          this.ui.proxyInput.style.height = "50px";
+        } else {
+          this.ui.alignWithCursor(this.tab.term);
+        }
+      }
+    });
 
     // Use a click listener on the terminal to focus our proxy input
     this.tab.term.element.addEventListener("click", () => {
       if (this.isMobile) {
         this.ui.proxyInput.focus();
-        this.ui.alignWithCursor(this.tab.term);
       }
     });
 
