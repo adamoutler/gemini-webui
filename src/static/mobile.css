@@ -134,14 +134,14 @@ body {
 
 /* Bug 3 Fix: Anchor the input container and prevent floating */
 .is-mobile .mobile-input-container {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
   overflow: visible;
   pointer-events: none;
-  z-index: 100;
+  z-index: 9999;
 }
 
 /* Bug 3 Fix: Constrain text area sizing and enable scrolling */
