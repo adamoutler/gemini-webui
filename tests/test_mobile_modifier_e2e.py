@@ -34,8 +34,9 @@ def test_mobile_modifier_ctrl(server):
             )
 
         # Type 'c' into proxy input
-        page.fill(".mobile-text-area", "c")
-        page.dispatch_event(".mobile-text-area", "input")
+        page.evaluate(
+            "() => { const el = document.querySelector('.mobile-text-area'); el.value = 'c'; el.dispatchEvent(new Event('input', { bubbles: true })); }"
+        )
 
         # Verify ctrl is inactive
         page.wait_for_selector("#ctrl-toggle:not(.active)")

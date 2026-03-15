@@ -39,7 +39,9 @@ def test_keyboard_per_word_overlay(page, server):
     page.wait_for_timeout(1000)
 
     # Type a word without space
-    textarea.fill("echo")
+    textarea.evaluate(
+        "el => { el.value = 'echo'; el.dispatchEvent(new Event('input', { bubbles: true })); }"
+    )
     textarea.evaluate(
         "el => el.dispatchEvent(new InputEvent('input', {data: 'o', inputType: 'insertText'}))"
     )
@@ -56,7 +58,9 @@ def test_keyboard_per_word_overlay(page, server):
     )
 
     # Type a space
-    textarea.fill("echo ")
+    textarea.evaluate(
+        "el => { el.value = 'echo '; el.dispatchEvent(new Event('input', { bubbles: true })); }"
+    )
     textarea.evaluate(
         "el => el.dispatchEvent(new InputEvent('input', {data: ' ', inputType: 'insertText'}))"
     )
@@ -69,7 +73,9 @@ def test_keyboard_per_word_overlay(page, server):
     ), f"Expected buffer to clear after space, got '{overlay_val}'"
 
     # Type another word
-    textarea.fill("hello")
+    textarea.evaluate(
+        "el => { el.value = 'hello'; el.dispatchEvent(new Event('input', { bubbles: true })); }"
+    )
     textarea.evaluate(
         "el => el.dispatchEvent(new InputEvent('input', {data: 'o', inputType: 'insertText'}))"
     )
