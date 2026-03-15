@@ -242,13 +242,13 @@ class MobileInputUI {
     this.proxyInput.id = "terminal-input-mobile";
     this.proxyInput.className = "mobile-text-area";
     this.proxyInput.placeholder = "";
-    
+
     // Make it invisible but positionable
-    this.proxyInput.style.position = 'absolute';
-    this.proxyInput.style.opacity = '0';
-    this.proxyInput.style.zIndex = '-1';
-    this.proxyInput.style.width = '1px';
-    this.proxyInput.style.height = '1px';
+    this.proxyInput.style.position = "absolute";
+    this.proxyInput.style.opacity = "0";
+    this.proxyInput.style.zIndex = "-1";
+    this.proxyInput.style.width = "1px";
+    this.proxyInput.style.height = "1px";
 
     this.proxyInput.setAttribute("autocomplete", "on");
     this.proxyInput.setAttribute("autocorrect", "on");
@@ -305,7 +305,7 @@ class MobileInputUI {
 
   alignWithCursor(term) {
     if (!term || !this.proxyInput) return;
-    const cursor = term.element.querySelector('.xterm-cursor');
+    const cursor = term.element.querySelector(".xterm-cursor");
     if (cursor) {
       const rect = cursor.getBoundingClientRect();
       this.proxyInput.style.left = `${rect.left}px`;
