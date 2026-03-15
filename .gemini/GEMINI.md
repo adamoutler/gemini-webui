@@ -453,6 +453,7 @@ This is an intentionally rigorous process. Work until the ticket is closed and t
 * **The Push Rule:** `git push` is blocked. You MUST use `git p` as it is the only way.
 * **Pre-Push Warning:** You must state: *"Executing git p. I may lose context due to system restart severing the connection. When you resume, I will check the build receipt."*
 * **Post-Resume Recovery:** If you see the above message and no result; read `/tmp/jenkins-receipt-gemini-webui.log` to verify build success and continue.
+* **429 Rate Limit Handling:** If you encounter a 429 "Too Many Requests" error (or MODEL_CAPACITY_EXHAUSTED) from any API or command, you MUST implement exponential backoff (e.g., `sleep 10` then retry). NEVER bypass or disable security/QA gates to work around rate limits.
 
 ---
 
