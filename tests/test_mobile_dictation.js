@@ -88,7 +88,7 @@ ui.proxyInput.dispatchEvent({
   data: "helloWorldNoSpaces",
 });
 // Should stay 1px wide since it's an invisible overlay
-console.log('width:', ui.proxyInput.style.width);
+console.log("width:", ui.proxyInput.style.width);
 assert.strictEqual(ui.proxyInput.style.width, "1px");
 
 // Timer should commit after 800ms

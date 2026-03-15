@@ -118,7 +118,7 @@ class MobileInputBuffer {
       e.inputType === "deleteWordBackward"
     ) {
       if (!this.isMobile) return undefined;
-      // If the buffer was ALREADY empty before this delete event, 
+      // If the buffer was ALREADY empty before this delete event,
       // it means the user pressed backspace on an empty buffer.
       if (lastValue.length === 0) {
         this.emitCallback("\x7f");
@@ -157,7 +157,11 @@ class MobileInputBuffer {
       }
     }
 
-    if (forceEmit || boundaryRegex.test(value) || (!this.isMobile && value.length > 1)) {
+    if (
+      forceEmit ||
+      boundaryRegex.test(value) ||
+      (!this.isMobile && value.length > 1)
+    ) {
       this.emitCallback(value);
       return "";
     }
@@ -273,7 +277,13 @@ class MobileInputUI {
       setTimeout(() => {
         if (this.proxyInput.value.length > 0) {
           // Send whatever was composed and clear the proxy
-          inputHandler({ data: "" }, false, this.proxyInput.value, true, lastValue);
+          inputHandler(
+            { data: "" },
+            false,
+            this.proxyInput.value,
+            true,
+            lastValue,
+          );
           this.proxyInput.value = "";
           lastValue = "";
         }
@@ -282,7 +292,13 @@ class MobileInputUI {
 
     this.proxyInput.addEventListener("input", (e) => {
       const currentValue = this.proxyInput.value;
-      const newValue = inputHandler(e, this.isComposing, currentValue, false, lastValue);
+      const newValue = inputHandler(
+        e,
+        this.isComposing,
+        currentValue,
+        false,
+        lastValue,
+      );
       if (newValue !== undefined) {
         this.proxyInput.value = newValue;
       }
@@ -300,7 +316,13 @@ class MobileInputUI {
           () => {
             if (this.proxyInput.value.length > 0) {
               // force flush
-              inputHandler({ data: "" }, false, this.proxyInput.value, true, this.proxyInput.value);
+              inputHandler(
+                { data: "" },
+                false,
+                this.proxyInput.value,
+                true,
+                this.proxyInput.value,
+              );
               this.proxyInput.value = "";
               lastValue = "";
             }
@@ -363,11 +385,11 @@ class MobileTerminalController {
     const nativeTextarea = this.tab.term.textarea;
     if (nativeTextarea && this.isMobile) {
       nativeTextarea.disabled = true;
-      nativeTextarea.style.display = 'none';
+      nativeTextarea.style.display = "none";
     }
 
     // Use a click listener on the terminal to focus our proxy input
-    this.tab.term.element.addEventListener('click', () => {
+    this.tab.term.element.addEventListener("click", () => {
       if (this.isMobile) {
         this.ui.proxyInput.focus();
         this.ui.alignWithCursor(this.tab.term);
