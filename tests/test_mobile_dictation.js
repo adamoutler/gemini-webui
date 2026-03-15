@@ -73,6 +73,7 @@ console.log("Dispatching event...");
 console.log("Dispatching event...");
 console.log("Dispatching event...");
 console.log("Dispatching event...");
+console.log("Dispatching event...");
 ui.proxyInput.dispatchEvent({
   type: "input",
   inputType: "insertDictationResult",
@@ -80,6 +81,7 @@ ui.proxyInput.dispatchEvent({
 });
 
 // Should expand visually immediately
+console.log("width:", ui.proxyInput.style.width);
 console.log("width:", ui.proxyInput.style.width);
 console.log("width:", ui.proxyInput.style.width);
 console.log("width:", ui.proxyInput.style.width);
