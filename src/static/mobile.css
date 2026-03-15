@@ -147,6 +147,8 @@ body {
 /* Bug 3 Fix: Constrain text area sizing and enable scrolling */
 .is-mobile .mobile-text-area {
   width: 100%;
+  box-sizing: border-box;
+  max-width: 100%;
   min-height: 44px;
   max-height: 120px;
   overflow-y: auto;

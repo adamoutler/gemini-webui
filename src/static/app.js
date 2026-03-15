@@ -1530,6 +1530,9 @@ function startSession(
   let disconnectTime = null;
   tab.socket.on("connect", async () => {
     disconnectTime = null;
+    if (tab.term) {
+      tab.term.clear();
+    }
     tab.term.write("\r\n\x1b[2m[Connected to server]\x1b[0m\r\n");
     updateStatus(tab.session.ssh_target, tab.session.ssh_dir); // Restore correct status
 
@@ -1951,7 +1954,7 @@ function restartActiveTab() {
   const tab = tabs.find((t) => t.id === activeTabId);
   if (tab && tab.state === "terminal") {
     const { ssh_target, ssh_dir, resume } = tab.session;
-    // tab.term.clear();
+    tab.term.clear();
     tab.socket.emit("restart", {
       tab_id: tab.id,
       resume: resume,
