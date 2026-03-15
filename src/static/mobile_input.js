@@ -112,15 +112,17 @@ class MobileInputBuffer {
     this.modifierState = modifierState;
   }
 
-  handleInput(e, isComposing, value) {
+  handleInput(e, isComposing, value, forceEmit = false, lastValue = "") {
     if (
       e.inputType === "deleteContentBackward" ||
       e.inputType === "deleteWordBackward"
     ) {
       if (!this.isMobile) return undefined;
-      // We do not emit backspace here because deleting text within the visible buffer
-      // should not delete text already sent to the terminal.
-      // Backspacing an empty buffer is handled by handleKeyDown.
+      // If the buffer was ALREADY empty before this delete event, 
+      // it means the user pressed backspace on an empty buffer.
+      if (lastValue.length === 0) {
+        this.emitCallback("\x7f");
+      }
       return undefined;
     }
 
@@ -142,9 +144,9 @@ class MobileInputBuffer {
         return value.slice(0, -1);
       }
     }
-    if (isComposing) return undefined;
+    if (isComposing && !forceEmit) return undefined;
 
-    const boundaryRegex = /[\s.,?!;-]/;
+    const boundaryRegex = /[\s.,?!;—，。？！；]/;
 
     if (!this.isMobile && !isComposing) {
       if (e.data && e.data.length === 1) {
@@ -155,7 +157,7 @@ class MobileInputBuffer {
       }
     }
 
-    if (boundaryRegex.test(value) || (!this.isMobile && value.length > 1)) {
+    if (forceEmit || boundaryRegex.test(value) || (!this.isMobile && value.length > 1)) {
       this.emitCallback(value);
       return "";
     }
@@ -261,17 +263,30 @@ class MobileInputUI {
       this.isComposing = true;
       this.proxyInput.classList.add("is-composing");
     });
+    let lastValue = this.proxyInput.value;
+
     this.proxyInput.addEventListener("compositionend", () => {
       this.isComposing = false;
       this.proxyInput.classList.remove("is-composing");
+      // Give the native input event a moment to fire and settle,
+      // then flush the buffer to terminal if it's not empty.
       setTimeout(() => {
-        if (this.proxyInput.value.length > 0) this.proxyInput.value = "";
-      }, 200);
+        if (this.proxyInput.value.length > 0) {
+          // Send whatever was composed and clear the proxy
+          inputHandler({ data: "" }, false, this.proxyInput.value, true, lastValue);
+          this.proxyInput.value = "";
+          lastValue = "";
+        }
+      }, 50);
     });
 
     this.proxyInput.addEventListener("input", (e) => {
-      const newValue = inputHandler(e, this.isComposing, this.proxyInput.value);
-      if (newValue !== undefined) this.proxyInput.value = newValue;
+      const currentValue = this.proxyInput.value;
+      const newValue = inputHandler(e, this.isComposing, currentValue, false, lastValue);
+      if (newValue !== undefined) {
+        this.proxyInput.value = newValue;
+      }
+      lastValue = this.proxyInput.value;
 
       // Auto-commit buffer after pause for dictation
       if (this.dictationTimer) clearTimeout(this.dictationTimer);
@@ -284,9 +299,10 @@ class MobileInputUI {
         this.dictationTimer = setTimeout(
           () => {
             if (this.proxyInput.value.length > 0) {
-              // force flush by appending a space
-              inputHandler({ data: " " }, false, this.proxyInput.value + " ");
+              // force flush
+              inputHandler({ data: "" }, false, this.proxyInput.value, true, this.proxyInput.value);
               this.proxyInput.value = "";
+              lastValue = "";
             }
           },
           isDictation ? 800 : 2000,
@@ -342,10 +358,17 @@ class MobileTerminalController {
   setupFocusManagement() {
     if (!this.tab.term) return;
 
-    // Intercept touch events on terminal to focus our proxy instead
-    this.tab.term.element.addEventListener("touchstart", (e) => {
-      if (!e.target.closest(".xterm-viewport")) {
-        e.preventDefault(); // disable xterm's native textarea behavior
+    // Disable xterm's native textarea on mobile so it cannot steal focus
+    // and cause the mobile keyboard to flash on re-taps.
+    const nativeTextarea = this.tab.term.textarea;
+    if (nativeTextarea && this.isMobile) {
+      nativeTextarea.disabled = true;
+      nativeTextarea.style.display = 'none';
+    }
+
+    // Use a click listener on the terminal to focus our proxy input
+    this.tab.term.element.addEventListener('click', () => {
+      if (this.isMobile) {
         this.ui.proxyInput.focus();
         this.ui.alignWithCursor(this.tab.term);
       }

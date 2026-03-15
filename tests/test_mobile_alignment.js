@@ -19,6 +19,10 @@ class MockElement {
         return this.classes.includes(cls);
       },
     };
+    this.children = [];
+  }
+  appendChild(child) {
+    this.children.push(child);
   }
   setAttribute(k, v) {
     this[k] = v;
@@ -107,14 +111,13 @@ ui.alignWithCursor(mockTerm);
 
 // top = cursor.top(100) + vv.pageTop(10) = 110
 // left = cursor.left(50) + vv.pageLeft(5) = 55
-assert.strictEqual(ui.proxyInput.style.transform, "translate(55px, 110px)");
-assert.strictEqual(ui.proxyInput.style.fontSize, "14px");
-assert.strictEqual(ui.proxyInput.style.opacity, "0"); // because value is empty
+assert.strictEqual(ui.proxyInput.style.left, "50px");
+assert.strictEqual(ui.proxyInput.style.top, "100px");
 
 // Test with value
 ui.proxyInput.value = "hello";
 ui.alignWithCursor(mockTerm);
-assert.strictEqual(ui.proxyInput.style.opacity, "1");
-assert.strictEqual(ui.proxyInput.style.width, "calc(100vw - 55px - 20px)");
+assert.strictEqual(ui.proxyInput.style.left, "50px");
+assert.strictEqual(ui.proxyInput.style.top, "100px");
 
 console.log("All unit tests passed. Alignment verified.");

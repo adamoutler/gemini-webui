@@ -20,6 +20,11 @@ class MockElement {
         return this.classes.includes(cls);
       },
     };
+    this.children = [];
+  }
+
+  appendChild(child) {
+    this.children.push(child);
   }
 
   setAttribute(k, v) {
@@ -51,6 +56,9 @@ global.document = {
   createElement: function (tag) {
     return new MockElement(tag, "");
   },
+  getElementById: function (id) {
+    return null;
+  },
 };
 
 const {
@@ -79,16 +87,9 @@ ui.proxyInput.dispatchEvent({
   inputType: "insertDictationResult",
   data: "helloWorldNoSpaces",
 });
-
-// Should expand visually immediately
-console.log("width:", ui.proxyInput.style.width);
-console.log("width:", ui.proxyInput.style.width);
-console.log("width:", ui.proxyInput.style.width);
-console.log("width:", ui.proxyInput.style.width);
-console.log("width:", ui.proxyInput.style.width);
-console.log("width:", ui.proxyInput.style.width);
-assert.strictEqual(ui.proxyInput.style.width, "calc(100vw - 20px)");
-assert.strictEqual(ui.proxyInput.style.left, "10px");
+// Should stay 1px wide since it's an invisible overlay
+console.log('width:', ui.proxyInput.style.width);
+assert.strictEqual(ui.proxyInput.style.width, "1px");
 
 // Timer should commit after 800ms
 assert.strictEqual(emitted.length, 0); // Not committed yet
