@@ -339,7 +339,7 @@ class MobileInputUI {
         currentValue,
         false,
         lastValue,
-        isDictation
+        isDictation,
       );
       if (newValue !== undefined) {
         this.proxyInput.value = newValue;
