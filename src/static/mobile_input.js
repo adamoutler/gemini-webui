@@ -169,7 +169,7 @@ class MobileInputBuffer {
       this.emitCallback(value);
       return ""; // Synchronously clear the buffer
     }
-    
+
     return undefined; // Keep buffering the current word
   }
 
