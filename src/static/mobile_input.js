@@ -428,7 +428,7 @@ class MobileTerminalController {
     // Use a touchend listener on the terminal to focus our proxy input
     // without using preventDefault() on touchstart (which breaks scrolling/long-press)
     this.tab.term.element.addEventListener("touchend", (e) => {
-      if (this.isMobile && e.target.closest(".xterm-viewport")) {
+      if (this.isMobile) {
         this.ui.proxyInput.focus();
 
         // Move proxyInput to touch coordinates so long-press opens paste menu on it
