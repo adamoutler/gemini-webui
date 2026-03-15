@@ -16,14 +16,17 @@ started=false
 while [ $SECONDS -lt $end_time ]; do
     if [ -f "$RECEIPT" ] && grep -q "Gemini WebUI Build Started" "$RECEIPT" 2>/dev/null; then
         started=true
-        echo "Build started. Waiting for completion..."
+        echo -e "\nBuild started. Waiting for completion..."
         break
+    fi
+    if [ $(( SECONDS % 10 )) -eq 0 ]; then
+        echo -n "."
     fi
     sleep 2
 done
 
 if [ "$started" = false ]; then
-    echo "Error: Global timeout reached (${TIMEOUT}s) waiting for build to start."
+    echo -e "\nError: Global timeout reached (${TIMEOUT}s) waiting for build to start."
     exit 1
 fi
 
@@ -32,7 +35,7 @@ finished=false
 while [ $SECONDS -lt $end_time ]; do
     if grep -q "Gemini WebUI Build Finished" "$RECEIPT" 2>/dev/null; then
         finished=true
-        echo "Deployment Complete. Results:"
+        echo -e "\nDeployment Complete. Results:"
         echo "----------------------------------------"
         cat "$RECEIPT"
         echo "----------------------------------------"
@@ -54,8 +57,11 @@ while [ $SECONDS -lt $end_time ]; do
 
         exit 0
     fi
+    if [ $(( SECONDS % 10 )) -eq 0 ]; then
+        echo -n "."
+    fi
     sleep 2
 done
 
-echo "Error: Global timeout reached (${TIMEOUT}s) waiting for build to finish."
+echo -e "\nError: Global timeout reached (${TIMEOUT}s) waiting for build to finish."
 exit 1
