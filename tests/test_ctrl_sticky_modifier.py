@@ -53,7 +53,7 @@ def test_ctrl_sticky_modifier(mobile_page):
 
     # Fill the textarea as if user is typing 'c'
     textarea.focus()
-    textarea.fill("c")
+    textarea.evaluate("el => { el.value = 'c'; el.dispatchEvent(new Event('input', { bubbles: true })); }")
     textarea.evaluate(
         "el => el.dispatchEvent(new InputEvent('input', {bubbles: true, data: 'c'}))"
     )
