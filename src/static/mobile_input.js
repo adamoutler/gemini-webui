@@ -367,6 +367,8 @@ class MobileInputUI {
         this.proxyInput.style.fontSize = style.fontSize;
         this.proxyInput.style.lineHeight = style.lineHeight;
         this.proxyInput.style.letterSpacing = style.letterSpacing;
+        this.proxyInput.style.color = style.color; // Explicitly inherit color
+        this.proxyInput.style.caretColor = style.color;
       }
     }
   }
