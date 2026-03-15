@@ -81,7 +81,7 @@ description: the build results from jenkins
 $(cat /tmp/jenkins-receipt-gemini-webui.log 2>/dev/null)
 EOF
 
-  RESULT=$(cat "$TICKET_FILE" | gemini -p "@reality-checker Please verify if work item $WORK_ITEM_ID is completed. You don't get the work items from the filesystem. Use the list_files and read_file tool to find proof. You may request any additional information you need in a specific location. Be descriptive. Otherwise, respond with NEEDS WORK." 2>&1)
+  RESULT=$(cat "$TICKET_FILE" | gemini -p "@reality-checker Please verify if work item $WORK_ITEM_ID is completed. The developer has provided the required documentation and proof directly in the ticket comments. Read the comments thoroughly. If the evidence is satisfactory, respond with READY. Otherwise, respond with NEEDS WORK." 2>&1)
   GEMINI_EXIT_CODE=$?
 
   if [ $GEMINI_EXIT_CODE -ne 0 ]; then
