@@ -59,7 +59,9 @@ def test_ctrl_clears_on_paste(mobile_page):
     # Simulate typing multiple characters at once (like a paste or swipe type that emits multiple chars)
     # The term.onData event is triggered by textarea input
     # In playwright, fill() replaces the whole content, effectively sending a multi-char string.
-    textarea.evaluate("el => { el.value = 'hello'; el.dispatchEvent(new Event('input', { bubbles: true })); }")
+    textarea.evaluate(
+        "el => { el.value = 'hello'; el.dispatchEvent(new Event('input', { bubbles: true })); }"
+    )
 
     # Wait for processing
     mobile_page.wait_for_timeout(200)

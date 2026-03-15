@@ -43,7 +43,9 @@ def test_ctrl_sticky(mobile_page):
     active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
     textarea = mobile_page.locator(".mobile-text-area")
 
-    textarea.evaluate("el => { el.value = 'c'; el.dispatchEvent(new Event('input', { bubbles: true })); }")
+    textarea.evaluate(
+        "el => { el.value = 'c'; el.dispatchEvent(new Event('input', { bubbles: true })); }"
+    )
 
     # Now let's see if ctrlActive was applied.
     # If applied, the terminal should have sent \x03
