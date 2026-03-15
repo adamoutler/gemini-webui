@@ -66,7 +66,7 @@ def test_keyboard_per_word_overlay(page, server):
     # Assert the value was flushed and cleared by space
     # (Since we changed the logic to use common prefix, it might actually retain 'echo ' in some cases,
     # but the test checks for empty string. Let's just verify the terminal got it.)
-    
+
     # Type another word
     textarea.evaluate(
         "el => { el.value = 'hello'; el.dispatchEvent(new Event('input', { bubbles: true })); }"
