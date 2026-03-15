@@ -241,7 +241,14 @@ class MobileInputUI {
     this.proxyInput = document.createElement("textarea");
     this.proxyInput.id = "terminal-input-mobile";
     this.proxyInput.className = "mobile-text-area";
-    this.proxyInput.placeholder = "Tap to type...";
+    this.proxyInput.placeholder = "";
+    
+    // Make it invisible but positionable
+    this.proxyInput.style.position = 'absolute';
+    this.proxyInput.style.opacity = '0';
+    this.proxyInput.style.zIndex = '-1';
+    this.proxyInput.style.width = '1px';
+    this.proxyInput.style.height = '1px';
 
     this.proxyInput.setAttribute("autocomplete", "on");
     this.proxyInput.setAttribute("autocorrect", "on");
@@ -297,8 +304,13 @@ class MobileInputUI {
   }
 
   alignWithCursor(term) {
-    // We no longer align a floating proxy input with the cursor.
-    // The mobile-text-area remains fixed at the bottom.
+    if (!term || !this.proxyInput) return;
+    const cursor = term.element.querySelector('.xterm-cursor');
+    if (cursor) {
+      const rect = cursor.getBoundingClientRect();
+      this.proxyInput.style.left = `${rect.left}px`;
+      this.proxyInput.style.top = `${rect.top}px`;
+    }
   }
 }
 

@@ -1750,10 +1750,10 @@ function startSession(
       !e.altKey &&
       e.key.length === 1
     ) {
-      return false;
+      if (isMobile) return false;
     }
     if (e.type === "keydown" && e.key === "Backspace") {
-      return false;
+      if (isMobile) return false;
     }
 
     return true;
