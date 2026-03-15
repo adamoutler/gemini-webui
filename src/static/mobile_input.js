@@ -110,9 +110,17 @@ class MobileInputBuffer {
     this.emitCallback = emitCallback;
     this.isMobile = isMobile;
     this.modifierState = modifierState;
+    this.lastEmittedText = "";
   }
 
-  handleInput(e, isComposing, value, forceEmit = false, lastValue = "") {
+  handleInput(
+    e,
+    isComposing,
+    value,
+    forceEmit = false,
+    lastValue = "",
+    isDictation = false,
+  ) {
     if (
       e.inputType === "deleteContentBackward" ||
       e.inputType === "deleteWordBackward"
@@ -122,6 +130,14 @@ class MobileInputBuffer {
       // it means the user pressed backspace on an empty buffer.
       if (lastValue.length === 0) {
         this.emitCallback("\x7f");
+        // We also need to shrink lastEmittedText so commonPrefix logic doesn't break
+        if (this.lastEmittedText && this.lastEmittedText.length > 0) {
+          this.lastEmittedText = this.lastEmittedText.substring(
+            0,
+            this.lastEmittedText.length - 1,
+          );
+        }
+        return ""; // Force clear so Gboard's resurrected text is deleted
       }
       return undefined;
     }
@@ -140,32 +156,52 @@ class MobileInputBuffer {
       if (char) {
         const modified = this.modifierState.applyModifiers(char);
         this.emitCallback(modified);
+        this.lastEmittedText = ""; // reset on modifier
         // Return the buffer without the consumed character
         return value.slice(0, -1);
       }
     }
-    if (isComposing && !forceEmit) return undefined;
 
-    const boundaryRegex = /[\s.,?!;—，。？！；]/;
-
-    if (!this.isMobile && !isComposing) {
-      if (e.data && e.data.length === 1) {
-        if (boundaryRegex.test(e.data)) {
-          return "";
-        }
-        return undefined;
-      }
+    // Gboard remembers the entire line of text and re-inserts it.
+    // Find the common prefix between what we previously emitted and what Gboard thinks is there.
+    let i = 0;
+    const prevEmit = this.lastEmittedText || "";
+    while (
+      i < prevEmit.length &&
+      i < value.length &&
+      prevEmit[i] === value[i]
+    ) {
+      i++;
     }
 
+    // The actual text Gboard thinks is in the buffer up to the point it diverges
+    this.lastEmittedText = prevEmit.substring(0, i);
+
+    // The "new" text that hasn't been emitted yet
+    let workingValue = value.substring(i);
+
+    const boundaryRegex = /[\s.,?!;—，。？！；]$/; // Match boundary at the END
+
+    // If it's a dictation (voice typing), we don't clear on every space.
+    // We let the dictationTimer or forceEmit handle the final flush.
+    if (isDictation && !forceEmit) {
+      return workingValue !== value ? workingValue : undefined;
+    }
+
+    // For normal typing, we check if the value ends with a boundary.
+    // We flush on boundary to enforce a single-word buffer.
     if (
       forceEmit ||
-      boundaryRegex.test(value) ||
-      (!this.isMobile && value.length > 1)
+      boundaryRegex.test(workingValue) ||
+      (!this.isMobile && workingValue.length > 1)
     ) {
-      this.emitCallback(value);
+      this.emitCallback(workingValue);
+      this.lastEmittedText += workingValue;
       return "";
     }
-    return undefined;
+
+    // If we stripped text, we must return the stripped version so the textarea updates
+    return workingValue !== value ? workingValue : undefined;
   }
 
   handleKeyDown(e, value, isComposing) {
@@ -249,12 +285,15 @@ class MobileInputUI {
     this.proxyInput.className = "mobile-text-area";
     this.proxyInput.placeholder = "";
 
-    // Make it invisible but positionable
+    // Make it visible, transparent background, positioned at cursor
     this.proxyInput.style.position = "absolute";
-    this.proxyInput.style.opacity = "0";
-    this.proxyInput.style.zIndex = "-1";
-    this.proxyInput.style.width = "1px";
-    this.proxyInput.style.height = "1px";
+    this.proxyInput.style.opacity = "1";
+    this.proxyInput.style.zIndex = "100";
+    this.proxyInput.style.height = "2em"; // Enough for one line
+    this.proxyInput.style.whiteSpace = "pre-wrap";
+    this.proxyInput.style.wordBreak = "break-word";
+    this.proxyInput.style.background = "transparent";
+    this.proxyInput.style.color = "inherit";
 
     this.proxyInput.setAttribute("autocomplete", "on");
     this.proxyInput.setAttribute("autocorrect", "on");
@@ -305,15 +344,18 @@ class MobileInputUI {
       lastValue = this.proxyInput.value;
 
       // Auto-commit buffer after pause for dictation
-      if (this.dictationTimer) clearTimeout(this.dictationTimer);
+      if (this.dictationTimer) {
+        clearTimeout(this.dictationTimer);
+        this.dictationTimer = null;
+      }
 
       if (this.proxyInput.value.length > 0) {
         const isDictation =
           e.inputType === "insertDictationResult" ||
           (e.data && e.data.length > 5 && e.inputType !== "insertFromPaste");
 
-        this.dictationTimer = setTimeout(
-          () => {
+        if (isDictation) {
+          this.dictationTimer = setTimeout(() => {
             if (this.proxyInput.value.length > 0) {
               // force flush
               inputHandler(
@@ -322,13 +364,13 @@ class MobileInputUI {
                 this.proxyInput.value,
                 true,
                 this.proxyInput.value,
+                true,
               );
               this.proxyInput.value = "";
               lastValue = "";
             }
-          },
-          isDictation ? 800 : 2000,
-        );
+          }, 800);
+        }
       }
     });
     this.proxyInput.addEventListener("keydown", (e) => {
@@ -348,6 +390,18 @@ class MobileInputUI {
       const rect = cursor.getBoundingClientRect();
       this.proxyInput.style.left = `${rect.left}px`;
       this.proxyInput.style.top = `${rect.top}px`;
+      const remainingWidth = window.innerWidth - rect.left;
+      this.proxyInput.style.width = `${Math.max(remainingWidth, 50)}px`;
+
+      // Match terminal font metrics if possible
+      const termEl = term.element.querySelector(".xterm-rows");
+      if (termEl) {
+        const style = window.getComputedStyle(termEl);
+        this.proxyInput.style.fontFamily = style.fontFamily;
+        this.proxyInput.style.fontSize = style.fontSize;
+        this.proxyInput.style.lineHeight = style.lineHeight;
+        this.proxyInput.style.letterSpacing = style.letterSpacing;
+      }
     }
   }
 }
@@ -387,6 +441,21 @@ class MobileTerminalController {
       nativeTextarea.disabled = true;
       nativeTextarea.style.display = "none";
     }
+
+    // Prevent default on touchstart/mousedown so tapping the terminal doesn't blur the input
+    const preventBlur = (e) => {
+      if (this.isMobile && e.target.closest(".xterm-viewport")) {
+        // Only prevent default if we're not tapping on something that naturally needs focus
+        e.preventDefault();
+        this.ui.proxyInput.focus();
+        this.ui.alignWithCursor(this.tab.term);
+      }
+    };
+
+    this.tab.term.element.addEventListener("touchstart", preventBlur, {
+      passive: false,
+    });
+    this.tab.term.element.addEventListener("mousedown", preventBlur);
 
     // Use a click listener on the terminal to focus our proxy input
     this.tab.term.element.addEventListener("click", () => {
