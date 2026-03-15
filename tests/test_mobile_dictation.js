@@ -82,7 +82,7 @@ console.log("Dispatching event...");
 console.log("Dispatching event...");
 console.log("Dispatching event...");
 console.log("Dispatching event...");
-console.log('Dispatching event...');
+console.log("Dispatching event...");
 ui.proxyInput.dispatchEvent({
   type: "input",
   inputType: "insertDictationResult",
