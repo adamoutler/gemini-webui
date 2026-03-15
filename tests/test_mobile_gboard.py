@@ -2,6 +2,7 @@ import pytest
 from playwright.sync_api import expect, sync_playwright
 import time
 
+
 @pytest.fixture(scope="function")
 def mobile_page(server):
     with sync_playwright() as p:
@@ -11,15 +12,19 @@ def mobile_page(server):
         page = context.new_page()
         page.set_default_timeout(60000)
         page.goto(server, timeout=15000)
-        page.wait_for_selector(".launcher, .terminal-instance", state="attached", timeout=15000)
+        page.wait_for_selector(
+            ".launcher, .terminal-instance", state="attached", timeout=15000
+        )
         yield page
         context.close()
         browser.close()
+
 
 def get_terminal_text(page):
     return page.evaluate(
         "() => { const tab = tabs.find(t => t.id === activeTabId); return (tab && tab.term) ? Array.from({length: tab.term.buffer.active.length}).map((_, i) => tab.term.buffer.active.getLine(i)?.translateToString().trimEnd()).filter(l => l.length > 0).join('\\n') : ''; }"
     )
+
 
 @pytest.mark.timeout(60)
 def test_mobile_gboard_composition(mobile_page):
@@ -34,12 +39,16 @@ def test_mobile_gboard_composition(mobile_page):
     textarea.focus()
 
     # Simulate Gboard composition
-    textarea.evaluate("el => el.dispatchEvent(new CompositionEvent('compositionstart'))")
-    
+    textarea.evaluate(
+        "el => el.dispatchEvent(new CompositionEvent('compositionstart'))"
+    )
+
     # Type "hello " while composing
-    textarea.evaluate("el => { el.value = 'hello '; el.dispatchEvent(new InputEvent('input', {inputType: 'insertCompositionText'})); }")
+    textarea.evaluate(
+        "el => { el.value = 'hello '; el.dispatchEvent(new InputEvent('input', {inputType: 'insertCompositionText'})); }"
+    )
     time.sleep(0.5)
-    
+
     term_text = get_terminal_text(mobile_page)
     # Should not have emitted yet because isComposing is true
     assert "You said: hello" not in term_text
@@ -47,10 +56,10 @@ def test_mobile_gboard_composition(mobile_page):
     # End composition
     textarea.evaluate("el => el.dispatchEvent(new CompositionEvent('compositionend'))")
     time.sleep(0.5)
-    
+
     mobile_page.keyboard.press("Enter")
     time.sleep(1)
-    
+
     term_text = get_terminal_text(mobile_page)
     # Now it should have emitted!
     assert "You said: hello" in term_text
