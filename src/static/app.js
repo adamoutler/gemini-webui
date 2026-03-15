@@ -1784,26 +1784,6 @@ function triggerHapticFeedback() {
   }
 }
 
-function toggleCtrl(force) {
-  ctrlActive = force !== undefined ? force : !ctrlActive;
-  const btn = document.getElementById("ctrl-toggle");
-  if (ctrlActive) btn.classList.add("active");
-  else btn.classList.remove("active");
-  const tab = tabs.find((t) => t.id === activeTabId);
-  if (tab && tab.term) tab.term.focus();
-}
-
-function toggleAlt(force) {
-  altActive = force !== undefined ? force : !altActive;
-  const btn = document.getElementById("alt-toggle");
-  if (btn) {
-    if (altActive) btn.classList.add("active");
-    else btn.classList.remove("active");
-  }
-  const tab = tabs.find((t) => t.id === activeTabId);
-  if (tab && tab.term) tab.term.focus();
-}
-
 function emitPtyInput(tab, data) {
   if (!tab || !tab.socket || data == null) return;
   const chunkSize = 1024;
@@ -1822,9 +1802,6 @@ function sendToTerminal(data) {
 
   if (tab && tab.mobileProxy && tab.mobileProxy.modifierState) {
     finalData = tab.mobileProxy.modifierState.applyModifiers(data);
-  } else {
-    if (ctrlActive) toggleCtrl(false);
-    if (altActive) toggleAlt(false);
   }
 
   if (tab && tab.socket && tab.state === "terminal") {
