@@ -1,5 +1,11 @@
 class MobileModifierState {
+  static instance = null;
+
   constructor() {
+    if (MobileModifierState.instance) {
+      return MobileModifierState.instance;
+    }
+
     this.ctrlActive = false;
     this.altActive = false;
 
@@ -20,8 +26,8 @@ class MobileModifierState {
     if (this.altBtn) this.altBtn.classList.remove("active");
 
     this.setupListeners();
+    MobileModifierState.instance = this;
   }
-
   setupListeners() {
     const bindBtn = (btn, toggleFn) => {
       if (!btn) return;
@@ -358,15 +364,18 @@ class MobileTerminalController {
   }
 
   emitToTerminal(data) {
-    if (!this.tab || !this.tab.socket || data == null) return;
+    const activeTab = window.tabs ? window.tabs.find((t) => t.id === window.activeTabId) : this.tab;
+    const targetTab = activeTab || this.tab;
+
+    if (!targetTab || !targetTab.socket || data == null) return;
     if (window.emitPtyInput) {
-      window.emitPtyInput(this.tab, data);
+      window.emitPtyInput(targetTab, data);
     } else {
       const chunkSize = 1024;
       const strData = String(data).replace(/\n/g, "\r");
       for (let i = 0; i < strData.length; i += chunkSize) {
         const chunk = strData.slice(i, i + chunkSize);
-        this.tab.socket.emit("pty-input", { input: chunk });
+        targetTab.socket.emit("pty-input", { input: chunk });
       }
     }
   }

@@ -137,6 +137,8 @@ body {
   display: flex;
   flex-direction: column;
   width: 100%;
+  max-width: 100vw;
+  box-sizing: border-box;
   background: var(--bg-secondary, #2a2d2e);
   border-top: 1px solid var(--border-color, #444);
   z-index: 30;
@@ -148,10 +150,11 @@ body {
 .is-mobile .mobile-text-area {
   width: 100%;
   box-sizing: border-box;
-  max-width: 100%;
+  max-width: 100vw;
   min-height: 44px;
   max-height: 120px;
   overflow-y: auto;
+  overflow-x: hidden;
   resize: none;
   padding: 12px 16px;
   font-family: inherit;
@@ -162,6 +165,6 @@ body {
 
   /* Bug 4 Fix: Ensure voice transcription and long text wraps properly */
   white-space: pre-wrap;
-  overflow-wrap: break-word;
-  overflow-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
