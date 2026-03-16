@@ -386,8 +386,14 @@ class MobileInputUI {
       const cursorX = term.buffer.active.cursorX;
       const cursorY = term.buffer.active.cursorY;
 
+      // Account for scroll offset
+      const viewportY = term.buffer.active.viewportY;
+      const baseY = term.buffer.active.baseY;
+      const scrollOffsetLines = baseY - viewportY;
+      const visualCursorY = cursorY + scrollOffsetLines;
+
       left = screenRect.left + cursorX * cellW;
-      top = screenRect.top + cursorY * cellH;
+      top = screenRect.top + visualCursorY * cellH;
       foundCursor = true;
     } else if (
       foundCursor &&
@@ -410,11 +416,15 @@ class MobileInputUI {
       if (termEl) {
         const style = window.getComputedStyle(termEl);
         this.proxyInput.style.fontFamily = style.fontFamily;
+
+        // Browsers inflate textarea font sizes sometimes. We explicitly set it exactly.
+        const fontSizeStr = style.fontSize;
         this.proxyInput.style.setProperty(
           "font-size",
-          style.fontSize,
+          fontSizeStr,
           "important",
         );
+
         this.proxyInput.style.lineHeight = style.lineHeight;
         this.proxyInput.style.letterSpacing = style.letterSpacing;
         this.proxyInput.style.color = style.color; // Explicitly inherit color
@@ -428,6 +438,7 @@ class MobileInputUI {
           bgStyle.backgroundColor !== "rgba(0, 0, 0, 0)"
             ? bgStyle.backgroundColor
             : "var(--bg-primary, #1e1e1e)";
+
         this.proxyInput.style.backgroundColor = termBg;
 
         // Create a fake block cursor (bottom 25% of the first character cell)
