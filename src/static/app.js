@@ -1256,6 +1256,10 @@ function startSession(
 
         // Populate selection overlay with visible terminal text
         let cellHeight = 16;
+        let fontSizeStr = tab.term.options.fontSize + "px";
+        let fontFamilyStr = tab.term.options.fontFamily;
+        let letterSpacingStr = "normal";
+
         if (
           tab.term._core &&
           tab.term._core._renderService &&
@@ -1263,9 +1267,19 @@ function startSession(
         ) {
           cellHeight = tab.term._core._renderService.dimensions.css.cell.height;
         }
+
+        const termRows = termDiv.querySelector(".xterm-rows");
+        if (termRows) {
+          const style = window.getComputedStyle(termRows);
+          fontSizeStr = style.fontSize;
+          fontFamilyStr = style.fontFamily;
+          letterSpacingStr = style.letterSpacing;
+        }
+
         selectionOverlay.style.lineHeight = cellHeight + "px";
-        selectionOverlay.style.fontSize = tab.term.options.fontSize + "px";
-        selectionOverlay.style.fontFamily = tab.term.options.fontFamily;
+        selectionOverlay.style.fontSize = fontSizeStr;
+        selectionOverlay.style.fontFamily = fontFamilyStr;
+        selectionOverlay.style.letterSpacing = letterSpacingStr;
 
         const screenElement = termDiv.querySelector(".xterm-screen");
         let offsetTop = 0;
@@ -1273,7 +1287,11 @@ function startSession(
         if (screenElement) {
           const screenBox = screenElement.getBoundingClientRect();
           const proxyBox = proxy.getBoundingClientRect();
-          offsetTop = screenBox.top - proxyBox.top;
+          // The canvas text baseline is slightly lower than a standard div's top-aligned text.
+          // Nudge it down slightly (roughly 15% of cell height) to align the transparent text
+          // perfectly over the canvas pixels so selections match visually.
+          const baselineNudge = cellHeight * 0.15;
+          offsetTop = screenBox.top - proxyBox.top + baselineNudge;
           offsetLeft = screenBox.left - proxyBox.left;
           selectionOverlay.style.width = screenElement.offsetWidth + "px";
         } else {
@@ -1347,12 +1365,20 @@ function startSession(
 
           // 2. Focus the terminal with a tiny delay to allow link handling
           setTimeout(() => {
-            if (
-              tab.term &&
-              document.activeElement !==
+            if (tab.term) {
+              if (
+                tab.mobileProxy &&
+                tab.mobileProxy.ui &&
+                tab.mobileProxy.ui.proxyInput
+              ) {
+                tab.mobileProxy.ui.proxyInput.focus();
+                tab.mobileProxy.ui.alignWithCursor(tab.term);
+              } else if (
+                document.activeElement !==
                 document.querySelector("textarea.xterm-helper")
-            ) {
-              tab.term.focus();
+              ) {
+                tab.term.focus();
+              }
             }
           }, 50);
 
