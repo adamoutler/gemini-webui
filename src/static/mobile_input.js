@@ -407,9 +407,9 @@ class MobileInputUI {
     }
 
     if (foundCursor) {
-      this.proxyInput.style.left = `${left}px`;
+      this.proxyInput.style.left = `${left + cellW}px`;
       this.proxyInput.style.top = `${top}px`;
-      const remainingWidth = window.innerWidth - left;
+      const remainingWidth = window.innerWidth - (left + cellW);
       this.proxyInput.style.width = `${Math.max(remainingWidth, 50)}px`;
 
       // Match terminal font metrics if possible

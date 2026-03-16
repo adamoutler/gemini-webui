@@ -117,13 +117,14 @@ ui.alignWithCursor(mockTerm);
 
 // top = cursor.top(100) + vv.pageTop(10) = 110
 // left = cursor.left(50) + vv.pageLeft(5) = 55
-assert.strictEqual(ui.proxyInput.style.left, "50px");
+// With shift right 1 char (cellW=9): left = 59
+assert.strictEqual(ui.proxyInput.style.left, "59px");
 assert.strictEqual(ui.proxyInput.style.top, "100px");
 
 // Test with value
 ui.proxyInput.value = "hello";
 ui.alignWithCursor(mockTerm);
-assert.strictEqual(ui.proxyInput.style.left, "50px");
+assert.strictEqual(ui.proxyInput.style.left, "59px");
 assert.strictEqual(ui.proxyInput.style.top, "100px");
 
 console.log("All unit tests passed. Alignment verified.");
