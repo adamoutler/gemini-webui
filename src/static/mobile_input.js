@@ -155,8 +155,9 @@ class MobileInputBuffer {
 
     const boundaryRegex = /[\s.,?!;—，。？！；]/; // Match boundary ANYWHERE
 
-    // If it's dictation, don't clear on every space. Let the dictationTimer or forceEmit handle it.
-    if (isDictation && !forceEmit) {
+    // If it's dictation or active composition (voice typing/swipe), don't clear on every space.
+    // Let the compositionend event or dictationTimer force the flush.
+    if ((isDictation || isComposing) && !forceEmit) {
       return undefined;
     }
 
@@ -267,7 +268,7 @@ class MobileInputUI {
     this.proxyInput.setAttribute("autocomplete", "on");
     this.proxyInput.setAttribute("autocorrect", "on");
     this.proxyInput.setAttribute("spellcheck", "true");
-    this.proxyInput.setAttribute("autocapitalize", "sentences");
+    this.proxyInput.setAttribute("autocapitalize", "none");
 
     container.appendChild(this.proxyInput);
     this.isComposing = false;
@@ -485,14 +486,13 @@ class MobileTerminalController {
       nativeTextarea.disabled = true;
       nativeTextarea.style.display = "none";
     }
-
     // Handle paste directly on our proxy input since we disabled xterm's textarea
     this.ui.proxyInput.addEventListener("paste", (e) => {
       let pasteText = (e.clipboardData || window.clipboardData).getData("text");
       if (pasteText) {
         e.preventDefault();
         // Force flush the pasted text immediately
-        this.buffer.handleInput(
+        const newValue = this.buffer.handleInput(
           { data: pasteText, inputType: "insertFromPaste" },
           false,
           this.ui.proxyInput.value + pasteText,
@@ -500,9 +500,11 @@ class MobileTerminalController {
           this.ui.proxyInput.value,
           false,
         );
+        if (newValue !== undefined) {
+          this.ui.proxyInput.value = newValue;
+        }
       }
     });
-
     // Use a click listener on the document to focus our proxy input if they tap anywhere.
     // A standard click event reliably detects a tap (vs a long-press/scroll).
     document.addEventListener("click", (e) => {
