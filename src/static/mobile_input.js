@@ -368,6 +368,7 @@ class MobileInputUI {
     }
 
     // Fallback for WebGL/Canvas renderer where .xterm-cursor is hidden or non-existent
+    let cellW = 9;
     if (
       !foundCursor &&
       term._core &&
@@ -375,7 +376,7 @@ class MobileInputUI {
       term._core._renderService.dimensions
     ) {
       const dims = term._core._renderService.dimensions;
-      const cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
+      cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
       const cellH = dims.css?.cell?.height || dims.actualCellHeight || 17;
 
       const screenEl =
@@ -388,6 +389,14 @@ class MobileInputUI {
       left = screenRect.left + cursorX * cellW;
       top = screenRect.top + cursorY * cellH;
       foundCursor = true;
+    } else if (
+      foundCursor &&
+      term._core &&
+      term._core._renderService &&
+      term._core._renderService.dimensions
+    ) {
+      const dims = term._core._renderService.dimensions;
+      cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
     }
 
     if (foundCursor) {
@@ -401,11 +410,30 @@ class MobileInputUI {
       if (termEl) {
         const style = window.getComputedStyle(termEl);
         this.proxyInput.style.fontFamily = style.fontFamily;
-        this.proxyInput.style.fontSize = style.fontSize;
+        this.proxyInput.style.setProperty(
+          "font-size",
+          style.fontSize,
+          "important",
+        );
         this.proxyInput.style.lineHeight = style.lineHeight;
         this.proxyInput.style.letterSpacing = style.letterSpacing;
         this.proxyInput.style.color = style.color; // Explicitly inherit color
         this.proxyInput.style.caretColor = style.color;
+
+        // Find background color to cover the underlying xterm cursor
+        const bgStyle = window.getComputedStyle(
+          term.element.querySelector(".xterm-viewport") || term.element,
+        );
+        const termBg =
+          bgStyle.backgroundColor !== "rgba(0, 0, 0, 0)"
+            ? bgStyle.backgroundColor
+            : "var(--bg-primary, #1e1e1e)";
+        this.proxyInput.style.backgroundColor = termBg;
+
+        // Create a fake block cursor (bottom 25% of the first character cell)
+        this.proxyInput.style.backgroundImage = `linear-gradient(to bottom, transparent 75%, #414141 75%)`;
+        this.proxyInput.style.backgroundSize = `${cellW}px 100%`;
+        this.proxyInput.style.backgroundRepeat = "no-repeat";
       }
     }
   }
@@ -464,10 +492,16 @@ class MobileTerminalController {
       }
     });
 
-    // Use a click listener on the terminal to focus our proxy input.
+    // Use a click listener on the document to focus our proxy input if they tap anywhere.
     // A standard click event reliably detects a tap (vs a long-press/scroll).
-    this.tab.term.element.addEventListener("click", () => {
-      if (this.isMobile) {
+    document.addEventListener("click", (e) => {
+      if (!this.isMobile) return;
+      // Do not steal focus if they clicked a button, link, or another input
+      const target = e.target;
+      const isInteractive = target.closest(
+        "button, a, input, select, .control-btn, .header-icon",
+      );
+      if (!isInteractive && window.activeTabId === this.tab.id) {
         this.ui.proxyInput.focus();
         this.ui.alignWithCursor(this.tab.term);
       }
@@ -482,6 +516,14 @@ class MobileTerminalController {
     this.ui.proxyInput.addEventListener("input", () => {
       this.ui.alignWithCursor(this.tab.term);
     });
+
+    // Re-align on terminal scroll
+    const viewport = this.tab.term.element.querySelector(".xterm-viewport");
+    if (viewport) {
+      viewport.addEventListener("scroll", () => {
+        this.ui.alignWithCursor(this.tab.term);
+      });
+    }
 
     // Re-align on resize or scroll
     window.addEventListener("resize", () =>

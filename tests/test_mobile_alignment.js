@@ -42,7 +42,12 @@ class MockElement {
   querySelector(sel) {
     if (sel === ".xterm-cursor") {
       return {
-        getBoundingClientRect: () => ({ top: 100, left: 50 }),
+        getBoundingClientRect: () => ({
+          top: 100,
+          left: 50,
+          width: 9,
+          height: 17,
+        }),
       };
     }
     if (sel === ".xterm-screen") {
@@ -76,6 +81,7 @@ global.document = {
 };
 
 global.window = {
+  innerWidth: 375,
   matchMedia: function (q) {
     return { matches: true };
   },

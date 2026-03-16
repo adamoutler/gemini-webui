@@ -1,4 +1,9 @@
 {
+  "tools": {
+    "shell": {
+      "inactivityTimeout": 800
+    }
+  },
   "mcpServers": {
     "kanban": {
       "url": "https://kanban.hackedyour.info/mcp/http/api-key/mcp",

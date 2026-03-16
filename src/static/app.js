@@ -1824,7 +1824,12 @@ function adjustFontSize(delta) {
     if (document.getElementById("theme-font")) {
       document.getElementById("theme-font").value = currentFontSize;
     }
-    setTimeout(() => fitTerminal(tab), 50);
+    setTimeout(() => {
+      fitTerminal(tab);
+      if (tab.mobileProxy && tab.mobileProxy.ui) {
+        tab.mobileProxy.ui.alignWithCursor(tab.term);
+      }
+    }, 50);
   }
 }
 

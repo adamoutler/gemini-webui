@@ -474,6 +474,13 @@ This is an intentionally rigorous process. Work until the ticket is closed and t
     * **Todo:** Reviewed and approved cycles.
     * **In Progress:** Active execution with automated QA intercept.
 
+### 6. Communication & Requests
+* **Procedure:** When you (the AI) need something from the user, you must:
+  1. Add a ticket to the Kanban board (`mcp_kanban_create_work_item`).
+  2. Make a note in the `.gemini/GEMINI.md` file (if it's a persistent requirement).
+  3. Inform the user directly in chat about the request.
+* **Problem Solving:** You must work around problems whenever possible. However, if efficiency gains are to be had by requesting user intervention (e.g., configuring something outside your environment access), then you must tell the user following the procedure above.
+
 ## Project Specific
 - Timebox Everything! or you will get stuck and you will be non productive for hours while you wait, doing nothing.
 - Don't just write the code for complex items.  use Crawl-Walk-Run method. Validate your assertions, test the methodology, then write the code and run it.
