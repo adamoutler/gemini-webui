@@ -420,6 +420,8 @@ Please spawn an agents-orchestrator to execute complete development pipeline for
 * **PTY Integrity:** Use `codecs.getincrementaldecoder` for UTF-8 streaming to prevent multi-byte character mangling in `xterm.js`.
 * **Persistence:** Maintain state via `/home/node/.gemini` (mounted host `~/.gemini`).
 * **Mobile/PWA:** Zero functional difference between Web and PWA. Never block pull-to-refresh (`overscroll-behavior: none` is forbidden on viewport layers).
+* **Overall Architecture:** This is a Web App which uses Xterm. The main code is modified via extension to work on mobile devices. The mobile extensions include CSS, Buttons, and a complicated input layer. Be very cautious working with input as slight changes can ruin the UX and your testing does not effectively simulate the mobile tap keyboard.
+
 
 ---
 

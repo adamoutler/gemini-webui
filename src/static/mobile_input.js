@@ -351,12 +351,49 @@ class MobileInputUI {
 
   alignWithCursor(term) {
     if (!term || !this.proxyInput) return;
+
+    let left = 0;
+    let top = 0;
+    let foundCursor = false;
+
+    // First try the DOM cursor (if DOM renderer is used or cursor is blinking)
     const cursor = term.element.querySelector(".xterm-cursor");
     if (cursor) {
       const rect = cursor.getBoundingClientRect();
-      this.proxyInput.style.left = `${rect.left}px`;
-      this.proxyInput.style.top = `${rect.top}px`;
-      const remainingWidth = window.innerWidth - rect.left;
+      if (rect.width > 0 && rect.height > 0) {
+        left = rect.left;
+        top = rect.top;
+        foundCursor = true;
+      }
+    }
+
+    // Fallback for WebGL/Canvas renderer where .xterm-cursor is hidden or non-existent
+    if (
+      !foundCursor &&
+      term._core &&
+      term._core._renderService &&
+      term._core._renderService.dimensions
+    ) {
+      const dims = term._core._renderService.dimensions;
+      const cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
+      const cellH = dims.css?.cell?.height || dims.actualCellHeight || 17;
+
+      const screenEl =
+        term.element.querySelector(".xterm-screen") || term.element;
+      const screenRect = screenEl.getBoundingClientRect();
+
+      const cursorX = term.buffer.active.cursorX;
+      const cursorY = term.buffer.active.cursorY;
+
+      left = screenRect.left + cursorX * cellW;
+      top = screenRect.top + cursorY * cellH;
+      foundCursor = true;
+    }
+
+    if (foundCursor) {
+      this.proxyInput.style.left = `${left}px`;
+      this.proxyInput.style.top = `${top}px`;
+      const remainingWidth = window.innerWidth - left;
       this.proxyInput.style.width = `${Math.max(remainingWidth, 50)}px`;
 
       // Match terminal font metrics if possible
@@ -427,30 +464,12 @@ class MobileTerminalController {
       }
     });
 
-    // Use a touchend listener on the terminal to focus our proxy input
-    // without using preventDefault() on touchstart (which breaks scrolling/long-press)
-    this.tab.term.element.addEventListener("touchend", (e) => {
-      if (this.isMobile) {
-        this.ui.proxyInput.focus();
-
-        // Move proxyInput to touch coordinates so long-press opens paste menu on it
-        // and make it large enough to be easily tapped/long-pressed.
-        if (e.changedTouches && e.changedTouches.length > 0) {
-          const touch = e.changedTouches[0];
-          this.ui.proxyInput.style.left = `${touch.clientX - 25}px`;
-          this.ui.proxyInput.style.top = `${touch.clientY - 25}px`;
-          this.ui.proxyInput.style.width = "50px";
-          this.ui.proxyInput.style.height = "50px";
-        } else {
-          this.ui.alignWithCursor(this.tab.term);
-        }
-      }
-    });
-
-    // Use a click listener on the terminal to focus our proxy input
+    // Use a click listener on the terminal to focus our proxy input.
+    // A standard click event reliably detects a tap (vs a long-press/scroll).
     this.tab.term.element.addEventListener("click", () => {
       if (this.isMobile) {
         this.ui.proxyInput.focus();
+        this.ui.alignWithCursor(this.tab.term);
       }
     });
 
