@@ -149,7 +149,8 @@ body {
   position: absolute;
   pointer-events: auto; /* Re-enable pointer events for the textarea itself */
   background: transparent !important;
-  color: var(--terminal-fg, inherit) !important;
+  color: var(--terminal-fg, #fff) !important;
+  caret-color: #fff !important;
   font-family: inherit;
   font-size: inherit;
   border: none;

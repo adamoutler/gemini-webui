@@ -80,11 +80,16 @@ global.document = {
   },
 };
 
+global.requestAnimationFrame = function (cb) {
+  cb();
+};
+
 global.window = {
   innerWidth: 375,
   matchMedia: function (q) {
     return { matches: true };
   },
+  requestAnimationFrame: global.requestAnimationFrame,
   visualViewport: { pageTop: 10, pageLeft: 5 },
   scrollY: 20,
   scrollX: 10,
