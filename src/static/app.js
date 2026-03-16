@@ -932,6 +932,12 @@ function getGlobalSocket() {
       },
       reconnection: true,
     });
+    globalSocket.on("connect_error", (error) => {
+      if (error.message === "invalid_csrf") {
+        console.warn("Global socket CSRF token expired. Reloading page...");
+        setTimeout(() => window.location.reload(true), 1500);
+      }
+    });
   }
   return globalSocket;
 }
