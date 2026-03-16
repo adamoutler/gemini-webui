@@ -303,6 +303,16 @@ class MobileInputUI {
       const currentValue = this.proxyInput.value;
       const isDictation = e.inputType === "insertDictationResult";
 
+      // Voice typing can sometimes bypass compositionend, leaving us stuck in composing state
+      if (
+        (isDictation || e.inputType === "insertText") &&
+        this.isComposing &&
+        !e.isComposing
+      ) {
+        this.isComposing = false;
+        this.proxyInput.classList.remove("is-composing");
+      }
+
       const newValue = inputHandler(
         e,
         this.isComposing,
@@ -341,6 +351,12 @@ class MobileInputUI {
       }
     });
     this.proxyInput.addEventListener("keydown", (e) => {
+      // If we press Enter and the browser left us stuck in a composing state after voice dictation, force clear it.
+      if (e.key === "Enter" && this.isComposing && !e.isComposing) {
+        this.isComposing = false;
+        this.proxyInput.classList.remove("is-composing");
+      }
+
       const newValue = keyDownHandler(
         e,
         this.proxyInput.value,
@@ -353,101 +369,103 @@ class MobileInputUI {
   alignWithCursor(term) {
     if (!term || !this.proxyInput) return;
 
-    let left = 0;
-    let top = 0;
-    let foundCursor = false;
+    requestAnimationFrame(() => {
+      let left = 0;
+      let top = 0;
+      let foundCursor = false;
 
-    // First try the DOM cursor (if DOM renderer is used or cursor is blinking)
-    const cursor = term.element.querySelector(".xterm-cursor");
-    if (cursor) {
-      const rect = cursor.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        left = rect.left;
-        top = rect.top;
+      // First try the DOM cursor (if DOM renderer is used or cursor is blinking)
+      const cursor = term.element.querySelector(".xterm-cursor");
+      if (cursor) {
+        const rect = cursor.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          left = rect.left;
+          top = rect.top;
+          foundCursor = true;
+        }
+      }
+
+      // Fallback for WebGL/Canvas renderer where .xterm-cursor is hidden or non-existent
+      let cellW = 9;
+      if (
+        !foundCursor &&
+        term._core &&
+        term._core._renderService &&
+        term._core._renderService.dimensions
+      ) {
+        const dims = term._core._renderService.dimensions;
+        cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
+        const cellH = dims.css?.cell?.height || dims.actualCellHeight || 17;
+
+        const screenEl =
+          term.element.querySelector(".xterm-screen") || term.element;
+        const screenRect = screenEl.getBoundingClientRect();
+
+        const cursorX = term.buffer.active.cursorX;
+        const cursorY = term.buffer.active.cursorY;
+
+        // Account for scroll offset
+        const viewportY = term.buffer.active.viewportY;
+        const baseY = term.buffer.active.baseY;
+        const scrollOffsetLines = baseY - viewportY;
+        const visualCursorY = cursorY + scrollOffsetLines;
+
+        left = screenRect.left + cursorX * cellW;
+        top = screenRect.top + visualCursorY * cellH;
         foundCursor = true;
+      } else if (
+        foundCursor &&
+        term._core &&
+        term._core._renderService &&
+        term._core._renderService.dimensions
+      ) {
+        const dims = term._core._renderService.dimensions;
+        cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
       }
-    }
 
-    // Fallback for WebGL/Canvas renderer where .xterm-cursor is hidden or non-existent
-    let cellW = 9;
-    if (
-      !foundCursor &&
-      term._core &&
-      term._core._renderService &&
-      term._core._renderService.dimensions
-    ) {
-      const dims = term._core._renderService.dimensions;
-      cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
-      const cellH = dims.css?.cell?.height || dims.actualCellHeight || 17;
+      if (foundCursor) {
+        this.proxyInput.style.left = `${left + cellW}px`;
+        this.proxyInput.style.top = `${top}px`;
+        const remainingWidth = window.innerWidth - (left + cellW);
+        this.proxyInput.style.width = `${Math.max(remainingWidth, 50)}px`;
 
-      const screenEl =
-        term.element.querySelector(".xterm-screen") || term.element;
-      const screenRect = screenEl.getBoundingClientRect();
+        // Match terminal font metrics if possible
+        const termEl = term.element.querySelector(".xterm-rows");
+        if (termEl) {
+          const style = window.getComputedStyle(termEl);
+          this.proxyInput.style.fontFamily = style.fontFamily;
 
-      const cursorX = term.buffer.active.cursorX;
-      const cursorY = term.buffer.active.cursorY;
+          // Browsers inflate textarea font sizes sometimes. We explicitly set it exactly.
+          const fontSizeStr = style.fontSize;
+          this.proxyInput.style.setProperty(
+            "font-size",
+            fontSizeStr,
+            "important",
+          );
 
-      // Account for scroll offset
-      const viewportY = term.buffer.active.viewportY;
-      const baseY = term.buffer.active.baseY;
-      const scrollOffsetLines = baseY - viewportY;
-      const visualCursorY = cursorY + scrollOffsetLines;
+          this.proxyInput.style.lineHeight = style.lineHeight;
+          this.proxyInput.style.letterSpacing = style.letterSpacing;
+          this.proxyInput.style.color = style.color; // Explicitly inherit color
+          this.proxyInput.style.caretColor = style.color;
 
-      left = screenRect.left + cursorX * cellW;
-      top = screenRect.top + visualCursorY * cellH;
-      foundCursor = true;
-    } else if (
-      foundCursor &&
-      term._core &&
-      term._core._renderService &&
-      term._core._renderService.dimensions
-    ) {
-      const dims = term._core._renderService.dimensions;
-      cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
-    }
+          // Find background color to cover the underlying xterm cursor
+          const bgStyle = window.getComputedStyle(
+            term.element.querySelector(".xterm-viewport") || term.element,
+          );
+          const termBg =
+            bgStyle.backgroundColor !== "rgba(0, 0, 0, 0)"
+              ? bgStyle.backgroundColor
+              : "var(--bg-primary, #1e1e1e)";
 
-    if (foundCursor) {
-      this.proxyInput.style.left = `${left + cellW}px`;
-      this.proxyInput.style.top = `${top}px`;
-      const remainingWidth = window.innerWidth - (left + cellW);
-      this.proxyInput.style.width = `${Math.max(remainingWidth, 50)}px`;
+          this.proxyInput.style.backgroundColor = termBg;
 
-      // Match terminal font metrics if possible
-      const termEl = term.element.querySelector(".xterm-rows");
-      if (termEl) {
-        const style = window.getComputedStyle(termEl);
-        this.proxyInput.style.fontFamily = style.fontFamily;
-
-        // Browsers inflate textarea font sizes sometimes. We explicitly set it exactly.
-        const fontSizeStr = style.fontSize;
-        this.proxyInput.style.setProperty(
-          "font-size",
-          fontSizeStr,
-          "important",
-        );
-
-        this.proxyInput.style.lineHeight = style.lineHeight;
-        this.proxyInput.style.letterSpacing = style.letterSpacing;
-        this.proxyInput.style.color = style.color; // Explicitly inherit color
-        this.proxyInput.style.caretColor = style.color;
-
-        // Find background color to cover the underlying xterm cursor
-        const bgStyle = window.getComputedStyle(
-          term.element.querySelector(".xterm-viewport") || term.element,
-        );
-        const termBg =
-          bgStyle.backgroundColor !== "rgba(0, 0, 0, 0)"
-            ? bgStyle.backgroundColor
-            : "var(--bg-primary, #1e1e1e)";
-
-        this.proxyInput.style.backgroundColor = termBg;
-
-        // Create a fake block cursor (bottom 25% of the first character cell)
-        this.proxyInput.style.backgroundImage = `linear-gradient(to bottom, transparent 75%, #414141 75%)`;
-        this.proxyInput.style.backgroundSize = `${cellW}px 100%`;
-        this.proxyInput.style.backgroundRepeat = "no-repeat";
+          // Create a fake block cursor (bottom 25% of the first character cell)
+          this.proxyInput.style.backgroundImage = `linear-gradient(to bottom, transparent 75%, #414141 75%)`;
+          this.proxyInput.style.backgroundSize = `${cellW}px 100%`;
+          this.proxyInput.style.backgroundRepeat = "no-repeat";
+        }
       }
-    }
+    });
   }
 }
 
