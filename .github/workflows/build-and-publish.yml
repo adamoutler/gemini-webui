@@ -1,6 +1,12 @@
 name: Build and Publish
 
 on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "**"
   workflow_dispatch: # On-demand trigger
 
 jobs:
