@@ -51,8 +51,10 @@ def test_esc_dismiss_file_transfer(page):
     page.locator('button:has-text("Files")').click()
     expect(page.locator("#file-transfer-modal")).to_be_visible(timeout=15000)
 
+    page.wait_for_timeout(500)
     # Press Escape
     page.keyboard.press("Escape")
+    page.wait_for_timeout(500)
 
     # Verify it is closed
     expect(page.locator("#file-transfer-modal")).to_be_hidden(timeout=15000)
