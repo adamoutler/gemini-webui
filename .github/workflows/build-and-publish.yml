@@ -32,6 +32,8 @@ jobs:
           .venv/bin/playwright install-deps
 
       - name: Run tests
+        env:
+          DATA_DIR: /tmp/data
         run: |
           PYTHONPATH=. .venv/bin/pytest -s tests/
 
