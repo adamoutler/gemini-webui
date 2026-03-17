@@ -1,7 +1,0 @@
-ticket details for ca37f476-e87a-44df-a9ec-93f25df8b00b
-name: fix mobile text entry method
-Before outputting text to terminal, it should buffer one word to the text box, allowing autocomplete.
-OVERWHELMING PROOF GATHERED
-docs/qa-images/mobile_typing_buffer.png
-docs/qa-images/mobile_after_backspace.png
-public/qa-screenshots/test-results.json
