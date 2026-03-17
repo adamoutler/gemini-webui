@@ -36,7 +36,14 @@ def run_fake_gemini():
     sys.stdout.write(f"\x1b[1;34mScenario: {args.scenario}\x1b[0m\r\n")
 
     if "GEMINI_WEBUI_HARNESS_ID" not in os.environ:
-        sys.stdout.write("\x1b[31m[WARNING: HARNESS BYPASSED]\x1b[0m\r\n")
+        sys.stderr.write("\x1b[31m[ERROR] Direct execution blocked.\x1b[0m\r\n")
+        sys.stderr.write(
+            "You must use the WebUI ephemeral session harness (/test-launcher) for testing.\r\n"
+        )
+        sys.stderr.write(
+            "Direct execution of fake_gemini.py is strictly prevented to ensure test fidelity.\r\n"
+        )
+        sys.exit(1)
 
     sys.stdout.write("\x1b[32mReady for input. Type 'EXIT' to quit.\x1b[0m\r\n")
     sys.stdout.write("> ")
