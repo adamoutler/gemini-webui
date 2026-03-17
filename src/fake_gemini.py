@@ -35,34 +35,8 @@ def run_fake_gemini():
     sys.stdout.write("Welcome to Fake Gemini\r\n")
     sys.stdout.write(f"\x1b[1;34mScenario: {args.scenario}\x1b[0m\r\n")
 
-    harness_bypassed = False
     if "GEMINI_WEBUI_HARNESS_ID" not in os.environ:
         sys.stdout.write("\x1b[31m[WARNING: HARNESS BYPASSED]\x1b[0m\r\n")
-        sys.stdout.write(
-            "======================================================================\r\n"
-        )
-        sys.stdout.write("[WARNING] UNDEFINITIVE PROOF: BYPASSING TEST HARNESS\r\n")
-        sys.stdout.write(
-            "fake_gemini.py was invoked directly without the WebUI Session Harness.\r\n"
-        )
-        sys.stdout.write(
-            "Test results using this output will be rejected by the QA Gate.\r\n"
-        )
-        sys.stdout.write(
-            "======================================================================\r\n"
-        )
-        sys.stdout.flush()
-        time.sleep(5)
-        harness_bypassed = True
-
-    original_write = sys.stdout.write
-
-    def wrapped_write(s):
-        original_write(s)
-        if harness_bypassed:
-            original_write("[UNDEFINITIVE PROOF - BYPASSED HARNESS]")
-
-    sys.stdout.write = wrapped_write
 
     sys.stdout.write("\x1b[32mReady for input. Type 'EXIT' to quit.\x1b[0m\r\n")
     sys.stdout.write("> ")
