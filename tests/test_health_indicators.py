@@ -115,6 +115,13 @@ def test_default_health_indicator_grey(server):
 
         # Block Socket.io completely to simulate an offline server
         page.route("**/socket.io/*", lambda route: route.abort())
+        page.add_init_script("""
+            window.WebSocket = class extends WebSocket {
+                constructor() {
+                    throw new Error("Simulated offline WebSocket");
+                }
+            };
+        """)
 
         page.goto(server, timeout=15000)
         page.wait_for_selector(".launcher", state="attached", timeout=15000)

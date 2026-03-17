@@ -930,6 +930,7 @@ function getGlobalSocket() {
           .querySelector('meta[name="csrf-token"]')
           ?.getAttribute("content"),
       },
+      transports: ["websocket", "polling"],
       reconnection: true,
     });
     globalSocket.on("connect_error", (error) => {
@@ -1019,6 +1020,29 @@ async function fetchSessions(
 
     const listEl = document.getElementById(targetId);
     if (!listEl) return;
+
+    if (data.error === "Timeout waiting for get_sessions") {
+      if (!useCache || isPolling) {
+        try {
+          HostStateManager.updateHealth(tabId, conn.label, false, false);
+        } catch (e) {
+          console.log("INNER ERROR: " + e.stack);
+        }
+      }
+      if (
+        listEl.innerHTML === "" ||
+        listEl.innerHTML.includes("Connecting to server") ||
+        listEl.innerHTML.includes("Fetching sessions")
+      ) {
+        listEl.innerHTML = `<div style="padding: 10px; color: #888; font-size: 11px;">Connecting to server...</div>`;
+      }
+      setTimeout(
+        () => fetchSessions(tabId, conn, targetId, forceAll, useCache, true),
+        2000,
+      );
+      return;
+    }
+
     if (data.error) {
       let errorHtml = `<div style="padding: 10px; color: #f14c4c; font-size: 11px;">Error: ${data.error}</div>`;
       if (
@@ -1552,6 +1576,7 @@ function startSession(
         .querySelector('meta[name="csrf-token"]')
         ?.getAttribute("content"),
     },
+    transports: ["websocket", "polling"],
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
