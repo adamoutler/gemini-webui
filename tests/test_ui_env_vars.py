@@ -28,7 +28,7 @@ def test_ui_add_host_with_env_vars(page, server):
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
 
     # Open Settings
-    page.locator('button:has-text("Settings")').click()
+    page.locator('button[onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Ensure add mode

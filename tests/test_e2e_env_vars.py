@@ -94,7 +94,7 @@ def test_e2e_session_env_vars_injected(
 ):
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
 
-    page.locator('button:has-text("Settings")').click()
+    page.locator('button[onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     page.locator("#new-host-label").fill("Env Var SSH Test")

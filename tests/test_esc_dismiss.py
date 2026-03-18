@@ -26,7 +26,7 @@ def page(server):
 def test_esc_dismiss_settings(page):
     """Verify pressing Escape closes the Settings modal."""
     # Open settings
-    page.locator('button:has-text("Settings")').click()
+    page.locator('button[onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Press Escape

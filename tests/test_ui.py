@@ -45,7 +45,7 @@ def test_ui_launcher_and_sessions(page):
 @pytest.mark.timeout(60)
 def test_ui_local_protection(page):
     """Verify the default 'local' host is protected from deletion."""
-    page.locator('button:has-text("Settings")').click()
+    page.locator('button[onclick="openSettings()"]').click()
     expect(page.locator("#hosts-list")).to_contain_text("local")
 
     import re
@@ -380,7 +380,7 @@ def test_ui_add_and_use_host(page, server):
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
 
     # Open Settings to add host
-    page.locator('button:has-text("Settings")').click()
+    page.locator('button[onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Fill in the new host details
@@ -418,7 +418,7 @@ def test_ui_add_and_use_host(page, server):
 
     print("Opening settings again to delete")
     # Now verify we can delete it
-    page.locator('button:has-text("Settings")').click()
+    page.locator('button[onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     print("Deleting host")
