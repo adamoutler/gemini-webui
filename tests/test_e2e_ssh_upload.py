@@ -135,7 +135,7 @@ def test_ssh_drag_and_drop_upload(page, test_data_dir, ssh_target_container):
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
 
     # Open settings modal to add host
-    page.locator('button:has-text("Settings")').click()
+    page.locator('button[onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Fill out the form
