@@ -24,6 +24,78 @@ class ExtensionRuleParser {
   }
 }
 
+class AutoPunctuationRule extends InputRule {
+  handleEvent(event, context) {
+    if (
+      event.type === "input" &&
+      (event.data === ". " || event.data === "。") &&
+      (event.inputType === "insertText" ||
+        event.inputType === "insertReplacementText")
+    ) {
+      const input = context.getProxyInput();
+      if (
+        input &&
+        (input.value === event.data || input.value.endsWith(event.data))
+      ) {
+        // OS auto-punctuated the previous space. Send backspace then the punctuation.
+        context.emitToTerminal("\x7f" + event.data);
+        input.value = "";
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+class CursorPlacementRule extends InputRule {
+  constructor() {
+    super();
+    this.lastSelectionStart = 0;
+    this.lastValue = "";
+    this.lastEventTime = 0;
+  }
+
+  handleEvent(event, context) {
+    const input = context.getProxyInput();
+    if (!input) return false;
+
+    if (event.type === "selectionchange" && document.activeElement === input) {
+      const currentStart = input.selectionStart;
+      const currentValue = input.value;
+      const now = Date.now();
+
+      // If value hasn't changed and it's not immediately after an input event
+      if (
+        this.lastSelectionStart !== null &&
+        currentValue === this.lastValue &&
+        currentStart !== this.lastSelectionStart &&
+        now - this.lastEventTime > 50
+      ) {
+        const diff = currentStart - this.lastSelectionStart;
+        if (diff > 0) {
+          for (let i = 0; i < diff; i++) context.emitToTerminal("\x1b[C");
+        } else if (diff < 0) {
+          for (let i = 0; i < -diff; i++) context.emitToTerminal("\x1b[D");
+        }
+      }
+      this.lastSelectionStart = currentStart;
+      this.lastValue = currentValue;
+      return false; // let other selection logic run if any
+    }
+
+    if (event.type === "input" || event.type === "keydown") {
+      this.lastEventTime = Date.now();
+      setTimeout(() => {
+        if (input) {
+          this.lastSelectionStart = input.selectionStart;
+          this.lastValue = input.value;
+        }
+      }, 0);
+    }
+    return false;
+  }
+}
+
 class MobileModifierState {
   static instance = null;
 
@@ -527,6 +599,8 @@ class MobileTerminalController {
         emitToTerminal: this.emitToTerminal.bind(this),
         getProxyInput: () => (this.ui ? this.ui.proxyInput : null),
       });
+      this.ruleParser.registerRule(new AutoPunctuationRule());
+      this.ruleParser.registerRule(new CursorPlacementRule());
 
       this.buffer = new MobileInputBuffer(
         this.emitToTerminal.bind(this),
