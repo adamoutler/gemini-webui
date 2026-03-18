@@ -40,11 +40,23 @@ if [[ "$STATE" == "$DONE_STATE_ID" ]]; then
     exit 0
   fi
 
-  # Check Jenkins build status before invoking AI
-  if ! grep -q "Gemini WebUI Build Finished: SUCCESS" /tmp/jenkins-receipt-gemini-webui.log 2>/dev/null; then
-    jq -c -n --arg reason "Jenkins build failed or receipt not found. Please resolve build issues before transitioning to Done." '{"decision": "deny", "reason": $reason}'
+  # Check GitHub Actions build status before invoking AI
+  CURRENT_COMMIT=$(git rev-parse HEAD)
+  RUN_JSON=$(gh run list --commit "$CURRENT_COMMIT" --json databaseId,conclusion -q '.[0]')
+  RUN_ID=$(echo "$RUN_JSON" | jq -r '.databaseId // empty')
+  CONCLUSION=$(echo "$RUN_JSON" | jq -r '.conclusion // empty')
+
+  if [[ -z "$RUN_ID" || "$RUN_ID" == "null" ]]; then
+    jq -c -n --arg reason "No GitHub Actions run found for the current commit $CURRENT_COMMIT. Please push your changes and wait for checks to pass." '{"decision": "deny", "reason": $reason}'
     exit 0
   fi
+
+  if [[ "$CONCLUSION" != "success" ]]; then
+    jq -c -n --arg reason "GitHub Actions run $RUN_ID did not succeed (status: $CONCLUSION). Please fix the build before transitioning to Done." '{"decision": "deny", "reason": $reason}'
+    exit 0
+  fi
+  
+  GH_RUN_VIEW=$(gh run view "$RUN_ID")
 
   # Retrieve the ticket
   TICKET_JSON=$(curl -s -X GET "https://kanban.hackedyour.info/api/v1/workspaces/${PROJECT}/projects/$PROJECT_ID/issues/$WORK_ITEM_ID/" \
@@ -75,10 +87,10 @@ description: The discussion and history on the ticket including any attachments.
 ${TICKET_COMMENTS}
 
 ---
-name: Jenkins Build Receipt
-description: the build results from jenkins
+name: GitHub Actions Build Receipt
+description: The build results from GitHub Actions for commit $CURRENT_COMMIT
 ---
-$(cat /tmp/jenkins-receipt-gemini-webui.log 2>/dev/null)
+$GH_RUN_VIEW
 EOF
 
   RESULT=$(cat "$TICKET_FILE" | gemini -p " @reality-checker Please verify if work item $WORK_ITEM_ID is completed. The developer has provided the required documentation and proof directly in the ticket comments. Read the comments thoroughly. If the evidence is satisfactory, respond with READY. Otherwise, respond with NEEDS WORK." 2>&1)

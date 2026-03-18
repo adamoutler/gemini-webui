@@ -37,12 +37,6 @@
         "matcher": ".*(run_shell_command|Bash|shell).*",
         "hooks": [
           {
-            "name": "git-push-intercept",
-            "type": "command",
-            "command": "./.gemini/hooks/git-push-intercept.sh",
-            "description": "Automatically appends receipt wait to git push"
-          },
-          {
             "name": "prevent-curl-bypass",
             "type": "command",
             "command": "./.gemini/hooks/prevent-curl-bypass.sh",
@@ -65,6 +59,18 @@
       }
     ],
     "AfterTool": [
+      {
+        "matcher": ".*(run_shell_command|Bash|shell).*",
+        "hooks": [
+          {
+            "name": "git-push-after",
+            "type": "command",
+            "command": "./.gemini/hooks/git-push-after.sh",
+            "description": "Automatically watches GitHub Actions workflows after a git push",
+            "timeout": 600000
+          }
+        ]
+      },
       {
         "matcher": ".*mcp_kanban_update_work_item.*",
         "hooks": [

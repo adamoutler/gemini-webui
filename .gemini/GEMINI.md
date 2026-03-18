@@ -434,15 +434,14 @@ Please spawn an agents-orchestrator to execute complete development pipeline for
   The AI reviewer is the final quality gate. The ticket must have undeniable proof of completion. The AI reviewer's comment will appear in the ticket as well.
   1. ensure you think the ticket is done.
   2. commit the code.
-  3. git p - triggers a full jenkins build-test-deploy. You will be informed of any failures.
+  3. git push - triggers a full GitHub Actions build-test-deploy. The AfterTool hook will automatically watch the run and wait for results. You will be informed of any failures.
   4. You may add a comment to the ticket for the AI reviewer. 
   5. Don't commit if: 
     * You speculate the ticket may be incomplete
-  6. "Done" or close a single ticket. A `reality-checker` AI will evaluate your work. They will be provided the ticket, comments, the full jenkins build log, and QA will refuse if:
+  6. "Done" or close a single ticket. A `reality-checker` AI will evaluate your work. They will be provided the ticket, comments, the full GitHub Actions build log, and QA will refuse if:
     * multiple tickets submitted at once.
     * any uncommitted files.
-    * any commits not `git p`'d.
-    * Jenkins build receipt absent/failed.
+    * GitHub Actions build receipt absent/failed.
     * Code changes were ineffective.
     * lack of evidence the code works.
     * Network or timeout errors
@@ -452,9 +451,9 @@ This is an intentionally rigorous process. Work until the ticket is closed and t
 ---
 
 ### 3. Deployment & Recovery Protocol (Zero-Downtime)
-* **The Push Rule:** `git push` is blocked. You MUST use `git p` as it is the only way.
-* **Pre-Push Warning:** You must state: *"Executing git p. I may lose context due to system restart severing the connection. When you resume, I will check the build receipt."*
-* **Post-Resume Recovery:** If you see the above message and no result; read `/tmp/jenkins-receipt-gemini-webui.log` to verify build success and continue.
+* **The Push Rule:** `git push` is now the standard method. The Gemini CLI hook automatically monitors GitHub actions.
+* **Pre-Push Warning:** You must state: *"Executing git push. I may lose context due to system restart severing the connection. When you resume, I will check the GitHub Actions build receipt."*
+* **Post-Resume Recovery:** If you see the above message and no result; run `gh run list --limit 1` and `gh run view` to verify build success and continue.
 * **429 Rate Limit Handling:** If you encounter a 429 "Too Many Requests" error (or MODEL_CAPACITY_EXHAUSTED) from any API or command, you MUST implement exponential backoff (e.g., `sleep 10` then retry). NEVER bypass or disable security/QA gates to work around rate limits.
 
 ---
