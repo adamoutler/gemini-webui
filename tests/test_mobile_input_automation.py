@@ -12,7 +12,7 @@ from tests.playwright_mobile_utils import (
 def ios_page(server):
     with sync_playwright() as p:
         iphone = p.devices["iPhone 12"]
-        browser = p.chromium.launch(headless=True)
+        browser = p.webkit.launch(headless=True)
         context = browser.new_context(**iphone)
         page = context.new_page()
         page.set_default_timeout(60000)
