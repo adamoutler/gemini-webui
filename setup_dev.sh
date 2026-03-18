@@ -19,7 +19,7 @@ echo "Installing testing dependencies..."
 pip install -r requirements-test.txt
 
 echo "Installing Playwright browsers..."
-playwright install --with-deps chromium webkit
+playwright install chromium webkit
 
 echo "Configuring git hooks..."
 chmod +x scripts/increment_version.sh
