@@ -64,7 +64,7 @@ if os.path.exists(sw_file):
 
     # Replace CACHE_NAME pattern
     new_content = re.sub(
-        r\"const CACHE_NAME = 'gemini-webui-v[^']*';\",
+        r\"const CACHE_NAME = ['\\\"]gemini-webui-v[^'\\\"]*['\\\"];\",
         f\"const CACHE_NAME = 'gemini-webui-v{new_version}';\",
         content
     )
