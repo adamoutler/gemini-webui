@@ -332,6 +332,7 @@ class MobileInputBuffer {
 
 class MobileInputUI {
   constructor(tabId, inputHandler, keyDownHandler, ruleParser = null) {
+    this.tabId = tabId;
     this.ruleParser = ruleParser;
     let container = document.getElementById("mobile-input-container");
     if (!container) {
@@ -346,11 +347,11 @@ class MobileInputUI {
       }
     }
 
-    let oldProxy = document.getElementById("terminal-input-mobile");
+    let oldProxy = document.getElementById("terminal-input-mobile-" + tabId);
     if (oldProxy) oldProxy.remove();
 
     this.proxyInput = document.createElement("textarea");
-    this.proxyInput.id = "terminal-input-mobile";
+    this.proxyInput.id = "terminal-input-mobile-" + tabId;
     this.proxyInput.className = "mobile-text-area";
     this.proxyInput.placeholder = "";
 
@@ -483,6 +484,11 @@ class MobileInputUI {
 
   alignWithCursor(term) {
     if (!term || !this.proxyInput) return;
+    if (window.activeTabId && window.activeTabId !== this.tabId) {
+      this.proxyInput.style.display = "none";
+      return;
+    }
+    this.proxyInput.style.display = "block";
 
     requestAnimationFrame(() => {
       let left = 0;
