@@ -1171,6 +1171,38 @@ def export_settings():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/settings/import", methods=["POST"])
+@authenticated_only
+def import_settings():
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files["file"]
+    if file.filename == "":
+        return jsonify({"error": "No selected file"}), 400
+
+    if not (file.filename.endswith(".gwui") or file.filename.endswith(".zip")):
+        return jsonify({"error": "Invalid file type. Must be .gwui or .zip"}), 400
+
+    data_dir, _, _ = get_config_paths()
+    try:
+        temp_zip = os.path.join(tempfile.gettempdir(), f"import_{uuid.uuid4().hex}.zip")
+        file.save(temp_zip)
+
+        import zipfile
+
+        with zipfile.ZipFile(temp_zip, "r") as zip_ref:
+            zip_ref.extractall(data_dir)
+
+        os.remove(temp_zip)
+        return jsonify({"success": True})
+    except zipfile.BadZipFile:
+        return jsonify({"error": "The uploaded file is not a valid zip archive"}), 400
+    except Exception as e:
+        logger.error(f"Failed to import settings: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/csrf", methods=["GET"])
 def get_csrf_token():
     return jsonify({"csrf_token": generate_csrf()})

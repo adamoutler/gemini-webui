@@ -2738,6 +2738,46 @@ function closeSettings() {
 function exportSettings() {
   window.location.href = "/api/settings/export";
 }
+
+function importSettings(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (
+    !confirm(
+      "Warning: Importing settings will overwrite your current configuration. Are you sure you want to proceed?",
+    )
+  ) {
+    event.target.value = "";
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  fetch("/api/settings/import", {
+    method: "POST",
+    body: formData,
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      if (data.success) {
+        alert(
+          "Settings imported successfully. The application will now reload.",
+        );
+        window.location.reload();
+      } else {
+        alert("Failed to import settings: " + (data.error || "Unknown error"));
+      }
+    })
+    .catch((err) => {
+      console.error(err);
+      alert("An error occurred during import.");
+    })
+    .finally(() => {
+      event.target.value = "";
+    });
+}
 async function savePastedKey() {
   const name = document.getElementById("ssh-key-name").value;
   const text = document.getElementById("ssh-key-text").value;
