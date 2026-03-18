@@ -143,3 +143,17 @@ def test_api_keys_public(client, test_data_dir):
     assert response.status_code == 200
     data = json.loads(response.data)
     assert data == {"key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI test@example.com"}
+
+
+def test_api_export_settings(client, test_data_dir):
+    # Ensure there's something to zip
+    test_file_path = os.path.join(test_data_dir, "test_file.txt")
+    with open(test_file_path, "w") as f:
+        f.write("test content")
+
+    response = client.get("/api/settings/export")
+    assert response.status_code == 200
+    assert response.headers["Content-Type"] == "application/zip"
+    assert "attachment" in response.headers["Content-Disposition"]
+    assert "settings.gwui" in response.headers["Content-Disposition"]
+    assert len(response.data) > 0

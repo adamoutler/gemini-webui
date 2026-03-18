@@ -29,6 +29,7 @@ import socket
 import datetime
 import threading
 import uuid
+import tempfile
 from functools import wraps
 from flask import (
     Flask,
@@ -39,6 +40,7 @@ from flask import (
     jsonify,
     send_from_directory,
     redirect,
+    send_file,
 )
 from werkzeug.utils import secure_filename
 from flask_socketio import SocketIO
@@ -1147,6 +1149,26 @@ def update_config():
     with open(config_file, "w") as f:
         json.dump(curr_conf, f, indent=4)
     return jsonify({"status": "success"})
+
+
+@app.route("/api/settings/export", methods=["GET"])
+@authenticated_only
+def export_settings():
+    try:
+        data_dir, _, _ = get_config_paths()
+        temp_dir = tempfile.mkdtemp()
+        zip_path = os.path.join(temp_dir, "settings")
+        # create a zip file
+        shutil.make_archive(zip_path, "zip", data_dir)
+        return send_file(
+            zip_path + ".zip",
+            as_attachment=True,
+            download_name="settings.gwui",
+            mimetype="application/zip",
+        )
+    except Exception as e:
+        logger.error(f"Failed to export settings: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/csrf", methods=["GET"])

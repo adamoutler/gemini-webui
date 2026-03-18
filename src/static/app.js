@@ -2728,6 +2728,10 @@ function closeSettings() {
     if (t.state === "launcher") renderLauncher(t.id);
   });
 }
+
+function exportSettings() {
+  window.location.href = "/api/settings/export";
+}
 async function savePastedKey() {
   const name = document.getElementById("ssh-key-name").value;
   const text = document.getElementById("ssh-key-text").value;
