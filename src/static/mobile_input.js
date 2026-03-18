@@ -1,3 +1,29 @@
+class InputRule {
+  handleEvent(event, context) {
+    return false; // Return true to prevent default processing
+  }
+}
+
+class ExtensionRuleParser {
+  constructor(context) {
+    this.rules = [];
+    this.context = context; // { ui, emitToTerminal, getProxyInput }
+  }
+
+  registerRule(rule) {
+    this.rules.push(rule);
+  }
+
+  process(event) {
+    for (const rule of this.rules) {
+      if (rule.handleEvent(event, this.context)) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
 class MobileModifierState {
   static instance = null;
 
@@ -233,7 +259,8 @@ class MobileInputBuffer {
 }
 
 class MobileInputUI {
-  constructor(tabId, inputHandler, keyDownHandler) {
+  constructor(tabId, inputHandler, keyDownHandler, ruleParser = null) {
+    this.ruleParser = ruleParser;
     let container = document.getElementById("mobile-input-container");
     if (!container) {
       container = document.createElement("div");
@@ -272,13 +299,15 @@ class MobileInputUI {
 
     container.appendChild(this.proxyInput);
     this.isComposing = false;
-    this.proxyInput.addEventListener("compositionstart", () => {
+    this.proxyInput.addEventListener("compositionstart", (e) => {
+      if (this.ruleParser && this.ruleParser.process(e)) return;
       this.isComposing = true;
       this.proxyInput.classList.add("is-composing");
     });
     let lastValue = this.proxyInput.value;
 
-    this.proxyInput.addEventListener("compositionend", () => {
+    this.proxyInput.addEventListener("compositionend", (e) => {
+      if (this.ruleParser && this.ruleParser.process(e)) return;
       this.isComposing = false;
       this.proxyInput.classList.remove("is-composing");
       // Give the native input event a moment to fire and settle,
@@ -299,7 +328,20 @@ class MobileInputUI {
       }, 50);
     });
 
+    this.proxyInput.addEventListener("beforeinput", (e) => {
+      if (this.ruleParser && this.ruleParser.process(e)) {
+        e.preventDefault();
+      }
+    });
+
+    document.addEventListener("selectionchange", (e) => {
+      if (document.activeElement === this.proxyInput) {
+        if (this.ruleParser && this.ruleParser.process(e)) return;
+      }
+    });
+
     this.proxyInput.addEventListener("input", (e) => {
+      if (this.ruleParser && this.ruleParser.process(e)) return;
       const currentValue = this.proxyInput.value;
       const isDictation = e.inputType === "insertDictationResult";
 
@@ -351,6 +393,7 @@ class MobileInputUI {
       }
     });
     this.proxyInput.addEventListener("keydown", (e) => {
+      if (this.ruleParser && this.ruleParser.process(e)) return;
       // If we press Enter and the browser left us stuck in a composing state after voice dictation, force clear it.
       if (e.key === "Enter" && this.isComposing && !e.isComposing) {
         this.isComposing = false;
@@ -479,6 +522,12 @@ class MobileTerminalController {
 
     if (this.isMobile) {
       this.modifierState = new MobileModifierState();
+
+      this.ruleParser = new ExtensionRuleParser({
+        emitToTerminal: this.emitToTerminal.bind(this),
+        getProxyInput: () => (this.ui ? this.ui.proxyInput : null),
+      });
+
       this.buffer = new MobileInputBuffer(
         this.emitToTerminal.bind(this),
         this.isMobile,
@@ -488,7 +537,9 @@ class MobileTerminalController {
         this.tab.id,
         this.buffer.handleInput.bind(this.buffer),
         this.buffer.handleKeyDown.bind(this.buffer),
+        this.ruleParser,
       );
+      this.ruleParser.context.ui = this.ui;
 
       this.setupFocusManagement();
     }
@@ -592,6 +643,8 @@ class MobileTerminalController {
 
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
+    InputRule,
+    ExtensionRuleParser,
     MobileInputBuffer,
     MobileInputUI,
     MobileTerminalController,
