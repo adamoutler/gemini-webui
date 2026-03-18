@@ -1,7 +1,19 @@
 import pytest
-from playwright.sync_api import expect
+from playwright.sync_api import expect, sync_playwright
 import os
 import zipfile
+
+
+@pytest.fixture(scope="function")
+def page(server):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+        page.set_default_timeout(60000)
+        yield page
+        context.close()
+        browser.close()
 
 
 @pytest.mark.timeout(60)
