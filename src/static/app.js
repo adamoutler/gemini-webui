@@ -1560,6 +1560,7 @@ function startSession(
           }
         }
       }
+      const isComposing = tab.mobileProxy?.ui?.isComposing || false;
       if (!hasImage && !isComposing) {
         // Normal text paste needs more time to process in xterm before clearing buffer
         setTimeout(() => {
