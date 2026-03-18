@@ -52,6 +52,8 @@ def test_esc_dismiss_file_transfer(page):
     expect(page.locator("#file-transfer-modal")).to_be_visible(timeout=15000)
 
     page.wait_for_timeout(500)
+    # Ensure terminal doesn't steal focus by clicking the modal background
+    page.locator("#file-transfer-modal").click(position={"x": 5, "y": 5})
     # Press Escape
     page.keyboard.press("Escape")
     page.wait_for_timeout(500)
