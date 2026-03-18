@@ -1828,7 +1828,7 @@ function startSession(
 }
 
 function fitTerminal(tab) {
-  if (!tab || tab.state !== "terminal" || !tab.fitAddon) return;
+  if (!tab || tab.state !== "terminal" || !tab.term || !tab.fitAddon) return;
   const oldCols = tab.term.cols;
   const oldRows = tab.term.rows;
   try {
@@ -1976,9 +1976,11 @@ function switchTab(id) {
     }
     setTimeout(() => {
       fitTerminal(tab);
-      tab.term.focus();
+      if (tab.term) {
+        tab.term.focus();
+      }
       tabs.forEach((t) => {
-        if (t.mobileProxy && t.mobileProxy.ui) {
+        if (t.mobileProxy && t.mobileProxy.ui && t.term) {
           t.mobileProxy.ui.alignWithCursor(t.term);
         }
       });
