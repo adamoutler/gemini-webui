@@ -1195,6 +1195,17 @@ def import_settings():
             zip_ref.extractall(data_dir)
 
         os.remove(temp_zip)
+
+        # Fix permissions for .ssh directory and its files
+        ssh_dir = os.path.join(data_dir, ".ssh")
+        if os.path.exists(ssh_dir):
+            os.chmod(ssh_dir, 0o700)
+            for root, dirs, files in os.walk(ssh_dir):
+                for d in dirs:
+                    os.chmod(os.path.join(root, d), 0o700)
+                for f in files:
+                    os.chmod(os.path.join(root, f), 0o600)
+
         return jsonify({"success": True})
     except zipfile.BadZipFile:
         return jsonify({"error": "The uploaded file is not a valid zip archive"}), 400

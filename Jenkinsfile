@@ -7,7 +7,7 @@ pipeline {
         LDAP_SERVER = 'ldaps://192.168.1.100'
         LDAP_BASE_DN = 'CN=Users,DC=activedirectory,DC=adamoutler,DC=com'
         LDAP_AUTHORIZED_GROUP = 'CN=gemini-webui,OU=Groups,dc=activedirectory,dc=adamoutler,dc=com'
-        ALLOWED_ORIGINS = 'https://gemini.hackedyour.info'
+        ALLOWED_ORIGINS = '*'
     }
 
     options {
