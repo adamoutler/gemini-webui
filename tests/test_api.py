@@ -157,3 +157,29 @@ def test_api_export_settings(client, test_data_dir):
     assert "attachment" in response.headers["Content-Disposition"]
     assert "settings.gwui" in response.headers["Content-Disposition"]
     assert len(response.data) > 0
+
+
+def test_api_import_settings(client, test_data_dir):
+    import zipfile
+    import io
+
+    # Create a dummy zip file in memory
+    memory_file = io.BytesIO()
+    with zipfile.ZipFile(memory_file, "w") as zf:
+        zf.writestr("imported_file.txt", "imported content")
+    memory_file.seek(0)
+
+    # Send it to the import endpoint
+    data = {"file": (memory_file, "backup.gwui")}
+    response = client.post(
+        "/api/settings/import", data=data, content_type="multipart/form-data"
+    )
+
+    assert response.status_code == 200
+    assert response.json["success"] is True
+
+    # Verify the file was extracted into the data dir
+    extracted_file = os.path.join(test_data_dir, "imported_file.txt")
+    assert os.path.exists(extracted_file)
+    with open(extracted_file, "r") as f:
+        assert f.read() == "imported content"

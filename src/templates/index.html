@@ -526,14 +526,37 @@
           <h3 style="font-size: 14px; text-transform: uppercase">
             Data Management
           </h3>
-          <div style="background: #2a2d2e; padding: 15px; border-radius: 4px">
+          <div
+            style="
+              background: #2a2d2e;
+              padding: 15px;
+              border-radius: 4px;
+              display: flex;
+              gap: 10px;
+            "
+          >
             <button
               class="primary"
-              style="width: 100%"
+              style="width: 50%"
               onclick="exportSettings()"
               title="Download all settings and data as a .gwui (zip) file."
             >
               Export Settings (.gwui)
+            </button>
+            <input
+              type="file"
+              id="import-settings-input"
+              style="display: none"
+              accept=".gwui,.zip"
+              onchange="importSettings(event)"
+            />
+            <button
+              class="primary"
+              style="width: 50%; background: #4a4d4e"
+              onclick="document.getElementById('import-settings-input').click()"
+              title="Upload and restore a .gwui file."
+            >
+              Import Settings
             </button>
           </div>
         </div>
