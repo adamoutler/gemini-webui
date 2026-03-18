@@ -1585,7 +1585,8 @@ function startSession(
   });
 
   let disconnectTime = null;
-  tab.socket.on("connect", async () => {
+
+  const handleConnect = async () => {
     disconnectTime = null;
     if (tab.term) {
       tab.term.clear();
@@ -1659,7 +1660,13 @@ function startSession(
       fitTerminal(tab);
       tab.term.focus();
     }, 150);
-  });
+  };
+
+  tab.socket.on("connect", handleConnect);
+
+  if (tab.socket.connected) {
+    handleConnect();
+  }
 
   tab.socket.on("disconnect", (reason) => {
     disconnectTime = Date.now();
