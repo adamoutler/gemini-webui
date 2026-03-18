@@ -137,7 +137,7 @@ const HostStateManager = {
 
   updateHealth: function (tabId, label, isSuccess, shouldPulse = false) {
     const prevClass = this.getInitialStatusClass(label);
-    console.log("UPDATE HEALTH CALLED WITH " + isSuccess);
+    // console.log("UPDATE HEALTH CALLED WITH " + isSuccess);
     const failures = this.updateState(label, isSuccess);
     const newClass = this.getStatusClass(failures);
     this.renderHealthUI(tabId, label, failures);
@@ -951,12 +951,12 @@ async function fetchSessions(
   useCache = false,
   isPolling = false,
 ) {
-  console.log(
-    "FETCH SESSIONS CALLED WITH useCache=" +
-      useCache +
-      " isPolling=" +
-      isPolling,
-  );
+  // console.log(
+  //   "FETCH SESSIONS CALLED WITH useCache=" +
+  //     useCache +
+  //     " isPolling=" +
+  //     isPolling,
+  // );
   if (!window.expandedSessionLists) window.expandedSessionLists = new Set();
   if (window.expandedSessionLists.has(conn.label)) {
     forceAll = true;
@@ -971,7 +971,7 @@ async function fetchSessions(
   params.bg = true;
 
   try {
-    console.log("FETCH SESSIONS START");
+    // console.log("FETCH SESSIONS START");
     const data = await new Promise((resolve, reject) => {
       const socket = getGlobalSocket();
 
@@ -996,7 +996,7 @@ async function fetchSessions(
       });
     });
 
-    console.log("FETCH SESSIONS DATA: ", JSON.stringify(data));
+    // console.log("FETCH SESSIONS DATA: ", JSON.stringify(data));
     if (data.status === "fetching") {
       const listEl = document.getElementById(targetId);
       if (listEl && listEl.innerHTML === "") {
@@ -1010,11 +1010,11 @@ async function fetchSessions(
     }
 
     if (!useCache || isPolling) {
-      console.log("ENTERED IF BLOCK");
+      // console.log("ENTERED IF BLOCK");
       try {
         HostStateManager.updateHealth(tabId, conn.label, !data.error, false);
       } catch (e) {
-        console.log("INNER ERROR: " + e.stack);
+        // console.log("INNER ERROR: " + e.stack);
       }
     }
 
@@ -1026,7 +1026,7 @@ async function fetchSessions(
         try {
           HostStateManager.updateHealth(tabId, conn.label, false, false);
         } catch (e) {
-          console.log("INNER ERROR: " + e.stack);
+          // console.log("INNER ERROR: " + e.stack);
         }
       }
       if (
@@ -1114,7 +1114,7 @@ async function fetchSessions(
       fetchSessions(tabId, conn, targetId, forceAll, false); // Update after cache load
   } catch (e) {
     if (!useCache || isPolling) {
-      console.log("ENTERED IF BLOCK");
+      // console.log("ENTERED IF BLOCK");
       HostStateManager.updateHealth(tabId, conn.label, false, false);
     }
     console.error(e);
@@ -1627,7 +1627,7 @@ function startSession(
           if (dir) params.ssh_dir = dir;
           params.cache = false;
 
-          console.log("FETCH SESSIONS START");
+          // console.log("FETCH SESSIONS START");
           const data = await new Promise((resolve, reject) => {
             const socket = getGlobalSocket();
             socket.emit("get_sessions", params, (response) => {
