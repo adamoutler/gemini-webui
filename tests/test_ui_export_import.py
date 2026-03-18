@@ -52,8 +52,16 @@ def test_export_import_settings(page, server, tmp_path):
     export_path = tmp_path / "settings_export.gwui"
     download.save_as(export_path)
 
-    # Verify it is a valid zip archive
+    # Verify it is a valid zip archive and contains expected user data
     assert zipfile.is_zipfile(export_path)
+    with zipfile.ZipFile(export_path, "r") as zf:
+        namelist = zf.namelist()
+        # Ensure it's not empty and contains expected structure (e.g. config files, ssh keys, etc.)
+        assert len(namelist) > 0
+        # The app creates default config on startup, so we expect some json or files
+        assert any(
+            n.endswith(".json") or "ssh" in n or n.startswith(".") for n in namelist
+        ), f"Zip contents missing expected structure: {namelist}"
 
     # 4. Test Import Journey
     # Mock window.confirm to auto-accept the overwrite warning
