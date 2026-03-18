@@ -1892,6 +1892,7 @@ function adjustFontSize(delta) {
 
 function switchTab(id) {
   activeTabId = id;
+  window.activeTabId = id;
   const tab = tabs.find((t) => t.id === id);
   if (!tab) return;
 
@@ -1968,6 +1969,11 @@ function switchTab(id) {
     setTimeout(() => {
       fitTerminal(tab);
       tab.term.focus();
+      tabs.forEach((t) => {
+        if (t.mobileProxy && t.mobileProxy.ui) {
+          t.mobileProxy.ui.alignWithCursor(t.term);
+        }
+      });
     }, 50);
   } else {
     toolbarInfo.style.display = "none";
