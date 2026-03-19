@@ -1,32 +1,65 @@
+let isRefreshingToken = false;
+let tokenRefreshSubscribers = [];
+
+async function refreshCsrfToken() {
+  if (isRefreshingToken) {
+    return new Promise((resolve) => tokenRefreshSubscribers.push(resolve));
+  }
+  isRefreshingToken = true;
+  try {
+    const response = await originalFetch("/api/csrf-token", {
+      cache: "no-store",
+      credentials: "same-origin",
+    });
+    if (!response.ok) throw new Error("Failed to fetch token");
+    const data = await response.json();
+    const newToken = data.csrf_token;
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag) metaTag.setAttribute("content", newToken);
+    tokenRefreshSubscribers.forEach((cb) => cb(newToken));
+    return newToken;
+  } finally {
+    isRefreshingToken = false;
+    tokenRefreshSubscribers = [];
+  }
+}
+
 const originalFetch = window.fetch;
 window.fetch = async function () {
-  const currentCsrfToken = document
+  let currentCsrfToken = document
     .querySelector('meta[name="csrf-token"]')
     ?.getAttribute("content");
   let [resource, config] = arguments;
   if (config === undefined) {
     config = {};
   }
-  if (
-    config.method &&
-    ["POST", "PUT", "DELETE", "PATCH"].includes(config.method.toUpperCase())
-  ) {
-    if (config.headers instanceof Headers) {
-      if (currentCsrfToken)
-        config.headers.append("X-CSRFToken", currentCsrfToken);
-    } else {
-      config.headers = config.headers || {};
-      if (currentCsrfToken) config.headers["X-CSRFToken"] = currentCsrfToken;
+
+  const injectToken = (token, cfg) => {
+    if (
+      cfg.method &&
+      ["POST", "PUT", "DELETE", "PATCH"].includes(cfg.method.toUpperCase())
+    ) {
+      if (cfg.headers instanceof Headers) {
+        if (token) cfg.headers.set("X-CSRFToken", token);
+      } else {
+        cfg.headers = cfg.headers || {};
+        if (token) cfg.headers["X-CSRFToken"] = token;
+      }
     }
-  }
-  const response = await originalFetch(resource, config);
+  };
+
+  injectToken(currentCsrfToken, config);
+
+  let response = await originalFetch(resource, config);
+
   if (response.status === 400 || response.status === 403) {
     try {
       const clonedResponse = response.clone();
       const data = await clonedResponse.json();
       if (data && data.csrf_expired === true && !config.skipCsrfReload) {
-        window.location.reload(true);
-        return new Promise(() => {}); // Block further execution during reload
+        const newToken = await refreshCsrfToken();
+        injectToken(newToken, config);
+        response = await originalFetch(resource, config);
       }
     } catch (e) {
       // Ignore JSON parse errors for non-JSON responses
@@ -933,10 +966,12 @@ function getGlobalSocket() {
       transports: ["websocket", "polling"],
       reconnection: true,
     });
-    globalSocket.on("connect_error", (error) => {
+    globalSocket.on("connect_error", async (error) => {
       if (error.message === "invalid_csrf") {
-        console.warn("Global socket CSRF token expired. Reloading page...");
-        setTimeout(() => window.location.reload(true), 1500);
+        console.warn("Global socket CSRF token expired. Refreshing token...");
+        const newToken = await refreshCsrfToken();
+        globalSocket.auth = { csrf_token: newToken };
+        globalSocket.connect();
       }
     });
   }
@@ -1705,14 +1740,16 @@ function startSession(
     );
   });
 
-  tab.socket.on("connect_error", (error) => {
+  tab.socket.on("connect_error", async (error) => {
     if (error.message === "invalid_csrf") {
       if (tab.term) {
         tab.term.write(
-          "\r\n\x1b[1;31m[CSRF Token Expired. Reloading page...]\x1b[0m\r\n",
+          "\r\n\x1b[1;33m[CSRF Token Expired. Refreshing...]\x1b[0m\r\n",
         );
       }
-      setTimeout(() => window.location.reload(true), 1500);
+      const newToken = await refreshCsrfToken();
+      tab.socket.auth = { csrf_token: newToken };
+      tab.socket.connect();
     }
   });
 

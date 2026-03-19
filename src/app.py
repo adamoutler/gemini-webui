@@ -56,6 +56,7 @@ try:
         fetch_sessions_for_host,
         build_terminal_command,
         get_remote_command_prefix,
+        build_ssh_args,
     )
     from share_manager import ShareManager
     from utils import smart_file_search
@@ -67,6 +68,7 @@ except ImportError:
         fetch_sessions_for_host,
         build_terminal_command,
         get_remote_command_prefix,
+        build_ssh_args,
     )
     from src.share_manager import ShareManager
     from src.utils import smart_file_search
@@ -878,9 +880,13 @@ def pty_restart(data):
             set_winsize(fd, rows, cols)
         except Exception as e:
             logger.warning(f"Failed to set winsize on fd {fd}: {e}")
-        socketio.emit(
-            "pty-output", {"output": "\x1b[2mLoading Context...\x1b[0m\r\n"}, room=sid
+
+        initial_msg = (
+            "\x1b[2mEstablishing connection...\x1b[0m\r\n"
+            if ssh_target
+            else "\x1b[2mLoading Context...\x1b[0m\r\n"
         )
+        socketio.emit("pty-output", {"output": initial_msg}, room=sid)
 
 
 @app.route("/")
@@ -1214,6 +1220,16 @@ def import_settings():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/csrf-token", methods=["GET"])
+def get_csrf_token_endpoint():
+    token = generate_csrf()
+    response = jsonify({"csrf_token": token})
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
 @app.route("/api/csrf", methods=["GET"])
 def get_csrf_token():
     return jsonify({"csrf_token": generate_csrf()})
@@ -1261,19 +1277,6 @@ def upload_file():
         ssh_dir = request.form.get("ssh_dir")
         _, _, ssh_dir_path = get_config_paths()
 
-        # Build base SSH arguments
-        base_ssh_args = ["-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=no"]
-        known_hosts_path = os.path.join(ssh_dir_path, "known_hosts")
-        base_ssh_args.extend(["-o", f"UserKnownHostsFile={known_hosts_path}"])
-        if os.path.exists(ssh_dir_path):
-            for f in os.listdir(ssh_dir_path):
-                if (
-                    os.path.isfile(os.path.join(ssh_dir_path, f))
-                    and f not in ["config", "known_hosts"]
-                    and not f.endswith(".pub")
-                ):
-                    base_ssh_args.extend(["-i", os.path.join(ssh_dir_path, f)])
-
         # Determine remote path
         if not ssh_dir or ssh_dir == "~":
             remote_path = filename
@@ -1294,11 +1297,11 @@ def upload_file():
                 clean_target = parts[0]
                 port = parts[1]
 
-        ssh_cmd_base = ["ssh"] + base_ssh_args
+        ssh_cmd_base = build_ssh_args(ssh_target, ssh_dir_path)
         if port:
             ssh_cmd_base.extend(["-p", port])
 
-        scp_cmd_base = ["scp"] + base_ssh_args
+        scp_cmd_base = ["scp"] + build_ssh_args(ssh_target, ssh_dir_path)[1:]
         if port:
             scp_cmd_base.extend(["-P", port])
 
