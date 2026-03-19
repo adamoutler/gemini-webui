@@ -96,6 +96,148 @@ class CursorPlacementRule extends InputRule {
   }
 }
 
+class BackspaceRule extends InputRule {
+  constructor() {
+    super();
+    this.lastValue = "";
+  }
+  handleEvent(event, context) {
+    const input = context.getProxyInput();
+    if (!input) return false;
+
+    if (event.type === "keydown") {
+      this.lastValue = input.value;
+      if (
+        (event.key === "Backspace" || event.keyCode === 8) &&
+        input.value.length === 0
+      ) {
+        event.preventDefault();
+        context.emitToTerminal("\x7f");
+        return true;
+      }
+    }
+
+    if (event.type === "input") {
+      if (
+        (event.inputType === "deleteContentBackward" ||
+          event.inputType === "deleteWordBackward") &&
+        this.lastValue.length === 0
+      ) {
+        context.emitToTerminal("\x7f");
+        input.value = "";
+        return true;
+      }
+      this.lastValue = input.value;
+    }
+    return false;
+  }
+}
+
+class ModifierRule extends InputRule {
+  handleEvent(event, context) {
+    const input = context.getProxyInput();
+    const modifierState = context.modifierState;
+    const isComposing = context.ui && context.ui.isComposing;
+
+    if (event.type === "keydown") {
+      if (event.altKey || event.ctrlKey || event.metaKey) {
+        if (event.key && event.key.length === 1 && !event.metaKey) {
+          event.preventDefault();
+          let char = event.key;
+          if (event.ctrlKey) {
+            const code = char.charCodeAt(0);
+            if (code >= 97 && code <= 122)
+              char = String.fromCharCode(code - 96);
+            else if (code >= 65 && code <= 90)
+              char = String.fromCharCode(code - 64);
+            else if (code === 32) char = "\x00";
+            else if (code === 91) char = "\x1b";
+            else if (code === 92) char = "\x1c";
+            else if (code === 93) char = "\x1d";
+          }
+          if (event.altKey) {
+            char = "\x1b" + char;
+          }
+          if (input && input.value.length > 0) {
+            context.emitToTerminal(input.value);
+            input.value = "";
+          }
+          context.emitToTerminal(char);
+          return true;
+        } else if (event.key === "Enter" && event.altKey) {
+          event.preventDefault();
+          if (input && input.value.length > 0) {
+            context.emitToTerminal(input.value);
+            input.value = "";
+          }
+          context.emitToTerminal("\x1b\r");
+          return true;
+        }
+      }
+    }
+
+    if (
+      event.type === "input" &&
+      modifierState &&
+      (modifierState.ctrlActive || modifierState.altActive)
+    ) {
+      if (isComposing) return false;
+      const char =
+        event.data && event.data.length > 0
+          ? event.data[event.data.length - 1]
+          : input && input.value
+            ? input.value.slice(-1)
+            : null;
+      if (char) {
+        const modified = modifierState.applyModifiers(char);
+        context.emitToTerminal(modified);
+        if (input) input.value = input.value.slice(0, -1);
+        return true;
+      }
+    }
+
+    return false;
+  }
+}
+
+class WordBoundaryRule extends InputRule {
+  constructor() {
+    super();
+    this.boundaryRegex = /[\s.,?!;\-—，。？！；]/;
+  }
+  handleEvent(event, context) {
+    if (event.type === "input") {
+      const input = context.getProxyInput();
+      if (!input) return false;
+
+      const isDictation = event.inputType === "insertDictationResult";
+      const isComposing = context.ui && context.ui.isComposing;
+
+      if (isDictation || isComposing) {
+        return false;
+      }
+
+      if (this.boundaryRegex.test(input.value)) {
+        context.emitToTerminal(input.value);
+        input.value = "";
+        return true;
+      }
+    } else if (event.type === "keydown" && event.key === "Enter") {
+      const isComposing = context.ui && context.ui.isComposing;
+      if (isComposing) return false;
+
+      const input = context.getProxyInput();
+      if (input) {
+        event.preventDefault();
+        context.emitToTerminal(input.value + "\r");
+        input.value = "";
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
 class MobileModifierState {
   static instance = null;
 
@@ -604,9 +746,13 @@ class MobileTerminalController {
       this.ruleParser = new ExtensionRuleParser({
         emitToTerminal: this.emitToTerminal.bind(this),
         getProxyInput: () => (this.ui ? this.ui.proxyInput : null),
+        modifierState: this.modifierState,
       });
       this.ruleParser.registerRule(new AutoPunctuationRule());
       this.ruleParser.registerRule(new CursorPlacementRule());
+      this.ruleParser.registerRule(new BackspaceRule());
+      this.ruleParser.registerRule(new ModifierRule());
+      this.ruleParser.registerRule(new WordBoundaryRule());
 
       this.buffer = new MobileInputBuffer(
         this.emitToTerminal.bind(this),
@@ -729,5 +875,8 @@ if (typeof module !== "undefined" && module.exports) {
     MobileInputUI,
     MobileTerminalController,
     MobileModifierState,
+    BackspaceRule,
+    ModifierRule,
+    WordBoundaryRule,
   };
 }

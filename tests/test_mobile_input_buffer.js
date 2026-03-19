@@ -40,10 +40,26 @@ class MockElement {
       }
     }
   }
+  cloneNode() {
+    let cloned = new MockElement(this.tagName, this.id);
+    cloned.classes = [...this.classes];
+    cloned.parentNode = this.parentNode;
+    return cloned;
+  }
 }
 
 let mockCtrlBtn = new MockElement("button", "ctrl-toggle");
 let mockAltBtn = new MockElement("button", "alt-toggle");
+
+const mockParent = {
+  replaceChild: function (newChild, oldChild) {
+    if (oldChild === mockCtrlBtn) mockCtrlBtn = newChild;
+    if (oldChild === mockAltBtn) mockAltBtn = newChild;
+  },
+};
+
+mockCtrlBtn.parentNode = mockParent;
+mockAltBtn.parentNode = mockParent;
 
 global.document = {
   body: {
