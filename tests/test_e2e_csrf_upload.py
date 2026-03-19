@@ -258,14 +258,24 @@ def test_csrf_upload_stale_cache_recovery(csrf_enabled_server, test_data_dir):
 
         page.wait_for_timeout(2000)
 
-        assert len(upload_requests) > 0, "Upload API request should have been made"
-
-        req = upload_requests[-1]
-        resp = req.response()
         assert (
-            resp.status != 400
+            len(upload_requests) >= 2
+        ), "Should have made at least two requests (initial and retry)"
+
+        first_req = upload_requests[0]
+        first_resp = first_req.response()
+        assert (
+            first_resp.status == 400
+        ), "First request should have failed due to bad CSRF token"
+
+        last_req = upload_requests[-1]
+        last_resp = last_req.response()
+        assert (
+            last_resp.status != 400
         ), "CSRF validation failed on backend! The token was not recovered."
-        assert resp.status == 200, f"Upload failed for another reason: {resp.status}"
+        assert (
+            last_resp.status == 200
+        ), f"Upload failed for another reason: {last_resp.status}"
 
         screenshot_path = (
             f"/tmp/gemwe-180_{os.environ.get('BUILD_NUMBER', 'local')}.png"
