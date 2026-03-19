@@ -1,0 +1,1 @@
+{"tests": [{"nodeid": "tests/test_mobile_input_automation.py::test_mobile_utils_webkit", "outcome": "passed"}, {"nodeid": "tests/test_mobile_input_automation.py::test_mobile_utils_chromium", "outcome": "passed"}], "summary": {"passed": 2, "total": 2}}
