@@ -78,6 +78,8 @@ global.document = {
   querySelector: function (sel) {
     return new MockElement("input", "");
   },
+  addEventListener: function (evt, cb) {},
+  activeElement: null,
 };
 
 global.requestAnimationFrame = function (cb) {

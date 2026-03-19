@@ -59,6 +59,8 @@ global.document = {
   getElementById: function (id) {
     return null;
   },
+  addEventListener: function (evt, cb) {},
+  activeElement: null,
 };
 
 const {
