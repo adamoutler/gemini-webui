@@ -1,0 +1,19 @@
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.12.3, pytest-8.0.2, pluggy-1.6.0 -- /home/adamoutler/gemini-webui/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/adamoutler/gemini-webui
+configfile: pytest.ini
+plugins: playwright-0.7.2, anyio-4.12.1, timeout-2.4.0, base-url-2.1.0, cov-7.0.0
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+[1mcollecting ... [0mcollected 6 items
+
+tests/test_e2e_ssh_multiplexing.py::test_ssh_multiplexing_loading_state [32mPASSED[0m[32m [ 16%][0m
+tests/test_e2e_ssh_multiplexing.py::test_ssh_connection_error_bubbling [32mPASSED[0m[32m [ 33%][0m
+tests/test_process_manager_ssh_multiplexing.py::test_get_socket_path [32mPASSED[0m[32m [ 50%][0m
+tests/test_process_manager_ssh_multiplexing.py::test_get_base_ssh_args [32mPASSED[0m[32m [ 66%][0m
+tests/test_process_manager_ssh_multiplexing.py::test_check_and_recover_connection_dead [32mPASSED[0m[32m [ 83%][0m
+tests/test_process_manager_ssh_multiplexing.py::test_check_and_recover_connection_healthy [32mPASSED[0m[32m [100%][0m
+
+[32m============================== [32m[1m6 passed[0m[32m in 22.52s[0m[32m ==============================[0m

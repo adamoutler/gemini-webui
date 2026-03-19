@@ -98,7 +98,9 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir):
 
         page.wait_for_timeout(2000)
 
-        assert len(upload_requests) > 0, "Upload API request should have been made"
+        assert (
+            len(upload_requests) >= 2
+        ), "Upload API request and retry should have been made"
 
         req = upload_requests[-1]
         # X-CSRFToken header check

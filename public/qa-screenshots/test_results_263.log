@@ -1,0 +1,17 @@
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.12.3, pytest-8.0.2, pluggy-1.6.0 -- /home/adamoutler/gemini-webui/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/adamoutler/gemini-webui
+configfile: pytest.ini
+plugins: playwright-0.7.2, anyio-4.12.1, timeout-2.4.0, base-url-2.1.0, cov-7.0.0
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+[1mcollecting ... [0mcollected 4 items
+
+tests/test_api_csrf.py::test_csrf_token_endpoint [32mPASSED[0m[32m                  [ 25%][0m
+tests/test_e2e_csrf_upload.py::test_csrf_upload_over_ssh [32mPASSED[0m[32m          [ 50%][0m
+tests/test_e2e_csrf_upload.py::test_csrf_drag_drop_upload_over_ssh [32mPASSED[0m[32m [ 75%][0m
+tests/test_e2e_csrf_upload.py::test_csrf_upload_stale_cache_recovery [32mPASSED[0m[32m [100%][0m
+
+[32m============================== [32m[1m4 passed[0m[32m in 25.64s[0m[32m ==============================[0m
