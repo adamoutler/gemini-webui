@@ -8,7 +8,14 @@ if [[ "$tool_name" =~ run_shell_command|Bash|shell ]]; then
     command=$(echo "$INPUT" | jq -r '.tool_input.command')
 
     if [[ "$command" =~ git[[:space:]]+push ]]; then
-        echo "Detected git push. Waiting 20 seconds for GitHub Actions to register the build..." >&2
+        if [ "$(hostname)" = "inferrence1" ]; then
+            echo "Detected git push on inferrence1. Restarting docker-compose in the background..." >&2
+            # Automatically recreate the docker container in the background
+            # nohup detaches the process from the terminal/current shell and & puts it in the background
+            nohup bash -c "docker compose up -d --build --force-recreate" > /dev/null 2>&1 &
+        fi
+        
+        echo "Waiting 20 seconds for GitHub Actions to register the build..." >&2
         sleep 20
         
         CURRENT_COMMIT=$(git rev-parse HEAD)
