@@ -8,7 +8,9 @@ def page(server):
     with sync_playwright() as p:
         # Connect to host-based Chromium via CDP
         try:
-            browser = p.chromium.connect_over_cdp("http://172.20.0.1:9223")
+            browser = p.chromium.connect_over_cdp(
+                "http://172.20.0.1:9223", timeout=2000
+            )
         except Exception as e:
             print(f"Failed to connect to CDP: {e}. Falling back to local launch.")
             browser = p.chromium.launch(headless=True)
