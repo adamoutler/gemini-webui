@@ -1,5 +1,5 @@
 pytest==8.0.2
-playwright==1.42.0
+playwright
 pytest-playwright==0.4.4
 Pillow
 pytest-timeout

@@ -12,16 +12,7 @@ from tests.playwright_mobile_utils import (
 def ios_page(server):
     with sync_playwright() as p:
         iphone = p.devices["iPhone 12"]
-        try:
-            browser = p.webkit.launch(headless=True)
-        except Exception as e:
-            if "Host system is missing dependencies" in str(e):
-                print(
-                    "\nWARNING: WebKit dependencies missing on host, falling back to chromium simulation for iOS test."
-                )
-                browser = p.chromium.launch(headless=True)
-            else:
-                raise
+        browser = p.webkit.launch(headless=True)
         context = browser.new_context(**iphone)
         page = context.new_page()
         page.set_default_timeout(60000)
