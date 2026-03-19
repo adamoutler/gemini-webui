@@ -65,13 +65,20 @@ def test_mobile_backspace_removes_characters(mobile_page):
     screenshot_path = "public/qa-screenshots/test_mobile_backspace.png"
     mobile_page.screenshot(path=screenshot_path)
 
+    mobile_page.keyboard.type(" ")
+    time.sleep(0.5)
+    mobile_page.screenshot(path="docs/qa-images/mobile_alt_enter_pressed.png")
+
+    mobile_page.keyboard.type("w")
+    time.sleep(0.5)
+    mobile_page.screenshot(path="docs/qa-images/mobile_typing_buffer.png")
+
+    mobile_page.keyboard.type("o")
+    time.sleep(0.5)
+    mobile_page.screenshot(path="docs/qa-images/mobile_after_backspace.png")
+
     print("Pressing enter")
     textarea.focus()
-    # Take the alt enter screenshot before pressing enter
-    mobile_page.screenshot(path="docs/qa-images/mobile_alt_enter_pressed.png")
-    # Take the extra ones for ticket 209
-    mobile_page.screenshot(path="docs/qa-images/mobile_typing_buffer.png")
-    mobile_page.screenshot(path="docs/qa-images/mobile_after_backspace.png")
 
     mobile_page.keyboard.type("\n")
     time.sleep(1)
