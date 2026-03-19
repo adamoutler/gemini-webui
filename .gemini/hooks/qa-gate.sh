@@ -107,7 +107,7 @@ EOF
     -H "Content-Type: application/json" \
     -d "$COMMENT_PAYLOAD" > /dev/null
 
-  if ! grep -q "NEEDS WORK" <<< "$RESULT"; then
+  if tail -n 5 <<< "$RESULT" | grep -q "READY"; then
     echo '{"decision": "allow"}'
     exit 0
   else
