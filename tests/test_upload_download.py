@@ -72,15 +72,9 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
 
         import os
         import shlex
+        from src.process_manager import build_ssh_args
 
-        base_ssh_args = [
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            "StrictHostKeyChecking=no",
-            "-o",
-            "UserKnownHostsFile=/tmp/ssh_dir/known_hosts",
-        ]
+        base_ssh_args = build_ssh_args("user@host", "/tmp/ssh_dir")[1:]
         workspace_dir = os.path.join(test_data_dir, "workspace")
         save_path = os.path.abspath(os.path.join(workspace_dir, "testfile.txt"))
 
@@ -141,15 +135,9 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
 
         import os
         import shlex
+        from src.process_manager import build_ssh_args
 
-        base_ssh_args = [
-            "-o",
-            "BatchMode=yes",
-            "-o",
-            "StrictHostKeyChecking=no",
-            "-o",
-            "UserKnownHostsFile=/tmp/ssh_dir/known_hosts",
-        ]
+        base_ssh_args = build_ssh_args("user@host", "/tmp/ssh_dir")[1:]
         workspace_dir = os.path.join(test_data_dir, "workspace")
         save_path = os.path.abspath(os.path.join(workspace_dir, "testfile.txt"))
 

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 try:
     from config import env_config
@@ -8,6 +9,89 @@ import re
 import shlex
 import subprocess
 import time
+
+SSH_SOCKET_DIR = Path("/tmp/gemini_ssh_mux")
+try:
+    SSH_SOCKET_DIR.mkdir(parents=True, exist_ok=True)
+    os.chmod(SSH_SOCKET_DIR, 0o700)
+except Exception:
+    pass
+
+
+class SSHConnectionManager:
+    @staticmethod
+    def parse_target(target):
+        user = ""
+        port = 22
+        host = target
+        if ":" in host:
+            parts = host.rsplit(":", 1)
+            if parts[1].isdigit():
+                host = parts[0]
+                port = int(parts[1])
+        if "@" in host:
+            user, host = host.split("@", 1)
+        return user, host, port
+
+    @staticmethod
+    def get_socket_path(user, host, port):
+        safe_user = "".join(c for c in user if c.isalnum() or c in "-_")
+        safe_host = "".join(c for c in host if c.isalnum() or c in "-_.")
+        prefix = f"{safe_user}@" if safe_user else ""
+        return str(SSH_SOCKET_DIR / f"{prefix}{safe_host}:{port}.sock")
+
+    @staticmethod
+    def get_base_ssh_args(user, host, port):
+        socket_path = SSHConnectionManager.get_socket_path(user, host, port)
+        return [
+            "-o",
+            "ControlMaster=auto",
+            "-o",
+            f"ControlPath={socket_path}",
+            "-o",
+            "ControlPersist=10m",
+        ]
+
+    @staticmethod
+    def check_and_recover_connection(user, host, port):
+        socket_path = SSHConnectionManager.get_socket_path(user, host, port)
+        if not os.path.exists(socket_path):
+            return
+
+        target_str = f"{user}@{host}" if user else host
+
+        check_cmd = [
+            "ssh",
+            "-O",
+            "check",
+            "-o",
+            f"ControlPath={socket_path}",
+            target_str,
+        ]
+        try:
+            result = subprocess.run(
+                check_cmd, capture_output=True, text=True, timeout=5
+            )
+            if result.returncode != 0:
+                raise Exception("Connection dead")
+        except (subprocess.TimeoutExpired, Exception):
+            exit_cmd = [
+                "ssh",
+                "-O",
+                "exit",
+                "-o",
+                f"ControlPath={socket_path}",
+                target_str,
+            ]
+            try:
+                subprocess.run(exit_cmd, capture_output=True, timeout=5)
+            except Exception:
+                pass
+            if os.path.exists(socket_path):
+                try:
+                    os.remove(socket_path)
+                except OSError:
+                    pass
 
 
 def validate_ssh_target(target):
@@ -20,7 +104,12 @@ def validate_ssh_target(target):
 
 def build_ssh_args(ssh_target, ssh_dir_path):
     """Builds common SSH connection arguments."""
+    user, host, port = SSHConnectionManager.parse_target(ssh_target)
+    SSHConnectionManager.check_and_recover_connection(user, host, port)
+
     cmd = ["ssh", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=no"]
+    cmd.extend(SSHConnectionManager.get_base_ssh_args(user, host, port))
+
     known_hosts_path = os.path.join(ssh_dir_path, "known_hosts")
     if not os.access(ssh_dir_path, os.W_OK) and not os.access(
         known_hosts_path, os.W_OK
@@ -170,6 +259,9 @@ def build_terminal_command(
         if not validate_ssh_target(ssh_target):
             return None  # Invalid target
 
+        user, host, port = SSHConnectionManager.parse_target(ssh_target)
+        SSHConnectionManager.check_and_recover_connection(user, host, port)
+
         quoted_gemini = shlex.quote(gemini_bin)
         gemini_base_cmd = quoted_gemini
         if resume is True or str(resume).lower() == "true":
@@ -198,6 +290,7 @@ def build_terminal_command(
         login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
 
         cmd = ["ssh", "-t"]
+        cmd.extend(SSHConnectionManager.get_base_ssh_args(user, host, port))
 
         known_hosts_path = os.path.join(ssh_dir_path, "known_hosts")
         if not os.access(ssh_dir_path, os.W_OK) and not os.access(
