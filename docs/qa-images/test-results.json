@@ -1,0 +1,18 @@
+{
+  "status": "passed",
+  "metrics": {},
+  "devices": {
+    "desktop": {
+      "load_time_ms": 2728,
+      "status": "success"
+    },
+    "tablet": {
+      "load_time_ms": 2660,
+      "status": "success"
+    },
+    "mobile": {
+      "load_time_ms": 2671,
+      "status": "success"
+    }
+  }
+}
