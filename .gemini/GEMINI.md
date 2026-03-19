@@ -368,6 +368,9 @@ Please spawn an agents-orchestrator to execute complete development pipeline for
 4. **Done:** Tickets can only be closed after a validated commit.
 
 ## Kanban Tools and Usage
+
+The Kanban isn't just "tickets" to be closed. It's a collection of stories which guide how the user views the digital world.  While you have access to DOM and raw files, a user sees a narrow scope of a browser-rendered user experience.  These kanban tickets are not just action items.  They represent changes to how the user can interact with Gemini and should be tested and treated in a representative way.
+
 - Your primary Work is guided by kanban MCP.
   * Tickets are named SLUG-SEQUENCE_ID.
   * To find tickets, you can use `retrieve_work_item_by_identifier(project_identifier="SLUG",issue_identifier=123,expand="assignees")`
@@ -425,27 +428,31 @@ Please spawn an agents-orchestrator to execute complete development pipeline for
 
 ---
 
+
 ### 2. The Universal Quality Control Gate ("The Machine")
-* **Providing Proof via Comments:** To pass the QA gate, you must guide the checking agent to your evidence. When commenting on the ticket to signal completion, include a direct instruction for the agent.
-  * *Example Comment:* `Ticket's done. read_file(file:docs/qa/test_results/evidence.txt)` or `list_files(dir_path:docs/qa-images/GEMWEBUI-123)`.
-* **Rejection Policy:** Reality Checker AI defaults to **"NEEDS WORK"**. rejection reason back to the developer agent immediately.
-* **Artifacts:** You are encouraged to automatically generate properly named artifacts for QA during test time within docs/qa & docs/qa-images.
-* **Procedure For closing kanban tickets:**
-  The AI reviewer is the final quality gate. The ticket must have undeniable proof of completion. The AI reviewer's comment will appear in the ticket as well.
-  1. ensure you think the ticket is done.
-  2. commit the code.
-  3. git push - triggers a full GitHub Actions build-test-deploy. The AfterTool hook will automatically watch the run and wait for results. You will be informed of any failures.
-  4. You may add a comment to the ticket for the AI reviewer. 
-  5. Don't commit if: 
-    * You speculate the ticket may be incomplete
-  6. "Done" or close a single ticket. A `reality-checker` AI will evaluate your work. They will be provided the ticket, comments, the full GitHub Actions build log, and QA will refuse if:
-    * multiple tickets submitted at once.
-    * any uncommitted files.
-    * GitHub Actions build receipt absent/failed.
-    * Code changes were ineffective.
-    * lack of evidence the code works.
-    * Network or timeout errors
-This is an intentionally rigorous process. Work until the ticket is closed and then continue to the next ticket. Slow but steady wins the race. Ask an Architect subagent to evaluate and continue for the most effective results. Don't search manually.
+
+The final quality gate is managed by an unforgiving `reality-checker` AI. When you attempt to transition a ticket to "Done", the system automatically provides the QA agent with the Ticket Details, your Comments, and the **full GitHub Actions Build Receipt**. It defaults to **"NEEDS WORK"** unless the evidence is overwhelming.
+
+To streamline this process and pass the gate on the first try, you MUST adhere to the following workflow:
+
+* **Artifacts & Evidence Generation:** You MUST automatically generate visual artifacts (screenshots, terminal logs) during your local tests. Save all visual evidence strictly to standard project paths like `docs/qa-images/` or `public/qa-screenshots/`.
+* **The "Verify Before Submit" Rule (Anti-Hallucination):** As an AI, you are highly prone to hallucinating file paths and names when writing summaries. Before you add a completion comment to a ticket, you **MUST** run a shell command (e.g., `ls -la docs/qa-images/`) to empirically verify the *exact* filename, path, and freshness (timestamp/size) of the evidence you generated.
+* **Providing Proof via Comments:** The QA agent relies heavily on your final ticket comment to know what to evaluate. You must write a comment using the *exact, verified* file paths.
+  * *Example Comment:* `The copy picture feature is complete. I have simulated it with playwrite and personally tested in a browser port 9222 via MCP. You can view the local test-generated logs and pictures read_file(file:/docs/qa/test_results.json) and list_files(dir_path:docs/qa-images/GEMWEBUI-123). The GitHub Actions build has passed and I certify this ticket is complete to my best understanding of the user-driven intention.`
+
+
+**Strict Procedure for Closing Kanban Tickets:**
+1. **Implement & Test:** Ensure the code is complete and tests are passing.
+2. **Generate Proof:** Run tests to generate the required screenshot/log evidence.
+3. **Verify Reality:** Run `ls -la ` to confirm the exact paths and creation times of your evidence. Do not trust your memory.
+4. **Commit & Push:** Add all files (including new images), commit, and `git push`. (The `git-push-after.sh` hook will monitor the GitHub Actions run).
+5. **Wait for CI:** You cannot pass QA if the GitHub Actions build fails. Wait for the success receipt.
+6. **Comment:** Add a comment to the Kanban ticket containing the verified file paths and an explanation of the fix.
+7. **Transition to Done:** Move the ticket to "Done". If you have uncommitted files, unpushed commits, or a failed build, the `qa-gate.sh` hook will block you.
+
+Notes: This is an intentionally rigorous process. Work until the ticket is closed and then continue to the next ticket. Slow but steady wins the race. You have many subagents to help you such as an evidence collector, architects, and devops engineers to perform tasks, evaluate, provide instant guidance, and reorient you to the the most effective results. Not all agents have full access to all tools. Use codebase analzyer and don't search manually because it will wreck your context window.
+
+
 
 
 ---
