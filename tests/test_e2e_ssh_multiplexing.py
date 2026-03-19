@@ -70,9 +70,7 @@ def test_ssh_multiplexing_loading_state(ssh_test_server):
         page.wait_for_timeout(1000)
 
         # Let's take a screenshot of the loading indicator!
-        screenshot_path = (
-            f"/tmp/ssh_cold_start_loading_{os.environ.get('BUILD_NUMBER', 'local')}.png"
-        )
+        screenshot_path = f"public/qa-screenshots/ssh_cold_start_loading_{os.environ.get('BUILD_NUMBER', 'local')}.png"
         page.screenshot(path=screenshot_path)
         print(
             f"Empirical Evidence: Loading indicator shown. Visual proof saved to {screenshot_path}"
@@ -127,9 +125,7 @@ def test_ssh_connection_error_bubbling(ssh_test_server):
         # It takes a few seconds for the SSH process to timeout and return the error.
         page.wait_for_timeout(4000)
 
-        screenshot_path = (
-            f"/tmp/ssh_error_bubbling_{os.environ.get('BUILD_NUMBER', 'local')}.png"
-        )
+        screenshot_path = f"public/qa-screenshots/ssh_error_bubbling_{os.environ.get('BUILD_NUMBER', 'local')}.png"
         page.screenshot(path=screenshot_path)
         print(
             f"Empirical Evidence: Error bubbled up cleanly. Visual proof saved to {screenshot_path}"

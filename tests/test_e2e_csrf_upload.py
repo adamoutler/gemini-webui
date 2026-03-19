@@ -277,9 +277,7 @@ def test_csrf_upload_stale_cache_recovery(csrf_enabled_server, test_data_dir):
             last_resp.status == 200
         ), f"Upload failed for another reason: {last_resp.status}"
 
-        screenshot_path = (
-            f"/tmp/gemwe-180_{os.environ.get('BUILD_NUMBER', 'local')}.png"
-        )
+        screenshot_path = f"public/qa-screenshots/gemwe-180_{os.environ.get('BUILD_NUMBER', 'local')}.png"
         page.screenshot(path=screenshot_path)
         print(
             f"Empirical Evidence: Stale CSRF cache upload succeeded. Visual proof saved to {screenshot_path}"
