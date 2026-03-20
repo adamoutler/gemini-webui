@@ -19,6 +19,15 @@ def test_debug_logging(page, server):
     page.wait_for_timeout(2000)
     page.wait_for_function("typeof window.setDebug === 'function'")
     
+    # Take screenshot of settings
+    page.evaluate("openSettings()")
+    page.wait_for_selector("#settings-modal", state="visible")
+    page.evaluate("document.querySelector('#settings-modal .modal-content').scrollBy(0, 1000)")
+    page.wait_for_timeout(1000)
+    page.screenshot(path="public/qa-screenshots/debug_settings.png")
+    page.evaluate("closeSettings()")
+    page.wait_for_selector("#settings-modal", state="hidden")
+    
     initial_log_count = len(logs)
     
     # Enable debug logging
