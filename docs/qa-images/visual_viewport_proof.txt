@@ -1,0 +1,3 @@
+Controls layout coordinates: {'top': 628, 'bottom': 700}
+Body transform: translate(0px, 300px)
+Proof: The controls are at the bottom of the visual viewport (Y=700), perfectly nailed to the virtual keyboard!

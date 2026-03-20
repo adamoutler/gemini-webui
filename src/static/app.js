@@ -2137,6 +2137,12 @@ window.appVisualViewport = window.visualViewport
       get scale() {
         return window.visualViewport.scale;
       },
+      get offsetTop() {
+        return window.visualViewport.offsetTop;
+      },
+      get offsetLeft() {
+        return window.visualViewport.offsetLeft;
+      },
       addEventListener: window.visualViewport.addEventListener.bind(
         window.visualViewport,
       ),
@@ -2150,28 +2156,42 @@ window.appVisualViewport = window.visualViewport
 if (window.appVisualViewport) {
   let resizeTimeout;
   let lastViewHeight = window.appVisualViewport.height;
+
+  const updateViewport = () => {
+    if (window.appVisualViewport.scale > 1.05) {
+      return; // User is zooming, do not break layout
+    }
+
+    const viewHeight = window.appVisualViewport.height;
+    document.body.style.height = `${viewHeight}px`;
+
+    const offsetTop = window.appVisualViewport.offsetTop || 0;
+    const offsetLeft = window.appVisualViewport.offsetLeft || 0;
+    document.body.style.transform = `translate(${offsetLeft}px, ${offsetTop}px)`;
+
+    window.scrollTo(0, 0);
+  };
+
   window.appVisualViewport.addEventListener("resize", () => {
     clearTimeout(resizeTimeout);
     resizeTimeout = setTimeout(() => {
       if (window.appVisualViewport.scale > 1.05) {
         return; // User is zooming, do not break layout
       }
-
       const viewHeight = window.appVisualViewport.height;
       // Ignore tiny jitters (less than 20px) to prevent scroll interruption
       if (Math.abs(viewHeight - lastViewHeight) < 20) return;
       lastViewHeight = viewHeight;
 
-      // Constrain the body height to exactly the visible viewport height
-      // This moves the bottom-pinned mobile controls to just above the keyboard
-      document.body.style.height = `${viewHeight}px`;
-
-      window.scrollTo(0, 0);
+      updateViewport();
       tabs.forEach((tab) => fitTerminal(tab));
     }, 100);
   });
+
+  window.appVisualViewport.addEventListener("scroll", updateViewport);
+
   // Also initialize with the current height
-  document.body.style.height = `${window.appVisualViewport.height}px`;
+  updateViewport();
 }
 if (mode === "fake" && sessionId) {
   document.body.classList.add("theme-fake-session");
