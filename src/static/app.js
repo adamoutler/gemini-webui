@@ -1,3 +1,20 @@
+
+window.ENABLE_DEBUG = localStorage.getItem('GEMINI_DEBUG') === 'true';
+window.setDebug = function(enabled) {
+  window.ENABLE_DEBUG = !!enabled;
+  if(enabled) {
+    localStorage.setItem('GEMINI_DEBUG', 'true');
+    console.log("Verbose debugging enabled. To disable, run: setDebug(false)");
+  } else {
+    localStorage.removeItem('GEMINI_DEBUG');
+    console.log("Verbose debugging disabled. To enable, run: setDebug(true)");
+  }
+};
+function debugLog(...args) {
+  if (window.ENABLE_DEBUG) {
+    console.log(...args);
+  }
+}
 let isRefreshingToken = false;
 let tokenRefreshSubscribers = [];
 
@@ -74,21 +91,21 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker
       .register("/sw.js")
       .then((reg) => {
-        // console.log('SW registered:', reg);
+        debugLog('SW registered:', reg);
       })
       .catch((err) => {
-        // console.log('SW registration failed:', err);
+        debugLog('SW registration failed:', err);
       });
   });
 }
 
 window.addEventListener("beforeinstallprompt", (e) => {
-  // console.log('beforeinstallprompt event fired');
+  debugLog('beforeinstallprompt event fired');
   // e.preventDefault(); // Don't prevent default, we want the browser prompt
 });
 
 window.addEventListener("appinstalled", (evt) => {
-  // console.log('Gemini WebUI was installed');
+  debugLog('Gemini WebUI was installed');
 });
 
 // Request Notification Permission
@@ -170,7 +187,7 @@ const HostStateManager = {
 
   updateHealth: function (tabId, label, isSuccess, shouldPulse = false) {
     const prevClass = this.getInitialStatusClass(label);
-    // console.log("UPDATE HEALTH CALLED WITH " + isSuccess);
+    debugLog("UPDATE HEALTH CALLED WITH " + isSuccess);
     const failures = this.updateState(label, isSuccess);
     const newClass = this.getStatusClass(failures);
     this.renderHealthUI(tabId, label, failures);
@@ -343,7 +360,7 @@ const isMobile = checkMobile();
 if (isMobile) {
   document.documentElement.classList.add("is-mobile");
 }
-// console.log("Environment detection: isMobile =", isMobile, "(UA:", navigator.userAgent, "Width:", window.innerWidth, "Touch:", ('ontouchstart' in window || navigator.maxTouchPoints > 0), ")");
+debugLog("Environment detection: isMobile =", isMobile, "(UA:", navigator.userAgent, "Width:", window.innerWidth, "Touch:", ('ontouchstart' in window || navigator.maxTouchPoints > 0), ")");
 
 // VisualViewport logic is handled at the bottom of the script
 
@@ -986,12 +1003,12 @@ async function fetchSessions(
   useCache = false,
   isPolling = false,
 ) {
-  // console.log(
-  //   "FETCH SESSIONS CALLED WITH useCache=" +
-  //     useCache +
-  //     " isPolling=" +
-  //     isPolling,
-  // );
+  debugLog(
+    "FETCH SESSIONS CALLED WITH useCache=" +
+      useCache +
+      " isPolling=" +
+      isPolling,
+  );
   if (!window.expandedSessionLists) window.expandedSessionLists = new Set();
   if (window.expandedSessionLists.has(conn.label)) {
     forceAll = true;
@@ -1006,7 +1023,7 @@ async function fetchSessions(
   params.bg = true;
 
   try {
-    // console.log("FETCH SESSIONS START");
+    debugLog("FETCH SESSIONS START");
     const data = await new Promise((resolve, reject) => {
       const socket = getGlobalSocket();
 
@@ -1031,7 +1048,7 @@ async function fetchSessions(
       });
     });
 
-    // console.log("FETCH SESSIONS DATA: ", JSON.stringify(data));
+    debugLog("FETCH SESSIONS DATA: ", JSON.stringify(data));
     if (data.status === "fetching") {
       const listEl = document.getElementById(targetId);
       if (listEl && listEl.innerHTML === "") {
@@ -1045,11 +1062,11 @@ async function fetchSessions(
     }
 
     if (!useCache || isPolling) {
-      // console.log("ENTERED IF BLOCK");
+      debugLog("ENTERED IF BLOCK");
       try {
         HostStateManager.updateHealth(tabId, conn.label, !data.error, false);
       } catch (e) {
-        // console.log("INNER ERROR: " + e.stack);
+        debugLog("INNER ERROR: " + e.stack);
       }
     }
 
@@ -1061,7 +1078,7 @@ async function fetchSessions(
         try {
           HostStateManager.updateHealth(tabId, conn.label, false, false);
         } catch (e) {
-          // console.log("INNER ERROR: " + e.stack);
+          debugLog("INNER ERROR: " + e.stack);
         }
       }
       if (
@@ -1149,7 +1166,7 @@ async function fetchSessions(
       fetchSessions(tabId, conn, targetId, forceAll, false); // Update after cache load
   } catch (e) {
     if (!useCache || isPolling) {
-      // console.log("ENTERED IF BLOCK");
+      debugLog("ENTERED IF BLOCK");
       HostStateManager.updateHealth(tabId, conn.label, false, false);
     }
     console.error(e);
@@ -1242,7 +1259,7 @@ function startSession(
       });
     }
   } catch (e) {
-    // console.log("WebGL addon could not be loaded", e);
+    debugLog("WebGL addon could not be loaded", e);
   }
 
   // Passive Portal Implementation for Native Momentum
@@ -1541,7 +1558,7 @@ function startSession(
         callback(links);
       },
     });
-    // console.log("Custom LinkProvider registered.");
+    debugLog("Custom LinkProvider registered.");
   } catch (e) {
     console.error("Failed to setup link provider:", e);
   }
@@ -1664,7 +1681,7 @@ function startSession(
           if (dir) params.ssh_dir = dir;
           params.cache = false;
 
-          // console.log("FETCH SESSIONS START");
+          debugLog("FETCH SESSIONS START");
           const data = await new Promise((resolve, reject) => {
             const socket = getGlobalSocket();
             socket.emit("get_sessions", params, (response) => {
