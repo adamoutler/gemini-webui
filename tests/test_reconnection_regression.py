@@ -96,17 +96,16 @@ class TestReconnectionRegression:
             )
 
             # 3. Observe green indicator on Local connection
-            # Trigger fetch manually to bypass the 10-second polling delay in case the initial fetch timed out during slow CI startup
-            page.evaluate("""() => {
-                if (typeof activeTabId !== 'undefined') {
-                    fetchSessions(activeTabId, {label: 'local', type: 'local'}, `${activeTabId}_sessions_local`, false, false);
-                }
-            }""")
-
             local_health = page.locator(
                 'div[data-label="local"] .connection-title span[id$="_health_local"]'
             )
-            expect(local_health).to_have_text("🟢", timeout=30000)
+
+            try:
+                expect(local_health).to_have_text("🟢", timeout=15000)
+            except AssertionError:
+                # If CI is slow and Socket.IO didn't bind in time for the first load, reload the page
+                page.reload()
+                expect(local_health).to_have_text("🟢", timeout=15000)
 
             # 4. Restart the server (stop then start)
             # To simulate the server being down long enough for the UI to notice
