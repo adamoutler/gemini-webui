@@ -1,7 +1,16 @@
 import pytest
-from playwright.sync_api import Page, expect
+from playwright.sync_api import sync_playwright, expect
 
-def test_debug_logging(page: Page, server):
+@pytest.fixture(scope="function")
+def page(server):
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+        yield page
+        browser.close()
+
+def test_debug_logging(page, server):
     logs = []
     page.on("console", lambda msg: logs.append(msg.text))
     page.goto(server)
