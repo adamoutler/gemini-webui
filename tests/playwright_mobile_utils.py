@@ -42,22 +42,3 @@ def simulateSpacebarTrackpad(page, offset, locator=".mobile-text-area"):
     time.sleep(0.1)
 
 
-def simulateAutoPunctuation(page, trigger_char=".", locator=".mobile-text-area"):
-    """
-    Simulates a double-space inserting a period and space, or similar auto-punctuation.
-    """
-    page.evaluate(f"""
-        () => {{
-            const el = document.querySelector('{locator}');
-            if (el) {{
-                if (el.value.endsWith(' ')) {{
-                    el.value = el.value.slice(0, -1) + '{trigger_char} ';
-                    el.dispatchEvent(new InputEvent('input', {{ inputType: 'insertText', data: '{trigger_char} ' }}));
-                }} else {{
-                    el.value = el.value + '{trigger_char} ';
-                    el.dispatchEvent(new InputEvent('input', {{ inputType: 'insertText', data: '{trigger_char} ' }}));
-                }}
-            }}
-        }}
-    """)
-    time.sleep(0.1)

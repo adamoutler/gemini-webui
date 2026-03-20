@@ -24,29 +24,6 @@ class ExtensionRuleParser {
   }
 }
 
-class AutoPunctuationRule extends InputRule {
-  handleEvent(event, context) {
-    if (
-      event.type === "input" &&
-      (event.data === ". " || event.data === "。") &&
-      (event.inputType === "insertText" ||
-        event.inputType === "insertReplacementText")
-    ) {
-      const input = context.getProxyInput();
-      if (
-        input &&
-        (input.value === event.data || input.value.endsWith(event.data))
-      ) {
-        // OS auto-punctuated the previous space. Send backspace then the punctuation.
-        context.emitToTerminal("\x7f" + event.data);
-        input.value = "";
-        return true;
-      }
-    }
-    return false;
-  }
-}
-
 class CursorPlacementRule extends InputRule {
   constructor() {
     super();
@@ -748,7 +725,6 @@ class MobileTerminalController {
         getProxyInput: () => (this.ui ? this.ui.proxyInput : null),
         modifierState: this.modifierState,
       });
-      this.ruleParser.registerRule(new AutoPunctuationRule());
       this.ruleParser.registerRule(new CursorPlacementRule());
       this.ruleParser.registerRule(new BackspaceRule());
       this.ruleParser.registerRule(new ModifierRule());
