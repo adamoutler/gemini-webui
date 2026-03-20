@@ -20,8 +20,14 @@ def custom_server(test_data_dir):
     env["FLASK_USE_RELOADER"] = "false"
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
+    env["GEMINI_BIN"] = "gemini"
+    env["GEMWEBUI_HARNESS"] = "1"
+    env["SKIP_MULTIPLEXER"] = "true"
 
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    mock_dir = os.path.join(project_root, "tests", "mock")
+    env["PATH"] = f"{mock_dir}:{env.get('PATH', '')}"
+
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     def start_server():
