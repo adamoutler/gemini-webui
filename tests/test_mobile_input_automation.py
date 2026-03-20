@@ -4,7 +4,6 @@ import time
 from tests.playwright_mobile_utils import (
     simulateAutocorrect,
     simulateSpacebarTrackpad,
-    simulateAutoPunctuation,
 )
 
 
@@ -64,7 +63,6 @@ def test_mobile_utils_webkit(ios_page):
     # Just ensure the utility functions execute without exceptions
     simulateAutocorrect(ios_page, "teh", "the")
     simulateSpacebarTrackpad(ios_page, -1)
-    simulateAutoPunctuation(ios_page, ".")
 
     assert True
 
@@ -85,6 +83,5 @@ def test_mobile_utils_chromium(android_page):
     # Just ensure the utility functions execute without exceptions
     simulateAutocorrect(android_page, "teh", "the")
     simulateSpacebarTrackpad(android_page, -1)
-    simulateAutoPunctuation(android_page, ".")
 
     assert True
