@@ -1658,14 +1658,7 @@ function startSession(
 
     // Refresh CSRF token on reconnect in case server restarted
     try {
-      const response = await fetch("/api/csrf");
-      if (response.ok) {
-        const data = await response.json();
-        if (data.csrf_token) {
-          const meta = document.querySelector('meta[name="csrf-token"]');
-          if (meta) meta.setAttribute("content", data.csrf_token);
-        }
-      }
+      await refreshCsrfToken();
     } catch (e) {
       console.error("Failed to refresh CSRF token:", e);
     }
@@ -2675,14 +2668,7 @@ class EnvVarManager {
 let envVarManager;
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    const response = await fetch("/api/csrf");
-    if (response.ok) {
-      const data = await response.json();
-      if (data.csrf_token) {
-        const meta = document.querySelector('meta[name="csrf-token"]');
-        if (meta) meta.setAttribute("content", data.csrf_token);
-      }
-    }
+    await refreshCsrfToken();
   } catch (e) {
     console.error("Failed to initialize CSRF token:", e);
   }
@@ -2701,17 +2687,9 @@ async function fetchWithCSRF(url, options = {}) {
 
   if (response.status === 400 || response.status === 403) {
     try {
-      const csrfResponse = await fetch("/api/csrf");
-      if (csrfResponse.ok) {
-        const data = await csrfResponse.json();
-        if (data.csrf_token) {
-          const meta = document.querySelector('meta[name="csrf-token"]');
-          if (meta) meta.setAttribute("content", data.csrf_token);
-          options.headers["X-CSRFToken"] = data.csrf_token;
-
-          response = await fetch(url, options);
-        }
-      }
+      const newToken = await refreshCsrfToken();
+      options.headers["X-CSRFToken"] = newToken;
+      response = await fetch(url, options);
     } catch (e) {
       console.error("Failed to refresh CSRF token on retry:", e);
     }
