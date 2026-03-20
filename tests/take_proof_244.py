@@ -45,21 +45,29 @@ def main():
                 page.locator("#new-tab-btn").click()
                 page.wait_for_selector(".backend-sessions-container .session-item", timeout=5000)
                 
-                # Force the pulse indicator to show with the superbright class
-                print("Triggering the flash transition...")
+                # Force the pulse indicator to show by simulating a health check response organically
+                print("Triggering the flash transition organically via HostStateManager...")
                 page.evaluate("""() => {
-                    const indicator = document.querySelector('.connections-list .pulse-indicator');
-                    if (indicator) {
-                        indicator.classList.add('pulsing', 'superbright');
+                    const activeTab = document.querySelector('.tab-instance.active');
+                    if (activeTab) {
+                        const id = activeTab.id.replace('_instance', '');
+                        // Force a status change to trigger the superbright flash naturally
+                        HostStateManager.updateHealth(id, 'local', true, true);
                     }
                 }""")
                 
-                # Wait just a tiny bit to catch it in the middle of the animation
+                print("Taking screenshot mid-animation...")
                 time.sleep(0.15)
+                page.screenshot(path="docs/qa-images/issue_244_flash_mid.png", full_page=True)
                 
-                print(f"Taking screenshot of the transition: {screenshot_path}")
-                page.screenshot(path=screenshot_path, full_page=True)
-                print("Screenshot captured successfully!")
+                print("Taking screenshot near end of animation (0.8s) to prove fade...")
+                time.sleep(0.65)
+                page.screenshot(path="docs/qa-images/issue_244_flash_fade.png", full_page=True)
+
+                print("Taking screenshot after animation (1.1s) to prove completion...")
+                time.sleep(0.3)
+                page.screenshot(path="docs/qa-images/issue_244_flash_end.png", full_page=True)
+                print("Screenshots captured successfully!")
                 
             except Exception as e:
                 print(f"Error interacting with page: {e}")
