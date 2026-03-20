@@ -1038,7 +1038,7 @@ async function fetchSessions(
 
       const timeoutTimer = setTimeout(() => {
         resolve({ error: "Timeout waiting for get_sessions" });
-      }, 15000);
+      }, 5000);
 
       socket.emit("get_sessions", params, (response) => {
         clearTimeout(timeoutTimer);
