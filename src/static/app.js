@@ -1,12 +1,11 @@
-
-window.ENABLE_DEBUG = localStorage.getItem('GEMINI_DEBUG') === 'true';
-window.setDebug = function(enabled) {
+window.ENABLE_DEBUG = localStorage.getItem("GEMINI_DEBUG") === "true";
+window.setDebug = function (enabled) {
   window.ENABLE_DEBUG = !!enabled;
-  if(enabled) {
-    localStorage.setItem('GEMINI_DEBUG', 'true');
+  if (enabled) {
+    localStorage.setItem("GEMINI_DEBUG", "true");
     console.log("Verbose debugging enabled. To disable, run: setDebug(false)");
   } else {
-    localStorage.removeItem('GEMINI_DEBUG');
+    localStorage.removeItem("GEMINI_DEBUG");
     console.log("Verbose debugging disabled. To enable, run: setDebug(true)");
   }
 };
@@ -91,21 +90,21 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker
       .register("/sw.js")
       .then((reg) => {
-        debugLog('SW registered:', reg);
+        debugLog("SW registered:", reg);
       })
       .catch((err) => {
-        debugLog('SW registration failed:', err);
+        debugLog("SW registration failed:", err);
       });
   });
 }
 
 window.addEventListener("beforeinstallprompt", (e) => {
-  debugLog('beforeinstallprompt event fired');
+  debugLog("beforeinstallprompt event fired");
   // e.preventDefault(); // Don't prevent default, we want the browser prompt
 });
 
 window.addEventListener("appinstalled", (evt) => {
-  debugLog('Gemini WebUI was installed');
+  debugLog("Gemini WebUI was installed");
 });
 
 // Request Notification Permission
@@ -360,7 +359,17 @@ const isMobile = checkMobile();
 if (isMobile) {
   document.documentElement.classList.add("is-mobile");
 }
-debugLog("Environment detection: isMobile =", isMobile, "(UA:", navigator.userAgent, "Width:", window.innerWidth, "Touch:", ('ontouchstart' in window || navigator.maxTouchPoints > 0), ")");
+debugLog(
+  "Environment detection: isMobile =",
+  isMobile,
+  "(UA:",
+  navigator.userAgent,
+  "Width:",
+  window.innerWidth,
+  "Touch:",
+  "ontouchstart" in window || navigator.maxTouchPoints > 0,
+  ")",
+);
 
 // VisualViewport logic is handled at the bottom of the script
 
@@ -2075,6 +2084,40 @@ function restartActiveTab() {
     });
     updateStatus(ssh_target, ssh_dir);
   }
+}
+
+async function killActiveTab() {
+  const tab = tabs.find((t) => t.id === activeTabId);
+  if (!tab || tab.state !== "terminal") return;
+
+  if (
+    !confirm(
+      "Are you sure you want to permanently kill the active terminal session? This will terminate the underlying process and close the tab.",
+    )
+  ) {
+    return;
+  }
+
+  try {
+    if (tab.session && tab.session.ssh_target) {
+      await fetchWithCSRF("/api/sessions/terminate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ssh_target: tab.session.ssh_target,
+          ssh_dir: tab.session.ssh_dir,
+          session_id: tab.session.resume,
+        }),
+      });
+    } else {
+      await fetchWithCSRF(`/api/management/sessions/${tab.id}`, {
+        method: "DELETE",
+      });
+    }
+  } catch (e) {
+    console.error("Failed to kill session", e);
+  }
+  closeTab(tab.id);
 }
 
 function closeTab(id, event) {
