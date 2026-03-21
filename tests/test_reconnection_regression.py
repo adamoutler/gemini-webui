@@ -1,45 +1,50 @@
 import pytest
 import time
 import os
-import signal
 import subprocess
+import requests
 from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def custom_server(test_data_dir):
-    env = os.environ.copy()
-    env["BYPASS_AUTH_FOR_TESTING"] = "true"
-    env["SECRET_KEY"] = "testsecret"
+def docker_server(test_data_dir):
     import random
 
     port = str(random.randint(10000, 20000))
-    env["PORT"] = port
-    env["ALLOWED_ORIGINS"] = "*"
-    env["DATA_DIR"] = str(test_data_dir)
-    env["FLASK_USE_RELOADER"] = "false"
-    env["FLASK_DEBUG"] = "false"
-    env["SKIP_MONKEY_PATCH"] = "false"
-    env["GEMINI_BIN"] = "gemini"
-    env["GEMWEBUI_HARNESS"] = "1"
-    env["SKIP_MULTIPLEXER"] = "true"
-
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    mock_dir = os.path.join(project_root, "tests", "mock")
-    env["PATH"] = f"{mock_dir}:{env.get('PATH', '')}"
+    image_name = "gemwebui-test-image"
 
-    python_bin = os.path.join(project_root, ".venv", "bin", "python")
+    # 1. build and launch a fresh container
+    subprocess.run(
+        ["docker", "build", "-t", image_name, "."], cwd=project_root, check=True
+    )
+
+    container_name = f"gemwebui-test-{port}"
 
     def start_server():
-        proc = subprocess.Popen(
-            [python_bin, "-m", "src.app"],
-            env=env,
-            cwd=project_root,
-            preexec_fn=os.setsid,
+        subprocess.run(
+            [
+                "docker",
+                "run",
+                "-d",
+                "--name",
+                container_name,
+                "-p",
+                f"{port}:5000",
+                "-e",
+                "BYPASS_AUTH_FOR_TESTING=true",
+                "-e",
+                "SECRET_KEY=testsecret",
+                "-e",
+                "ALLOWED_ORIGINS=*",
+                "-v",
+                f"{test_data_dir}:/data",
+                image_name,
+            ],
+            check=True,
         )
-        import requests
 
-        for _ in range(20):
+        for _ in range(30):
             try:
                 resp = requests.get(f"http://127.0.0.1:{port}/health", timeout=1)
                 if resp.status_code == 200:
@@ -47,35 +52,29 @@ def custom_server(test_data_dir):
             except requests.RequestException:
                 pass
             time.sleep(1)
-        return proc
 
-    process = start_server()
+    start_server()
     url = f"http://127.0.0.1:{port}"
 
     class ServerController:
-        def __init__(self, process, start_fn, url):
-            self.process = process
+        def __init__(self, start_fn, url):
             self.start_fn = start_fn
             self.url = url
 
         def stop(self):
-            try:
-                os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
-                self.process.wait()
-            except OSError:
-                pass
+            subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
 
         def start(self):
-            self.process = self.start_fn()
+            self.start_fn()
 
-    controller = ServerController(process, start_server, url)
+    controller = ServerController(start_server, url)
     yield controller
     controller.stop()
 
 
 class TestReconnectionRegression:
-    @pytest.mark.timeout(60)
-    def test_reconnection_regression(self, custom_server):
+    @pytest.mark.timeout(120)
+    def test_reconnection_regression(self, docker_server):
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             context = browser.new_context()
@@ -90,9 +89,8 @@ class TestReconnectionRegression:
             page = context.new_page()
             page.on("console", log_console)
 
-            # 1. Start the server (using custom_server)
             # 2. Visit the select a connection page (the root URL)
-            page.goto(custom_server.url)
+            page.goto(docker_server.url)
 
             # Wait for service worker to install
             page.wait_for_timeout(2000)
@@ -113,12 +111,10 @@ class TestReconnectionRegression:
                 page.reload()
                 expect(local_health).to_have_text("🟢", timeout=15000)
 
-            # 4. Restart the server (stop then start)
-            # To simulate the server being down long enough for the UI to notice
-            custom_server.stop()
+            # 4. Restart the container
+            docker_server.stop()
 
             # 5. Observe red indicator
-            # UI checks every 10 seconds, so it may take up to 20-25 seconds to turn red
             expect(local_health).to_have_text("🔴", timeout=30000)
 
             # Wait a bit to ensure the SW caches the failed responses if it does
@@ -139,8 +135,8 @@ class TestReconnectionRegression:
             )
             assert error_found, "Expected error or disconnect messages in console logs"
 
-            # Now restart the server
-            custom_server.start()
+            # Now restart the container
+            docker_server.start()
 
             # Give the server a moment to be fully ready
             page.wait_for_timeout(2000)
