@@ -64,6 +64,7 @@ jobs:
             type=raw,value=${{ env.VERSION }}
             type=ref,event=branch
             type=ref,event=pr
+            type=sha
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
