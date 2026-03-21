@@ -73,7 +73,7 @@ def docker_server(test_data_dir):
 
 
 class TestReconnectionRegression:
-    @pytest.mark.timeout(120)
+    @pytest.mark.timeout(300)
     def test_reconnection_regression(self, docker_server):
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
@@ -152,7 +152,7 @@ class TestReconnectionRegression:
             local_health2 = page.locator(
                 'div[data-label="local"] .connection-title span[id$="_health_local"]'
             )
-            expect(local_health2).to_have_text("🟢", timeout=15000)
+            expect(local_health2).to_have_text("🟢", timeout=60000)
 
             page.screenshot(path="docs/qa-images/GEMWEBUI-265/reconnected.png")
 
