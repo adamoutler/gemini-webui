@@ -318,19 +318,19 @@ button.small {
 @keyframes pulseFade {
   0% {
     opacity: 0;
-    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    box-shadow: 0 0 0 rgb(255, 255, 255, 0);
     transform: translate(-50%, -50%) scale(0.9);
   }
 
   15% {
     opacity: 0.7;
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 8px rgb(255, 255, 255, 0.5);
     transform: translate(-50%, -50%) scale(1.15);
   }
 
   100% {
     opacity: 0;
-    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    box-shadow: 0 0 0 rgb(255, 255, 255, 0);
     transform: translate(-50%, -50%) scale(1);
   }
 }
@@ -355,19 +355,22 @@ button.small {
 @keyframes pulseFadeSuperbright {
   0% {
     opacity: 0;
-    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    background-color: transparent;
+    box-shadow: 0 0 0 rgb(255, 255, 255, 0);
     transform: translate(-50%, -50%) scale(0.9);
   }
 
   15% {
-    opacity: 0.9;
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
-    transform: translate(-50%, -50%) scale(1.15);
+    opacity: 1;
+    background-color: #fff;
+    box-shadow: 0 0 6px 4px rgb(255, 255, 255, 1);
+    transform: translate(-50%, -50%) scale(1);
   }
 
   100% {
     opacity: 0;
-    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+    background-color: transparent;
+    box-shadow: 0 0 0 rgb(255, 255, 255, 0);
     transform: translate(-50%, -50%) scale(1);
   }
 }
@@ -596,8 +599,8 @@ textarea {
 
 @keyframes flashWhite {
   0% {
-    background-color: rgba(255, 255, 255, 0.5);
-    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    background-color: rgb(255, 255, 255, 0.5);
+    box-shadow: 0 0 8px rgb(255, 255, 255, 0.5);
   }
 
   100% {
