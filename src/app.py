@@ -43,7 +43,7 @@ from flask import (
     send_file,
 )
 from werkzeug.utils import secure_filename
-from flask_socketio import SocketIO
+from flask_socketio import SocketIO, ConnectionRefusedError
 from flask_talisman import Talisman
 from flask_wtf.csrf import CSRFProtect, CSRFError, generate_csrf
 from werkzeug.middleware.proxy_fix import ProxyFix

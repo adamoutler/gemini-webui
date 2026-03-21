@@ -99,6 +99,7 @@ def test_csrf_socketio_rejection(client):
     app.config["WTF_CSRF_ENABLED"] = True
 
     from src.app import handle_connect
+    from flask_socketio import ConnectionRefusedError
 
     try:
         with app.test_request_context("/"):
