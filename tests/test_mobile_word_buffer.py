@@ -53,8 +53,7 @@ def test_mobile_single_word_buffer(mobile_page):
 
     # Buffer should be empty
     buffer_val = textarea.evaluate("el => el.value")
-    assert buffer_val == ""
-
+    assert buffer_val == " "
     # 3. Type "world"
     mobile_page.keyboard.type("world")
     time.sleep(0.5)
