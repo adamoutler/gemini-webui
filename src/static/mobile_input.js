@@ -281,8 +281,10 @@ class MobileModifierState {
         if (e.type === "touchstart" || e.type === "touchend") {
           e.preventDefault();
         }
-        if (e.type === "touchend" || e.type === "mousedown") {
+        if (e.type === "touchstart" || e.type === "mousedown") {
           if (window.triggerHapticFeedback) window.triggerHapticFeedback();
+        }
+        if (e.type === "touchend" || e.type === "mousedown") {
           toggleFn();
           const activeProxy = document.querySelector(".mobile-text-area");
           if (activeProxy) {
