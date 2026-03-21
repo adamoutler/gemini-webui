@@ -195,8 +195,37 @@ class WordBoundaryRule extends InputRule {
       }
 
       if (this.boundaryRegex.test(input.value)) {
-        context.emitToTerminal(input.value);
-        input.value = "";
+        if (input.value === " ") {
+          return true;
+        }
+
+        if (input.value === "  ") {
+          // Manually handle double-space to period because OS requires word context
+          context.emitToTerminal(".");
+          input.value = " ";
+          return true;
+        }
+
+        let toEmit = input.value;
+        let toKeep = "";
+
+        if (input.value.endsWith(" ")) {
+          toEmit = input.value.slice(0, -1);
+          toKeep = " ";
+        } else {
+          // Find the last sequence of boundaries and split there
+          const match = input.value.match(
+            /([\s.,?!;\-—，。？！；]+)([^[\s.,?!;\-—，。？！；]*)$/,
+          );
+          if (match) {
+            const boundaryEndIndex = input.value.length - match[2].length;
+            toEmit = input.value.substring(0, boundaryEndIndex);
+            toKeep = match[2];
+          }
+        }
+
+        if (toEmit) context.emitToTerminal(toEmit);
+        input.value = toKeep;
         return true;
       }
     } else if (event.type === "keydown" && event.key === "Enter") {
@@ -249,14 +278,16 @@ class MobileModifierState {
     const bindBtn = (btn, toggleFn) => {
       if (!btn) return;
       const handler = (e) => {
-        if (e.type === "touchstart" || e.type === "touchend")
+        if (e.type === "touchstart" || e.type === "touchend") {
           e.preventDefault();
-        // only toggle on touchstart or mousedown, avoid double toggle
-        if (e.type === "touchstart" || e.type === "mousedown") {
+        }
+        if (e.type === "touchend" || e.type === "mousedown") {
           if (window.triggerHapticFeedback) window.triggerHapticFeedback();
           toggleFn();
           const activeProxy = document.querySelector(".mobile-text-area");
-          if (activeProxy) activeProxy.focus();
+          if (activeProxy) {
+            activeProxy.focus();
+          }
         }
       };
       btn.addEventListener("touchstart", handler, { passive: false });
@@ -664,10 +695,15 @@ class MobileInputUI {
       }
 
       if (foundCursor) {
-        this.proxyInput.style.left = `${left + cellW}px`;
+        let proxyLeft = left + cellW;
+        if (proxyLeft >= window.innerWidth - 10) {
+          proxyLeft = window.innerWidth - 10;
+        }
+        const remainingWidth = Math.max(window.innerWidth - proxyLeft, 10);
+
+        this.proxyInput.style.left = `${proxyLeft}px`;
         this.proxyInput.style.top = `${top}px`;
-        const remainingWidth = window.innerWidth - (left + cellW);
-        this.proxyInput.style.width = `${Math.max(remainingWidth, 50)}px`;
+        this.proxyInput.style.width = `${remainingWidth}px`;
 
         // Match terminal font metrics if possible
         const termEl = term.element.querySelector(".xterm-rows");
@@ -758,7 +794,51 @@ class MobileTerminalController {
       nativeTextarea.style.display = "none";
     }
     // Handle paste directly on our proxy input since we disabled xterm's textarea
-    this.ui.proxyInput.addEventListener("paste", (e) => {
+    this.ui.proxyInput.addEventListener("paste", async (e) => {
+      const items = (e.clipboardData || window.clipboardData)?.items;
+      let hasImage = false;
+      if (items) {
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i];
+          if (item.type.startsWith("image/")) {
+            hasImage = true;
+            e.preventDefault();
+            const file = item.getAsFile();
+            if (!file) continue;
+
+            const formData = new FormData();
+            const ext = item.type.split("/")[1] || "png";
+            formData.append(
+              "file",
+              file,
+              file.name || `pasted-image-${Date.now()}.${ext}`,
+            );
+
+            try {
+              const csrfToken = document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute("content");
+              const response = await fetch("/api/upload", {
+                method: "POST",
+                headers: csrfToken ? { "X-CSRFToken": csrfToken } : {},
+                body: formData,
+              });
+              if (!response.ok)
+                throw new Error("Upload failed: " + response.statusText);
+              const data = await response.json();
+              this.emitToTerminal(`> I uploaded @${data.filename}\r`);
+            } catch (error) {
+              console.error("Paste upload error:", error);
+              this.emitToTerminal(
+                `\r\n\x1b[31m[Error] Failed to upload pasted image: ${error.message}\x1b[0m\r\n`,
+              );
+            }
+          }
+        }
+      }
+
+      if (hasImage) return;
+
       let pasteText = (e.clipboardData || window.clipboardData).getData("text");
       if (pasteText) {
         e.preventDefault();

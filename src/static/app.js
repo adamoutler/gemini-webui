@@ -1241,6 +1241,45 @@ function startSession(
   termDiv.setAttribute("aria-relevant", "additions");
   container.appendChild(termDiv);
 
+  if (!isMobile) {
+    termDiv.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      if (typeof initDesktopContextMenu === "function") {
+        initDesktopContextMenu();
+      }
+      const desktopContextMenu = document.getElementById(
+        "desktop-context-menu",
+      );
+      if (desktopContextMenu) {
+        if (tab.term && tab.term.hasSelection()) {
+          desktopContextMenu.querySelector("#ctx-copy").style.display = "block";
+        } else {
+          desktopContextMenu.querySelector("#ctx-copy").style.display = "none";
+        }
+
+        desktopContextMenu.style.display = "block";
+
+        let x = e.pageX;
+        let y = e.pageY;
+
+        // Render off-screen initially or just set and fix
+        desktopContextMenu.style.left = x + "px";
+        desktopContextMenu.style.top = y + "px";
+
+        // Adjust if it goes off screen
+        const rect = desktopContextMenu.getBoundingClientRect();
+        if (x + rect.width > window.innerWidth) {
+          desktopContextMenu.style.left =
+            window.innerWidth - rect.width - 5 + "px";
+        }
+        if (y + rect.height > window.innerHeight) {
+          desktopContextMenu.style.top =
+            window.innerHeight - rect.height - 5 + "px";
+        }
+      }
+    });
+  }
+
   tab.term = new Terminal({
     cursorBlink: true,
     cursorStyle: "block",
@@ -3431,3 +3470,55 @@ document.addEventListener("keydown", (e) => {
     }
   }
 });
+
+let desktopContextMenuInitialized = false;
+function initDesktopContextMenu() {
+  if (isMobile || desktopContextMenuInitialized) return;
+  desktopContextMenuInitialized = true;
+
+  const menu = document.createElement("div");
+  menu.id = "desktop-context-menu";
+  menu.className = "desktop-context-menu";
+  menu.innerHTML = `
+    <div class="menu-item" id="ctx-copy">Copy</div>
+    <div class="menu-item" id="ctx-paste">Paste</div>
+  `;
+  document.body.appendChild(menu);
+
+  menu.querySelector("#ctx-copy").addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    const tab = tabs.find((t) => t.id === activeTabId);
+    if (tab && tab.term && tab.term.hasSelection()) {
+      navigator.clipboard.writeText(tab.term.getSelection());
+    } else {
+      document.execCommand("copy");
+    }
+    menu.style.display = "none";
+  });
+
+  menu.querySelector("#ctx-paste").addEventListener("mousedown", async (e) => {
+    e.preventDefault();
+    try {
+      const text = await navigator.clipboard.readText();
+      const tab = tabs.find((t) => t.id === activeTabId);
+      if (tab && tab.socket) {
+        tab.socket.emit("pty_input", {
+          session_id: tab.session.resume,
+          input: text,
+        });
+      }
+    } catch (err) {
+      console.error("Paste failed", err);
+    }
+    menu.style.display = "none";
+  });
+
+  document.addEventListener("mousedown", (e) => {
+    if (
+      menu.style.display === "block" &&
+      !e.target.closest("#desktop-context-menu")
+    ) {
+      menu.style.display = "none";
+    }
+  });
+}
