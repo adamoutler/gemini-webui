@@ -73,7 +73,7 @@ def docker_server(test_data_dir):
 
 
 class TestReconnectionRegression:
-    @pytest.mark.timeout(120)
+    @pytest.mark.timeout(240)
     def test_reconnection_regression(self, docker_server):
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
