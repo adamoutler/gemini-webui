@@ -28,7 +28,6 @@ def get_terminal_text(page):
 
 @pytest.mark.timeout(60)
 def test_mobile_double_space(android_page):
-    android_page.on("console", lambda msg: print(f"BROWSER_CONSOLE: {msg.text}"))
     btns = android_page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
@@ -39,33 +38,34 @@ def test_mobile_double_space(android_page):
     textarea = android_page.locator(".mobile-text-area")
     textarea.focus()
 
-    # Define a helper to type text character by character exactly like a mobile keyboard does
-    android_page.evaluate("""() => {
-        window.simulateMobileTyping = (text) => {
-            const el = document.querySelector('.mobile-text-area');
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                el.dispatchEvent(new KeyboardEvent('keydown', {key: char}));
-                el.value += char;
-                el.dispatchEvent(new InputEvent('input', {data: char, inputType: 'insertText'}));
-            }
-        };
-    }""")
-
     # Type "hello"
-    android_page.evaluate("window.simulateMobileTyping('hello')")
+    textarea.evaluate(
+        "el => { el.value = 'hello'; el.dispatchEvent(new InputEvent('input', {data: 'o', inputType: 'insertText'})); }"
+    )
     time.sleep(0.5)
+
+    print("Buffer after hello:", textarea.evaluate("el => el.value"))
 
     # Type space
-    android_page.evaluate("window.simulateMobileTyping(' ')")
-    time.sleep(0.1)
-
-    # User types space again (double tap)
-    android_page.evaluate("window.simulateMobileTyping(' ')")
+    textarea.evaluate(
+        "el => { el.value += ' '; el.dispatchEvent(new InputEvent('input', {data: ' ', inputType: 'insertText'})); }"
+    )
     time.sleep(0.5)
 
+    print("Buffer after space 1:", textarea.evaluate("el => el.value"))
+
+    # User types space again (OS just inserts a space because no context)
+    textarea.evaluate(
+        "el => { el.value += ' '; el.dispatchEvent(new InputEvent('input', {data: ' ', inputType: 'insertText'})); }"
+    )
+    time.sleep(0.5)
+
+    print("Buffer after space 2:", textarea.evaluate("el => el.value"))
+
     # Type "world"
-    android_page.evaluate("window.simulateMobileTyping('world')")
+    textarea.evaluate(
+        "el => { el.value += 'world'; el.dispatchEvent(new InputEvent('input', {data: 'd', inputType: 'insertText'})); }"
+    )
     time.sleep(0.5)
 
     android_page.keyboard.press("Enter")
