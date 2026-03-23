@@ -177,54 +177,6 @@ class ModifierRule extends InputRule {
   }
 }
 
-class AutoPeriodRule extends InputRule {
-  constructor() {
-    super();
-    this.lastSpaceTime = 0;
-    this.charsTypedSincePeriod = 0;
-  }
-
-  handleEvent(event, context) {
-    const input = context.getProxyInput();
-    if (!input) return false;
-
-    if (event.type === "input") {
-      const isComposing = context.ui && context.ui.isComposing;
-      const isDictation = event.inputType === "insertDictationResult";
-      if (isComposing || isDictation) return false;
-
-      const isSpace = event.data === " " || (input.value && input.value.endsWith(" "));
-
-      // Track non-space characters to reset the period requirement
-      if (event.inputType === "insertText" && !isSpace) {
-        this.charsTypedSincePeriod += (event.data ? event.data.length : 1);
-      }
-
-      // Check for double space insertion
-      if (isSpace) {
-        const now = Date.now();
-        if (now - this.lastSpaceTime < 1500 && this.charsTypedSincePeriod > 0) {
-          // Double space detected, and characters were typed since last auto-period
-          context.emitToTerminal("\x7f. ");
-          this.charsTypedSincePeriod = 0;
-          this.lastSpaceTime = 0;
-          input.value = ""; // Consume it
-          return true; 
-        } else {
-          // Regular space, track the time, but let other logic (or the core) emit it
-          this.lastSpaceTime = now;
-        }
-      }
-    } else if (event.type === "keydown") {
-      if (event.key && event.key !== "Backspace" && event.key !== " " && event.key.length === 1) {
-        this.charsTypedSincePeriod++;
-        console.log(`AutoPeriodRule: charstyped incremented to ${this.charsTypedSincePeriod} for key ${event.key}`);
-      }
-    }
-    return false;
-  }
-}
-
 class WordBoundaryRule extends InputRule {
   constructor() {
     super();
@@ -243,9 +195,37 @@ class WordBoundaryRule extends InputRule {
       }
 
       if (this.boundaryRegex.test(input.value)) {
-        // Emit immediately and clear buffer
-        context.emitToTerminal(input.value);
-        input.value = "";
+        if (input.value === " ") {
+          return true;
+        }
+
+        if (input.value === "  ") {
+          // Manually handle double-space to period because OS requires word context
+          context.emitToTerminal(".");
+          input.value = " ";
+          return true;
+        }
+
+        let toEmit = input.value;
+        let toKeep = "";
+
+        if (input.value.endsWith(" ")) {
+          toEmit = input.value.slice(0, -1);
+          toKeep = " ";
+        } else {
+          // Find the last sequence of boundaries and split there
+          const match = input.value.match(
+            /([\s.,?!;\-—，。？！；]+)([^[\s.,?!;\-—，。？！；]*)$/,
+          );
+          if (match) {
+            const boundaryEndIndex = input.value.length - match[2].length;
+            toEmit = input.value.substring(0, boundaryEndIndex);
+            toKeep = match[2];
+          }
+        }
+
+        if (toEmit) context.emitToTerminal(toEmit);
+        input.value = toKeep;
         return true;
       }
     } else if (event.type === "keydown" && event.key === "Enter") {
@@ -955,7 +935,6 @@ if (typeof module !== "undefined" && module.exports) {
     MobileModifierState,
     BackspaceRule,
     ModifierRule,
-    AutoPeriodRule,
     WordBoundaryRule,
   };
 }
