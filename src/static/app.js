@@ -546,6 +546,11 @@ function refreshBackendSessionsList(id) {
 
   const socket = getGlobalSocket();
   socket.emit("get_management_sessions", (sessions) => {
+    const terminateAllBtn = document.getElementById(`${id}_terminate_all_btn`);
+    if (terminateAllBtn) {
+      terminateAllBtn.style.display = (sessions && sessions.length > 0) ? "block" : "none";
+    }
+
     if (!sessions || sessions.length === 0) {
       listEl.innerHTML =
         '<div style="padding: 10px; color: #444; font-size: 11px;">No detached sessions found on the server.</div>';
@@ -692,7 +697,10 @@ async function renderLauncher(id) {
                     <div id="${id}_connections" class="connections-list"></div>
 
                     <div class="backend-sessions-container" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
-                        <h3 style="color: #888; margin-bottom: 15px;">Backend Managed Sessions</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="color: #888; margin: 0;">Backend Managed Sessions</h3>
+                            <button class="small danger" style="padding: 6px 12px; display: none;" id="${id}_terminate_all_btn" onclick="terminateAllBackendSessions('${id}')">Terminate All</button>
+                        </div>
                         <div style="font-size: 11px; color: #666; margin-bottom: 15px;">
                             These are PTY processes running on the server. Reclaiming one will attach it to this window.
                         </div>
@@ -946,6 +954,47 @@ async function terminateBackendSession(launcherTabId, tabId) {
       }
       if (response.status === 400 || response.status === 403) {
         errorMessage += " (Auth/CSRF error - please reload the page)";
+      }
+      alert("Termination failed: " + errorMessage);
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Termination failed: " + e.message);
+  }
+}
+
+async function terminateAllBackendSessions(launcherTabId) {
+  if (
+    !confirm(
+      `Are you sure you want to terminate ALL backend sessions? Any unsaved work in these terminals will be lost.`,
+    )
+  )
+    return;
+  try {
+    const response = await fetch(`/api/sessions/terminate_all`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken":
+          document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content") || "",
+      },
+    });
+    if (response.ok) {
+      refreshBackendSessionsList(launcherTabId);
+    } else {
+      let errorMessage = "Unknown error";
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") !== -1) {
+        try {
+          const data = await response.json();
+          errorMessage = data.error || data.message || errorMessage;
+        } catch (e) {
+          errorMessage = "Failed to parse error response.";
+        }
+      } else {
+        errorMessage = await response.text();
       }
       alert("Termination failed: " + errorMessage);
     }
