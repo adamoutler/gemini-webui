@@ -963,6 +963,11 @@ def terminate_managed_session(tab_id):
     if session_obj:
         logger.info(f"Terminating managed session {tab_id}")
         ephemeral_sessions.pop(tab_id, None)
+        if session_obj.fd is not None:
+            try:
+                os.close(session_obj.fd)
+            except OSError:
+                pass
         try:
             os.kill(session_obj.pid, signal.SIGKILL)
         except Exception:
@@ -975,6 +980,43 @@ def terminate_managed_session(tab_id):
         return jsonify({"status": "success"})
 
     return jsonify({"error": "Session not found"}), 404
+
+
+@app.route("/api/sessions/terminate_all", methods=["POST"])
+@authenticated_only
+def terminate_all_managed_sessions():
+    """Terminate all backend managed sessions for the current user."""
+    user_id = session.get("user_id") or (
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+    )
+
+    count = 0
+    sessions_to_remove = session_manager.list_sessions(user_id)
+    for s in sessions_to_remove:
+        tab_id = s.get("tab_id")
+        if not tab_id:
+            continue
+        session_obj = session_manager.remove_session(tab_id, user_id)
+        if session_obj:
+            logger.info(f"Terminating managed session {tab_id}")
+            ephemeral_sessions.pop(tab_id, None)
+            if session_obj.fd is not None:
+                try:
+                    os.close(session_obj.fd)
+                except OSError:
+                    pass
+            if session_obj.pid is not None:
+                try:
+                    os.kill(session_obj.pid, signal.SIGKILL)
+                except Exception:
+                    pass
+                try:
+                    os.waitpid(session_obj.pid, 0)
+                except Exception:
+                    pass
+            count += 1
+
+    return jsonify({"status": "success", "count": count})
 
 
 @app.route("/api/sessions/<session_id>/search_files", methods=["GET"])
