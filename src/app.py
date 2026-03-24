@@ -822,6 +822,7 @@ def pty_restart(data):
 
     (child_pid, fd) = pty.fork()
     if child_pid == 0:
+        os.closerange(3, 65536)
         os.environ["TERM"] = "xterm-256color"
         os.environ["COLORTERM"] = "truecolor"
         os.environ["FORCE_COLOR"] = "3"
