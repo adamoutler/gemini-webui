@@ -548,7 +548,8 @@ function refreshBackendSessionsList(id) {
   socket.emit("get_management_sessions", (sessions) => {
     const terminateAllBtn = document.getElementById(`${id}_terminate_all_btn`);
     if (terminateAllBtn) {
-      terminateAllBtn.style.display = (sessions && sessions.length > 0) ? "block" : "none";
+      terminateAllBtn.style.display =
+        sessions && sessions.length > 0 ? "block" : "none";
     }
 
     if (!sessions || sessions.length === 0) {
@@ -1764,39 +1765,35 @@ function startSession(
     tab.shouldReclaim = true; // All subsequent reconnects should attempt reclaim
 
     if (tab.session.resume === "new") {
-      setTimeout(async () => {
-        try {
-          const params = {};
-          if (target) params.ssh_target = target;
-          if (dir) params.ssh_dir = dir;
-          params.cache = false;
+      // Predict the next session ID based on the current cache immediately
+      try {
+        const params = {};
+        if (target) params.ssh_target = target;
+        if (dir) params.ssh_dir = dir;
+        params.cache = true; // Force use cache so it's instant
+        params.bg = true; // Don't trigger a foreground fetch if cache is empty
 
-          debugLog("FETCH SESSIONS START");
-          const data = await new Promise((resolve, reject) => {
-            const socket = getGlobalSocket();
-            socket.emit("get_sessions", params, (response) => {
-              if (response) resolve(response);
-              else reject(new Error("No response from WebSocket"));
-            });
-          });
-
-          const sessions = parseSessions(data.output || "");
-          if (sessions.length > 0) {
+        getGlobalSocket().emit("get_sessions", params, (response) => {
+          if (response && response.output) {
+            const sessions = parseSessions(response.output);
             let maxId = 0;
             sessions.forEach((s) => {
               const id = parseInt(s.id);
               if (id > maxId) maxId = id;
             });
-            if (maxId > 0) {
-              tab.session.resume = maxId.toString();
-              saveTabsToStorage();
-              localStorage.setItem("geminiResume", maxId.toString());
-            }
+            // The new session will have maxId + 1
+            const predictedId = maxId + 1;
+            tab.session.resume = predictedId.toString();
+            saveTabsToStorage();
+            localStorage.setItem("geminiResume", predictedId.toString());
+          } else {
+            // If no sessions, first session will typically be 1 or unnumbered
+            tab.session.resume = true;
           }
-        } catch (e) {
-          console.error("Failed to update resume ID:", e);
-        }
-      }, 1500);
+        });
+      } catch (e) {
+        console.error("Failed to predict resume ID:", e);
+      }
     }
 
     setTimeout(() => {
@@ -1850,9 +1847,7 @@ function startSession(
   tab.socket.on("connect_error", async (error) => {
     if (error.message === "invalid_csrf") {
       if (tab.term) {
-        tab.term.write(
-          "\r\n\x1b[1;33m[Securing connection...]\x1b[0m\r\n",
-        );
+        tab.term.write("\r\n\x1b[1;33m[Securing connection...]\x1b[0m\r\n");
       }
       const newToken = await refreshCsrfToken();
       tab.socket.auth = { csrf_token: newToken };

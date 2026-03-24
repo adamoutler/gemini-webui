@@ -119,11 +119,29 @@ def test_e2e_session_env_vars_injected(
 
     # We drop into bash because gemini is not found.
     # We should wait for bash prompt.
-    page.wait_for_timeout(5000)
+    page.wait_for_timeout(8000)
     page.screenshot(path="terminal_before_typing.png")
     page.locator(".xterm").first.click()
     page.keyboard.type("echo EXPECTED_${MY_TEST_VAR}_END", delay=50)
     page.keyboard.press("Enter")
+
+    # Print terminal output to help debug
+    term_output = page.evaluate(
+        """() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            let out = "";
+            for (let i = 0; i < tab.term.buffer.active.length; i++) {
+                const line = tab.term.buffer.active.getLine(i);
+                if (line) out += line.translateToString() + "\\n";
+            }
+            return out;
+        }
+        return "No terminal";
+    }"""
+    )
+    print("TERMINAL OUTPUT:")
+    print(term_output)
 
     # Check the terminal output via xterm.js API
     page.wait_for_function(
