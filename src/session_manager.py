@@ -91,7 +91,7 @@ class SessionManager:
                         pass
                     try:
                         if oldest.pid is not None:
-                            os.waitpid(oldest.pid, os.WNOHANG)
+                            os.waitpid(oldest.pid, 0)
                     except OSError:
                         pass
                     self.sessions.pop(oldest.tab_id, None)
