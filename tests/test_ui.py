@@ -247,9 +247,12 @@ def test_ui_backend_session_termination_no_refresh(page, server):
 
     # Wait for the network response to the terminate call
     with page.expect_response("**/api/management/sessions/*") as response_info:
-        # Click Terminate
+        import re
+
+        # Click Terminate (exact text match to avoid matching 'Terminate All Managed Sessions')
         terminate_btn = page.locator(
-            '.tab-instance.active .backend-sessions-container button.danger:has-text("Terminate")'
+            ".tab-instance.active .backend-sessions-container button.danger",
+            has_text=re.compile(r"^Terminate$"),
         ).first
         terminate_btn.click()
 

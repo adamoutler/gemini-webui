@@ -58,6 +58,7 @@ def test_ui_settings_shared_sessions(page, server):
     expect(shared_list).to_be_visible(timeout=15000)
 
     # It should have at least one session item
+    expect(shared_list.locator(".session-item").first).to_be_visible(timeout=15000)
     items_count_before = shared_list.locator(".session-item").count()
     assert items_count_before > 0
 
