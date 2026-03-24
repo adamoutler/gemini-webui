@@ -156,7 +156,7 @@ def cleanup_orphaned_ptys():
                     except OSError:
                         pass
                     try:
-                        os.waitpid(session.pid, os.WNOHANG)
+                        os.waitpid(session.pid, 0)
                     except OSError:
                         pass
                     session_manager.remove_session(session.tab_id)
@@ -1391,7 +1391,9 @@ def upload_file():
                 clean_target,
                 f"realpath {shlex.quote(remote_path)} 2>/dev/null || readlink -m {shlex.quote(remote_path)} 2>/dev/null || echo {shlex.quote(remote_path)}",
             ]
-            path_res = subprocess.run(path_cmd, capture_output=True, text=True, timeout=15)
+            path_res = subprocess.run(
+                path_cmd, capture_output=True, text=True, timeout=15
+            )
             if path_res.returncode == 0 and path_res.stdout.strip():
                 filename = path_res.stdout.strip()
 
