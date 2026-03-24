@@ -42,10 +42,11 @@ def test_validate_ssh_target_invalid():
 
 
 @patch("pty.fork")
+@patch("os.closerange")
 @patch("os.execvp")
 @patch("os._exit")
 @patch("shutil.which", return_value=None)
-def test_pty_restart_local_cmd(mock_which, mock_exit, mock_execvp, mock_fork):
+def test_pty_restart_local_cmd(mock_which, mock_exit, mock_execvp, mock_closerange, mock_fork):
     # Simulate being the child process
     mock_fork.return_value = (0, 1)  # child_pid=0, fd=1
 
@@ -65,10 +66,11 @@ def test_pty_restart_local_cmd(mock_which, mock_exit, mock_execvp, mock_fork):
 
 
 @patch("pty.fork")
+@patch("os.closerange")
 @patch("os.execvp")
 @patch("os._exit")
 @patch("shutil.which", return_value=None)
-def test_pty_restart_ssh_cmd(mock_which, mock_exit, mock_execvp, mock_fork):
+def test_pty_restart_ssh_cmd(mock_which, mock_exit, mock_execvp, mock_closerange, mock_fork):
     # Simulate being the child process
     mock_fork.return_value = (0, 1)  # child_pid=0, fd=1
 
