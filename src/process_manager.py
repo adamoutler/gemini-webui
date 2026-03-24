@@ -170,7 +170,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
         )
 
         # Check for gemini before running list-sessions to avoid ugly bash errors
-        remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then {gemini_list_cmd}; else exit 0; fi"
+        remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then timeout 15 {gemini_list_cmd}; else {gemini_list_cmd}; fi; else exit 0; fi"
 
         login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
 

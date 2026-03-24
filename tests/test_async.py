@@ -92,7 +92,7 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
             "src.app.get_config"
         ) as mock_get_config, patch("shutil.which", return_value=None), patch(
             "os.chdir"
-        ), patch("os.execv"), patch("os.execvp") as mock_execvp, patch(
+        ), patch("os.execv"), patch("os.closerange"), patch("os.execvp") as mock_execvp, patch(
             "os._exit"
         ), patch(
             "src.app.build_terminal_command", return_value=["bash"]

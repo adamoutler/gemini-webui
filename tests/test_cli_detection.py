@@ -11,7 +11,7 @@ def test_remote_gemini_detection_missing(test_data_dir):
         # Mock PTY and other logic to focus on remote command construction
         with patch("src.app.pty.fork") as mock_fork, patch(
             "src.app.get_config_paths"
-        ) as mock_paths, patch("os.chdir"), patch("os.execvp"), patch("os._exit"):
+        ) as mock_paths, patch("os.chdir"), patch("os.closerange"), patch("os.execvp"), patch("os._exit"):
             mock_fork.return_value = (0, 10)  # child
             mock_paths.return_value = ("/data", "/data/config.json", "/data/.ssh")
 
