@@ -39,8 +39,7 @@ RUN useradd -m -u 1000 node && \
     ln -s /data/.gemini /root/.gemini
 
 # Install Gemini CLI via npm at the end to ensure it's not shadowed
-RUN npm install -g @google/gemini-cli --unsafe-perm && \
-    gemini --version
+RUN npm install -g @google/gemini-cli --unsafe-perm
 
 # We need access to the mounted volume for the host
 CMD ["python", "src/app.py"]
