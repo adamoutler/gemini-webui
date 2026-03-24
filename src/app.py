@@ -411,7 +411,6 @@ def handle_connect(auth=None):
 
     auth = auth or {}
     csrf_token = auth.get("csrf_token")
-    logger.info(f"Socket.io connect attempt with token: {csrf_token}")
 
     try:
         if app.config.get("WTF_CSRF_ENABLED", True):
@@ -420,7 +419,7 @@ def handle_connect(auth=None):
         else:
             logger.info("CSRF validation disabled via config")
     except ValidationError as e:
-        logger.warning(f"CSRF validation failed: {e}")
+        app.logger.debug(f"CSRF validation failed (expected during token refresh): {e}")
         raise ConnectionRefusedError("invalid_csrf")
 
     if env_config.BYPASS_AUTH_FOR_TESTING:
@@ -518,6 +517,7 @@ def read_and_forward_pty_output():
             fd = session.fd
             decoder = session.decoder
             sid = session_manager.tabid_to_sid.get(tab_id)
+            break_eof = False
             try:
                 batched_output = []
                 for _ in range(10):  # Read up to 200KB per tick
@@ -1353,7 +1353,7 @@ def upload_file():
                 clean_target,
                 f"mkdir -p {shlex.quote(remote_dir)}",
             ]
-            res = subprocess.run(ssh_cmd, capture_output=True, text=True)
+            res = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=15)
             if res.returncode != 0:
                 return jsonify(
                     {
@@ -1365,7 +1365,7 @@ def upload_file():
         # Run SCP
         scp_cmd = scp_cmd_base + ["--", save_path, f"{clean_target}:{remote_path}"]
         try:
-            result = subprocess.run(scp_cmd, capture_output=True, text=True)
+            result = subprocess.run(scp_cmd, capture_output=True, text=True, timeout=60)
             if result.returncode != 0:
                 return jsonify(
                     {"status": "error", "message": f"SCP failed: {result.stderr}"}
@@ -1376,7 +1376,7 @@ def upload_file():
                 clean_target,
                 f"ls {shlex.quote(remote_path)}",
             ]
-            verify_res = subprocess.run(verify_cmd, capture_output=True)
+            verify_res = subprocess.run(verify_cmd, capture_output=True, timeout=15)
             if verify_res.returncode != 0:
                 return jsonify(
                     {
@@ -1390,7 +1390,7 @@ def upload_file():
                 clean_target,
                 f"realpath {shlex.quote(remote_path)} 2>/dev/null || readlink -m {shlex.quote(remote_path)} 2>/dev/null || echo {shlex.quote(remote_path)}",
             ]
-            path_res = subprocess.run(path_cmd, capture_output=True, text=True)
+            path_res = subprocess.run(path_cmd, capture_output=True, text=True, timeout=15)
             if path_res.returncode == 0 and path_res.stdout.strip():
                 filename = path_res.stdout.strip()
 

@@ -198,7 +198,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             cmd = [gemini_bin, "--list-sessions"]
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
         # Suppress auth errors from the CLI - just show as "no sessions"
         if result.returncode != 0 and (
             "Please set an Auth method" in result.stderr
