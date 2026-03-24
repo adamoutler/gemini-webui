@@ -1043,7 +1043,7 @@ function getGlobalSocket() {
     });
     globalSocket.on("connect_error", async (error) => {
       if (error.message === "invalid_csrf") {
-        console.warn("Global socket CSRF token expired. Refreshing token...");
+        console.debug("Global socket CSRF token expired. Refreshing token...");
         const newToken = await refreshCsrfToken();
         globalSocket.auth = { csrf_token: newToken };
         globalSocket.connect();
@@ -1851,7 +1851,7 @@ function startSession(
     if (error.message === "invalid_csrf") {
       if (tab.term) {
         tab.term.write(
-          "\r\n\x1b[1;33m[CSRF Token Expired. Refreshing...]\x1b[0m\r\n",
+          "\r\n\x1b[1;33m[Securing connection...]\x1b[0m\r\n",
         );
       }
       const newToken = await refreshCsrfToken();
