@@ -192,7 +192,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             cmd = [
                 "/bin/sh",
                 "-c",
-                f"cd {shlex.quote(work_dir)} && {shlex.quote(gemini_bin)} --list-sessions",
+                f"cd {shlex.quote(work_dir)} && exec {shlex.quote(gemini_bin)} --list-sessions",
             ]
         else:
             cmd = [gemini_bin, "--list-sessions"]
