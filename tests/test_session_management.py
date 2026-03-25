@@ -1,4 +1,5 @@
 import pytest
+import os
 import json
 import signal
 from unittest.mock import patch
@@ -66,7 +67,7 @@ def test_terminate_managed_session(client):
         assert data["status"] == "success"
 
         mock_kill.assert_called_once_with(pid, signal.SIGKILL)
-        mock_waitpid.assert_called_once_with(pid, 0)
+        mock_waitpid.assert_called_with(pid, os.WNOHANG)
 
         # Verify session is removed
         assert session_manager.get_session(tab_id) is None
