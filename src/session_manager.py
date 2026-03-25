@@ -87,11 +87,12 @@ class SessionManager:
                     try:
                         if oldest.pid is not None:
                             os.kill(oldest.pid, signal.SIGKILL)
-                    except OSError:
-                        pass
-                    try:
-                        if oldest.pid is not None:
-                            os.waitpid(oldest.pid, 0)
+                            for _ in range(10):
+                                res = os.waitpid(oldest.pid, os.WNOHANG)
+                                wpid = res[0] if isinstance(res, tuple) else res
+                                if wpid != 0:
+                                    break
+                                time.sleep(0.05)
                     except OSError:
                         pass
                     self.sessions.pop(oldest.tab_id, None)

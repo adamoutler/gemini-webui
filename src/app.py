@@ -139,6 +139,22 @@ active_fake_sockets_lock = threading.Lock()
 IDENTIFICATION_REGEX = re.compile(r"\x1b\[\??\d+(?:;\d+)*c")
 
 
+
+def kill_and_reap(pid):
+    if pid is None:
+        return
+    import time
+    try:
+        os.kill(pid, signal.SIGKILL)
+        for _ in range(10):
+            res = os.waitpid(pid, os.WNOHANG)
+            wpid = res[0] if isinstance(res, tuple) else res
+            if wpid != 0:
+                break
+            time.sleep(0.05)
+    except Exception:
+        pass
+
 def cleanup_orphaned_ptys():
     """Cleanup orphaned sessions based on ORPHANED_SESSION_TTL."""
     is_testing = app.config.get("TESTING") or env_config.BYPASS_AUTH_FOR_TESTING
@@ -151,14 +167,7 @@ def cleanup_orphaned_ptys():
                     session.orphaned_at is not None
                     and (now - session.orphaned_at) > ttl
                 ):
-                    try:
-                        os.kill(session.pid, signal.SIGKILL)
-                    except OSError:
-                        pass
-                    try:
-                        os.waitpid(session.pid, 0)
-                    except OSError:
-                        pass
+                    kill_and_reap(session.pid)
                     session_manager.remove_session(session.tab_id)
         except Exception as e:
             logger.error(f"Error in cleanup_orphaned_ptys: {e}")
@@ -773,26 +782,12 @@ def pty_restart(data):
                 )
 
             session_manager.remove_session(oldest_session.tab_id)
-            try:
-                os.kill(oldest_session.pid, signal.SIGKILL)
-            except Exception:
-                pass
-            try:
-                os.waitpid(oldest_session.pid, 0)
-            except Exception:
-                pass
+            kill_and_reap(oldest_session.pid)
 
     old_session = session_manager.remove_session(tab_id, user_id)
     if old_session:
         logger.info(f"Killing old session {tab_id} for fresh restart")
-        try:
-            os.kill(old_session.pid, signal.SIGKILL)
-        except Exception:
-            pass
-        try:
-            os.waitpid(old_session.pid, 0)
-        except Exception:
-            pass
+        kill_and_reap(old_session.pid)
     resume = data.get("resume", True)
     if isinstance(resume, str):
         if resume.lower() == "true":
@@ -969,14 +964,7 @@ def terminate_managed_session(tab_id):
                 os.close(session_obj.fd)
             except OSError:
                 pass
-        try:
-            os.kill(session_obj.pid, signal.SIGKILL)
-        except Exception:
-            pass
-        try:
-            os.waitpid(session_obj.pid, 0)
-        except Exception:
-            pass
+        kill_and_reap(session_obj.pid)
 
         return jsonify({"status": "success"})
 
@@ -1007,14 +995,7 @@ def terminate_all_managed_sessions():
                 except OSError:
                     pass
             if session_obj.pid is not None:
-                try:
-                    os.kill(session_obj.pid, signal.SIGKILL)
-                except Exception:
-                    pass
-                try:
-                    os.waitpid(session_obj.pid, 0)
-                except Exception:
-                    pass
+                kill_and_reap(session_obj.pid)
             count += 1
 
     return jsonify({"status": "success", "count": count})

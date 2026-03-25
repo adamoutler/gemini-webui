@@ -35,7 +35,7 @@ def test_lru_pty_eviction():
         # Verify os.close, os.kill, os.waitpid were called for session 0 (fd=100, pid=1000)
         mock_close.assert_called_once_with(100)
         mock_kill.assert_called_once_with(1000, signal.SIGKILL)
-        mock_waitpid.assert_called_once_with(1000, 0)
+        mock_waitpid.assert_called_with(1000, os.WNOHANG)
 
         # Check that tab_1 to tab_10 are present
         for i in range(1, 11):
