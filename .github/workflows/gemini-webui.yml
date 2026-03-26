@@ -1,4 +1,4 @@
-name: Publish Production
+name: gemini-webui
 
 on:
   workflow_dispatch: # On-demand trigger for production
