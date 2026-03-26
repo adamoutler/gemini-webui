@@ -6,7 +6,7 @@
   },
   "mcpServers": {
     "kanban": {
-      "url": "https://kanban.hackedyour.info/mcp/http/api-key/mcp",
+      "url": "https://kanban.hackedyour.info/mcp/agent/api-key/mcp",
       "headers": {
         "Authorization": "Bearer ${KANBAN_API_KEY}",
         "X-Workspace-slug": "gemwebui"
@@ -46,13 +46,13 @@
         ]
       },
       {
-        "matcher": ".*mcp_kanban_update_work_item.*",
+        "matcher": ".*(mcp_kanban_transition_ticket|mcp_kanban_complete_work).*",
         "hooks": [
           {
             "name": "qa-gate",
             "type": "command",
             "command": "./.gemini/hooks/qa-gate.sh",
-            "description": "Prevents the AI Orchestrator from directly closing tickets via update_work_item to enforce the verification pipeline.",
+            "description": "Prevents the AI Orchestrator from directly closing tickets to enforce the verification pipeline.",
             "timeout": 180000
           }
         ]
@@ -72,12 +72,12 @@
         ]
       },
       {
-        "matcher": ".*mcp_kanban_update_work_item.*",
+        "matcher": ".*(mcp_kanban_update_ticket|mcp_kanban_transition_ticket).*",
         "hooks": [
           {
             "name": "remind-comment",
             "type": "command",
-            "command": "echo '{\"message\": \"REMINDER: If you just updated the ticket, do not forget to add a comment detailing your changes using mcp_kanban_create_work_item_comment.\"}'",
+            "command": "echo '{\"message\": \"REMINDER: If you just updated the ticket, do not forget to add a comment detailing your changes using mcp_kanban_update_ticket or another tool.\"}'",
             "description": "Reminds the AI to add a comment after updating a ticket."
           }
         ]
