@@ -1,3 +1,4 @@
+from src.shared_state import ephemeral_sessions
 import os
 import shlex
 import subprocess
@@ -9,7 +10,7 @@ from src.app import (
     authenticated_only,
     logger,
     session_manager,
-    ephemeral_sessions,
+    # removed direct import
     kill_and_reap,
     GEMINI_BIN,
     session_results_cache,

@@ -1,7 +1,8 @@
 from flask import Blueprint, render_template, request, redirect, jsonify
 import uuid
 import logging
-from src.app import app, ephemeral_sessions
+from src.app import app
+from src.shared_state import ephemeral_sessions
 
 logger = logging.getLogger(__name__)
 
