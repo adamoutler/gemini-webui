@@ -80,11 +80,6 @@ class SessionManager:
                 while len(user_sessions) >= 10:
                     oldest = user_sessions.pop(0)
                     try:
-                        if oldest.fd is not None:
-                            os.close(oldest.fd)
-                    except OSError:
-                        pass
-                    try:
                         if oldest.pid is not None:
                             os.kill(oldest.pid, signal.SIGKILL)
                             for _ in range(10):
@@ -93,6 +88,11 @@ class SessionManager:
                                 if wpid != 0:
                                     break
                                 time.sleep(0.05)
+                    except OSError:
+                        pass
+                    try:
+                        if oldest.fd is not None:
+                            os.close(oldest.fd)
                     except OSError:
                         pass
                     self.sessions.pop(oldest.tab_id, None)
