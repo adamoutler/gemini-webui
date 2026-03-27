@@ -30,7 +30,7 @@ def test_fetch_sessions_for_host_ssh():
         assert "ssh" in cmd
         assert "user@remote" in cmd
         remote_bash_cmd = cmd[-1]
-        assert "bash -ilc" in remote_bash_cmd
+        assert "bash -ilc" not in remote_bash_cmd
         assert "~/myproject" in remote_bash_cmd or "myproject" in remote_bash_cmd
         assert "gemini --list-sessions" in remote_bash_cmd
 
@@ -46,7 +46,9 @@ def test_validate_ssh_target_invalid():
 @patch("os.execvp")
 @patch("os._exit")
 @patch("shutil.which", return_value=None)
-def test_pty_restart_local_cmd(mock_which, mock_exit, mock_execvp, mock_closerange, mock_fork):
+def test_pty_restart_local_cmd(
+    mock_which, mock_exit, mock_execvp, mock_closerange, mock_fork
+):
     # Simulate being the child process
     mock_fork.return_value = (0, 1)  # child_pid=0, fd=1
 
@@ -70,7 +72,9 @@ def test_pty_restart_local_cmd(mock_which, mock_exit, mock_execvp, mock_closeran
 @patch("os.execvp")
 @patch("os._exit")
 @patch("shutil.which", return_value=None)
-def test_pty_restart_ssh_cmd(mock_which, mock_exit, mock_execvp, mock_closerange, mock_fork):
+def test_pty_restart_ssh_cmd(
+    mock_which, mock_exit, mock_execvp, mock_closerange, mock_fork
+):
     # Simulate being the child process
     mock_fork.return_value = (0, 1)  # child_pid=0, fd=1
 
@@ -92,7 +96,7 @@ def test_pty_restart_ssh_cmd(mock_which, mock_exit, mock_execvp, mock_closerange
     assert "user@remote.com" in cmd
 
     remote_cmd = cmd[-1]
-    assert "bash -ilc" in remote_cmd
+    assert "bash -ilc" not in remote_cmd
     assert "gemini -r" in remote_cmd
     assert "cd ~" in remote_cmd
     assert "dev/project" in remote_cmd
