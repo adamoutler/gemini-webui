@@ -1123,7 +1123,7 @@ async function fetchSessions(
     if (!useCache || isPolling) {
       debugLog("ENTERED IF BLOCK");
       try {
-        HostStateManager.updateHealth(tabId, conn.label, !data.error, false);
+        HostStateManager.updateHealth(tabId, conn.label, !data.error, true);
       } catch (e) {
         debugLog("INNER ERROR: " + e.stack);
       }
@@ -1135,7 +1135,7 @@ async function fetchSessions(
     if (data.error === "Timeout waiting for get_sessions") {
       if (!useCache || isPolling) {
         try {
-          HostStateManager.updateHealth(tabId, conn.label, false, false);
+          HostStateManager.updateHealth(tabId, conn.label, false, true);
         } catch (e) {
           debugLog("INNER ERROR: " + e.stack);
         }
@@ -1226,7 +1226,7 @@ async function fetchSessions(
   } catch (e) {
     if (!useCache || isPolling) {
       debugLog("ENTERED IF BLOCK");
-      HostStateManager.updateHealth(tabId, conn.label, false, false);
+      HostStateManager.updateHealth(tabId, conn.label, false, true);
     }
     console.error(e);
   }
