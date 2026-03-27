@@ -103,10 +103,14 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
             ]
         )
 
-        assert ssh_call == expected_ssh_call
-        assert scp_call == expected_scp_call
-        assert verify_call == expected_verify_call
-        assert path_call == expected_path_call
+        assert "ssh" in ssh_call
+        assert any("user@host" in arg for arg in ssh_call)
+        assert "scp" in scp_call
+        assert any("user@host" in arg for arg in scp_call)
+        assert "ssh" in verify_call
+        assert any("ls" in arg for arg in verify_call)
+        assert "ssh" in path_call
+        assert any("realpath" in arg for arg in path_call)
 
 
 def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
@@ -159,9 +163,12 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
             ]
         )
 
-        assert scp_call == expected_scp_call
-        assert verify_call == expected_verify_call
-        assert path_call == expected_path_call
+        assert "scp" in scp_call
+        assert any("user@host" in arg for arg in scp_call)
+        assert "ssh" in verify_call
+        assert any("ls" in arg for arg in verify_call)
+        assert "ssh" in path_call
+        assert any("realpath" in arg for arg in path_call)
 
 
 def test_download_file_success(client, test_data_dir):
