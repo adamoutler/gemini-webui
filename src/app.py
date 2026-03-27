@@ -50,7 +50,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 try:
     from auth_ldap import check_auth
-    from session_manager import Session, SessionManager
+    from session_manager import Session, SessionManager, session_manager
     from process_manager import (
         validate_ssh_target,
         fetch_sessions_for_host,
@@ -62,7 +62,7 @@ try:
     from utils import smart_file_search
 except ImportError:
     from src.auth_ldap import check_auth
-    from src.session_manager import Session, SessionManager
+    from src.session_manager import Session, SessionManager, session_manager
     from src.process_manager import (
         validate_ssh_target,
         fetch_sessions_for_host,
@@ -124,7 +124,6 @@ app.wsgi_app = ProxyFix(
     app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1
 )
 
-session_manager = SessionManager()
 share_manager = ShareManager()
 
 # Background session cache: key -> {"output": str, "error": str, "timestamp": float}

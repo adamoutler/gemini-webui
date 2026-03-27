@@ -5,11 +5,11 @@ import subprocess
 from flask import Blueprint, jsonify, request, session
 
 from src.config import env_config
+from src.session_manager import session_manager
 from src.app import (
     get_config_paths,
     authenticated_only,
     logger,
-    session_manager,
     # removed direct import
     kill_and_reap,
     GEMINI_BIN,
@@ -94,6 +94,9 @@ def search_files(session_id):
     )
     session_obj = session_manager.get_session(session_id, user_id)
     if not session_obj:
+        logger.warning(
+            f"search_files: Session {session_id} not found for user {user_id}. Available sessions: {list(session_manager.sessions.keys())}"
+        )
         return jsonify({"error": "Session not found"}), 404
     matches = smart_file_search(session_obj.file_cache, q)
     return jsonify({"matches": matches})
