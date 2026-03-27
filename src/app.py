@@ -131,7 +131,8 @@ share_manager = ShareManager()
 session_results_cache = {}
 session_results_cache_lock = threading.Lock()
 
-ephemeral_sessions = {}
+from src.shared_state import ephemeral_sessions
+
 active_fake_sockets = {}
 active_fake_sockets_lock = threading.Lock()
 
