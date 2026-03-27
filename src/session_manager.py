@@ -185,3 +185,6 @@ class SessionManager:
                 session.file_cache = result.stdout.strip().split("\n")
         except Exception:
             pass
+
+
+session_manager = SessionManager()
