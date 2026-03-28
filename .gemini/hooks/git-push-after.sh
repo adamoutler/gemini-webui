@@ -27,8 +27,16 @@ if [[ "$tool_name" =~ run_shell_command|Bash|shell ]]; then
             # Watch the run and stream output to stderr so the user sees it without breaking JSON hook protocol
             gh run watch "$RUN_ID" >&2
             
-            # Get final status
-            STATUS=$(gh run view "$RUN_ID" --json conclusion -q '.conclusion')
+            # Get final status with polling
+            STATUS=""
+            ATTEMPTS=0
+            while [[ -z "$STATUS" || "$STATUS" == "null" ]] && [[ $ATTEMPTS -lt 6 ]]; do
+                STATUS=$(gh run view "$RUN_ID" --json conclusion -q '.conclusion')
+                if [[ -z "$STATUS" || "$STATUS" == "null" ]]; then
+                    sleep 5
+                    ATTEMPTS=$((ATTEMPTS+1))
+                fi
+            done
             
             jq -n -c --arg result "GitHub Actions workflow run $RUN_ID for commit $CURRENT_COMMIT finished with status: $STATUS" \
               '{"decision": "allow", "hookSpecificOutput": {"additionalContext": $result}}'
@@ -42,3 +50,4 @@ fi
 
 # Proceed normally
 echo '{"decision": "allow"}'
+# Test comment to trigger build
