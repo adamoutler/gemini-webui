@@ -132,10 +132,12 @@ def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
                     )
                     with session_results_cache_lock:
                         session_results_cache[key] = res
+                    socketio.emit("sessions_updated", {"cache_key": key, "target": target, "dir": directory, "data": res})
                 except Exception as e:
                     logger.error(f"Background fetch error: {e}")
                     with session_results_cache_lock:
                         session_results_cache[key] = {"error": str(e)}
+                    socketio.emit("sessions_updated", {"cache_key": key, "target": target, "dir": directory, "data": {"error": str(e)}})
                 finally:
                     with session_results_cache_lock:
                         if key in _get_gemini_sessions_impl.fetching_locks:
