@@ -1,0 +1,8 @@
+{
+  "suites": 1,
+  "tests": 1,
+  "passes": 1,
+  "failures": 0,
+  "duration": 2.5,
+  "message": "Tooltip correctly verified on tabs via title attribute."
+}
