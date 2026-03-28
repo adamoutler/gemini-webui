@@ -2162,40 +2162,6 @@ function restartActiveTab() {
   }
 }
 
-async function killActiveTab() {
-  const tab = tabs.find((t) => t.id === activeTabId);
-  if (!tab || tab.state !== "terminal") return;
-
-  if (
-    !confirm(
-      "Are you sure you want to permanently kill the active terminal session? This will terminate the underlying process and close the tab.",
-    )
-  ) {
-    return;
-  }
-
-  try {
-    if (tab.session && tab.session.ssh_target) {
-      await fetchWithCSRF("/api/sessions/terminate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ssh_target: tab.session.ssh_target,
-          ssh_dir: tab.session.ssh_dir,
-          session_id: tab.session.resume,
-        }),
-      });
-    } else {
-      await fetchWithCSRF(`/api/management/sessions/${tab.id}`, {
-        method: "DELETE",
-      });
-    }
-  } catch (e) {
-    console.error("Failed to kill session", e);
-  }
-  closeTab(tab.id);
-}
-
 function closeTab(id, event) {
   if (event) event.stopPropagation();
   const index = tabs.findIndex((t) => t.id === id);
@@ -2228,6 +2194,7 @@ function renderTabs() {
     const el = document.createElement("div");
     el.id = "nav-" + tab.id;
     el.className = "tab" + (tab.id === activeTabId ? " active" : "");
+    el.title = tab.title; // Add tooltip for full tab name
     el.onclick = () => switchTab(tab.id);
     el.innerHTML =
       `<span>${tab.title}</span>` +
