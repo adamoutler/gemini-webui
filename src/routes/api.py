@@ -77,7 +77,12 @@ def import_settings():
         file.save(temp_zip)
 
         with zipfile.ZipFile(temp_zip, "r") as zip_ref:
-            zip_ref.extractall(data_dir)
+            for info in zip_ref.infolist():
+                extracted_path = zip_ref.extract(info, data_dir)
+                if info.external_attr > 0:
+                    perms = info.external_attr >> 16
+                    if perms != 0:
+                        os.chmod(extracted_path, perms)
 
         os.remove(temp_zip)
 

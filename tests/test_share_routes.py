@@ -1,8 +1,15 @@
 import pytest
 import json
 from unittest.mock import patch, PropertyMock
-from src.app import app, env_config
+from src.app import app, env_config, register_blueprints
 
+
+@pytest.fixture(autouse=True)
+def init_test_app():
+    # Only register if not already registered to avoid errors in pytest runner
+    if not hasattr(app, "blueprints_registered"):
+        register_blueprints(app)
+        app.blueprints_registered = True
 
 @pytest.fixture
 def client():

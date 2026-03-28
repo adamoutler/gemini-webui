@@ -2,7 +2,6 @@ import pytest
 import re
 from playwright.sync_api import sync_playwright, expect
 
-
 @pytest.fixture(scope="function")
 def page(server):
     with sync_playwright() as p:
@@ -10,6 +9,7 @@ def page(server):
         context = browser.new_context()
 
         page = context.new_page()
+        page.on("console", lambda msg: print(f"BROWSER: {msg.text}"))
         page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
@@ -109,6 +109,7 @@ def test_default_health_indicator_grey(server):
         context = browser.new_context()
 
         page = context.new_page()
+        page.on("console", lambda msg: print(f"BROWSER: {msg.text}"))
         page.set_default_timeout(60000)
         page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
         page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
@@ -149,6 +150,7 @@ def test_sync_pulse_with_health_indicator(server):
         context = browser.new_context()
 
         page = context.new_page()
+        page.on("console", lambda msg: print(f"BROWSER: {msg.text}"))
         page.set_default_timeout(60000)
         page.goto(server, timeout=15000)
         page.wait_for_selector(".launcher", state="attached", timeout=15000)

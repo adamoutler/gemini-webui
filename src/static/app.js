@@ -121,6 +121,7 @@ if ("Notification" in window && Notification.permission === "default") {
 }
 
 let tabs = [];
+window.ENABLE_DEBUG = true;
 let activeTabId = null;
 let ctrlActive = false;
 let altActive = false;
@@ -715,6 +716,7 @@ async function renderLauncher(id) {
   refreshBackendSessionsList(id);
 
   const hosts = await (await fetch("/api/hosts")).json();
+  sessionStorage.setItem("hosts_cache", JSON.stringify(hosts));
 
   // Set up polling while this launcher is visible
   if (launcherRefreshInterval) clearInterval(launcherRefreshInterval);
@@ -1050,6 +1052,26 @@ function getGlobalSocket() {
         globalSocket.connect();
       }
     });
+    globalSocket.on("sessions_updated", (payload) => {
+      console.log("SESSIONS UPDATED EVENT: " + JSON.stringify(payload));
+      const hostsStr = sessionStorage.getItem("hosts_cache") || "[]";
+      let hosts = [];
+      try { hosts = JSON.parse(hostsStr); } catch (e) {}
+
+      // Find connections matching the cache_key target/dir
+      tabs.forEach((tab) => {
+        if (!tab.isLauncher) return;
+        const id = tab.id;
+        hosts.forEach((conn) => {
+          const expectedTarget = conn.target || "local";
+          const expectedDir = conn.dir || "";
+          if ((payload.target || "local") === expectedTarget && (payload.dir || "") === expectedDir) {
+             const sessionListId = `${id}_sessions_${conn.label.replace(/[^a-z0-9]/gi, "")}`;
+             fetchSessions(id, conn, sessionListId, false, true, true);
+          }
+        });
+      });
+    });
   }
   return globalSocket;
 }
@@ -1113,10 +1135,8 @@ async function fetchSessions(
       if (listEl && listEl.innerHTML === "") {
         listEl.innerHTML = `<div style="padding: 10px; color: #888; font-size: 11px;">Fetching sessions...</div>`;
       }
-      setTimeout(
-        () => fetchSessions(tabId, conn, targetId, forceAll, true, true),
-        1000,
-      );
+      // Wait for 'sessions_updated' websocket event, but fallback just in case it is missed
+      setTimeout(() => fetchSessions(tabId, conn, targetId, forceAll, true, true), 3000);
       return;
     }
 
@@ -1135,7 +1155,7 @@ async function fetchSessions(
     if (data.error === "Timeout waiting for get_sessions") {
       if (!useCache || isPolling) {
         try {
-          HostStateManager.updateHealth(tabId, conn.label, false, true);
+          HostStateManager.updateHealth(tabId, conn.label, false, false);
         } catch (e) {
           debugLog("INNER ERROR: " + e.stack);
         }
@@ -2751,6 +2771,7 @@ let editingHostLabel = null;
 
 async function loadHosts() {
   const hosts = await (await fetch("/api/hosts")).json();
+  sessionStorage.setItem("hosts_cache", JSON.stringify(hosts));
   const list = document.getElementById("hosts-list");
   list.innerHTML = "";
   hosts.forEach((host) => {
