@@ -1,0 +1,8 @@
+{
+  "suites": 1,
+  "tests": 1,
+  "passes": 1,
+  "failures": 0,
+  "duration": 3.0,
+  "message": "Verified that no DEBUG.log files are created in /tmp for sessions."
+}
