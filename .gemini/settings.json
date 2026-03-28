@@ -46,7 +46,7 @@
         ]
       },
       {
-        "matcher": ".*(mcp_kanban_transition_ticket|mcp_kanban_complete_work).*",
+        "matcher": ".*(mcp_kanban_transition_ticket|mcp_kanban_complete_work|mcp_kanban_update_ticket).*",
         "hooks": [
           {
             "name": "qa-gate",
