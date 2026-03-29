@@ -3,6 +3,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+if __name__ == "__main__":
+    # Prevent double-initialization and circular imports when run as __main__
+    sys.modules["src.app"] = sys.modules[__name__]
+
 try:
     from config import env_config
 except ImportError:
@@ -929,9 +933,15 @@ def register_blueprints(app_instance):
 # Without this, blueprints are never registered in production docker deployments.
 import sys
 if "pytest" not in sys.modules:
-    init_app()
+    if not getattr(app, "_init_app_called", False):
+        app._init_app_called = True
+        init_app()
 
 if __name__ == "__main__":
+    if not getattr(app, "_init_app_called", False):
+        app._init_app_called = True
+        init_app()
+    
     if not app.config.get("TESTING"):
         socketio.start_background_task(read_and_forward_pty_output)
         socketio.start_background_task(cleanup_orphaned_ptys)

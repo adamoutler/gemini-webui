@@ -61,6 +61,7 @@ def test_pty_resize_handling():
 
 
 def test_connect_disconnect_logic():
+    app.config["WTF_CSRF_ENABLED"] = False
     with app.test_request_context("/"):
         with patch("src.app.request") as mock_req:
             mock_req.sid = "sid_new"
