@@ -38,8 +38,16 @@ if [[ "$tool_name" =~ run_shell_command|Bash|shell ]]; then
                 fi
             done
             
-            jq -n -c --arg result "GitHub Actions workflow run $RUN_ID for commit $CURRENT_COMMIT finished with status: $STATUS" \
-              '{"decision": "allow", "hookSpecificOutput": {"additionalContext": $result}}'
+            if [ "$STATUS" = "failure" ]; then
+                LOG_FILE="/tmp/github_run_${RUN_ID}_failed.log"
+                gh run view "$RUN_ID" --log-failed > "$LOG_FILE"
+                LAST_LINES=$(tail -n 30 "$LOG_FILE")
+                jq -n -c --arg result "GitHub Actions workflow run $RUN_ID failed! Log saved to $LOG_FILE. Last 30 lines:\n$LAST_LINES" \
+                  '{"decision": "allow", "hookSpecificOutput": {"additionalContext": $result}}'
+            else
+                jq -n -c --arg result "GitHub Actions workflow run $RUN_ID for commit $CURRENT_COMMIT finished with status: $STATUS" \
+                  '{"decision": "allow", "hookSpecificOutput": {"additionalContext": $result}}'
+            fi
             exit 0
         else
             jq -n -c '{decision: "allow", "hookSpecificOutput": {"additionalContext": "Could not find a GitHub Actions run for the pushed commit."}}'

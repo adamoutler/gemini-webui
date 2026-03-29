@@ -247,10 +247,6 @@ def init_app():
     data_dir, config_file, ssh_dir = get_config_paths()
     logger.info(f"Initializing app with DATA_DIR: {data_dir}")
 
-    if not getattr(app, "_blueprints_registered", False):
-        register_blueprints(app)
-        app._blueprints_registered = True
-
     # Try FS operations but don't crash if they fail (RO filesystem)
     try:
         os.makedirs(ssh_dir, mode=0o700, exist_ok=True)
@@ -928,9 +924,13 @@ def register_blueprints(app_instance):
     app_instance.register_blueprint(shares_bp)
 
 
+# Unconditionally register blueprints on module load so they are always available to Gunicorn and tests
+if not getattr(app, "_blueprints_registered", False):
+    register_blueprints(app)
+    app._blueprints_registered = True
+
 # Initialize the app if not running in a test environment.
 # Gunicorn imports this module but does not execute __main__.
-# Without this, blueprints are never registered in production docker deployments.
 import sys
 if "pytest" not in sys.modules:
     if not getattr(app, "_init_app_called", False):
