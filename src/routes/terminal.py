@@ -103,6 +103,16 @@ def search_files(session_id):
 
 
 def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
+    """
+    Core implementation to fetch active Gemini sessions for a specific target.
+    
+    This function manages a server-side cache and asynchronous fetching to prevent
+    hanging the UI or spawning zombie SSH processes if the remote host is slow.
+    If 'bg' is True, it starts a detached background task to fetch the data
+    and immediately returns {"status": "fetching"}. It uses 'fetching_locks' to 
+    ensure only one background fetch occurs per cache key at a time.
+    When the background task completes, it emits a 'sessions_updated' websocket event.
+    """
     if use_cache:
         with session_results_cache_lock:
             if cache_key in session_results_cache:
@@ -110,6 +120,7 @@ def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
 
     if bg:
         with session_results_cache_lock:
+            # Initialize a set to track ongoing fetch operations and prevent duplicate overlapping requests
             if not hasattr(_get_gemini_sessions_impl, "fetching_locks"):
                 _get_gemini_sessions_impl.fetching_locks = set()
             should_fetch = cache_key not in _get_gemini_sessions_impl.fetching_locks
@@ -119,6 +130,10 @@ def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
         if should_fetch:
 
             def background_fetch(target, directory, key):
+                """
+                Worker function executed asynchronously to resolve SSH/local sessions.
+                Emits a websocket event upon completion so connected clients can update.
+                """
                 try:
                     _, _, ssh_dir_path = get_config_paths()
                     res = fetch_sessions_for_host(
@@ -132,6 +147,7 @@ def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
                     )
                     with session_results_cache_lock:
                         session_results_cache[key] = res
+                    # Notify connected frontends that fresh data is available
                     socketio.emit("sessions_updated", {"cache_key": key, "target": target, "dir": directory, "data": res})
                 except Exception as e:
                     logger.error(f"Background fetch error: {e}")
@@ -139,6 +155,7 @@ def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
                         session_results_cache[key] = {"error": str(e)}
                     socketio.emit("sessions_updated", {"cache_key": key, "target": target, "dir": directory, "data": {"error": str(e)}})
                 finally:
+                    # Always release the lock so future manual refreshes can run
                     with session_results_cache_lock:
                         if key in _get_gemini_sessions_impl.fetching_locks:
                             _get_gemini_sessions_impl.fetching_locks.remove(key)

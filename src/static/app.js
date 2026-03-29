@@ -1054,6 +1054,10 @@ function getGlobalSocket() {
     });
     globalSocket.on("sessions_updated", (payload) => {
       console.log("SESSIONS UPDATED EVENT: " + JSON.stringify(payload));
+      
+      // Load hosts from sessionStorage. We use sessionStorage instead of
+      // fetching from /api/hosts here to avoid race conditions where 
+      // the websocket event fires before the API responds.
       const hostsStr = sessionStorage.getItem("hosts_cache") || "[]";
       let hosts = [];
       try { hosts = JSON.parse(hostsStr); } catch (e) {}
@@ -1065,6 +1069,8 @@ function getGlobalSocket() {
         hosts.forEach((conn) => {
           const expectedTarget = conn.target || "local";
           const expectedDir = conn.dir || "";
+          // When a match is found, trigger a fetch which will immediately hit 
+          // the populated backend cache and cleanly re-render the UI
           if ((payload.target || "local") === expectedTarget && (payload.dir || "") === expectedDir) {
              const sessionListId = `${id}_sessions_${conn.label.replace(/[^a-z0-9]/gi, "")}`;
              fetchSessions(id, conn, sessionListId, false, true, true);
@@ -1135,7 +1141,9 @@ async function fetchSessions(
       if (listEl && listEl.innerHTML === "") {
         listEl.innerHTML = `<div style="padding: 10px; color: #888; font-size: 11px;">Fetching sessions...</div>`;
       }
-      // Wait for 'sessions_updated' websocket event, but fallback just in case it is missed
+      // Wait for 'sessions_updated' websocket event to update the UI without spamming the server.
+      // However, we include a 3000ms fallback loop just in case the websocket event is missed 
+      // (e.g., if the background task completes before the socket finishes connecting).
       setTimeout(() => fetchSessions(tabId, conn, targetId, forceAll, true, true), 3000);
       return;
     }
