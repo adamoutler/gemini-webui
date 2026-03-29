@@ -30,7 +30,7 @@ def test_fetch_sessions_for_host_ssh():
         assert "ssh" in cmd
         assert "user@remote" in cmd
         remote_bash_cmd = cmd[-1]
-        assert "bash -ilc" not in remote_bash_cmd
+        assert "bash -ilc" in remote_bash_cmd
         assert "~/myproject" in remote_bash_cmd or "myproject" in remote_bash_cmd
         assert "gemini --list-sessions" in remote_bash_cmd
 
@@ -96,7 +96,7 @@ def test_pty_restart_ssh_cmd(
     assert "user@remote.com" in cmd
 
     remote_cmd = cmd[-1]
-    assert "bash -ilc" not in remote_cmd
+    assert "bash -ilc" in remote_cmd
     assert "gemini -r" in remote_cmd
     assert "cd ~" in remote_cmd
     assert "dev/project" in remote_cmd
