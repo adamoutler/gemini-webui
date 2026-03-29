@@ -160,6 +160,33 @@ def kill_and_reap(pid):
         pass
 
 
+def reap_dead_ptys():
+    """Background task to continuously reap any PTY child processes that have exited to prevent zombies."""
+    while True:
+        try:
+            # We iterate over a copy of the sessions
+            with session_manager.lock:
+                sessions_copy = list(session_manager.sessions.values())
+            
+            for session_obj in sessions_copy:
+                if session_obj.child_pid:
+                    try:
+                        res = os.waitpid(session_obj.child_pid, os.WNOHANG)
+                        wpid = res[0] if isinstance(res, tuple) else res
+                        if wpid != 0:
+                            # Process has exited and is now reaped.
+                            # We keep the session_obj but mark child_pid as None so we don't reap again.
+                            session_obj.child_pid = None
+                    except OSError:
+                        # ECHILD means it was already reaped
+                        session_obj.child_pid = None
+                        pass
+        except Exception as e:
+            logger.error(f"Error in reap_dead_ptys: {e}")
+
+        socketio.sleep(2)
+
+
 def cleanup_orphaned_ptys():
     """Cleanup orphaned sessions based on ORPHANED_SESSION_TTL."""
     is_testing = app.config.get("TESTING") or env_config.BYPASS_AUTH_FOR_TESTING
@@ -932,6 +959,7 @@ if not getattr(app, "_blueprints_registered", False):
 # Initialize the app if not running in a test environment.
 # Gunicorn imports this module but does not execute __main__.
 import sys
+
 if "pytest" not in sys.modules:
     if not getattr(app, "_init_app_called", False):
         app._init_app_called = True
@@ -941,13 +969,13 @@ if __name__ == "__main__":
     if not getattr(app, "_init_app_called", False):
         app._init_app_called = True
         init_app()
-    
+
     if not app.config.get("TESTING"):
         socketio.start_background_task(read_and_forward_pty_output)
         socketio.start_background_task(cleanup_orphaned_ptys)
+        socketio.start_background_task(reap_dead_ptys)
         if not env_config.SKIP_PRELOADER:
             socketio.start_background_task(background_session_preloader)
-
     debug_mode = env_config.FLASK_DEBUG
     use_reloader = env_config.FLASK_USE_RELOADER
     socketio.run(
