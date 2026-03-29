@@ -76,10 +76,16 @@ def import_settings():
         temp_zip = os.path.join(tempfile.gettempdir(), f"import_{uuid.uuid4().hex}.zip")
         file.save(temp_zip)
 
+        # Extract the uploaded zip file, preserving crucial Unix permissions.
+        # Python's default ZipFile.extractall() drops file permissions. 
+        # For SSH keys (.ssh/id_ed25519) to work securely, they require 
+        # strictly restrictive permissions (0o600). We parse the raw zip header
+        # external attributes to reconstruct the original Unix permissions.
         with zipfile.ZipFile(temp_zip, "r") as zip_ref:
             for info in zip_ref.infolist():
                 extracted_path = zip_ref.extract(info, data_dir)
                 if info.external_attr > 0:
+                    # Unix attributes are stored in the high 16 bits
                     perms = info.external_attr >> 16
                     if perms != 0:
                         os.chmod(extracted_path, perms)
