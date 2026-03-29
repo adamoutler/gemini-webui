@@ -207,14 +207,13 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            preexec_fn=os.setsid,
         )
         try:
             stdout, stderr = proc.communicate(timeout=15)
         except subprocess.TimeoutExpired:
             import signal
             try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                proc.kill()
             except OSError:
                 pass
             proc.wait()
@@ -225,7 +224,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
         except Exception as e:
             import signal
             try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                proc.kill()
             except OSError:
                 pass
             proc.wait()
