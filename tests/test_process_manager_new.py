@@ -5,27 +5,31 @@ from src.app import pty_restart
 
 def test_fetch_sessions_for_host_local():
     host = {"type": "local", "target": None, "dir": None}
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value = MagicMock(
-            returncode=0, stdout="  1. Local (test) [uuid]", stderr=""
-        )
+    with patch("subprocess.Popen") as mock_popen:
+        mock_proc = MagicMock()
+        mock_proc.communicate.return_value = ("  1. Local (test) [uuid]", "")
+        mock_proc.returncode = 0
+        mock_proc.pid = 1234
+        mock_popen.return_value = mock_proc
 
         result = fetch_sessions_for_host(host, "/tmp/.ssh")
         assert result["output"] == "  1. Local (test) [uuid]"
-        assert mock_run.called
+        assert mock_popen.called
 
 
 def test_fetch_sessions_for_host_ssh():
     host = {"type": "ssh", "target": "user@remote", "dir": "~/myproject"}
-    with patch("subprocess.run") as mock_run:
-        mock_run.return_value = MagicMock(
-            returncode=0, stdout="  1. Remote (test) [uuid]", stderr=""
-        )
+    with patch("subprocess.Popen") as mock_popen:
+        mock_proc = MagicMock()
+        mock_proc.communicate.return_value = ("  1. Remote (test) [uuid]", "")
+        mock_proc.returncode = 0
+        mock_proc.pid = 1234
+        mock_popen.return_value = mock_proc
 
         result = fetch_sessions_for_host(host, "/tmp/.ssh")
         assert result["output"] == "  1. Remote (test) [uuid]"
 
-        args, kwargs = mock_run.call_args
+        args, kwargs = mock_popen.call_args
         cmd = args[0]
         assert "ssh" in cmd
         assert "user@remote" in cmd

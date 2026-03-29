@@ -202,25 +202,48 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             cmd = [gemini_bin, "--list-sessions"]
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        proc = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            preexec_fn=os.setsid,
+        )
+        try:
+            stdout, stderr = proc.communicate(timeout=15)
+        except subprocess.TimeoutExpired:
+            import signal
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            except OSError:
+                pass
+            proc.wait()
+            return {
+                "error": "Could not establish connection (timed out)",
+                "timestamp": time.time(),
+            }
+        except Exception as e:
+            import signal
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            except OSError:
+                pass
+            proc.wait()
+            return {"error": f"Connection failed: {e}", "timestamp": time.time()}
+
         # Suppress auth errors from the CLI - just show as "no sessions"
-        if result.returncode != 0 and (
-            "Please set an Auth method" in result.stderr
-            or "GEMINI_API_KEY" in result.stderr
+        if proc.returncode != 0 and (
+            "Please set an Auth method" in stderr
+            or "GEMINI_API_KEY" in stderr
         ):
             return {"output": "", "error": None, "timestamp": time.time()}
         return {
-            "output": result.stdout,
-            "error": result.stderr if result.returncode != 0 else None,
+            "output": stdout,
+            "error": stderr if proc.returncode != 0 else None,
             "timestamp": time.time(),
         }
-    except subprocess.TimeoutExpired:
-        return {
-            "error": "Could not establish connection (timed out)",
-            "timestamp": time.time(),
-        }
-    except Exception:
-        return {"error": "Connection failed", "timestamp": time.time()}
+    except Exception as e:
+        return {"error": f"Process launch failed: {e}", "timestamp": time.time()}
 
 
 def _wrap_with_multiplexer(cmd):
