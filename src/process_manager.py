@@ -172,8 +172,9 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
         # Check for gemini before running list-sessions to avoid ugly bash errors
         remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then timeout 15 {gemini_list_cmd}; else {gemini_list_cmd}; fi; else exit 0; fi"
 
-        # Use remote_cmd directly. SSH will execute it in the remote user's default shell.
-        # The remote_prefix ensures that PATH is set and profiles are sourced.
+        # Wrap in login shell to ensure .profile/.bash_profile PATH is loaded (e.g. for NVM)
+        login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
+
         cmd = build_ssh_args(ssh_target, ssh_dir_path)
 
         clean_target = ssh_target
@@ -183,7 +184,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
                 clean_target = parts[0]
                 cmd.extend(["-p", parts[1]])
 
-        cmd.extend(["--", clean_target, remote_cmd])
+        cmd.extend(["--", clean_target, login_wrapped_cmd])
     else:
         # Use workspace for local session listing to match startSession
         data_dir = env_config.DATA_DIR
@@ -319,6 +320,9 @@ def build_terminal_command(
             ]
         )
 
+        # Wrap in login shell to ensure .profile/.bash_profile PATH is loaded (e.g. for NVM)
+        login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
+
         clean_target = ssh_target
         if ":" in ssh_target:
             parts = ssh_target.rsplit(":", 1)
@@ -326,7 +330,7 @@ def build_terminal_command(
                 clean_target = parts[0]
                 cmd.extend(["-p", parts[1]])
 
-        cmd.extend(["--", clean_target, remote_cmd])
+        cmd.extend(["--", clean_target, login_wrapped_cmd])
         return _wrap_with_multiplexer(cmd)
     else:
         # Workspace initialization with failover guidance
