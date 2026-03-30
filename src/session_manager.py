@@ -82,12 +82,6 @@ class SessionManager:
                     try:
                         if oldest.pid is not None:
                             os.kill(oldest.pid, signal.SIGKILL)
-                            for _ in range(10):
-                                res = os.waitpid(oldest.pid, os.WNOHANG)
-                                wpid = res[0] if isinstance(res, tuple) else res
-                                if wpid != 0:
-                                    break
-                                time.sleep(0.05)
                     except OSError:
                         pass
                     try:

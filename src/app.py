@@ -139,21 +139,46 @@ active_fake_sockets_lock = threading.Lock()
 IDENTIFICATION_REGEX = re.compile(r"\x1b\[\??\d+(?:;\d+)*c")
 
 
+managed_ptys = set()
+managed_ptys_lock = threading.Lock()
+
+
+def add_managed_pty(pid):
+    if pid is not None:
+        with managed_ptys_lock:
+            managed_ptys.add(pid)
+
+
+def zombie_reaper_task():
+    """Periodically reaps any managed PTY processes that have exited to prevent zombies."""
+    while True:
+        try:
+            with managed_ptys_lock:
+                to_remove = set()
+                for pid in list(managed_ptys):
+                    try:
+                        res = os.waitpid(pid, os.WNOHANG)
+                        wpid = res[0] if isinstance(res, tuple) else res
+                        if wpid == pid:
+                            to_remove.add(pid)
+                    except ChildProcessError:
+                        to_remove.add(pid)
+                    except OSError:
+                        pass
+                managed_ptys.difference_update(to_remove)
+        except Exception as e:
+            logger.error(f"Error in zombie reaper: {e}")
+        socketio.sleep(2)
+
+
 def kill_and_reap(pid):
     if pid is None:
         return
-    import time
-
     try:
         os.kill(pid, signal.SIGKILL)
-        for _ in range(10):
-            res = os.waitpid(pid, os.WNOHANG)
-            wpid = res[0] if isinstance(res, tuple) else res
-            if wpid != 0:
-                break
-            time.sleep(0.05)
-    except Exception:
+    except OSError:
         pass
+    # The actual waitpid reaping is handled by zombie_reaper_task
 
 
 def cleanup_orphaned_ptys():
@@ -567,15 +592,7 @@ def read_and_forward_pty_output():
                 old_session = session_manager.remove_session(tab_id)
                 ephemeral_sessions.pop(tab_id, None)
                 if old_session and old_session.pid is not None:
-                    try:
-                        # Process might already be dead, but we must reap it to prevent zombies
-                        os.kill(old_session.pid, signal.SIGKILL)
-                    except OSError:
-                        pass
-                    try:
-                        os.waitpid(old_session.pid, 0)
-                    except OSError:
-                        pass
+                    kill_and_reap(old_session.pid)
 
 
 def background_session_preloader():
@@ -836,7 +853,8 @@ def pty_restart(data):
         os.execvp(cmd[0], cmd)
         os._exit(0)
     else:
-        # Parent process: create a new session
+        # Parent process: track pid and create a new session
+        add_managed_pty(child_pid)
         session_obj = Session(
             tab_id,
             fd,
