@@ -32,11 +32,9 @@ def test_lru_pty_eviction():
         # Verify oldest session (tab_0) was evicted
         assert manager.get_session("tab_0", user_id) is None
 
-        # Verify os.close, os.kill, os.waitpid were called for session 0 (fd=100, pid=1000)
+        # Verify os.close, os.kill were called for session 0 (fd=100, pid=1000)
         mock_close.assert_called_once_with(100)
         mock_kill.assert_called_once_with(1000, signal.SIGKILL)
-        mock_waitpid.assert_called_with(1000, os.WNOHANG)
-
         # Check that tab_1 to tab_10 are present
         for i in range(1, 11):
             assert manager.get_session(f"tab_{i}", user_id) is not None

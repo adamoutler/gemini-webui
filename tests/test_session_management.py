@@ -125,12 +125,14 @@ def test_terminate_all_managed_sessions(client):
     session2 = Session("tab-2", 102, 1002, "admin")
     # Add a mock session for another user
     session3 = Session("tab-3", 103, 1003, "other_user")
-    
+
     session_manager.add_session(session1)
     session_manager.add_session(session2)
     session_manager.add_session(session3)
 
-    with patch("os.kill") as mock_kill, patch("os.waitpid") as mock_waitpid, patch("os.close") as mock_close:
+    with patch("os.kill") as mock_kill, patch("os.waitpid") as mock_waitpid, patch(
+        "os.close"
+    ) as mock_close:
         response = client.post("/api/sessions/terminate_all")
         assert response.status_code == 200
         data = json.loads(response.data)
@@ -138,7 +140,7 @@ def test_terminate_all_managed_sessions(client):
         assert data["count"] == 2
 
         assert mock_kill.call_count == 2
-        assert mock_waitpid.call_count == 2
+        # waitpid removed, handled by background task
         assert mock_close.call_count == 2
 
         # Verify only the current user's sessions are removed
