@@ -92,9 +92,9 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
             "src.app.get_config"
         ) as mock_get_config, patch("shutil.which", return_value=None), patch(
             "os.chdir"
-        ), patch("os.execv"), patch("os.closerange"), patch("os.execvp") as mock_execvp, patch(
-            "os._exit"
-        ), patch(
+        ), patch("os.execv"), patch("os.closerange"), patch(
+            "os.execvp"
+        ) as mock_execvp, patch("os._exit"), patch(
             "src.app.build_terminal_command", return_value=["bash"]
         ) as mock_build_cmd:
             mock_paths.return_value = ("/data", "/data/config.json", "/data/.ssh")
@@ -190,9 +190,7 @@ def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
         session_manager.tabid_to_sid[tab_id] = f"sid_{i}"
 
     with app.test_request_context("/"):
-        with patch("os.kill") as mock_kill, patch("os.waitpid") as mock_wait, patch(
-            "src.app.set_winsize"
-        ):
+        with patch("os.kill") as mock_kill, patch("src.app.set_winsize"):
             # Attempt to start the 11th session
             pty_restart({"tab_id": "tab_new", "sid": "sid_new"})
 
