@@ -169,15 +169,11 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             ssh_dir, gemini_bin, env_vars=env_vars
         )
 
-        # Check for gemini before running list-sessions to avoid ugly bash errors.
-        # We use 'exec' so the timeout/gemini process replaces bash and receives signals directly.
-        # We use 'timeout -k 2 10' so the remote host aggressively kills hung CLI processes 
-        # BEFORE the local Python subprocess.run(timeout=15) kills the SSH client.
-        remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then exec timeout -k 2 10 {gemini_list_cmd}; else exec {gemini_list_cmd}; fi; else exit 0; fi"
+        # Check for gemini before running list-sessions to avoid ugly bash errors
+        remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then timeout 15 {gemini_list_cmd}; else {gemini_list_cmd}; fi; else exit 0; fi"
 
-        # Wrap in login shell to ensure .profile/.bash_profile PATH is loaded (e.g. for NVM)
-        login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
-
+        # Use remote_cmd directly. SSH will execute it in the remote user's default shell.
+        # The remote_prefix ensures that PATH is set and profiles are sourced.
         cmd = build_ssh_args(ssh_target, ssh_dir_path)
 
         clean_target = ssh_target
@@ -187,7 +183,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
                 clean_target = parts[0]
                 cmd.extend(["-p", parts[1]])
 
-        cmd.extend(["--", clean_target, login_wrapped_cmd])
+        cmd.extend(["--", clean_target, remote_cmd])
     else:
         # Use workspace for local session listing to match startSession
         data_dir = env_config.DATA_DIR
@@ -202,47 +198,25 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             cmd = [gemini_bin, "--list-sessions"]
 
     try:
-        proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        try:
-            stdout, stderr = proc.communicate(timeout=15)
-        except subprocess.TimeoutExpired:
-            import signal
-            try:
-                proc.kill()
-            except OSError:
-                pass
-            proc.wait()
-            return {
-                "error": "Could not establish connection (timed out)",
-                "timestamp": time.time(),
-            }
-        except Exception as e:
-            import signal
-            try:
-                proc.kill()
-            except OSError:
-                pass
-            proc.wait()
-            return {"error": f"Connection failed: {e}", "timestamp": time.time()}
-
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
         # Suppress auth errors from the CLI - just show as "no sessions"
-        if proc.returncode != 0 and (
-            "Please set an Auth method" in stderr
-            or "GEMINI_API_KEY" in stderr
+        if result.returncode != 0 and (
+            "Please set an Auth method" in result.stderr
+            or "GEMINI_API_KEY" in result.stderr
         ):
             return {"output": "", "error": None, "timestamp": time.time()}
         return {
-            "output": stdout,
-            "error": stderr if proc.returncode != 0 else None,
+            "output": result.stdout,
+            "error": result.stderr if result.returncode != 0 else None,
             "timestamp": time.time(),
         }
-    except Exception as e:
-        return {"error": f"Process launch failed: {e}", "timestamp": time.time()}
+    except subprocess.TimeoutExpired:
+        return {
+            "error": "Could not establish connection (timed out)",
+            "timestamp": time.time(),
+        }
+    except Exception:
+        return {"error": "Connection failed", "timestamp": time.time()}
 
 
 def _wrap_with_multiplexer(cmd):
@@ -345,9 +319,6 @@ def build_terminal_command(
             ]
         )
 
-        # Wrap in login shell to ensure .profile/.bash_profile PATH is loaded (e.g. for NVM)
-        login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
-
         clean_target = ssh_target
         if ":" in ssh_target:
             parts = ssh_target.rsplit(":", 1)
@@ -355,7 +326,7 @@ def build_terminal_command(
                 clean_target = parts[0]
                 cmd.extend(["-p", parts[1]])
 
-        cmd.extend(["--", clean_target, login_wrapped_cmd])
+        cmd.extend(["--", clean_target, remote_cmd])
         return _wrap_with_multiplexer(cmd)
     else:
         # Workspace initialization with failover guidance

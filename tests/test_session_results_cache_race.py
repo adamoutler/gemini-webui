@@ -1,12 +1,7 @@
 import threading
 import pytest
-from src.app import app, register_blueprints
+from src.app import app
 
-@pytest.fixture(autouse=True)
-def init_test_app():
-    if not hasattr(app, "blueprints_registered"):
-        register_blueprints(app)
-        app.blueprints_registered = True
 
 @pytest.fixture
 def client():
@@ -20,12 +15,14 @@ def client():
 def test_concurrent_list_sessions(client, monkeypatch):
     # Mock fetch_sessions_for_host to simulate work and prevent actual network/fs calls
     monkeypatch.setattr(
-        "src.routes.terminal.fetch_sessions_for_host", lambda *args, **kwargs: {"sessions": []}
+        "src.app.fetch_sessions_for_host", lambda *args, **kwargs: {"sessions": []}
     )
 
     # We must patch authenticated_only if it strictly requires session
     # but BYPASS_AUTH_FOR_TESTING usually handles this in the codebase.
-    monkeypatch.setenv("BYPASS_AUTH_FOR_TESTING", "true")
+    import os
+
+    os.environ["BYPASS_AUTH_FOR_TESTING"] = "true"
 
     errors = []
 

@@ -5,36 +5,32 @@ from src.app import pty_restart
 
 def test_fetch_sessions_for_host_local():
     host = {"type": "local", "target": None, "dir": None}
-    with patch("subprocess.Popen") as mock_popen:
-        mock_proc = MagicMock()
-        mock_proc.communicate.return_value = ("  1. Local (test) [uuid]", "")
-        mock_proc.returncode = 0
-        mock_proc.pid = 1234
-        mock_popen.return_value = mock_proc
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(
+            returncode=0, stdout="  1. Local (test) [uuid]", stderr=""
+        )
 
         result = fetch_sessions_for_host(host, "/tmp/.ssh")
         assert result["output"] == "  1. Local (test) [uuid]"
-        assert mock_popen.called
+        assert mock_run.called
 
 
 def test_fetch_sessions_for_host_ssh():
     host = {"type": "ssh", "target": "user@remote", "dir": "~/myproject"}
-    with patch("subprocess.Popen") as mock_popen:
-        mock_proc = MagicMock()
-        mock_proc.communicate.return_value = ("  1. Remote (test) [uuid]", "")
-        mock_proc.returncode = 0
-        mock_proc.pid = 1234
-        mock_popen.return_value = mock_proc
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(
+            returncode=0, stdout="  1. Remote (test) [uuid]", stderr=""
+        )
 
         result = fetch_sessions_for_host(host, "/tmp/.ssh")
         assert result["output"] == "  1. Remote (test) [uuid]"
 
-        args, kwargs = mock_popen.call_args
+        args, kwargs = mock_run.call_args
         cmd = args[0]
         assert "ssh" in cmd
         assert "user@remote" in cmd
         remote_bash_cmd = cmd[-1]
-        assert "bash -ilc" in remote_bash_cmd
+        assert "bash -ilc" not in remote_bash_cmd
         assert "~/myproject" in remote_bash_cmd or "myproject" in remote_bash_cmd
         assert "gemini --list-sessions" in remote_bash_cmd
 
@@ -100,7 +96,7 @@ def test_pty_restart_ssh_cmd(
     assert "user@remote.com" in cmd
 
     remote_cmd = cmd[-1]
-    assert "bash -ilc" in remote_cmd
+    assert "bash -ilc" not in remote_cmd
     assert "gemini -r" in remote_cmd
     assert "cd ~" in remote_cmd
     assert "dev/project" in remote_cmd

@@ -29,12 +29,18 @@ def setup_teardown():
 
 def test_pty_input_handling():
     with app.test_request_context("/"):
-        from flask import request
-        request.sid = "sid1"
-        with patch("os.write") as mock_write:
+        with patch("src.app.request") as mock_req, patch("os.write") as mock_write:
+            mock_req.sid = "sid1"
             session = Session("tab1", 10, 123, "admin")
             session_manager.add_session(session)
             session_manager.reclaim_session("tab1", "sid1", "admin")
+
+            print("SID IN MOCK:", mock_req.sid)
+            print(
+                "TAB IN SID_TO_TABID:", session_manager.sid_to_tabid.get(mock_req.sid)
+            )
+            print("USER_ID FOR TEST:", os.environ.get("BYPASS_AUTH_FOR_TESTING"))
+            print("SESSION OBJ DIRECT:", session_manager.get_session("tab1", "admin"))
 
             pty_input({"input": "hello"})
             mock_write.assert_called_with(10, b"hello")
@@ -42,11 +48,10 @@ def test_pty_input_handling():
 
 def test_pty_resize_handling():
     with app.test_request_context("/"):
-        from flask import request
-        request.sid = "sid1"
-        with patch(
+        with patch("src.app.request") as mock_req, patch(
             "src.app.set_winsize"
         ) as mock_resize:
+            mock_req.sid = "sid1"
             session = Session("tab1", 10, 123, "admin")
             session_manager.add_session(session)
             session_manager.reclaim_session("tab1", "sid1", "admin")
@@ -56,35 +61,36 @@ def test_pty_resize_handling():
 
 
 def test_connect_disconnect_logic():
-    app.config["WTF_CSRF_ENABLED"] = False
     with app.test_request_context("/"):
-        from flask import request
-        request.sid = "sid_new"
-        handle_connect()
-        # Just verify it doesn't crash
+        with patch("src.app.request") as mock_req:
+            mock_req.sid = "sid_new"
+            handle_connect()
+            # Just verify it doesn't crash
 
-        session = Session("tab_new", 10, 123, "admin")
-        session_manager.add_session(session)
-        session_manager.reclaim_session("tab_new", "sid_new", "admin")
+            session = Session("tab_new", 10, 123, "admin")
+            session_manager.add_session(session)
+            session_manager.reclaim_session("tab_new", "sid_new", "admin")
 
-        handle_disconnect()
+            with patch("src.app.request") as mock_disconnect_req:
+                mock_disconnect_req.sid = "sid_new"
+                handle_disconnect()
 
-        # Verify cleanup
-        assert "sid_new" not in session_manager.sid_to_tabid
-        assert (
-            session_manager.get_session("tab_new", "admin").orphaned_at is not None
-        )
+            # Verify cleanup
+            assert "sid_new" not in session_manager.sid_to_tabid
+            assert (
+                session_manager.get_session("tab_new", "admin").orphaned_at is not None
+            )
 
 
 def test_update_title_handling():
     with app.test_request_context("/"):
-        from flask import request
-        request.sid = "sid_new"
-        session = Session("tab_new", 10, 123, "admin", "Old Title")
-        session_manager.add_session(session)
-        session_manager.reclaim_session("tab_new", "sid_new", "admin")
+        with patch("src.app.request") as mock_req:
+            mock_req.sid = "sid_new"
+            session = Session("tab_new", 10, 123, "admin", "Old Title")
+            session_manager.add_session(session)
+            session_manager.reclaim_session("tab_new", "sid_new", "admin")
 
-        assert session.title == "Old Title"
+            assert session.title == "Old Title"
 
-        update_title({"tab_id": "tab_new", "title": "New Working Title"})
-        assert session.title == "New Working Title"
+            update_title({"tab_id": "tab_new", "title": "New Working Title"})
+            assert session.title == "New Working Title"
