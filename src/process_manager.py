@@ -172,6 +172,9 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
         # Check for gemini before running list-sessions to avoid ugly bash errors
         remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then timeout 15 {gemini_list_cmd}; else {gemini_list_cmd}; fi; else exit 0; fi"
 
+        # Wrap in login shell to ensure .profile/.bash_profile PATH is loaded (e.g. for NVM)
+        login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
+
         # Use remote_cmd directly. SSH will execute it in the remote user's default shell.
         # The remote_prefix ensures that PATH is set and profiles are sourced.
         cmd = build_ssh_args(ssh_target, ssh_dir_path)
@@ -183,7 +186,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
                 clean_target = parts[0]
                 cmd.extend(["-p", parts[1]])
 
-        cmd.extend(["--", clean_target, remote_cmd])
+        cmd.extend(["--", clean_target, login_wrapped_cmd])
     else:
         # Use workspace for local session listing to match startSession
         data_dir = env_config.DATA_DIR
@@ -267,7 +270,21 @@ def build_terminal_command(
         if resume is True or str(resume).lower() == "true":
             gemini_base_cmd += " -r"
         elif str(resume).lower() == "new":
-            pass  # Just run gemini without -r to start a fresh session
+            host = {"target": ssh_target, "dir": ssh_dir}
+            sessions_data = fetch_sessions_for_host(host, ssh_dir_path, gemini_bin)
+            sessions_out = (
+                sessions_data.get("output", "")
+                if isinstance(sessions_data, dict)
+                else ""
+            )
+            import re
+
+            ids = [
+                int(m.group(1))
+                for m in re.finditer(r"^\s+(\d+)\.\s+", sessions_out, re.MULTILINE)
+            ]
+            next_id = max(ids) + 1 if ids else 1
+            gemini_base_cmd += f" -r {next_id}"
         elif resume and str(resume).lower() != "false":
             gemini_base_cmd += f" -r {shlex.quote(str(resume))}"
 
