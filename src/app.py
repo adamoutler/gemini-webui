@@ -3,10 +3,6 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-if __name__ == "__main__":
-    # Prevent double-initialization and circular imports when run as __main__
-    sys.modules["src.app"] = sys.modules[__name__]
-
 try:
     from config import env_config
 except ImportError:
@@ -160,33 +156,6 @@ def kill_and_reap(pid):
         pass
 
 
-def reap_dead_ptys():
-    """Background task to continuously reap any PTY child processes that have exited to prevent zombies."""
-    while True:
-        try:
-            # We iterate over a copy of the sessions
-            with session_manager.lock:
-                sessions_copy = list(session_manager.sessions.values())
-            
-            for session_obj in sessions_copy:
-                if session_obj.child_pid:
-                    try:
-                        res = os.waitpid(session_obj.child_pid, os.WNOHANG)
-                        wpid = res[0] if isinstance(res, tuple) else res
-                        if wpid != 0:
-                            # Process has exited and is now reaped.
-                            # We keep the session_obj but mark child_pid as None so we don't reap again.
-                            session_obj.child_pid = None
-                    except OSError:
-                        # ECHILD means it was already reaped
-                        session_obj.child_pid = None
-                        pass
-        except Exception as e:
-            logger.error(f"Error in reap_dead_ptys: {e}")
-
-        socketio.sleep(2)
-
-
 def cleanup_orphaned_ptys():
     """Cleanup orphaned sessions based on ORPHANED_SESSION_TTL."""
     is_testing = app.config.get("TESTING") or env_config.BYPASS_AUTH_FOR_TESTING
@@ -273,6 +242,10 @@ def init_app():
         LDAP_FALLBACK_DOMAIN
     data_dir, config_file, ssh_dir = get_config_paths()
     logger.info(f"Initializing app with DATA_DIR: {data_dir}")
+
+    if not getattr(app, "_blueprints_registered", False):
+        register_blueprints(app)
+        app._blueprints_registered = True
 
     # Try FS operations but don't crash if they fail (RO filesystem)
     try:
@@ -834,24 +807,6 @@ def pty_restart(data):
     else:
         gemini_bin_override = GEMINI_BIN
 
-    _, _, ssh_dir_path = get_config_paths()
-    cmd = build_terminal_command(
-        ssh_target,
-        ssh_dir,
-        resume,
-        ssh_dir_path,
-        gemini_bin_override,
-        env_vars=env_vars,
-        is_fake=is_fake,
-        executable_override=executable_override,
-    )
-
-    if not cmd:
-        socketio.emit(
-            "pty-output", {"output": "\r\nInvalid SSH target format\r\n"}, room=sid
-        )
-        return
-
     (child_pid, fd) = pty.fork()
     if child_pid == 0:
         os.closerange(3, 65536)
@@ -862,11 +817,24 @@ def pty_restart(data):
         if is_fake:
             os.environ["GEMINI_WEBUI_HARNESS_ID"] = tab_id
 
-        try:
-            os.execvp(cmd[0], cmd)
-        except Exception as e:
-            print(f"\r\nFailed to start terminal process: {cmd}\r\nError: {e}\r\n")
-        os._exit(1)
+        _, _, ssh_dir_path = get_config_paths()
+        cmd = build_terminal_command(
+            ssh_target,
+            ssh_dir,
+            resume,
+            ssh_dir_path,
+            gemini_bin_override,
+            env_vars=env_vars,
+            is_fake=is_fake,
+            executable_override=executable_override,
+        )
+
+        if not cmd:
+            print("\r\nInvalid SSH target format\r\n")
+            os._exit(1)
+
+        os.execvp(cmd[0], cmd)
+        os._exit(0)
     else:
         # Parent process: create a new session
         session_obj = Session(
@@ -951,31 +919,14 @@ def register_blueprints(app_instance):
     app_instance.register_blueprint(shares_bp)
 
 
-# Unconditionally register blueprints on module load so they are always available to Gunicorn and tests
-if not getattr(app, "_blueprints_registered", False):
-    register_blueprints(app)
-    app._blueprints_registered = True
-
-# Initialize the app if not running in a test environment.
-# Gunicorn imports this module but does not execute __main__.
-import sys
-
-if "pytest" not in sys.modules:
-    if not getattr(app, "_init_app_called", False):
-        app._init_app_called = True
-        init_app()
-
 if __name__ == "__main__":
-    if not getattr(app, "_init_app_called", False):
-        app._init_app_called = True
-        init_app()
-
+    init_app()
     if not app.config.get("TESTING"):
         socketio.start_background_task(read_and_forward_pty_output)
         socketio.start_background_task(cleanup_orphaned_ptys)
-        socketio.start_background_task(reap_dead_ptys)
         if not env_config.SKIP_PRELOADER:
             socketio.start_background_task(background_session_preloader)
+
     debug_mode = env_config.FLASK_DEBUG
     use_reloader = env_config.FLASK_USE_RELOADER
     socketio.run(
