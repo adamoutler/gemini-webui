@@ -3,7 +3,13 @@ import os
 import time
 from unittest.mock import patch
 
-from src.app import session_manager, read_and_forward_pty_output
+from src.app import (
+    session_manager,
+    read_and_forward_pty_output,
+    zombie_reaper_task,
+    add_managed_pty,
+    managed_ptys_lock,
+)
 from src.session_manager import Session
 
 
@@ -14,6 +20,7 @@ def test_pty_reader_reaps_zombies():
         # Child process exits immediately
         os._exit(0)
 
+    add_managed_pty(pid)
     session = Session(tab_id, fd, pid, "user1")
     session_manager.add_session(session)
 
@@ -34,6 +41,13 @@ def test_pty_reader_reaps_zombies():
                 read_and_forward_pty_output()
             except StopIteration:
                 pass
+
+    # Now run the zombie reaper task manually for one iteration
+    with patch("src.app.socketio.sleep", side_effect=StopIteration("Stop Loop")):
+        try:
+            zombie_reaper_task()
+        except StopIteration:
+            pass
 
     # Now verify the process was reaped. If not reaped, waitpid with WNOHANG will return the PID.
     # If reaped, waitpid will raise ChildProcessError

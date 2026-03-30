@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     nodejs \
     npm \
     xclip \
+    tini \
     && rm -rf /var/lib/apt/lists/*
 
 COPY . .
@@ -42,4 +43,5 @@ RUN useradd -m -u 1000 node && \
 RUN npm install -g @google/gemini-cli --unsafe-perm
 
 # We need access to the mounted volume for the host
+ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["python", "src/app.py"]
