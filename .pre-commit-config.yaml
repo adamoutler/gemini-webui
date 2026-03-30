@@ -4,6 +4,7 @@ repos:
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
+        exclude: &hooks_exclude .gemini/hooks/
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-json
@@ -13,6 +14,7 @@ repos:
       - id: ruff
         args: ["--fix", "--ignore=E,F,W"]
       - id: ruff-format
+        exclude: *hooks_exclude
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: v8.56.0
     hooks:
