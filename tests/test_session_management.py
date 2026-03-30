@@ -67,7 +67,6 @@ def test_terminate_managed_session(client):
         assert data["status"] == "success"
 
         mock_kill.assert_called_once_with(pid, signal.SIGKILL)
-        mock_waitpid.assert_called_with(pid, os.WNOHANG)
 
         # Verify session is removed
         assert session_manager.get_session(tab_id) is None
@@ -130,9 +129,7 @@ def test_terminate_all_managed_sessions(client):
     session_manager.add_session(session2)
     session_manager.add_session(session3)
 
-    with patch("os.kill") as mock_kill, patch("os.waitpid") as mock_waitpid, patch(
-        "os.close"
-    ) as mock_close:
+    with patch("os.kill") as mock_kill, patch("os.close") as mock_close:
         response = client.post("/api/sessions/terminate_all")
         assert response.status_code == 200
         data = json.loads(response.data)

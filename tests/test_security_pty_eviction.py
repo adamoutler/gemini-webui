@@ -9,9 +9,7 @@ def test_lru_pty_eviction():
     manager = SessionManager()
     user_id = "test_user_123"
 
-    with patch("os.close") as mock_close, patch("os.kill") as mock_kill, patch(
-        "os.waitpid"
-    ) as mock_waitpid:
+    with patch("os.close") as mock_close, patch("os.kill") as mock_kill:
         # Create 11 sessions for the same user
         sessions = []
         for i in range(11):
