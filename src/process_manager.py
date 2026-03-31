@@ -174,13 +174,13 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
         # Check for gemini before running list-sessions to avoid ugly bash errors
         remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then timeout 15 {gemini_list_cmd}; else {gemini_list_cmd}; fi; else exit 0; fi"
 
-        # Wrap in login shell to ensure .profile/.bash_profile PATH is loaded (e.g. for NVM)
-        # Use -lc (login, non-interactive) to avoid TTY corruption on the master socket
-        login_wrapped_cmd = f"bash -lc {shlex.quote(remote_cmd)}"
-
-        # Use remote_cmd directly. SSH will execute it in the remote user's default shell.
-        # Use ControlMaster=auto for speed. Since we use -lc (non-interactive), this won't corrupt TTY.
-        cmd = build_ssh_args(ssh_target, ssh_dir_path, control_master="auto")
+        # Use bash -ilc (interactive login shell) so gemini's PATH is fully loaded
+        # (handles NVM, npm globals, etc.) and gemini outputs session text instead
+        # of a screen-clear escape sequence (which it emits when stdin is not a TTY).
+        # Use ControlMaster=no to avoid corrupting the master socket's TTY state,
+        # since this fetch runs without a real PTY (stdin=DEVNULL).
+        login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
+        cmd = build_ssh_args(ssh_target, ssh_dir_path, control_master="no")
 
         clean_target = ssh_target
         if ":" in ssh_target:
