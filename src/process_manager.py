@@ -179,6 +179,22 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
         # The remote_prefix ensures that PATH is set and profiles are sourced.
         cmd = build_ssh_args(ssh_target, ssh_dir_path)
 
+        # Disable multiplexing for this interactive fetch to prevent corrupting the master socket's TTY state
+        filtered_cmd = []
+        skip_next = False
+        for c in cmd:
+            if skip_next:
+                skip_next = False
+                continue
+            if c in ("ControlMaster=auto", "ControlPersist=10m"):
+                # Usually passed as -o ControlMaster=auto
+                filtered_cmd.pop()  # remove the preceding '-o'
+            elif c.startswith("ControlPath="):
+                filtered_cmd.pop()
+            else:
+                filtered_cmd.append(c)
+        cmd = filtered_cmd
+
         clean_target = ssh_target
         if ":" in ssh_target:
             parts = ssh_target.rsplit(":", 1)
@@ -201,7 +217,13 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             cmd = [gemini_bin, "--list-sessions"]
 
     try:
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=15,
+            stdin=subprocess.DEVNULL,
+        )
         # Suppress auth errors from the CLI - just show as "no sessions"
         if result.returncode != 0 and (
             "Please set an Auth method" in result.stderr
@@ -297,11 +319,7 @@ def build_terminal_command(
             f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then "
         )
         remote_cmd += f"{gemini_base_cmd}; "
-        remote_cmd += "else "
-        remote_cmd += "printf '\\r\\n\\033[1;31mError: gemini CLI not found on remote host.\\033[0m\\r\\n'; "
-        remote_cmd += "printf 'Please install it from: \\033[1;34mhttps://geminicli.com/\\033[0m\\r\\n\\r\\n'; "
-        remote_cmd += "exec $SHELL; "
-        remote_cmd += "fi"
+        remote_cmd += "else exec ${SHELL:-sh}; fi"
 
         # Use remote_cmd directly. SSH will execute it in the remote user's default shell.
         # The remote_prefix ensures that PATH is set and profiles are sourced.
@@ -363,7 +381,21 @@ def build_terminal_command(
         if resume is True or str(resume).lower() == "true":
             gemini_cmd += " -r"
         elif str(resume).lower() == "new":
-            pass  # Just run gemini without -r to start a fresh session
+            host = {"target": None, "dir": None}
+            sessions_data = fetch_sessions_for_host(host, ssh_dir_path, gemini_bin)
+            sessions_out = (
+                sessions_data.get("output", "")
+                if isinstance(sessions_data, dict)
+                else ""
+            )
+            import re
+
+            ids = [
+                int(m.group(1))
+                for m in re.finditer(r"^\s+(\d+)\.\s+", sessions_out, re.MULTILINE)
+            ]
+            next_id = max(ids) + 1 if ids else 1
+            gemini_cmd += f" -r {next_id}"
         elif resume and str(resume).lower() != "false":
             gemini_cmd += f" -r {shlex.quote(str(resume))}"
         cmd = ["/bin/sh", "-c", f"{setup_cmd} exec {gemini_cmd}"]
