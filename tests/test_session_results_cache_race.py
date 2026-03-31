@@ -3,19 +3,11 @@ import pytest
 from src.app import app
 
 
-@pytest.fixture
-def client():
-    app.config["TESTING"] = True
-    app.config["BYPASS_AUTH_FOR_TESTING"] = True
-    app.config["SECRET_KEY"] = "test_secret"
-    with app.test_client() as client:
-        yield client
-
-
 def test_concurrent_list_sessions(client, monkeypatch):
     # Mock fetch_sessions_for_host to simulate work and prevent actual network/fs calls
     monkeypatch.setattr(
-        "src.app.fetch_sessions_for_host", lambda *args, **kwargs: {"sessions": []}
+        "src.routes.terminal.fetch_sessions_for_host",
+        lambda *args, **kwargs: {"sessions": []},
     )
 
     # We must patch authenticated_only if it strictly requires session

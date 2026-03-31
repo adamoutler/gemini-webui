@@ -824,6 +824,26 @@ def pty_restart(data):
     else:
         gemini_bin_override = GEMINI_BIN
 
+    _, _, ssh_dir_path = get_config_paths()
+    cmd = build_terminal_command(
+        ssh_target,
+        ssh_dir,
+        resume,
+        ssh_dir_path,
+        gemini_bin_override,
+        env_vars=env_vars,
+        is_fake=is_fake,
+        executable_override=executable_override,
+    )
+
+    if not cmd:
+        socketio.emit(
+            "pty-output",
+            {"output": "\r\n\x1b[31mError: Invalid SSH target format\x1b[0m\r\n"},
+            room=sid,
+        )
+        return
+
     (child_pid, fd) = pty.fork()
     if child_pid == 0:
         os.closerange(3, 65536)
@@ -833,22 +853,6 @@ def pty_restart(data):
 
         if is_fake:
             os.environ["GEMINI_WEBUI_HARNESS_ID"] = tab_id
-
-        _, _, ssh_dir_path = get_config_paths()
-        cmd = build_terminal_command(
-            ssh_target,
-            ssh_dir,
-            resume,
-            ssh_dir_path,
-            gemini_bin_override,
-            env_vars=env_vars,
-            is_fake=is_fake,
-            executable_override=executable_override,
-        )
-
-        if not cmd:
-            print("\r\nInvalid SSH target format\r\n")
-            os._exit(1)
 
         os.execvp(cmd[0], cmd)
         os._exit(0)
