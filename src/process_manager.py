@@ -141,6 +141,10 @@ def get_remote_command_prefix(ssh_dir, gemini_bin="gemini", env_vars=None):
             if isinstance(k, str) and isinstance(v, str):
                 prefix += f"export {k}={shlex.quote(v)}; "
 
+    # Source profiles quietly to populate PATH (e.g. npm globals, nvm, etc.)
+    # We use . instead of source for POSIX compatibility
+    prefix += ". ~/.profile 2>/dev/null; . ~/.bash_profile 2>/dev/null; . ~/.bashrc 2>/dev/null; "
+
     if ssh_dir and ssh_dir != "~":
         if ssh_dir.startswith("~"):
             suffix = ssh_dir[1:]
@@ -175,8 +179,8 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
         login_wrapped_cmd = f"bash -lc {shlex.quote(remote_cmd)}"
 
         # Use remote_cmd directly. SSH will execute it in the remote user's default shell.
-        # Use ControlMaster=no to avoid starting a master socket without a TTY, but use one if it exists.
-        cmd = build_ssh_args(ssh_target, ssh_dir_path, control_master="no")
+        # Use ControlMaster=auto for speed. Since we use -lc (non-interactive), this won't corrupt TTY.
+        cmd = build_ssh_args(ssh_target, ssh_dir_path, control_master="auto")
 
         clean_target = ssh_target
         if ":" in ssh_target:
@@ -275,7 +279,21 @@ def build_terminal_command(
         if resume is True or str(resume).lower() == "true":
             gemini_base_cmd += " -r"
         elif str(resume).lower() == "new":
-            pass  # Just run gemini without -r to start a fresh session (fast)
+            host = {"target": ssh_target, "dir": ssh_dir}
+            sessions_data = fetch_sessions_for_host(host, ssh_dir_path, gemini_bin)
+            sessions_out = (
+                sessions_data.get("output", "")
+                if isinstance(sessions_data, dict)
+                else ""
+            )
+            import re
+
+            ids = [
+                int(m.group(1))
+                for m in re.finditer(r"^\s+(\d+)\.\s+", sessions_out, re.MULTILINE)
+            ]
+            next_id = max(ids) + 1 if ids else 1
+            gemini_base_cmd += f" -r {next_id}"
         elif resume and str(resume).lower() != "false":
             gemini_base_cmd += f" -r {shlex.quote(str(resume))}"
 
@@ -356,7 +374,21 @@ def build_terminal_command(
         if resume is True or str(resume).lower() == "true":
             gemini_cmd += " -r"
         elif str(resume).lower() == "new":
-            pass  # Just run gemini without -r to start a fresh session
+            host = {"target": None, "dir": None}
+            sessions_data = fetch_sessions_for_host(host, ssh_dir_path, gemini_bin)
+            sessions_out = (
+                sessions_data.get("output", "")
+                if isinstance(sessions_data, dict)
+                else ""
+            )
+            import re
+
+            ids = [
+                int(m.group(1))
+                for m in re.finditer(r"^\s+(\d+)\.\s+", sessions_out, re.MULTILINE)
+            ]
+            next_id = max(ids) + 1 if ids else 1
+            gemini_cmd += f" -r {next_id}"
         elif resume and str(resume).lower() != "false":
             gemini_cmd += f" -r {shlex.quote(str(resume))}"
         cmd = ["/bin/sh", "-c", f"{setup_cmd} exec {gemini_cmd}"]
