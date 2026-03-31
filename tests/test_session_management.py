@@ -90,7 +90,8 @@ def test_resume_new_local():
         }
         cmd = build_terminal_command(None, None, "new", "/tmp/ssh")
         cmd_str = " ".join(cmd)
-        assert "gemini -r 4" in cmd_str
+        assert "gemini -r" not in cmd_str
+        assert "gemini" in cmd_str
 
 
 def test_resume_new_ssh():
@@ -101,7 +102,8 @@ def test_resume_new_ssh():
         mock_fetch.return_value = {"output": "  5. Session (date)\n", "error": None}
         cmd = build_terminal_command("user@host", "~", "new", "/tmp/ssh")
         cmd_str = " ".join(cmd)
-        assert "gemini -r 6" in cmd_str
+        assert "gemini -r" not in cmd_str
+        assert "gemini" in cmd_str
 
 
 def test_resume_new_no_sessions():
@@ -112,7 +114,8 @@ def test_resume_new_no_sessions():
         mock_fetch.return_value = {"output": "", "error": None}
         cmd = build_terminal_command("user@host", "~", "new", "/tmp/ssh")
         cmd_str = " ".join(cmd)
-        assert "gemini -r 1" in cmd_str
+        assert "gemini -r" not in cmd_str
+        assert "gemini" in cmd_str
 
 
 def test_terminate_all_managed_sessions(client):
