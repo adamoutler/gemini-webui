@@ -30,8 +30,9 @@ def test_fetch_sessions_for_host_ssh():
         assert "ssh" in cmd
         assert "user@remote" in cmd
         remote_bash_cmd = cmd[-1]
-        assert "bash -lc" in remote_bash_cmd
-        assert "bash -ilc" not in remote_bash_cmd
+        assert "bash -ilc" in remote_bash_cmd
+        # We don't want a non-interactive shell because gemini needs a proper environment
+        # to output session text (no screen-clear ANSI codes due to stdin=DEVNULL).
         assert "~/myproject" in remote_bash_cmd or "myproject" in remote_bash_cmd
         assert "gemini --list-sessions" in remote_bash_cmd
 
