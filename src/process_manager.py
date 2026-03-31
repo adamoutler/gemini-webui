@@ -41,11 +41,11 @@ class SSHConnectionManager:
         return str(SSH_SOCKET_DIR / f"{prefix}{safe_host}:{port}.sock")
 
     @staticmethod
-    def get_base_ssh_args(user, host, port):
+    def get_base_ssh_args(user, host, port, control_master="auto"):
         socket_path = SSHConnectionManager.get_socket_path(user, host, port)
         return [
             "-o",
-            "ControlMaster=auto",
+            f"ControlMaster={control_master}",
             "-o",
             f"ControlPath={socket_path}",
             "-o",
@@ -102,13 +102,13 @@ def validate_ssh_target(target):
     return bool(re.match(r"^([a-zA-Z0-9.-]+@)?[a-zA-Z0-9.-]+(:[0-9]+)?$", target))
 
 
-def build_ssh_args(ssh_target, ssh_dir_path):
+def build_ssh_args(ssh_target, ssh_dir_path, control_master="auto"):
     """Builds common SSH connection arguments."""
     user, host, port = SSHConnectionManager.parse_target(ssh_target)
     SSHConnectionManager.check_and_recover_connection(user, host, port)
 
     cmd = ["ssh", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=no"]
-    cmd.extend(SSHConnectionManager.get_base_ssh_args(user, host, port))
+    cmd.extend(SSHConnectionManager.get_base_ssh_args(user, host, port, control_master))
 
     known_hosts_path = os.path.join(ssh_dir_path, "known_hosts")
     if not os.access(ssh_dir_path, os.W_OK) and not os.access(
@@ -129,7 +129,7 @@ def build_ssh_args(ssh_target, ssh_dir_path):
 
 
 def get_remote_command_prefix(ssh_dir, gemini_bin="gemini", env_vars=None):
-    """Builds a robust prefix for remote commands to ensure PATH and environment are loaded."""
+    """Builds a robust prefix for remote commands to ensure environment is loaded."""
     # Common color and path exports
     prefix = 'export PATH="$PATH:$HOME/.local/bin:$HOME/bin"; '
     prefix += (
@@ -141,8 +141,6 @@ def get_remote_command_prefix(ssh_dir, gemini_bin="gemini", env_vars=None):
             if isinstance(k, str) and isinstance(v, str):
                 prefix += f"export {k}={shlex.quote(v)}; "
 
-    # Source profiles quietly to populate PATH (e.g. npm globals, nvm, etc.)
-    prefix += "source ~/.profile 2>/dev/null; source ~/.bash_profile 2>/dev/null; source ~/.bashrc 2>/dev/null; "
     if ssh_dir and ssh_dir != "~":
         if ssh_dir.startswith("~"):
             suffix = ssh_dir[1:]
@@ -173,27 +171,12 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
         remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then timeout 15 {gemini_list_cmd}; else {gemini_list_cmd}; fi; else exit 0; fi"
 
         # Wrap in login shell to ensure .profile/.bash_profile PATH is loaded (e.g. for NVM)
-        login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
+        # Use -lc (login, non-interactive) to avoid TTY corruption on the master socket
+        login_wrapped_cmd = f"bash -lc {shlex.quote(remote_cmd)}"
 
         # Use remote_cmd directly. SSH will execute it in the remote user's default shell.
-        # The remote_prefix ensures that PATH is set and profiles are sourced.
-        cmd = build_ssh_args(ssh_target, ssh_dir_path)
-
-        # Disable multiplexing for this interactive fetch to prevent corrupting the master socket's TTY state
-        filtered_cmd = []
-        skip_next = False
-        for c in cmd:
-            if skip_next:
-                skip_next = False
-                continue
-            if c in ("ControlMaster=auto", "ControlPersist=10m"):
-                # Usually passed as -o ControlMaster=auto
-                filtered_cmd.pop()  # remove the preceding '-o'
-            elif c.startswith("ControlPath="):
-                filtered_cmd.pop()
-            else:
-                filtered_cmd.append(c)
-        cmd = filtered_cmd
+        # Use ControlMaster=no to avoid starting a master socket without a TTY, but use one if it exists.
+        cmd = build_ssh_args(ssh_target, ssh_dir_path, control_master="no")
 
         clean_target = ssh_target
         if ":" in ssh_target:
@@ -292,21 +275,7 @@ def build_terminal_command(
         if resume is True or str(resume).lower() == "true":
             gemini_base_cmd += " -r"
         elif str(resume).lower() == "new":
-            host = {"target": ssh_target, "dir": ssh_dir}
-            sessions_data = fetch_sessions_for_host(host, ssh_dir_path, gemini_bin)
-            sessions_out = (
-                sessions_data.get("output", "")
-                if isinstance(sessions_data, dict)
-                else ""
-            )
-            import re
-
-            ids = [
-                int(m.group(1))
-                for m in re.finditer(r"^\s+(\d+)\.\s+", sessions_out, re.MULTILINE)
-            ]
-            next_id = max(ids) + 1 if ids else 1
-            gemini_base_cmd += f" -r {next_id}"
+            pass  # Just run gemini without -r to start a fresh session (fast)
         elif resume and str(resume).lower() != "false":
             gemini_base_cmd += f" -r {shlex.quote(str(resume))}"
 
@@ -318,11 +287,17 @@ def build_terminal_command(
         remote_cmd = (
             f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then "
         )
-        remote_cmd += f"{gemini_base_cmd}; "
-        remote_cmd += "else exec ${SHELL:-sh}; fi"
+        remote_cmd += f"exec {gemini_base_cmd}; "
+        remote_cmd += "else "
+        remote_cmd += "printf '\\r\\n\\033[1;31mError: gemini CLI not found on remote host.\\033[0m\\r\\n'; "
+        remote_cmd += "printf 'Please install it from: \\033[1;34mhttps://geminicli.com/\\033[0m\\r\\n\\r\\n'; "
+        remote_cmd += "exec ${SHELL:-/bin/sh}; "
+        remote_cmd += "fi"
 
-        # Use remote_cmd directly. SSH will execute it in the remote user's default shell.
-        # The remote_prefix ensures that PATH is set and profiles are sourced.
+        # Use a login shell to ensure PATH is correctly set up (e.g. for NVM, npm globals)
+        # This is safe because we are using 'ssh -t' which provides a TTY.
+        login_wrapped_remote_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
+
         cmd = ["ssh", "-t"]
         cmd.extend(SSHConnectionManager.get_base_ssh_args(user, host, port))
 
@@ -361,7 +336,7 @@ def build_terminal_command(
                 clean_target = parts[0]
                 cmd.extend(["-p", parts[1]])
 
-        cmd.extend(["--", clean_target, remote_cmd])
+        cmd.extend(["--", clean_target, login_wrapped_remote_cmd])
         return _wrap_with_multiplexer(cmd)
     else:
         # Workspace initialization with failover guidance
@@ -381,21 +356,7 @@ def build_terminal_command(
         if resume is True or str(resume).lower() == "true":
             gemini_cmd += " -r"
         elif str(resume).lower() == "new":
-            host = {"target": None, "dir": None}
-            sessions_data = fetch_sessions_for_host(host, ssh_dir_path, gemini_bin)
-            sessions_out = (
-                sessions_data.get("output", "")
-                if isinstance(sessions_data, dict)
-                else ""
-            )
-            import re
-
-            ids = [
-                int(m.group(1))
-                for m in re.finditer(r"^\s+(\d+)\.\s+", sessions_out, re.MULTILINE)
-            ]
-            next_id = max(ids) + 1 if ids else 1
-            gemini_cmd += f" -r {next_id}"
+            pass  # Just run gemini without -r to start a fresh session
         elif resume and str(resume).lower() != "false":
             gemini_cmd += f" -r {shlex.quote(str(resume))}"
         cmd = ["/bin/sh", "-c", f"{setup_cmd} exec {gemini_cmd}"]

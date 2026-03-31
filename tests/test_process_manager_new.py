@@ -30,7 +30,8 @@ def test_fetch_sessions_for_host_ssh():
         assert "ssh" in cmd
         assert "user@remote" in cmd
         remote_bash_cmd = cmd[-1]
-        assert "bash -ilc" in remote_bash_cmd
+        assert "bash -lc" in remote_bash_cmd
+        assert "bash -ilc" not in remote_bash_cmd
         assert "~/myproject" in remote_bash_cmd or "myproject" in remote_bash_cmd
         assert "gemini --list-sessions" in remote_bash_cmd
 
@@ -96,7 +97,7 @@ def test_pty_restart_ssh_cmd(
     assert "user@remote.com" in cmd
 
     remote_cmd = cmd[-1]
-    assert "bash -ilc" not in remote_cmd
+    assert "bash -ilc" in remote_cmd
     assert "gemini -r" in remote_cmd
     assert "cd ~" in remote_cmd
     assert "dev/project" in remote_cmd
@@ -111,12 +112,14 @@ def test_build_terminal_command_resume_new(mock_fetch):
     # Test local
     cmd = build_terminal_command(None, None, "new", "/tmp/.ssh")
     cmd_str = " ".join(cmd)
-    assert "gemini -r 1" in cmd_str
+    assert "gemini -r" not in cmd_str
+    assert "gemini" in cmd_str
 
     # Test SSH
     cmd_ssh = build_terminal_command("user@host", "~/dir", "new", "/tmp/.ssh")
     remote_cmd = cmd_ssh[-1]
-    assert "gemini -r 1" in remote_cmd
+    assert "gemini -r" not in remote_cmd
+    assert "gemini" in remote_cmd
 
 
 def test_build_terminal_command_resume_id():
