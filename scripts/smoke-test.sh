@@ -3,7 +3,7 @@
 # smoke-test.sh — Build & run gemini-webui from local source in a test container
 #
 # Usage:
-#   ./scripts/smoke-test.sh [--no-stop] [--port PORT] [--tag TAG] [--help]
+#   ./scripts/smoke-test.sh [--no-stop] [--detach] [--port PORT] [--tag TAG] [--help]
 #
 # Behaviour:
 #   1. Inspects gemini-webui-dev to extract port, env vars, and volume name.
@@ -11,7 +11,7 @@
 #   2. Builds a fresh image from the current working tree with docker buildx.
 #   3. Stops gemini-webui-dev (unless --no-stop) and starts the test container
 #      on the same port with the same volume and env vars.
-#   4. Tails logs until Ctrl-C, then offers to remove the test container.
+#   4. If --detach, runs in background and exits. Otherwise tails logs until Ctrl-C.
 # =============================================================================
 set -euo pipefail
 
@@ -25,6 +25,7 @@ PLATFORM="${PLATFORM:-linux/$(uname -m | sed 's/aarch64/arm64/;s/x86_64/amd64/')
 # ─────────────────────────────────────────────────────────────────────────────
 
 NO_STOP=false
+DETACH=false
 OVERRIDE_PORT=""
 
 usage() {
@@ -35,6 +36,7 @@ usage() {
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-stop)   NO_STOP=true ;;
+    --detach|-d) DETACH=true ;;
     --port)      OVERRIDE_PORT="$2"; shift ;;
     --tag)       IMAGE_TAG="$2"; shift ;;
     --help|-h)   usage ;;
@@ -123,6 +125,10 @@ RUN_ARGS=(
   "-e" "PORT=5000"
 )
 
+if [[ "$DETACH" == true ]]; then
+  RUN_ARGS+=("-d")
+fi
+
 # Re-attach volume if we found one
 if [[ -n "$VOLUME_NAME" ]]; then
   RUN_ARGS+=("-v" "${VOLUME_NAME}:/data")
@@ -144,6 +150,13 @@ echo "🚀  Starting '$TEST_CONTAINER' on port $HOST_PORT ..."
 echo "    docker run ${RUN_ARGS[*]} $IMAGE_TAG"
 echo ""
 echo "    App → http://localhost:${HOST_PORT}"
+
+if [[ "$DETACH" == true ]]; then
+  echo "    Container running in background (--detach)"
+  docker run "${RUN_ARGS[@]}" "$IMAGE_TAG"
+  exit 0
+fi
+
 echo "    Ctrl-C to stop"
 echo ""
 
