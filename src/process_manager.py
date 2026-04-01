@@ -279,21 +279,7 @@ def build_terminal_command(
         if resume is True or str(resume).lower() == "true":
             gemini_base_cmd += " -r"
         elif str(resume).lower() == "new":
-            host = {"target": ssh_target, "dir": ssh_dir}
-            sessions_data = fetch_sessions_for_host(host, ssh_dir_path, gemini_bin)
-            sessions_out = (
-                sessions_data.get("output", "")
-                if isinstance(sessions_data, dict)
-                else ""
-            )
-            import re
-
-            ids = [
-                int(m.group(1))
-                for m in re.finditer(r"^\s+(\d+)\.\s+", sessions_out, re.MULTILINE)
-            ]
-            next_id = max(ids) + 1 if ids else 1
-            gemini_base_cmd += f" -r {next_id}"
+            pass  # Start a fresh session with no -r flag; JS predicts the ID for future reconnects
         elif resume and str(resume).lower() != "false":
             gemini_base_cmd += f" -r {shlex.quote(str(resume))}"
 
@@ -374,21 +360,7 @@ def build_terminal_command(
         if resume is True or str(resume).lower() == "true":
             gemini_cmd += " -r"
         elif str(resume).lower() == "new":
-            host = {"target": None, "dir": None}
-            sessions_data = fetch_sessions_for_host(host, ssh_dir_path, gemini_bin)
-            sessions_out = (
-                sessions_data.get("output", "")
-                if isinstance(sessions_data, dict)
-                else ""
-            )
-            import re
-
-            ids = [
-                int(m.group(1))
-                for m in re.finditer(r"^\s+(\d+)\.\s+", sessions_out, re.MULTILINE)
-            ]
-            next_id = max(ids) + 1 if ids else 1
-            gemini_cmd += f" -r {next_id}"
+            pass  # Start a fresh session with no -r flag; JS predicts the ID for future reconnects
         elif resume and str(resume).lower() != "false":
             gemini_cmd += f" -r {shlex.quote(str(resume))}"
         cmd = ["/bin/sh", "-c", f"{setup_cmd} exec {gemini_cmd}"]

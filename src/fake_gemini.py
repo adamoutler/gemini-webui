@@ -27,13 +27,37 @@ def run_fake_gemini():
     parser.add_argument(
         "--scenario", type=str, default="default", help="Scenario to run"
     )
+    parser.add_argument(
+        "--list-sessions", action="store_true", help="List fake sessions and exit"
+    )
+    parser.add_argument("-r", "--resume", type=int, help="Resume a specific session ID")
     args = parser.parse_args()
+
+    # Hardcoded fake session database (simulates real gemini's session list)
+    valid_sessions = {1: "FakeSessionOne", 3: "AnotherSession"}
+
+    if args.list_sessions:
+        for sid, name in valid_sessions.items():
+            status = "active" if sid == 1 else "paused"
+            sys.stdout.write(f"  {sid}. {name} ({status}) [uuid-fake-{sid}]\n")
+        sys.exit(0)
+
+    if args.resume is not None:
+        if args.resume not in valid_sessions:
+            sys.stderr.write(
+                f"\r\n\033[1;31mError: Session ID {args.resume} not found.\033[0m\r\n"
+            )
+            sys.exit(1)
+        session_name = valid_sessions[args.resume]
+    else:
+        session_name = "New Session"
 
     # Initial Welcome
     sys.stdout.write("\x1b[2J\x1b[H")  # Clear screen and home
     sys.stdout.write("\x1b[1;36m[Fake Gemini v2.0 - High Fidelity Mode]\x1b[0m\r\n")
     sys.stdout.write("Welcome to Fake Gemini\r\n")
     sys.stdout.write(f"\x1b[1;34mScenario: {args.scenario}\x1b[0m\r\n")
+    sys.stdout.write(f"\x1b[1;32mSession: {session_name}\x1b[0m\r\n")
 
     if "GEMINI_WEBUI_HARNESS_ID" not in os.environ:
         sys.stderr.write("\x1b[31m[ERROR] Direct execution blocked.\x1b[0m\r\n")
