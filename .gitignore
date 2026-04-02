@@ -9,3 +9,19 @@ __pycache__/
 docs/qa-images/
 docs/qa/
 \n# Gemini CLI environment file\n.gemini/.env
+
+# Orphaned test/debug scripts
+test_exec_shell.py
+test_filter.py
+test_ssh_bash.py
+test_ssh_env.py
+test_ssh_hang.py
+test_ssh_pty.py
+test_ssh_pty2.py
+test_ssh_pty3.py
+
+# Local SSH keys
+.ssh/
+
+# Local plans (antigravity artifacts)
+plans/
