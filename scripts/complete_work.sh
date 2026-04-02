@@ -221,9 +221,10 @@ echo "  Agent: @reality-checker"
 echo "  (This may take 30-60 seconds...)"
 echo ""
 
+GEMINI_STDERR="/tmp/gemini_stderr_${WORK_ITEM_ID}.log"
 RESULT=$(cat "$TICKET_FILE" | gemini -m "$GEMINI_MODEL" -p \
     "@reality-checker Please verify if work item $TICKET_ID is completed. The developer has provided the required documentation and proof directly in the ticket comments. Read the comments thoroughly. If the evidence is satisfactory, respond with READY. Otherwise, respond with NEEDS WORK." \
-    2>&1)
+    2>"$GEMINI_STDERR")
 GEMINI_EXIT_CODE=$?
 
 # --- Gate: Gemini failure = automatic rejection ---
@@ -232,11 +233,12 @@ if [ $GEMINI_EXIT_CODE -ne 0 ]; then
     echo "║  REJECTED — Reality checker unavailable (exit: $GEMINI_EXIT_CODE)"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo ""
-    echo "Output:"
-    echo "$RESULT"
+    echo "Gemini stderr:"
+    cat "$GEMINI_STDERR"
     echo ""
     echo "This may be a 429 rate limit, service outage, or auth issue."
     echo "The ticket CANNOT be closed without a successful reality check."
+    rm -f "$GEMINI_STDERR"
     exit 1
 fi
 
@@ -246,9 +248,15 @@ if [[ -z "$RESULT" ]]; then
     echo "║  REJECTED — Reality checker returned empty response         ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo ""
+    echo "Gemini stderr:"
+    cat "$GEMINI_STDERR"
+    echo ""
     echo "The ticket CANNOT be closed without a valid reality check response."
+    rm -f "$GEMINI_STDERR"
     exit 1
 fi
+
+rm -f "$GEMINI_STDERR"
 
 # =============================================================================
 # Post QA Comment to Ticket (regardless of verdict)
