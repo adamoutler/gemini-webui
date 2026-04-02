@@ -22,7 +22,7 @@ set -euo pipefail
 
 WORKSPACE="gemwebui"
 API_BASE="https://kanban.hackedyour.info/api/v1/workspaces/${WORKSPACE}"
-GEMINI_MODEL="gemini-2.5-pro"
+GEMINI_MODEL="${GEMINI_MODEL:-}"  # Optional: set env var to override model
 
 # =============================================================================
 # Argument Parsing
@@ -216,14 +216,19 @@ echo "  Evidence file: $TICKET_FILE"
 # =============================================================================
 echo ""
 echo "=== Invoking Reality Checker ==="
-echo "  Model: $GEMINI_MODEL"
+echo "  Model: ${GEMINI_MODEL:-default}"
 echo "  Agent: @reality-checker"
 echo "  (This may take 30-60 seconds...)"
 echo ""
 
+GEMINI_CMD=(gemini)
+if [[ -n "$GEMINI_MODEL" ]]; then
+    GEMINI_CMD+=(-m "$GEMINI_MODEL")
+fi
+
 GEMINI_STDERR="/tmp/gemini_stderr_${WORK_ITEM_ID}.log"
-RESULT=$(cat "$TICKET_FILE" | gemini -m "$GEMINI_MODEL" -p \
-    "@reality-checker Please verify if work item $TICKET_ID is completed. The developer has provided the required documentation and proof directly in the ticket comments. Read the comments thoroughly. If the evidence is satisfactory, respond with READY. Otherwise, respond with NEEDS WORK." \
+RESULT=$(cat "$TICKET_FILE" | "${GEMINI_CMD[@]}" -p \
+    " @reality-checker Please verify if work item $TICKET_ID is completed. The developer has provided the required documentation and proof directly in the ticket comments. Read the comments thoroughly. If the evidence is satisfactory, respond with READY. Otherwise, respond with NEEDS WORK." \
     2>"$GEMINI_STDERR")
 GEMINI_EXIT_CODE=$?
 
