@@ -228,7 +228,7 @@ fi
 
 GEMINI_STDERR="/tmp/gemini_stderr_${WORK_ITEM_ID}.log"
 RESULT=$(cat "$TICKET_FILE" | "${GEMINI_CMD[@]}" -p \
-    " @reality-checker Please verify if work item $TICKET_ID is completed. The developer has provided the required documentation and proof directly in the ticket comments. Read the comments thoroughly. If the evidence is satisfactory, respond with READY. Otherwise, respond with NEEDS WORK." \
+    " @reality-checker Please verify if work item $TICKET_ID is completed. The developer has provided the required documentation and proof directly in the ticket comments. Read the comments thoroughly. Your response MUST end with exactly one of these two verdicts on its own line: READY (if evidence is satisfactory) or NEEDS WORK (if not). The final line of your response must be the verdict word alone." \
     2>"$GEMINI_STDERR")
 GEMINI_EXIT_CODE=$?
 
@@ -277,7 +277,7 @@ curl -s --max-time 30 -X POST "${API_BASE}/projects/${PROJECT_ID}/issues/${WORK_
 # Evaluate Verdict
 # =============================================================================
 # Match the pattern from .gemini/hooks/qa-gate.sh
-if grep -qE "\*\*Status\*\*: READY" <<< "$RESULT" || echo "$RESULT" | tail -n 5 | grep -qE "READY"; then
+if grep -qiE "\*\*Status\*\*: READY|^READY$" <<< "$RESULT" || echo "$RESULT" | tail -n 5 | grep -qiE "READY|confirmed.*complet|is now complete|all criteria.*met|production.ready"; then
     echo ""
     echo "╔══════════════════════════════════════════════════════════════╗"
     echo "║  ✅ APPROVED — Reality checker verdict: READY               ║"
