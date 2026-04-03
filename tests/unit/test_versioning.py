@@ -5,7 +5,7 @@ import json
 def test_version_files_consistency(client):
     # 1. Read VERSION file
     version_file_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "VERSION"
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "VERSION"
     )
     assert os.path.exists(version_file_path), "VERSION file does not exist"
 
@@ -29,7 +29,7 @@ def test_version_files_consistency(client):
     ), f"Version {version} not found in UI response footer"
     # 3. Check manifest.json
     manifest_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
         "src",
         "static",
         "manifest.json",
@@ -45,7 +45,7 @@ def test_version_files_consistency(client):
 
     # 4. Check sw.js
     sw_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
         "src",
         "static",
         "sw.js",

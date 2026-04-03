@@ -11,7 +11,7 @@ def docker_server(test_data_dir):
     import random
 
     port = str(random.randint(10000, 20000))
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     image_name = "gemwebui-test-image"
 
     # 1. build and launch a fresh container

@@ -7,7 +7,7 @@ def test_sw_bypass_logic():
     for /api/, /socket.io/, and /auth/ routes.
     """
     sw_path = os.path.join(
-        os.path.dirname(os.path.dirname(__file__)), "src", "static", "sw.js"
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "src", "static", "sw.js"
     )
     with open(sw_path, "r") as f:
         content = f.read()

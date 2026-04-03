@@ -3,7 +3,7 @@ import sys
 
 # Add src to python path for importing utils
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
-from utils import smart_file_search
+from src.utils import smart_file_search
 
 
 def test_smart_file_search_empty_cache():

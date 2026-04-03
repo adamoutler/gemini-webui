@@ -21,7 +21,7 @@ def custom_server(test_data_dir):
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
 
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     def start_server():

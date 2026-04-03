@@ -7,7 +7,7 @@ def test_manifest_short_name_and_comment():
     Test that manifest.json has the correct short_name.
     """
     manifest_path = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
         "src",
         "static",
         "manifest.json",

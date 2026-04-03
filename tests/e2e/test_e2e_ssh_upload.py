@@ -79,7 +79,7 @@ def ssh_target_container(test_data_dir):
         check=True,
     )
 
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     src_path = os.path.join(project_root, "src")
 
     # Put src dir at /app/src
