@@ -140,8 +140,9 @@ echo "PASS"
 # 3. GitHub Actions pass for current HEAD
 echo -n "  [3/3] GitHub Actions: "
 CURRENT_COMMIT=$(git rev-parse HEAD)
-RUN_JSON=$(gh run list --commit "$CURRENT_COMMIT" --json databaseId,conclusion -q '.[0]')
+RUN_JSON=$(gh run list --commit "$CURRENT_COMMIT" --json databaseId,status,conclusion -q '.[0]')
 RUN_ID=$(echo "$RUN_JSON" | jq -r '.databaseId // empty')
+STATUS=$(echo "$RUN_JSON" | jq -r '.status // empty')
 CONCLUSION=$(echo "$RUN_JSON" | jq -r '.conclusion // empty')
 
 if [[ -z "$RUN_ID" || "$RUN_ID" == "null" ]]; then
@@ -152,14 +153,25 @@ if [[ -z "$RUN_ID" || "$RUN_ID" == "null" ]]; then
     exit 1
 fi
 
-if [[ "$CONCLUSION" != "success" ]]; then
+if [[ "$STATUS" == "in_progress" || "$STATUS" == "queued" || "$STATUS" == "waiting" || "$STATUS" == "pending" ]]; then
+    echo "WAITING"
+    echo "  Waiting for GitHub Actions run $RUN_ID to complete..."
+    # gh run watch exits 0 on success, non-zero on failure or cancellation
+    if ! gh run watch "$RUN_ID" --exit-status >/dev/null; then
+        echo ""
+        echo "ERROR: GitHub Actions run $RUN_ID failed after waiting."
+        exit 1
+    fi
+    echo "  [3/3] GitHub Actions: PASS (run $RUN_ID)"
+elif [[ "$CONCLUSION" != "success" ]]; then
     echo "FAIL"
     echo ""
-    echo "ERROR: GitHub Actions run $RUN_ID did not succeed (status: $CONCLUSION)."
+    echo "ERROR: GitHub Actions run $RUN_ID did not succeed (conclusion: $CONCLUSION)."
     echo "Please fix the build before attempting to close the ticket."
     exit 1
+else
+    echo "PASS (run $RUN_ID)"
 fi
-echo "PASS (run $RUN_ID)"
 
 # Capture full run details for the reality checker
 GH_RUN_VIEW=$(gh run view "$RUN_ID")
