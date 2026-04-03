@@ -25,12 +25,13 @@ def test_api_health(client):
 
 
 def test_api_hosts_lifecycle(client):
-    # 1. List initial hosts
+    # 1. List initial hosts (may have more than 1 if other tests added hosts)
     response = client.get("/api/hosts")
     assert response.status_code == 200
     hosts = json.loads(response.data)
-    assert len(hosts) == 1
-    assert hosts[0]["label"] == "local"
+    initial_count = len(hosts)
+    assert initial_count >= 1
+    assert any(h["label"] == "local" for h in hosts)
 
     # 2. Add a new host
     new_host = {
