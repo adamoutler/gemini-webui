@@ -135,7 +135,7 @@ def csrf_enabled_server_csrf(test_data_dir):
     env["ALLOWED_ORIGINS"] = "*"
     env["DATA_DIR"] = str(test_data_dir)
 
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     proc = subprocess.Popen(

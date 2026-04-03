@@ -2,12 +2,12 @@ import pytest
 from unittest.mock import patch, MagicMock
 
 # We will need to implement SSHConnectionManager in src/process_manager.py
-from src.process_manager import SSHConnectionManager, build_ssh_args
+from src.process_manager import SSHConnectionManager, build_ssh_args, SSH_SOCKET_DIR
 
 
 def test_get_socket_path():
     path = SSHConnectionManager.get_socket_path("user", "host", 22)
-    assert "/tmp/gemini_ssh_mux" in path
+    assert str(SSH_SOCKET_DIR) in path
     assert "user@host:22.sock" in path
 
 

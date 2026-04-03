@@ -71,7 +71,7 @@ done
     env["SKIP_MONKEY_PATCH"] = "false"
     env["SKIP_MULTIPLEXER"] = "true"
 
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     log_file = open(os.path.join(str(data_dir), "server.log"), "w")

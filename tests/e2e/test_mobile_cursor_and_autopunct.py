@@ -1,7 +1,7 @@
 import pytest
 from playwright.sync_api import expect, sync_playwright
 import time
-from tests.playwright_mobile_utils import (
+from tests.utils.playwright_mobile_utils import (
     simulateAutocorrect,
     simulateSpacebarTrackpad
 )

@@ -10,12 +10,42 @@ import shlex
 import subprocess
 import time
 
-SSH_SOCKET_DIR = Path("/tmp/gemini_ssh_mux")
-try:
-    SSH_SOCKET_DIR.mkdir(parents=True, exist_ok=True)
-    os.chmod(SSH_SOCKET_DIR, 0o700)
-except Exception:
-    pass
+def _get_ssh_socket_dir():
+    """Get SSH socket directory, preferring XDG_RUNTIME_DIR for security.
+
+    Uses /run/user/$UID/ (tmpfs, per-user, mode 0700 by default) when available,
+    falling back to /tmp/gemini_ssh_mux for environments without it (e.g. Docker).
+    """
+    # Prefer XDG_RUNTIME_DIR (e.g. /run/user/1000/) — already per-user, tmpfs, 0700
+    xdg_runtime = os.environ.get("XDG_RUNTIME_DIR")
+    if xdg_runtime and os.path.isdir(xdg_runtime):
+        candidate = Path(xdg_runtime) / "gemini_ssh_mux"
+    else:
+        # Fallback: try /run/user/$UID
+        uid = os.getuid()
+        run_user_dir = Path(f"/run/user/{uid}")
+        if run_user_dir.is_dir():
+            candidate = run_user_dir / "gemini_ssh_mux"
+        else:
+            # Final fallback for Docker/containers without /run/user
+            candidate = Path("/tmp/gemini_ssh_mux")
+
+    try:
+        candidate.mkdir(parents=True, exist_ok=True)
+        os.chmod(candidate, 0o700)
+    except Exception:
+        # If preferred dir fails, fall back to /tmp
+        candidate = Path("/tmp/gemini_ssh_mux")
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            os.chmod(candidate, 0o700)
+        except Exception:
+            pass
+
+    return candidate
+
+
+SSH_SOCKET_DIR = _get_ssh_socket_dir()
 
 
 class SSHConnectionManager:
