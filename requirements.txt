@@ -4,3 +4,5 @@ eventlet==0.35.1
 ldap3==2.9.1
 flask-talisman==1.1.0
 Flask-WTF==1.2.1
+flask-smorest==0.42.3
+marshmallow==3.20.1

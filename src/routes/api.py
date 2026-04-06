@@ -7,6 +7,7 @@ import json
 import zipfile
 import shlex
 import logging
+import secrets
 from flask import Blueprint, jsonify, request, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import generate_csrf
@@ -37,6 +38,44 @@ def update_config():
     with open(config_file, "w") as f:
         json.dump(curr_conf, f, indent=4)
     return jsonify({"status": "success"})
+
+
+@api_bp.route("/api/management/api-keys", methods=["GET"])
+@authenticated_only
+def list_api_keys():
+    conf = get_config()
+    return jsonify(conf.get("API_KEYS", []))
+
+
+@api_bp.route("/api/management/api-keys", methods=["POST"])
+@authenticated_only
+def create_api_key():
+    new_key = secrets.token_hex(32)
+    curr_conf = get_config()
+    api_keys = curr_conf.get("API_KEYS", [])
+    api_keys.append(new_key)
+    curr_conf["API_KEYS"] = api_keys
+
+    _, config_file, _ = get_config_paths()
+    with open(config_file, "w") as f:
+        json.dump(curr_conf, f, indent=4)
+
+    return jsonify({"status": "success", "key": new_key})
+
+
+@api_bp.route("/api/management/api-keys/<key>", methods=["DELETE"])
+@authenticated_only
+def delete_api_key(key):
+    curr_conf = get_config()
+    api_keys = curr_conf.get("API_KEYS", [])
+    if key in api_keys:
+        api_keys.remove(key)
+        curr_conf["API_KEYS"] = api_keys
+        _, config_file, _ = get_config_paths()
+        with open(config_file, "w") as f:
+            json.dump(curr_conf, f, indent=4)
+        return jsonify({"status": "success"})
+    return jsonify({"status": "error", "message": "Key not found"}), 404
 
 
 @api_bp.route("/api/settings/export", methods=["GET"])

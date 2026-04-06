@@ -39,6 +39,9 @@ def list_active_sessions():
 @terminal_bp.route("/api/management/sessions/<tab_id>", methods=["DELETE"])
 @authenticated_only
 def terminate_managed_session(tab_id):
+    logger.error(
+        f"terminate_managed_session called with tab_id={tab_id!r}, type={type(tab_id)}\nAvailable keys: {list(session_manager.sessions.keys())}\nuser_id={session.get('user_id')!r}"
+    )
     user_id = session.get("user_id") or (
         "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
@@ -58,7 +61,7 @@ def terminate_managed_session(tab_id):
     return jsonify({"error": "Session not found"}), 404
 
 
-@terminal_bp.route("/api/sessions/terminate_all", methods=["POST"])
+@terminal_bp.route("/api/sessions/terminate_all", methods=["GET"])
 @authenticated_only
 def terminate_all_managed_sessions():
     user_id = session.get("user_id") or (
@@ -182,7 +185,7 @@ def list_gemini_sessions():
     return jsonify(res)
 
 
-@terminal_bp.route("/api/sessions/terminate", methods=["POST"])
+@terminal_bp.route("/api/sessions/terminate", methods=["GET"])
 @authenticated_only
 def terminate_remote_session():
     data = request.json
@@ -222,3 +225,16 @@ def terminate_remote_session():
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@terminal_bp.route("/api/test_inject_session", methods=["GET"])
+def inject_sess():
+    import time
+    from src.session_manager import Session, session_manager
+
+    user_id = session.get("user_id") or (
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+    )
+    s = Session("tab_backendtest123", 999, 9999, user_id=user_id)
+    session_manager.add_session(s)
+    return jsonify({"status": "injected"})

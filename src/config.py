@@ -76,7 +76,15 @@ class EnvConfig:
 
     @property
     def PORT(self):
-        return int(os.environ.get("PORT", 5000))
+        return int(os.environ.get("PORT", 5001))
+
+    @property
+    def UI_PORT(self):
+        return int(os.environ.get("UI_PORT", self.PORT))
+
+    @property
+    def API_PORT(self):
+        return int(os.environ.get("API_PORT", 5002))
 
     @property
     def SECRET_KEY(self):

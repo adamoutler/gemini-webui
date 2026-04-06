@@ -77,6 +77,28 @@
       ></div>
     </div>
     <div id="tab-bar"></div>
+    <div id="install-banner" class="install-banner" style="display: none">
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="font-size: 16px">📱</span>
+        <span
+          >Organize your sessions! Install GemWebUI as an app for a better,
+          focused experience.</span
+        >
+      </div>
+      <button
+        onclick="dismissInstallBanner()"
+        style="
+          background: none;
+          border: none;
+          color: white;
+          cursor: pointer;
+          font-size: 20px;
+          padding: 0 5px;
+        "
+      >
+        &times;
+      </button>
+    </div>
     <div id="terminal-container"></div>
     <div id="mobile-controls" style="display: none">
       <div class="control-btn holdable" data-cmd="\x1b">Esc</div>
@@ -745,6 +767,48 @@
             onclick="submitQuickAddKey()"
           >
             Save Key & Connect
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="add-prompt-modal" class="modal">
+      <div class="modal-content">
+        <span
+          onclick="closeAddPromptModal()"
+          style="
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            opacity: 0.7;
+          "
+          >×</span
+        >
+        <h2 style="margin-top: 0">Add Prompt</h2>
+        <div
+          style="
+            background: #2a2d2e;
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 15px;
+          "
+        >
+          <h4 style="margin: 0 0 10px 0; font-size: 13px">Name</h4>
+          <input
+            type="text"
+            id="new-prompt-name"
+            placeholder="Prompt Name"
+            style="margin-bottom: 15px"
+          />
+          <h4 style="margin: 0 0 10px 0; font-size: 13px">Prompt</h4>
+          <textarea
+            id="new-prompt-text"
+            placeholder="Enter prompt text here..."
+            style="height: 100px; margin-bottom: 15px"
+          ></textarea>
+          <button class="primary" style="width: 100%" onclick="saveNewPrompt()">
+            Save Prompt
           </button>
         </div>
       </div>

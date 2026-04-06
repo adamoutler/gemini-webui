@@ -181,6 +181,7 @@ class WordBoundaryRule extends InputRule {
   constructor() {
     super();
     this.boundaryRegex = /[\s.,?!;\-—，。？！；]/;
+    this.canDoubleSpacePeriod = false;
   }
   handleEvent(event, context) {
     if (event.type === "input") {
@@ -200,10 +201,13 @@ class WordBoundaryRule extends InputRule {
         }
 
         if (input.value === "  ") {
-          // Manually handle double-space to period because OS requires word context
-          context.emitToTerminal(".");
-          input.value = " ";
-          return true;
+          if (this.canDoubleSpacePeriod) {
+            // Manually handle double-space to period because OS requires word context
+            context.emitToTerminal(".");
+            input.value = " ";
+            this.canDoubleSpacePeriod = false;
+            return true;
+          }
         }
 
         let toEmit = input.value;
@@ -224,7 +228,13 @@ class WordBoundaryRule extends InputRule {
           }
         }
 
-        if (toEmit) context.emitToTerminal(toEmit);
+        if (toEmit) {
+          context.emitToTerminal(toEmit);
+          // If the emitted text doesn't end with a boundary, a double-space can trigger a period.
+          this.canDoubleSpacePeriod = !this.boundaryRegex.test(
+            toEmit.slice(-1),
+          );
+        }
         input.value = toKeep;
         return true;
       }
@@ -283,9 +293,15 @@ class MobileModifierState {
         }
         if (e.type === "touchstart" || e.type === "mousedown") {
           if (window.triggerHapticFeedback) window.triggerHapticFeedback();
+          // Focus immediately on touchstart/mousedown to ensure keyboard pops up
+          const activeProxy = document.querySelector(".mobile-text-area");
+          if (activeProxy) {
+            activeProxy.focus();
+          }
         }
         if (e.type === "touchend" || e.type === "mousedown") {
           toggleFn();
+          // Re-focus on touchend to be absolutely sure
           const activeProxy = document.querySelector(".mobile-text-area");
           if (activeProxy) {
             activeProxy.focus();

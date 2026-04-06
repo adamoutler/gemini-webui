@@ -47,6 +47,7 @@ from flask_socketio import SocketIO, ConnectionRefusedError
 from flask_talisman import Talisman
 from flask_wtf.csrf import CSRFProtect, CSRFError, generate_csrf
 from werkzeug.middleware.proxy_fix import ProxyFix
+from flask_smorest import Api
 
 try:
     from auth_ldap import check_auth
@@ -817,7 +818,6 @@ def pty_restart(data):
                 break
 
     if is_fake:
-        os.environ["GEMINI_WEBUI_HARNESS_ID"] = tab_id
         env_vars["GEMINI_WEBUI_HARNESS_ID"] = tab_id
         ssh_target = None
         gemini_bin_override = GEMINI_BIN  # not used if executable_override is set
@@ -847,14 +847,15 @@ def pty_restart(data):
     (child_pid, fd) = pty.fork()
     if child_pid == 0:
         os.closerange(3, 65536)
-        os.environ["TERM"] = "xterm-256color"
-        os.environ["COLORTERM"] = "truecolor"
-        os.environ["FORCE_COLOR"] = "3"
+        env = os.environ.copy()
+        env["TERM"] = "xterm-256color"
+        env["COLORTERM"] = "truecolor"
+        env["FORCE_COLOR"] = "3"
 
         if is_fake:
-            os.environ["GEMINI_WEBUI_HARNESS_ID"] = tab_id
+            env["GEMINI_WEBUI_HARNESS_ID"] = tab_id
 
-        os.execvp(cmd[0], cmd)
+        os.execvpe(cmd[0], cmd, env)
         os._exit(0)
     else:
         # Parent process: track pid and create a new session
@@ -897,6 +898,74 @@ def pty_restart(data):
             else "\x1b[2mLoading Context...\x1b[0m\r\n"
         )
         socketio.emit("pty-output", {"output": initial_msg}, room=sid)
+
+        # Background task to discover and assign the real session ID
+        if resume == "new":
+
+            def discover_session_id(t_id, s_target, s_dir, s_id):
+                import time
+                import os
+                import re
+
+                from src.process_manager import fetch_sessions_for_host
+
+                # Wait for the session to register in the CLI
+                max_attempts = 10
+                for attempt in range(max_attempts):
+                    socketio.sleep(1.5)  # Wait for CLI to initialize
+                    try:
+                        _, _, ssh_dir_path = get_config_paths()
+                        res = fetch_sessions_for_host(
+                            {
+                                "target": s_target,
+                                "dir": s_dir,
+                                "type": "ssh" if s_target else "local",
+                            },
+                            ssh_dir_path,
+                            GEMINI_BIN,
+                        )
+                        output = res.get("output", "")
+                        sessions = []
+                        for line in output.split("\n"):
+                            match = re.search(
+                                r"^\s*(\d+)\.\s+(.*?)\s+\((.*?)\)\s+\[(.*?)\]", line
+                            )
+                            if match:
+                                sessions.append(
+                                    {"id": match.group(1), "uuid": match.group(4)}
+                                )
+
+                        found_id = None
+                        for s in sessions:
+                            if s.get("uuid") == t_id:
+                                found_id = s["id"]
+                                break
+
+                        if not found_id and sessions:
+                            # Fallback to highest ID if no UUID match
+                            try:
+                                found_id = max(int(s["id"]) for s in sessions)
+                            except (ValueError, TypeError):
+                                pass
+
+                        if found_id:
+                            logger.info(
+                                f"Discovered session ID {found_id} for tab {t_id}"
+                            )
+                            socketio.emit(
+                                "session_assigned",
+                                {"tab_id": t_id, "session_id": found_id},
+                                room=s_id,
+                            )
+                            return
+                    except Exception as e:
+                        logger.error(f"Error in session discovery: {e}")
+
+                logger.warning(f"Failed to discover session ID for tab {t_id}")
+
+            socketio.start_background_task(
+                discover_session_id, tab_id, ssh_target, ssh_dir, sid
+            )
 
 
 @socketio.on("get_management_sessions")
