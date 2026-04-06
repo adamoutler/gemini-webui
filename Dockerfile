@@ -34,8 +34,9 @@ COPY . .
 # Set environment variables for Gemini
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV GEMINI_HOME=/home/node/.gemini
-# Expose the Flask port
+# Expose the Flask port and documentation port
 EXPOSE 5000
+EXPOSE 5002
 
 # Create a non-root user and data directory
 RUN useradd -m -u 1000 node && \

@@ -10,6 +10,7 @@ import shlex
 import subprocess
 import time
 
+
 def _get_ssh_socket_dir():
     """Get SSH socket directory, preferring XDG_RUNTIME_DIR for security.
 
@@ -224,7 +225,8 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
         # Use workspace for local session listing to match startSession
         data_dir = env_config.DATA_DIR
         work_dir = os.path.join(data_dir, "workspace")
-        if os.path.exists(work_dir):
+        # In fake/test mode, we don't cd to workspace because the mock bin is often a relative path
+        if os.path.exists(work_dir) and not os.environ.get("GEMWEBUI_HARNESS"):
             cmd = [
                 "/bin/sh",
                 "-c",

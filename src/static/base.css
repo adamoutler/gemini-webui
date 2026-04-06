@@ -37,6 +37,19 @@ body {
   flex-shrink: 0;
 }
 
+.install-banner {
+  background-color: #2472c8;
+  color: white;
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  z-index: 1000;
+  border-bottom: 1px solid rgb(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
 .tab {
   padding: 8px 12px;
   background-color: #333;

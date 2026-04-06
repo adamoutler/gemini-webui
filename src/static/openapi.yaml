@@ -1,0 +1,172 @@
+openapi: 3.0.3
+info:
+  title: Gemini WebUI External API
+  description: External API for managing Gemini sessions and querying host states.
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Main API server
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: "Invalid JSON payload"
+
+    SessionCreateRequest:
+      type: object
+      required:
+        - host_id
+        - prompt
+      properties:
+        host_id:
+          type: string
+          description: The unique label of the target host.
+          example: local
+        prompt:
+          type: string
+          description: The prompt or command to be executed by Gemini.
+          example: "help"
+
+    SessionCreateResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            stdout:
+              type: string
+              example: "Gemini output..."
+            stderr:
+              type: string
+              example: ""
+
+    SessionCreateErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: error
+        message:
+          type: string
+          example: "Gemini command failed"
+        stdout:
+          type: string
+          example: "partial output"
+          nullable: true
+        stderr:
+          type: string
+          example: "error message from command"
+          nullable: true
+
+    HostStatesResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: success
+        data:
+          type: object
+          properties:
+            sessions:
+              type: string
+              description: Textual representation of current sessions as returned by gemini -l.
+              example: "  1. help (active)\n"
+            timestamp:
+              type: number
+              description: Unix timestamp of the state capture.
+              example: 1672531200
+
+security:
+  - BearerAuth: []
+
+paths:
+  /sessions/create:
+    post:
+      summary: Create a new session with a given prompt
+      description: Executes the Gemini binary with the provided prompt on the specified host. This is a blocking call.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SessionCreateRequest"
+      responses:
+        "200":
+          description: Successful execution
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionCreateResponse"
+        "400":
+          description: Invalid request payload or missing parameters
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Missing or invalid Bearer token
+        "404":
+          description: Host not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Gemini command failed or server-side exception
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionCreateErrorResponse"
+        "504":
+          description: Gemini command timed out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /hosts/{host_id}/states:
+    get:
+      summary: Retrieve current states (sessions) of a given host
+      description: Returns a list of active and background sessions for the specified host by running gemini -l.
+      parameters:
+        - name: host_id
+          in: path
+          required: true
+          description: The label of the host to query.
+          schema:
+            type: string
+          example: local
+      responses:
+        "200":
+          description: Successfully retrieved host states
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostStatesResponse"
+        "401":
+          description: Missing or invalid Bearer token
+        "404":
+          description: Host not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          description: Internal server error or failure to fetch sessions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

@@ -3,12 +3,56 @@ import sys
 import os
 import json
 
-STATE_FILE = "gemini_mock_state.json"
+data_dir = os.environ.get("DATA_DIR", ".")
+work_dir = os.path.join(data_dir, "workspace") if data_dir != "." else "."
+if not os.path.exists(work_dir) and work_dir != ".":
+    try:
+        os.makedirs(work_dir, exist_ok=True)
+    except Exception:
+        work_dir = "."
+
+STATE_FILE = os.path.join(work_dir, "gemini_mock_state.json")
+SESSIONS_FILE = os.path.join(work_dir, "gemini_mock_sessions.json")
+
+
+def get_sessions():
+    if os.path.exists(SESSIONS_FILE):
+        try:
+            with open(SESSIONS_FILE, "r") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return [1]
+
 
 if "--list-sessions" in sys.argv:
-    print("Available sessions for this project (1):")
-    print("  1. Mock Session (Just now) [mock-uuid]")
+    sessions = get_sessions()
+    print(f"Available sessions for this project ({len(sessions)}):")
+    for sid in sessions:
+        # Check for a saved UUID for this session ID
+        uuid_file = os.path.join(work_dir, f"gemini_mock_uuid_{sid}.json")
+        if os.path.exists(uuid_file):
+            with open(uuid_file, "r") as f:
+                saved_uuid = f.read().strip()
+        else:
+            saved_uuid = f"mock-uuid-{sid}"
+        print(f"  {sid}. Mock Session (Just now) [{saved_uuid}]")
     sys.exit(0)
+
+# Simulate session creation if not resuming
+if "-r" not in sys.argv and "--list-sessions" not in sys.argv:
+    sessions = get_sessions()
+    new_id = max(sessions) + 1 if sessions else 1
+    sessions.append(new_id)
+    with open(SESSIONS_FILE, "w") as f:
+        json.dump(sessions, f)
+    # Save the UUID if provided
+    harness_id = os.environ.get("GEMINI_WEBUI_HARNESS_ID")
+    if harness_id:
+        uuid_file = os.path.join(work_dir, f"gemini_mock_uuid_{new_id}.json")
+        with open(uuid_file, "w") as f:
+            f.write(harness_id)
+
 
 print(
     "Welcome to Fake \x1b[38;5;33mG\x1b[38;5;39me\x1b[38;5;45mm\x1b[38;5;51mi\x1b[38;5;87mn\x1b[38;5;123mi\x1b[0m"

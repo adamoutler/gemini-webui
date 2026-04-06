@@ -935,8 +935,10 @@ async function terminateBackendSession(launcherTabId, tabId) {
             ?.getAttribute("content") || "",
       },
     });
-    if (response.ok) {
-      const row = document.getElementById(`managed-session-${tabId}`);
+    if (response.ok || response.status === 404) {
+      const row = document.getElementById(
+        `managed-session-${launcherTabId}-${tabId}`,
+      );
       if (row) row.remove();
       // Optional: refresh from backend to ensure consistent state
       refreshBackendSessionsList(launcherTabId);
@@ -1292,42 +1294,48 @@ function startSession(
   container.appendChild(termDiv);
 
   if (!isMobile) {
-    termDiv.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-      if (typeof initDesktopContextMenu === "function") {
-        initDesktopContextMenu();
-      }
-      const desktopContextMenu = document.getElementById(
-        "desktop-context-menu",
-      );
-      if (desktopContextMenu) {
-        if (tab.term && tab.term.hasSelection()) {
-          desktopContextMenu.querySelector("#ctx-copy").style.display = "block";
-        } else {
-          desktopContextMenu.querySelector("#ctx-copy").style.display = "none";
+    termDiv.addEventListener(
+      "contextmenu",
+      (e) => {
+        e.preventDefault();
+        if (typeof initDesktopContextMenu === "function") {
+          initDesktopContextMenu();
         }
+        const desktopContextMenu = document.getElementById(
+          "desktop-context-menu",
+        );
+        if (desktopContextMenu) {
+          if (tab.term && tab.term.hasSelection()) {
+            desktopContextMenu.querySelector("#ctx-copy").style.display =
+              "block";
+          } else {
+            desktopContextMenu.querySelector("#ctx-copy").style.display =
+              "none";
+          }
 
-        desktopContextMenu.style.display = "block";
+          desktopContextMenu.style.display = "block";
 
-        let x = e.pageX;
-        let y = e.pageY;
+          let x = e.pageX;
+          let y = e.pageY;
 
-        // Render off-screen initially or just set and fix
-        desktopContextMenu.style.left = x + "px";
-        desktopContextMenu.style.top = y + "px";
+          // Render off-screen initially or just set and fix
+          desktopContextMenu.style.left = x + "px";
+          desktopContextMenu.style.top = y + "px";
 
-        // Adjust if it goes off screen
-        const rect = desktopContextMenu.getBoundingClientRect();
-        if (x + rect.width > window.innerWidth) {
-          desktopContextMenu.style.left =
-            window.innerWidth - rect.width - 5 + "px";
+          // Adjust if it goes off screen
+          const rect = desktopContextMenu.getBoundingClientRect();
+          if (x + rect.width > window.innerWidth) {
+            desktopContextMenu.style.left =
+              window.innerWidth - rect.width - 5 + "px";
+          }
+          if (y + rect.height > window.innerHeight) {
+            desktopContextMenu.style.top =
+              window.innerHeight - rect.height - 5 + "px";
+          }
         }
-        if (y + rect.height > window.innerHeight) {
-          desktopContextMenu.style.top =
-            window.innerHeight - rect.height - 5 + "px";
-        }
-      }
-    });
+      },
+      true,
+    );
   }
 
   tab.term = new Terminal({
@@ -1764,38 +1772,6 @@ function startSession(
     });
     tab.shouldReclaim = true; // All subsequent reconnects should attempt reclaim
 
-    if (tab.session.resume === "new") {
-      // Predict the next session ID based on the current cache immediately
-      try {
-        const params = {};
-        if (target) params.ssh_target = target;
-        if (dir) params.ssh_dir = dir;
-        params.cache = true; // Force use cache so it's instant
-        params.bg = true; // Don't trigger a foreground fetch if cache is empty
-
-        getGlobalSocket().emit("get_sessions", params, (response) => {
-          if (response && response.output) {
-            const sessions = parseSessions(response.output);
-            let maxId = 0;
-            sessions.forEach((s) => {
-              const id = parseInt(s.id);
-              if (id > maxId) maxId = id;
-            });
-            // The new session will have maxId + 1
-            const predictedId = maxId + 1;
-            tab.session.resume = predictedId.toString();
-            saveTabsToStorage();
-            localStorage.setItem("geminiResume", predictedId.toString());
-          } else {
-            // If no sessions, first session will typically be 1 or unnumbered
-            tab.session.resume = true;
-          }
-        });
-      } catch (e) {
-        console.error("Failed to predict resume ID:", e);
-      }
-    }
-
     setTimeout(() => {
       fitTerminal(tab);
       tab.term.focus();
@@ -1864,6 +1840,14 @@ function startSession(
       "\r\n\x1b[1;31m[Reconnection failed. Will keep trying...]\x1b[0m\r\n",
     );
     tab.socket.connect();
+  });
+
+  tab.socket.on("session_assigned", (data) => {
+    if (data.tab_id === tab.id && tab.session.resume === "new") {
+      tab.session.resume = data.session_id.toString();
+      saveTabsToStorage();
+      localStorage.setItem("geminiResume", data.session_id.toString());
+    }
   });
 
   tab.socket.on("pty-output", (data) => {
@@ -3532,4 +3516,71 @@ function initDesktopContextMenu() {
       menu.style.display = "none";
     }
   });
+}
+
+// --- Installation Recommendation Banner ---
+function checkInstallationStatus() {
+  // Check if running as a standalone app (installed PWA)
+  const isInstalled =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.navigator.standalone ||
+    document.referrer.includes("android-app://");
+
+  const isDismissed =
+    localStorage.getItem("install_banner_dismissed") === "true";
+
+  if (!isInstalled && !isDismissed) {
+    const banner = document.getElementById("install-banner");
+    if (banner) banner.style.display = "flex";
+  }
+}
+
+function dismissInstallBanner() {
+  const banner = document.getElementById("install-banner");
+  if (banner) banner.style.display = "none";
+  localStorage.setItem("install_banner_dismissed", "true");
+}
+
+// Run the check on load
+document.addEventListener("DOMContentLoaded", checkInstallationStatus);
+// Also run it immediately in case DOMContentLoaded already fired
+if (
+  document.readyState === "complete" ||
+  document.readyState === "interactive"
+) {
+  checkInstallationStatus();
+}
+
+// --- Add Prompt Modal ---
+function openAddPromptModal() {
+  document.getElementById("new-prompt-name").value = "";
+  document.getElementById("new-prompt-text").value = "";
+  document.getElementById("add-prompt-modal").style.display = "block";
+}
+
+function closeAddPromptModal() {
+  document.getElementById("add-prompt-modal").style.display = "none";
+}
+
+function saveNewPrompt() {
+  const name = document.getElementById("new-prompt-name").value.trim();
+  const text = document.getElementById("new-prompt-text").value.trim();
+
+  if (!name || !text) {
+    alert("Please provide both a name and a prompt.");
+    return;
+  }
+
+  let prompts = [];
+  try {
+    prompts = JSON.parse(localStorage.getItem("custom_prompts")) || [];
+  } catch (e) {
+    prompts = [];
+  }
+
+  prompts.push({ name, text });
+  localStorage.setItem("custom_prompts", JSON.stringify(prompts));
+
+  closeAddPromptModal();
+  alert("Prompt saved successfully.");
 }
