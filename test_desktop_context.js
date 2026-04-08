@@ -8,7 +8,7 @@ const { chromium } = require("playwright");
   const page = await context.newPage();
 
   console.log("Navigating...");
-  await page.goto("http://127.0.0.1:5001/");
+  await page.goto("http://127.0.0.1:5000/");
 
   await page.waitForTimeout(1000);
 

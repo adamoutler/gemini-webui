@@ -17,6 +17,7 @@ services:
       - LDAP_BIND_PASS=${LDAP_BIND_PASS}
       - LDAP_AUTHORIZED_GROUP=${LDAP_AUTHORIZED_GROUP}
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - PORT=5000
       - PYTHONDONTWRITEBYTECODE=1
     volumes:
       - data:/data

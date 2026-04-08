@@ -1013,10 +1013,17 @@ def register_blueprints(app_instance):
 if __name__ == "__main__":
     init_app()
     if not app.config.get("TESTING"):
-        socketio.start_background_task(read_and_forward_pty_output)
-        socketio.start_background_task(cleanup_orphaned_ptys)
-        if not env_config.SKIP_PRELOADER:
-            socketio.start_background_task(background_session_preloader)
+        # When using Flask's reloader, this block is executed twice:
+        # once by the reloader process and once by the worker process.
+        # We only want to start background tasks in the worker process.
+        if (
+            os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+            or not env_config.FLASK_USE_RELOADER
+        ):
+            socketio.start_background_task(read_and_forward_pty_output)
+            socketio.start_background_task(cleanup_orphaned_ptys)
+            if not env_config.SKIP_PRELOADER:
+                socketio.start_background_task(background_session_preloader)
 
     debug_mode = env_config.FLASK_DEBUG
     use_reloader = env_config.FLASK_USE_RELOADER

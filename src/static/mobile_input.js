@@ -824,31 +824,15 @@ class MobileTerminalController {
             const file = item.getAsFile();
             if (!file) continue;
 
-            const formData = new FormData();
-            const ext = item.type.split("/")[1] || "png";
-            formData.append(
-              "file",
-              file,
-              file.name || `pasted-image-${Date.now()}.${ext}`,
-            );
-
-            try {
-              const csrfToken = document
-                .querySelector('meta[name="csrf-token"]')
-                ?.getAttribute("content");
-              const response = await fetch("/api/upload", {
-                method: "POST",
-                headers: csrfToken ? { "X-CSRFToken": csrfToken } : {},
-                body: formData,
-              });
-              if (!response.ok)
-                throw new Error("Upload failed: " + response.statusText);
-              const data = await response.json();
-              this.emitToTerminal(`> I uploaded @${data.filename}\r`);
-            } catch (error) {
-              console.error("Paste upload error:", error);
+            if (typeof uploadPastedImage === "function") {
+              await uploadPastedImage(
+                file,
+                this.tab,
+                this.emitToTerminal.bind(this),
+              );
+            } else {
               this.emitToTerminal(
-                `\r\n\x1b[31m[Error] Failed to upload pasted image: ${error.message}\x1b[0m\r\n`,
+                `\r\n\x1b[31m[Error] uploadPastedImage function not available.\x1b[0m\r\n`,
               );
             }
           }

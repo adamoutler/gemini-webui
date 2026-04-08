@@ -3177,6 +3177,51 @@ function copyShareLink() {
   copyToClipboard(linkInput.value);
 }
 
+async function uploadPastedImage(file, tab, terminalEmitCallback) {
+  const formData = new FormData();
+  const ext = file.type ? file.type.split("/")[1] || "png" : "png";
+  formData.append(
+    "file",
+    file,
+    file.name || `pasted-image-${Date.now()}.${ext}`,
+  );
+
+  if (tab && tab.session && tab.session.type === "ssh") {
+    if (!tab.session.ssh_target) {
+      terminalEmitCallback(
+        "\r\n\x1b[31m[Error] SSH target is missing from session state! Upload cannot proceed.\x1b[0m\r\n",
+      );
+      return;
+    }
+    formData.append("ssh_target", tab.session.ssh_target);
+    if (tab.session.ssh_dir) {
+      formData.append("ssh_dir", tab.session.ssh_dir);
+    }
+  }
+
+  try {
+    const csrfToken =
+      document
+        .querySelector('meta[name="csrf-token"]')
+        ?.getAttribute("content") || "";
+    // Using standard fetch with CSRF header to ensure compatibility
+    const response = await fetch("/api/upload", {
+      method: "POST",
+      headers: csrfToken ? { "X-CSRFToken": csrfToken } : {},
+      body: formData,
+    });
+
+    if (!response.ok) throw new Error("Upload failed: " + response.statusText);
+    const data = await response.json();
+    terminalEmitCallback(`> I uploaded @${data.filename}\r`);
+  } catch (error) {
+    console.error("Paste upload error:", error);
+    terminalEmitCallback(
+      `\r\n\x1b[31m[Error] Failed to upload pasted image: ${error.message}\x1b[0m\r\n`,
+    );
+  }
+}
+
 async function uploadWorkspaceFile() {
   const fileInput = document.getElementById("workspace-upload-file");
   if (!fileInput.files.length) return alert("Please select a file to upload");
