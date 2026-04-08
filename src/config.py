@@ -76,7 +76,7 @@ class EnvConfig:
 
     @property
     def PORT(self):
-        return int(os.environ.get("PORT", 5001))
+        return int(os.environ.get("PORT", 5000))
 
     @property
     def UI_PORT(self):
