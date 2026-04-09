@@ -41,6 +41,28 @@
   background: #f14c4c;
 }
 
+.control-btn-group {
+  display: flex;
+  width: 100%;
+}
+
+.control-btn-group .control-btn {
+  flex: 1;
+  padding: 8px 0;
+  min-width: 0; /* Ensures buttons don't overflow the flex container */
+}
+
+.control-btn-group .control-btn.left {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-right: none;
+}
+
+.control-btn-group .control-btn.right {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
 /* Absolute Proxy Momentum Strategy */
 .mobile-scroll-proxy {
   position: absolute;
