@@ -102,8 +102,11 @@
     <div id="terminal-container"></div>
     <div id="mobile-controls" style="display: none">
       <div class="control-btn holdable" data-cmd="\x1b">Esc</div>
-      <div class="control-btn holdable" data-func-adjust="1">A+</div>
-      <div class="control-btn holdable" data-func-adjust="-1">A-</div>
+      <div class="control-btn holdable" data-cmd="\x1bz">Super</div>
+      <div class="control-btn-group">
+        <div class="control-btn holdable left" data-func-adjust="-1">A-</div>
+        <div class="control-btn holdable right" data-func-adjust="1">A+</div>
+      </div>
       <div class="control-btn holdable" data-cmd="\x1b[A">▲</div>
       <div class="control-btn holdable" data-cmd="\t">Tab</div>
       <div class="control-btn holdable" data-cmd="\x1b[H">Home</div>
