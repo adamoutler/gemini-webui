@@ -71,6 +71,7 @@ def test_mobile_double_space(android_page):
     android_page.keyboard.press("Enter")
     time.sleep(1)
 
+    android_page.screenshot(path="public/qa-screenshots/proof_267_double_space.png")
     text = get_terminal_text(android_page)
     print("TERMINAL TEXT:", repr(text))
     assert "hello. world" in text

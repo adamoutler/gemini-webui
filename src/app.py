@@ -906,7 +906,11 @@ def pty_restart(data):
     if child_pid == 0:
         # Become session leader for this process group to ensure all
         # subprocesses (ssh, gemini, etc) are reaped together.
-        os.setsid()
+        try:
+            os.setsid()
+        except OSError:
+            # Already a session leader or not permitted
+            pass
         os.closerange(3, 65536)
         env = os.environ.copy()
         env["TERM"] = "xterm-256color"

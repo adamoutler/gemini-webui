@@ -202,8 +202,8 @@ class WordBoundaryRule extends InputRule {
 
         if (input.value === "  ") {
           if (this.canDoubleSpacePeriod) {
-            // Emit backspace, period, space to replace the two spaces with a period and space
-            context.emitToTerminal("\x7f.\x20");
+            // Emit period and space to replace the two spaces in the proxy buffer
+            context.emitToTerminal(".\x20");
             input.value = "";
             this.canDoubleSpacePeriod = false;
             return true;
