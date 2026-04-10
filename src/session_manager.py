@@ -70,8 +70,30 @@ class SessionManager:
         self.tabid_to_sid = {}
         self._lock = threading.RLock()
 
-    def add_session(self, session):
+    def add_session(self, session, on_remove=None):
         with self._lock:
+            # If a session with the same tab_id already exists, kill it first
+            # This is critical for the "Start New" rapid-fire fix.
+            old_same_tab = self.sessions.pop(session.tab_id, None)
+            if old_same_tab:
+                if on_remove:
+                    on_remove(old_same_tab.pid)
+                else:
+                    try:
+                        if old_same_tab.pid is not None:
+                            os.killpg(os.getpgid(old_same_tab.pid), signal.SIGKILL)
+                    except OSError:
+                        try:
+                            if old_same_tab.pid is not None:
+                                os.kill(old_same_tab.pid, signal.SIGKILL)
+                        except OSError:
+                            pass
+                try:
+                    if old_same_tab.fd is not None:
+                        os.close(old_same_tab.fd)
+                except OSError:
+                    pass
+
             user_sessions = [
                 s for s in self.sessions.values() if s.user_id == session.user_id
             ]
@@ -79,11 +101,18 @@ class SessionManager:
                 user_sessions.sort(key=lambda s: s.last_seen)
                 while len(user_sessions) >= 10:
                     oldest = user_sessions.pop(0)
-                    try:
-                        if oldest.pid is not None:
-                            os.kill(oldest.pid, signal.SIGKILL)
-                    except OSError:
-                        pass
+                    if on_remove:
+                        on_remove(oldest.pid)
+                    else:
+                        try:
+                            if oldest.pid is not None:
+                                os.killpg(os.getpgid(oldest.pid), signal.SIGKILL)
+                        except OSError:
+                            try:
+                                if oldest.pid is not None:
+                                    os.kill(oldest.pid, signal.SIGKILL)
+                            except OSError:
+                                pass
                     try:
                         if oldest.fd is not None:
                             os.close(oldest.fd)

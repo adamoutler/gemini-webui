@@ -16,8 +16,26 @@ function debugLog(...args) {
 }
 let isRefreshingToken = false;
 let tokenRefreshSubscribers = [];
+let csrfRefreshAttempts = 0;
+let lastCsrfRefreshTime = 0;
 
 async function refreshCsrfToken() {
+  const now = Date.now();
+  if (now - lastCsrfRefreshTime < 500) {
+    csrfRefreshAttempts++;
+  } else {
+    csrfRefreshAttempts = 0;
+  }
+  lastCsrfRefreshTime = now;
+
+  if (csrfRefreshAttempts > 10) {
+    const details = document.getElementById("connection-issue-details");
+    if (details) details.innerText = "Error: Too many CSRF refresh attempts.";
+    const modal = document.getElementById("connection-issue-modal");
+    if (modal) modal.style.display = "block";
+    throw new Error("Too many CSRF refresh attempts");
+  }
+
   if (isRefreshingToken) {
     return new Promise((resolve) => tokenRefreshSubscribers.push(resolve));
   }
@@ -132,6 +150,9 @@ let originalPageTitle = "Gemini WebUI";
 const urlParams = new URLSearchParams(window.location.search);
 const mode = urlParams.get("mode");
 const sessionId = urlParams.get("session_id");
+const deepHost = urlParams.get("host");
+const deepTarget = urlParams.get("target");
+const deepDir = urlParams.get("dir");
 
 const HostStateManager = {
   states: {},
@@ -554,7 +575,7 @@ function refreshBackendSessionsList(id) {
 
     if (!sessions || sessions.length === 0) {
       listEl.innerHTML =
-        '<div style="padding: 10px; color: #444; font-size: 11px;">No detached sessions found on the server.</div>';
+        '<div class="js-style-536955">No detached sessions found on the server.</div>';
       return;
     }
 
@@ -577,7 +598,7 @@ function refreshBackendSessionsList(id) {
 
       const shortDir = s.ssh_dir ? s.ssh_dir.split("/").pop() : "";
       const dirContext = shortDir
-        ? `<span style="color: #0dbc79; font-weight: bold; margin-right: 5px;">[${shortDir}]</span>`
+        ? `<span class="js-style-b629a7">[${shortDir}]</span>`
         : "";
       const lastSeenDate = s.last_active
         ? new Date(s.last_active * 1000).toLocaleString()
@@ -617,30 +638,28 @@ function refreshBackendSessionsList(id) {
         let flashClass = shouldFlash ? " flash" : "";
         newNode.innerHTML = `
                             <div class="session-info">
-                                <div style="color: #3b8eea; font-weight: bold; font-size: 14px; margin-bottom: 2px;">${dirContext}${
+                                <div class="js-style-990843">${dirContext}${
                                   s.title
                                 }</div>
-                                <div style="color: #888; font-size: 11px; display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-weight: bold; display: flex; align-items: center; gap: 4px;">
+                                <div class="js-style-2ef6c5">
+                                    <span class="js-style-133a0c">
                                         <span class="status-node ${statusClass}${flashClass}"></span>
                                         <span class="status-label">${statusLabel}</span>
                                     </span>
-                                    <span style="color: #555;">|</span>
-                                    <span class="session-id-display" style="font-family: monospace;">ID: ${
-                                      s.tab_id
-                                    }</span>
-                                    <span style="color: #555;">|</span>
+                                    <span class="js-style-5fd781">|</span>
+                                    <span>ID: ${s.tab_id}</span>
+                                    <span class="js-style-5fd781">|</span>
                                     <span class="session-last-seen-display">Last seen: ${lastSeenDate}</span>
                                 </div>
                             </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="small primary" style="padding: 6px 12px;" onclick="reclaimBackendSession('${id}', '${
+                            <div class="js-style-13262f">
+                                <button class="small primary js-style-f52211" data-onclick="reclaimBackendSession('${id}', '${
                                   s.tab_id
                                 }', '${s.title}', ${JSON.stringify(s).replace(
                                   /"/g,
                                   "&quot;",
                                 )})">Reclaim</button>
-                                <button class="small danger" style="padding: 6px 12px;" onclick="terminateBackendSession('${id}', '${
+                                <button class="small danger js-style-f52211" data-onclick="terminateBackendSession('${id}', '${
                                   s.tab_id
                                 }')">Terminate</button>
                             </div>`;
@@ -666,14 +685,14 @@ async function renderLauncher(id) {
   let warningHtml = "";
   if (!config.DATA_WRITABLE && !config.TMP_WRITABLE) {
     warningHtml = `
-                    <div style="background: #cd3131; color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-size: 13px; line-height: 1.4;">
+                    <div class="js-style-31256e">
                         <strong>CRITICAL: No writable storage found.</strong><br>
                         Both /data and /tmp are read-only. Settings and keys cannot be saved.
                         Local sessions will not persist. Please mount a volume or enable tmpfs.
                     </div>`;
   } else if (!config.DATA_WRITABLE) {
     warningHtml = `
-                    <div style="background: #e5e510; color: #000; padding: 10px; border-radius: 6px; margin-bottom: 20px; font-size: 12px;">
+                    <div class="js-style-f80c50">
                         <strong>WARNING:</strong> Persistent storage (/data) is not writable.
                         Using temporary storage. Settings will be lost on restart.
                     </div>`;
@@ -682,7 +701,7 @@ async function renderLauncher(id) {
   container.innerHTML = `
                 <div class="launcher">
                     <h2>Select a Connection</h2>
-                    <div style="font-size: 11px; color: #888; margin-bottom: 15px; background: #2a2d2e; padding: 10px; border-radius: 4px; border-left: 3px solid #3b8eea;">
+                    <div class="js-style-a1ebd3">
                         <strong>Note:</strong> Sessions are isolated by project directory and user.
                         If you don't see your sessions, ensure the path below matches your host project.
                     </div>
@@ -691,22 +710,22 @@ async function renderLauncher(id) {
                     <div class="quick-connect-bar">
                         <span class="quick-connect-label">ssh</span>
                         <input type="text" id="${id}_quick_input" class="quick-connect-input" placeholder="user@host:port ~/folder" onkeydown="if(event.key === 'Enter') quickConnectAction('${id}', 'connect')">
-                        <button class="primary" onclick="quickConnectAction('${id}', 'key')">Add Key</button>
-                        <button class="success" onclick="quickConnectAction('${id}', 'connect')">Connect</button>
+                        <button class="primary" data-onclick="quickConnectAction('${id}', 'key')">Add Key</button>
+                        <button class="success" data-onclick="quickConnectAction('${id}', 'connect')">Connect</button>
                     </div>
 
                     <div id="${id}_connections" class="connections-list"></div>
 
-                    <div class="backend-sessions-container" style="margin-top: 30px; border-top: 1px solid #333; padding-top: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                            <h3 style="color: #888; margin: 0;">Backend Managed Sessions</h3>
-                            <button class="small danger" style="padding: 6px 12px; display: none;" id="${id}_terminate_all_btn" onclick="terminateAllBackendSessions('${id}')">Terminate All</button>
+                    <div>
+                        <div class="js-style-edad91">
+                            <h3 class="js-style-36f181">Backend Managed Sessions</h3>
+                            <button class="small danger js-style-eccf72" id="${id}_terminate_all_btn" data-onclick="terminateAllBackendSessions('${id}')">Terminate All</button>
                         </div>
-                        <div style="font-size: 11px; color: #666; margin-bottom: 15px;">
+                        <div class="js-style-28ac8f">
                             These are PTY processes running on the server. Reclaiming one will attach it to this window.
                         </div>
                         <div id="${id}_backend_sessions" class="session-list">
-                            <div style="padding: 10px; color: #444; font-size: 11px;">Checking for backend sessions...</div>
+                            <div class="js-style-536955">Checking for backend sessions...</div>
                         </div>
                     </div>
                 </div>`;
@@ -755,31 +774,31 @@ async function renderLauncher(id) {
                     <div class="connection-header">
                         <div class="connection-drag-handle" title="Drag to reorder" draggable="true">⠿</div>
                         <div class="connection-title">
-                            <div style="font-size: 18px; color: #fff; margin-bottom: 2px; display: flex; align-items: center;">
-                                <div style="position: relative; display: inline-block; width: 14px; height: 14px; margin-right: 8px;">
-                                    <span id="${healthId}" data-status="${initialStatus}" style="font-size: 12px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">${initialIndicator}</span>
+                            <div class="js-style-86447b">
+                                <div class="js-style-27eef0">
+                                    <span id="${healthId}" data-status="${initialStatus}" class="js-style-ae2742">${initialIndicator}</span>
                                     <div id="${pulseId}" class="pulse-indicator"></div>
                                 </div>
                                 <span>${conn.label}</span>
                             </div>
-                            <div style="font-size: 11px; font-family: monospace; color: #888; opacity: 0.8;">${
+                            <div class="js-style-cf9e3e">${
                               conn.target || "local"
                             } ${conn.dir || ""}</div>
                         </div>
                         <div class="connection-actions">
-                            <button class="primary" onclick="startSession('${id}', '${
+                            <button class="primary" data-onclick="startSession('${id}', '${
                               conn.type
                             }', '${conn.target || ""}', '${
                               conn.dir || ""
                             }', 'new')">Start New</button>
-                            <button class="success" onclick="startSession('${id}', '${
+                            <button class="success" data-onclick="startSession('${id}', '${
                               conn.type
                             }', '${conn.target || ""}', '${
                               conn.dir || ""
                             }', true)">Resume Latest</button>
                         </div>
                     </div>
-                    <div id="${sessionListId}" class="session-list-container"><div style="padding: 10px; color: #888; font-size: 11px;">Loading sessions...</div></div>`;
+                    <div id="${sessionListId}" class="session-list-container"><div class="js-style-2a672e">Loading sessions...</div></div>`;
 
     const handle = card.querySelector(".connection-drag-handle");
 
@@ -1056,6 +1075,8 @@ function getGlobalSocket() {
   return globalSocket;
 }
 
+let consecutiveTimeouts = {};
+
 async function fetchSessions(
   tabId,
   conn,
@@ -1113,7 +1134,7 @@ async function fetchSessions(
     if (data.status === "fetching") {
       const listEl = document.getElementById(targetId);
       if (listEl && listEl.innerHTML === "") {
-        listEl.innerHTML = `<div style="padding: 10px; color: #888; font-size: 11px;">Fetching sessions...</div>`;
+        listEl.innerHTML = `<div class="js-style-2a672e">Fetching sessions...</div>`;
       }
       setTimeout(
         () => fetchSessions(tabId, conn, targetId, forceAll, true, true),
@@ -1134,7 +1155,16 @@ async function fetchSessions(
     const listEl = document.getElementById(targetId);
     if (!listEl) return;
 
+    const timeoutKey = `${tabId}_${conn.label}`;
     if (data.error === "Timeout waiting for get_sessions") {
+      consecutiveTimeouts[timeoutKey] =
+        (consecutiveTimeouts[timeoutKey] || 0) + 1;
+
+      if (consecutiveTimeouts[timeoutKey] > 5) {
+        listEl.innerHTML = `<div class="js-style-7b7303">Connection unstable. Check server logs or try reloading.</div>`;
+        return;
+      }
+
       if (!useCache || isPolling) {
         try {
           HostStateManager.updateHealth(tabId, conn.label, false, true);
@@ -1147,7 +1177,7 @@ async function fetchSessions(
         listEl.innerHTML.includes("Connecting to server") ||
         listEl.innerHTML.includes("Fetching sessions")
       ) {
-        listEl.innerHTML = `<div style="padding: 10px; color: #888; font-size: 11px;">Connecting to server...</div>`;
+        listEl.innerHTML = `<div class="js-style-2a672e">Connecting to server...</div>`;
       }
       setTimeout(
         () => fetchSessions(tabId, conn, targetId, forceAll, useCache, true),
@@ -1156,13 +1186,15 @@ async function fetchSessions(
       return;
     }
 
+    consecutiveTimeouts[timeoutKey] = 0;
+
     if (data.error) {
-      let errorHtml = `<div style="padding: 10px; color: #f14c4c; font-size: 11px;">Error: ${data.error}</div>`;
+      let errorHtml = `<div class="js-style-7b7303">Error: ${data.error}</div>`;
       if (
         data.error.toLowerCase().includes("permission denied") ||
         data.error.toLowerCase().includes("publickey")
       ) {
-        errorHtml += `<div style="padding: 0 10px 10px 10px;"><button class="small primary" onclick="openSettings()">Setup Keys</button></div>`;
+        errorHtml += `<div class="js-style-67c8fc"><button class="small primary" data-onclick="openSettings()">Setup Keys</button></div>`;
       }
       listEl.innerHTML = errorHtml;
       if (useCache && !isPolling)
@@ -1171,7 +1203,7 @@ async function fetchSessions(
     }
     const sessions = parseSessions(data.output || "");
     if (sessions.length === 0) {
-      listEl.innerHTML = `<div style="padding: 10px; color: #666; font-size: 11px; padding-left: 15px;">No active sessions found.</div>`;
+      listEl.innerHTML = `<div class="js-style-e07506">No active sessions found.</div>`;
     } else {
       const sorted = sessions.reverse();
       const displayCount = forceAll ? sorted.length : 3;
@@ -1179,21 +1211,19 @@ async function fetchSessions(
       sorted.slice(0, displayCount).forEach((s) => {
         const shortDir = conn.dir ? conn.dir.split("/").pop() : "";
         const dirContext = shortDir
-          ? `<span style="color: #0dbc79; font-weight: bold; margin-right: 5px;">[${shortDir}]</span>`
+          ? `<span class="js-style-b629a7">[${shortDir}]</span>`
           : "";
-        html += `<div class="session-item" style="align-items: center;">
-                            <div style="flex-grow: 1; margin-right: 10px; min-width: 0;">
-                                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #999;">
-                                    ${dirContext}<span class="session-name" style="color: #3b8eea; font-weight: bold;">${
-                                      s.name
-                                    }</span>
+        html += `<div>
+                            <div class="js-style-57a00a">
+                                <div class="js-style-037e58">
+                                    ${dirContext}<span>${s.name}</span>
                                 </div>
-                                <div style="font-size: 10px; opacity: 0.7; color: #999; margin-top: 2px;">ID #${
-                                  s.id
-                                } • ${s.meta}</div>
+                                <div class="js-style-dbe504">ID #${s.id} • ${
+                                  s.meta
+                                }</div>
                             </div>
-                            <div style="flex-shrink: 0;">
-                                <button class="small" onclick="startSession('${tabId}', '${
+                            <div class="js-style-c99770">
+                                <button class="small" data-onclick="startSession('${tabId}', '${
                                   conn.type
                                 }', '${conn.target || ""}', '${
                                   conn.dir || ""
@@ -1205,21 +1235,21 @@ async function fetchSessions(
                         </div>`;
       });
       if (!forceAll && sorted.length > 3) {
-        html += `<div class="session-item" style="justify-content: center; background: #252526; cursor: pointer;" onclick="window.expandedSessionLists.add('${
+        html += `<div class="session-item js-style-86c2b8" data-onclick="window.expandedSessionLists.add('${
           conn.label
         }'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(
           /"/g,
           "&quot;",
-        )}, '${targetId}', true, true, true)"><div style="font-size: 11px; color: #2472c8; font-weight: bold;">... Show ${
+        )}, '${targetId}', true, true, true)"><div class="js-style-d94350">... Show ${
           sorted.length - 3
         } more</div></div>`;
       } else if (forceAll && sorted.length > 3) {
-        html += `<div class="session-item" style="justify-content: center; background: #252526; cursor: pointer;" onclick="window.expandedSessionLists.delete('${
+        html += `<div class="session-item js-style-86c2b8" data-onclick="window.expandedSessionLists.delete('${
           conn.label
         }'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(
           /"/g,
           "&quot;",
-        )}, '${targetId}', false, true, true)"><div style="font-size: 11px; color: #2472c8; font-weight: bold;">... Show less</div></div>`;
+        )}, '${targetId}', false, true, true)"><div class="js-style-d94350">... Show less</div></div>`;
       }
       listEl.innerHTML = html + "</div>";
     }
@@ -2184,7 +2214,7 @@ function renderTabs() {
       `<span>${tab.title}</span>` +
       (tab.state === "launcher"
         ? ""
-        : `<span class="tab-close" onclick="closeTab('${tab.id}', event)">&times;</span>`);
+        : `<span class="tab-close" data-onclick="closeTab('${tab.id}', event)">&times;</span>`);
     bar.appendChild(el);
   });
 }
@@ -2287,13 +2317,13 @@ if (mode === "fake" && sessionId) {
   startSession(id, "local", "", "", sessionId, "Test Session", true);
 
   const modalHtml = `
-                <div id="friction-modal" class="friction-modal" style="display: none;">
+                <div class="friction-modal js-style-224b51" id="friction-modal">
                     <div class="friction-modal-content">
                         <h2>Session Disconnected</h2>
                         <p>The test session has ended or disconnected.</p>
                         <div class="friction-actions">
-                            <button class="primary" onclick="window.location.href='/test-launcher'">Start Fresh Test</button>
-                            <button class="danger" onclick="forceReconnect()">Force Reconnect</button>
+                            <button class="primary" data-onclick="window.location.href='/test-launcher'">Start Fresh Test</button>
+                            <button class="danger" data-onclick="forceReconnect()">Force Reconnect</button>
                         </div>
                     </div>
                 </div>
@@ -2313,6 +2343,65 @@ if (mode === "fake" && sessionId) {
     e.preventDefault();
     e.returnValue = "";
   });
+} else if (deepHost || deepTarget) {
+  // GEMWEBUI-311: Deep link handling
+  const id = "tab_" + (Date.now() + Math.floor(Math.random() * 1000));
+  const tab = {
+    id,
+    term: null,
+    fitAddon: null,
+    socket: null,
+    session: null,
+    title: deepHost || deepTarget.split("@").pop(),
+    state: "terminal",
+  };
+  tabs.push(tab);
+
+  const container = document.createElement("div");
+  container.id = id + "_instance";
+  container.className = "tab-instance active";
+  document.getElementById("terminal-container").appendChild(container);
+
+  activeTabId = id;
+  renderTabs();
+
+  if (deepHost) {
+    fetch("/api/hosts")
+      .then((r) => r.json())
+      .then((hosts) => {
+        const host = hosts.find((h) => h.label === deepHost);
+        if (host) {
+          startSession(
+            id,
+            host.type,
+            host.target || "",
+            deepDir || host.dir || "",
+            false,
+            host.label,
+          );
+        } else {
+          // Fallback to launcher if host not found
+          closeTab(id);
+          addNewTab();
+          alert("Deep link host not found: " + deepHost);
+        }
+      })
+      .catch((err) => {
+        console.error("Deep link host fetch failed", err);
+        closeTab(id);
+        addNewTab();
+      });
+  } else {
+    // deepTarget
+    startSession(
+      id,
+      "ssh",
+      deepTarget,
+      deepDir || "",
+      false,
+      deepTarget.split("@").pop(),
+    );
+  }
 } else if (!loadTabsFromStorage()) {
   addNewTab(true);
 }
@@ -2461,7 +2550,7 @@ async function loadSharedSessions() {
   const list = document.getElementById("shared-sessions-list");
   if (!list) return;
   list.innerHTML =
-    '<div style="padding: 10px; color: #888; font-size: 13px;">Loading session snapshots...</div>';
+    '<div class="js-style-a06f1d">Loading session snapshots...</div>';
   try {
     const response = await fetch("/api/shares");
     if (response.ok) {
@@ -2471,7 +2560,7 @@ async function loadSharedSessions() {
       list.innerHTML = "";
       if (!shares || shares.length === 0) {
         list.innerHTML =
-          '<div style="padding: 10px; color: #666; font-size: 13px;">No session snapshots.</div>';
+          '<div class="js-style-a674a2">No session snapshots.</div>';
         return;
       }
 
@@ -2497,26 +2586,26 @@ async function loadSharedSessions() {
         const sessionName = share.session_name || "Session Snapshot";
 
         item.innerHTML = `
-                            <div style="flex-grow: 1; overflow: hidden; margin-right: 15px;">
-                                <div style="color: #3b8eea; font-weight: bold; margin-bottom: 5px;">${sessionName}</div>
-                                <div style="font-size: 11px; color: #888; margin-bottom: 5px;">Created: ${dateStr}</div>
+                            <div class="js-style-b2fad5">
+                                <div class="js-style-68bda4">${sessionName}</div>
+                                <div class="js-style-339053">Created: ${dateStr}</div>
                             </div>
-                            <div style="display: flex; gap: 5px; align-items: center;">
-                                <button class="primary small" onclick="viewSharedSession('${shareId}')">View</button>
-                                <button class="success small" onclick="copyToClipboard('${linkUrl}')">Copy</button>
-                                <button class="danger small" onclick="deleteSharedSession('${shareId}')">Delete</button>
+                            <div class="js-style-611fa3">
+                                <button class="primary small" data-onclick="viewSharedSession('${shareId}')">View</button>
+                                <button class="success small" data-onclick="copyToClipboard('${linkUrl}')">Copy</button>
+                                <button class="danger small" data-onclick="deleteSharedSession('${shareId}')">Delete</button>
                             </div>
                         `;
         list.appendChild(item);
       });
     } else {
       list.innerHTML =
-        '<div style="padding: 10px; color: #cd3131; font-size: 13px;">Failed to load session snapshots.</div>';
+        '<div class="js-style-808abb">Failed to load session snapshots.</div>';
     }
   } catch (e) {
     console.error("Failed to load session snapshots", e);
     list.innerHTML =
-      '<div style="padding: 10px; color: #cd3131; font-size: 13px;">Error loading session snapshots.</div>';
+      '<div class="js-style-808abb">Error loading session snapshots.</div>';
   }
 }
 
@@ -2743,13 +2832,13 @@ async function loadHosts() {
     item.style.cursor = "pointer";
     item.onclick = () => populateHostForm(host);
     item.innerHTML =
-      `<div class="session-info"><span style="color:#fff; font-weight:bold;">${
+      `<div class="session-info"><span class="js-style-7160a4">${
         host.label
-      }</span><span style="opacity:0.6; margin-left:10px;">${
-        host.target || "local"
-      } ${host.dir || ""}</span></div>` +
+      }</span><span class="js-style-c27a65">${host.target || "local"} ${
+        host.dir || ""
+      }</span></div>` +
       (host.label !== "local"
-        ? `<button class="danger small" onclick="event.stopPropagation(); removeHost('${host.label}')">Delete</button>`
+        ? `<button class="danger small" data-onclick="event.stopPropagation(); removeHost('${host.label}')">Delete</button>`
         : "");
     list.appendChild(item);
   });
@@ -2853,12 +2942,11 @@ async function loadKeys() {
   const list = document.getElementById("key-list");
   list.innerHTML = "";
   if (keys.length === 0)
-    list.innerHTML =
-      '<li style="padding:10px; color:#666;">No keys found.</li>';
+    list.innerHTML = '<li class="js-style-52b0fe">No keys found.</li>';
   keys.forEach((key) => {
     const li = document.createElement("li");
     li.className = "session-item";
-    li.innerHTML = `<div class="session-info">${key}</div><button class="danger small" onclick="removeKey('${key}')">Delete</button>`;
+    li.innerHTML = `<div class="session-info">${key}</div><button class="danger small" data-onclick="removeKey('${key}')">Delete</button>`;
     list.appendChild(li);
   });
 }
@@ -3629,3 +3717,88 @@ function saveNewPrompt() {
   closeAddPromptModal();
   alert("Prompt saved successfully.");
 }
+
+// CSP Event Delegation
+function executeDataAction(code, event) {
+  if (!code) return;
+
+  if (code.startsWith("document.getElementById")) {
+    if (code.includes("'import-settings-input').click()")) {
+      document.getElementById("import-settings-input").click();
+    }
+    return;
+  }
+  if (code.startsWith("window.open")) {
+    if (code.includes("'share-link-input'")) {
+      window.open(document.getElementById("share-link-input").value, "_blank");
+    }
+    return;
+  }
+  if (code.includes("window.location.href")) {
+    window.location.href = "/test-launcher";
+    return;
+  }
+  if (code.startsWith("event.stopPropagation();")) {
+    event.stopPropagation();
+    code = code.replace("event.stopPropagation();", "").trim();
+  }
+  if (code.startsWith("window.expandedSessionLists")) {
+    let match = code.match(
+      /window\.expandedSessionLists\.(add|delete)\((.*)\)/,
+    );
+    if (match) {
+      let op = match[1];
+      let args = match[2].split(",").map((s) => {
+        s = s.trim().replace(/^['"]|['"]$/g, "");
+        if (s === "true") return true;
+        if (s === "false") return false;
+        return s;
+      });
+      if (op === "add") window.expandedSessionLists.add(...args);
+      else window.expandedSessionLists.delete(...args);
+    }
+    return;
+  }
+
+  let match = code.match(/^([a-zA-Z0-9_]+)\((.*)\)$/);
+  if (match) {
+    let funcName = match[1];
+    let argsStr = match[2];
+    let args = [];
+    if (argsStr.trim()) {
+      // Basic split by comma. Since we don't use nested functions or commas inside strings
+      // in our inline handlers, this simple split is sufficient.
+      args = argsStr.split(",").map((s) => {
+        s = s.trim();
+        if (s === "event") return event;
+        if (s === "true") return true;
+        if (s === "false") return false;
+        if (s.startsWith("'") && s.endsWith("'")) return s.slice(1, -1);
+        if (s.startsWith('"') && s.endsWith('"')) return s.slice(1, -1);
+        if (!isNaN(s) && s !== "") return Number(s);
+        return s;
+      });
+    }
+    if (typeof window[funcName] === "function") {
+      window[funcName].apply(null, args);
+    } else {
+      console.error("Function not found: " + funcName);
+    }
+  } else {
+    console.error("Could not parse data action: " + code);
+  }
+}
+
+document.addEventListener("click", function (e) {
+  let target = e.target.closest("[data-onclick]");
+  if (target) {
+    executeDataAction(target.getAttribute("data-onclick"), e);
+  }
+});
+
+document.addEventListener("change", function (e) {
+  let target = e.target.closest("[data-onchange]");
+  if (target) {
+    executeDataAction(target.getAttribute("data-onchange"), e);
+  }
+});

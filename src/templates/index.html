@@ -30,77 +30,49 @@
   </head>
   <body>
     <div id="toolbar">
-      <div style="display: flex; gap: 10px; align-items: center">
-        <button id="new-tab-btn" onclick="addNewTab()">+ New</button>
-        <button onclick="openSettings()" style="background: #5c3b77">
+      <div class="auto-style-f6779d">
+        <button id="new-tab-btn" data-onclick="addNewTab()">+ New</button>
+        <button data-onclick="openSettings()" class="auto-style-ec55d0">
           Settings
         </button>
       </div>
-      <div
-        id="active-connection-info"
-        style="
-          display: none;
-          align-items: center;
-          gap: 10px;
-          border-left: 1px solid #555;
-          padding-left: 10px;
-        "
-      >
+      <div id="active-connection-info" class="auto-style-6e66f0">
         <button
           id="reclaim-btn"
-          onclick="reclaimStolenSession()"
-          style="display: none; background: #c82424; color: white"
+          data-onclick="reclaimStolenSession()"
+          class="auto-style-73c9d6"
         >
           Reclaim
         </button>
-        <button onclick="restartActiveTab()">Restart</button>
-        <button onclick="openFileTransfer()" style="background: #2472c8">
+        <button data-onclick="restartActiveTab()">Restart</button>
+        <button data-onclick="openFileTransfer()" class="auto-style-e81544">
           Files
         </button>
         <button
           id="share-session-btn"
-          onclick="shareSession()"
-          style="background: #e5a50a; color: #000"
+          data-onclick="shareSession()"
+          class="auto-style-aab0ec"
         >
           Share
         </button>
       </div>
-      <div
-        id="connection-status"
-        style="
-          margin-left: auto;
-          color: #0dbc79;
-          font-weight: bold;
-          font-family: monospace;
-          padding: 5px 10px;
-        "
-      ></div>
+      <div id="connection-status" class="auto-style-193302"></div>
     </div>
     <div id="tab-bar"></div>
-    <div id="install-banner" class="install-banner" style="display: none">
-      <div style="display: flex; align-items: center; gap: 10px">
-        <span style="font-size: 16px">📱</span>
+    <div class="install-banner auto-style-9c7663" id="install-banner">
+      <div class="auto-style-133d27">
+        <span class="auto-style-4e0dc0">📱</span>
         <span
           >Organize your sessions! Install GemWebUI as an app for a better,
           focused experience.</span
         >
       </div>
-      <button
-        onclick="dismissInstallBanner()"
-        style="
-          background: none;
-          border: none;
-          color: white;
-          cursor: pointer;
-          font-size: 20px;
-          padding: 0 5px;
-        "
-      >
+      <button data-onclick="dismissInstallBanner()" class="auto-style-2d8816">
         &times;
       </button>
     </div>
     <div id="terminal-container"></div>
-    <div id="mobile-controls" style="display: none">
+    <div id="mobile-controls" class="auto-style-9c7663">
       <div class="control-btn holdable" data-cmd="\x1b">Esc</div>
       <div class="control-btn holdable" data-cmd="\x1bz">Super</div>
       <div class="control-btn-group">
@@ -120,76 +92,41 @@
 
     <div id="file-transfer-modal" class="modal">
       <div class="modal-content">
-        <span
-          onclick="closeFileTransfer()"
-          style="
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            opacity: 0.7;
-          "
+        <span data-onclick="closeFileTransfer()" class="auto-style-6c8878"
           >&times;</span
         >
-        <h2 style="margin-top: 0">File Transfer</h2>
-        <div
-          style="
-            background: #2a2d2e;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 15px;
-          "
-        >
-          <h4 style="margin: 0 0 10px 0; font-size: 13px">
-            Upload File to Workspace
-          </h4>
+        <h2 class="auto-style-b8f7c9">File Transfer</h2>
+        <div class="auto-style-a774ed">
+          <h4 class="auto-style-aecc05">Upload File to Workspace</h4>
           <input
             type="file"
             id="workspace-upload-file"
-            style="margin-bottom: 10px; width: 100%; color: #ccc"
+            class="auto-style-cef0b5"
           />
           <button
-            class="primary"
-            style="width: 100%"
-            onclick="uploadWorkspaceFile()"
+            class="primary auto-style-be70d9"
+            data-onclick="uploadWorkspaceFile()"
           >
             Upload File
           </button>
         </div>
-        <div
-          style="
-            background: #2a2d2e;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 15px;
-            position: relative;
-          "
-        >
-          <h4 style="margin: 0 0 10px 0; font-size: 13px">
-            Download File from Workspace
-          </h4>
-          <div style="position: relative; width: 100%; margin-bottom: 10px">
+        <div class="auto-style-7ccb37">
+          <h4 class="auto-style-aecc05">Download File from Workspace</h4>
+          <div class="auto-style-4277a1">
             <input
               type="text"
               id="workspace-download-filename"
               placeholder="Filename"
-              style="
-                width: 100%;
-                padding: 5px;
-                box-sizing: border-box;
-                margin: 0;
-              "
+              class="auto-style-b9ddb9"
             />
             <div
+              class="autocomplete-dropdown auto-style-9c7663"
               id="autocomplete-results"
-              class="autocomplete-dropdown"
-              style="display: none"
             ></div>
           </div>
           <button
-            class="primary"
-            style="width: 100%"
-            onclick="downloadWorkspaceFile()"
+            class="primary auto-style-be70d9"
+            data-onclick="downloadWorkspaceFile()"
           >
             Download File
           </button>
@@ -199,69 +136,38 @@
 
     <div id="settings-modal" class="modal">
       <div class="modal-content">
-        <span
-          onclick="closeSettings()"
-          style="
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            opacity: 0.7;
-          "
+        <span data-onclick="closeSettings()" class="auto-style-6c8878"
           >&times;</span
         >
-        <h2 style="margin-top: 0">Settings</h2>
-        <div style="margin-top: 20px">
-          <h3 style="font-size: 14px; text-transform: uppercase">
-            Manage Hosts
-          </h3>
-          <div
-            id="hosts-list"
-            style="
-              margin-bottom: 15px;
-              border: 1px solid #444;
-              border-radius: 4px;
-              overflow: hidden;
-            "
-          ></div>
-          <div style="background: #2a2d2e; padding: 15px; border-radius: 4px">
-            <div
-              style="
-                display: flex;
-                gap: 5px;
-                margin-bottom: 10px;
-                align-items: center;
-              "
-            >
+        <h2 class="auto-style-b8f7c9">Settings</h2>
+        <div class="auto-style-0de1f9">
+          <h3 class="auto-style-d88b67">Manage Hosts</h3>
+          <div id="hosts-list" class="auto-style-752aa7"></div>
+          <div class="auto-style-d5f012">
+            <div class="auto-style-f2bd50">
               <button
+                class="small success auto-style-9c090c"
                 id="add-mode-btn"
-                class="small success"
-                onclick="setHostMode('add')"
-                style="opacity: 1; font-weight: bold"
+                data-onclick="setHostMode('add')"
               >
                 [ADD]
               </button>
               <button
+                class="small primary auto-style-c89dae"
                 id="edit-mode-btn"
-                class="small primary"
-                onclick="setHostMode('edit')"
-                style="opacity: 0.5; font-weight: normal"
+                data-onclick="setHostMode('edit')"
               >
                 [EDIT]
               </button>
-              <span style="font-size: 13px; margin-left: 5px; color: #ccc"
-                >Host Configuration</span
-              >
+              <span class="auto-style-1cdb5e">Host Configuration</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 10px">
+            <div class="auto-style-20487c">
               <input
                 type="text"
                 id="new-host-label"
                 placeholder="Label eg. My Server"
               />
-              <div
-                style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px"
-              >
+              <div class="auto-style-b6a144">
                 <input
                   type="text"
                   id="new-host-target"
@@ -273,170 +179,88 @@
                   placeholder="Path on host eg. ~/project"
                 />
               </div>
-              <div
-                id="env-var-container"
-                style="
-                  border: 1px solid #444;
-                  border-radius: 4px;
-                  padding: 10px;
-                  margin-top: 5px;
-                "
-              >
-                <div
-                  style="
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 10px;
-                  "
-                >
-                  <h4 style="margin: 0; font-size: 12px; color: #ccc">
-                    Environment Variables
-                  </h4>
+              <div id="env-var-container" class="auto-style-2b0953">
+                <div class="auto-style-aa04f4">
+                  <h4 class="auto-style-675d1e">Environment Variables</h4>
                   <button
+                    class="small auto-style-6fbe49"
                     type="button"
-                    class="small"
                     id="add-env-var-btn"
-                    style="padding: 2px 5px; font-size: 11px"
                   >
                     + Add
                   </button>
                 </div>
-                <div
-                  id="env-vars-list"
-                  style="display: flex; flex-direction: column; gap: 5px"
-                ></div>
+                <div id="env-vars-list" class="auto-style-8e49db"></div>
               </div>
             </div>
             <button
+              class="success auto-style-7d6376"
               id="add-host-btn"
-              class="success"
-              style="margin-top: 10px; width: 100%"
-              onclick="submitHostForm()"
+              data-onclick="submitHostForm()"
             >
               Add Host
             </button>
           </div>
         </div>
-        <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0" />
-        <div style="margin-top: 20px">
-          <h3 style="font-size: 14px; text-transform: uppercase">
-            Manage SSH Keys
-          </h3>
-          <ul
-            id="key-list"
-            style="
-              list-style: none;
-              padding: 0;
-              border: 1px solid #444;
-              border-radius: 4px;
-              margin-bottom: 15px;
-            "
-          ></ul>
-          <div style="background: #2a2d2e; padding: 15px; border-radius: 4px">
-            <h4 style="margin: 0 0 10px 0; font-size: 13px">Add Key (Text)</h4>
+        <hr class="auto-style-29c73b" />
+        <div class="auto-style-0de1f9">
+          <h3 class="auto-style-d88b67">Manage SSH Keys</h3>
+          <ul id="key-list" class="auto-style-abe3cd"></ul>
+          <div class="auto-style-d5f012">
+            <h4 class="auto-style-aecc05">Add Key (Text)</h4>
             <input
               type="text"
               id="ssh-key-name"
               placeholder="Label eg. Personal Key"
-              style="margin-bottom: 5px"
+              class="auto-style-9d616a"
             />
             <textarea
               id="ssh-key-text"
               placeholder="-----BEGIN OPENSSH PRIVATE KEY----- ..."
-              style="height: 80px; margin-bottom: 5px"
+              class="auto-style-d09cda"
             ></textarea>
             <button
-              class="primary"
-              style="width: 100%; margin-bottom: 15px"
-              onclick="savePastedKey()"
+              class="primary auto-style-f89da4"
+              data-onclick="savePastedKey()"
             >
               Save Key
             </button>
 
-            <hr style="border: 0; border-top: 1px solid #444; margin: 15px 0" />
+            <hr class="auto-style-b47245" />
 
-            <h4 style="margin: 0 0 10px 0; font-size: 13px">
-              Upload Key (File)
-            </h4>
-            <input
-              type="file"
-              id="ssh-key-file"
-              style="margin-bottom: 10px; width: 100%; color: #ccc"
-            />
+            <h4 class="auto-style-aecc05">Upload Key (File)</h4>
+            <input type="file" id="ssh-key-file" class="auto-style-cef0b5" />
             <button
-              class="primary"
-              style="width: 100%"
-              onclick="uploadKeyFile()"
+              class="primary auto-style-be70d9"
+              data-onclick="uploadKeyFile()"
             >
               Upload File
             </button>
           </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0" />
-        <div style="margin-top: 20px">
-          <h3 style="font-size: 14px; text-transform: uppercase">
-            Theme & Font Settings
-          </h3>
-          <div
-            style="
-              background: #2a2d2e;
-              padding: 15px;
-              border-radius: 4px;
-              display: grid;
-              grid-template-columns: 1fr 1fr;
-              gap: 10px;
-            "
-          >
+        <hr class="auto-style-29c73b" />
+        <div class="auto-style-0de1f9">
+          <h3 class="auto-style-d88b67">Theme & Font Settings</h3>
+          <div class="auto-style-d58cd1">
             <div>
-              <label
-                for="theme-bg"
-                style="
-                  font-size: 12px;
-                  color: #ccc;
-                  display: block;
-                  margin-bottom: 5px;
-                "
-                >Background</label
-              >
-              <input type="color" id="theme-bg" onchange="applyTheme()" />
+              <label for="theme-bg" class="auto-style-76cdd3">Background</label>
+              <input type="color" id="theme-bg" data-onchange="applyTheme()" />
             </div>
             <div>
-              <label
-                for="theme-fg"
-                style="
-                  font-size: 12px;
-                  color: #ccc;
-                  display: block;
-                  margin-bottom: 5px;
-                "
-                >Foreground</label
-              >
-              <input type="color" id="theme-fg" onchange="applyTheme()" />
+              <label for="theme-fg" class="auto-style-76cdd3">Foreground</label>
+              <input type="color" id="theme-fg" data-onchange="applyTheme()" />
             </div>
             <div>
-              <label
-                for="theme-cursor"
-                style="
-                  font-size: 12px;
-                  color: #ccc;
-                  display: block;
-                  margin-bottom: 5px;
-                "
-                >Cursor</label
-              >
-              <input type="color" id="theme-cursor" onchange="applyTheme()" />
+              <label for="theme-cursor" class="auto-style-76cdd3">Cursor</label>
+              <input
+                type="color"
+                id="theme-cursor"
+                data-onchange="applyTheme()"
+              />
             </div>
             <div>
-              <label
-                for="theme-font"
-                style="
-                  font-size: 12px;
-                  color: #ccc;
-                  display: block;
-                  margin-bottom: 5px;
-                "
+              <label for="theme-font" class="auto-style-76cdd3"
                 >Font Size</label
               >
               <input
@@ -444,15 +268,14 @@
                 id="theme-font"
                 min="8"
                 max="40"
-                onchange="applyTheme()"
-                style="width: 100%"
+                data-onchange="applyTheme()"
+                class="auto-style-be70d9"
               />
             </div>
-            <div style="grid-column: span 2; margin-top: 10px">
+            <div class="auto-style-73231c">
               <button
-                class="small primary"
-                onclick="resetTheme()"
-                style="width: 100%"
+                class="small primary auto-style-be70d9"
+                data-onclick="resetTheme()"
               >
                 Reset to Default
               </button>
@@ -460,84 +283,48 @@
           </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0" />
-        <div style="margin-top: 20px">
-          <h3 style="font-size: 14px; text-transform: uppercase">
-            Session Snapshots
-          </h3>
-          <div
-            id="shared-sessions-list"
-            style="
-              margin-bottom: 15px;
-              border: 1px solid #444;
-              border-radius: 4px;
-              overflow: hidden;
-              background: #2a2d2e;
-            "
-          >
-            <div style="padding: 10px; color: #888; font-size: 13px">
-              Loading session snapshots...
-            </div>
+        <hr class="auto-style-29c73b" />
+        <div class="auto-style-0de1f9">
+          <h3 class="auto-style-d88b67">Session Snapshots</h3>
+          <div id="shared-sessions-list" class="auto-style-b5133a">
+            <div class="auto-style-8d107b">Loading session snapshots...</div>
           </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0" />
-        <div
-          id="public-key-container"
-          style="
-            background: #1e1e1e;
-            padding: 15px;
-            border: 1px solid #444;
-            border-radius: 4px;
-            display: none;
-          "
-        >
-          <div
-            style="
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              gap: 10px;
-            "
-          >
-            <div
-              style="
-                flex-grow: 1;
-                overflow: hidden;
-                white-space: nowrap;
-                text-overflow: ellipsis;
-              "
-            >
+        <hr class="auto-style-29c73b" />
+        <div id="public-key-container" class="auto-style-3ef160">
+          <div class="auto-style-9fb7a6">
+            <div class="auto-style-939385">
               <span
-                style="font-size: 11px; color: #888; margin-right: 10px"
+                class="auto-style-bcde6d"
                 title="SSH key managed by this instance."
                 >INSTANCE KEY:</span
               >
               <code
                 id="public-key-text"
-                style="font-size: 10px; color: #0dbc79; cursor: pointer"
-                onclick="copyPublicKey()"
+                class="auto-style-55b51f"
+                data-onclick="copyPublicKey()"
               ></code>
-              <code id="instance-key-snippet" style="display: none"></code>
+              <code id="instance-key-snippet" class="auto-style-9c7663"></code>
             </div>
-            <div style="display: flex; gap: 5px; flex-shrink: 0">
+            <div class="auto-style-8b442c">
               <button
                 class="small"
-                onclick="copyPublicKey()"
+                data-onclick="copyPublicKey()"
                 title="Copy the SSH public key displayed in the box."
               >
                 Copy Key
               </button>
               <button
                 class="small"
-                onclick="copyInstanceSnippet()"
+                data-onclick="copyInstanceSnippet()"
                 title="In Gemini CLI press ! to enter command mode then paste the snippet."
               >
                 Copy Snippet
               </button>
               <button
                 class="small danger"
-                onclick="rotateInstanceKey()"
+                data-onclick="rotateInstanceKey()"
                 title="Change the SSH key."
               >
                 Rotate
@@ -546,53 +333,28 @@
           </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0" />
-        <div style="margin-top: 20px">
-          <h3 style="font-size: 14px; text-transform: uppercase">Debugging</h3>
-          <div style="background: #2a2d2e; padding: 15px; border-radius: 4px">
-            <p style="margin: 0; font-size: 13px; color: #ccc">
+        <hr class="auto-style-29c73b" />
+        <div class="auto-style-0de1f9">
+          <h3 class="auto-style-d88b67">Debugging</h3>
+          <div class="auto-style-d5f012">
+            <p class="auto-style-5ac591">
               To enable verbose logging in the browser console, run:
-              <code
-                style="
-                  background: #1e1e1e;
-                  padding: 2px 5px;
-                  border-radius: 3px;
-                "
-                >window.setDebug(true)</code
-              >
+              <code class="auto-style-725e32">window.setDebug(true)</code>
             </p>
-            <p style="margin: 10px 0 0 0; font-size: 13px; color: #ccc">
+            <p class="auto-style-d3869d">
               To disable verbose logging, run:
-              <code
-                style="
-                  background: #1e1e1e;
-                  padding: 2px 5px;
-                  border-radius: 3px;
-                "
-                >window.setDebug(false)</code
-              >
+              <code class="auto-style-725e32">window.setDebug(false)</code>
             </p>
           </div>
         </div>
 
-        <hr style="border: 0; border-top: 1px solid #444; margin: 20px 0" />
-        <div style="margin-top: 20px">
-          <h3 style="font-size: 14px; text-transform: uppercase">
-            Data Management
-          </h3>
-          <div
-            style="
-              background: #2a2d2e;
-              padding: 15px;
-              border-radius: 4px;
-              display: flex;
-              gap: 10px;
-            "
-          >
+        <hr class="auto-style-29c73b" />
+        <div class="auto-style-0de1f9">
+          <h3 class="auto-style-d88b67">Data Management</h3>
+          <div class="auto-style-a71f31">
             <button
-              class="primary"
-              style="width: 50%"
-              onclick="exportSettings()"
+              class="primary auto-style-cd7753"
+              data-onclick="exportSettings()"
               title="Download all settings and data as a .gwui (zip) file."
             >
               Export Settings (.gwui)
@@ -600,14 +362,13 @@
             <input
               type="file"
               id="import-settings-input"
-              style="display: none"
+              class="auto-style-9c7663"
               accept=".gwui,.zip"
-              onchange="importSettings(event)"
+              data-onchange="importSettings(event)"
             />
             <button
-              class="primary"
-              style="width: 50%; background: #4a4d4e"
-              onclick="document.getElementById('import-settings-input').click()"
+              class="primary auto-style-150ce9"
+              data-onclick="document.getElementById('import-settings-input').click()"
               title="Upload and restore a .gwui file."
             >
               Import Settings
@@ -619,66 +380,44 @@
 
     <div id="share-modal" class="modal">
       <div class="modal-content">
-        <span
-          onclick="closeShareModal()"
-          style="
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            opacity: 0.7;
-          "
+        <span data-onclick="closeShareModal()" class="auto-style-6c8878"
           >&times;</span
         >
-        <h2 style="margin-top: 0">Create Snapshot</h2>
-        <div
-          style="
-            background: #2a2d2e;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 15px;
-          "
-        >
-          <p style="color: #e5a50a; font-weight: bold">Warning!</p>
+        <h2 class="auto-style-b8f7c9">Create Snapshot</h2>
+        <div class="auto-style-a774ed">
+          <p class="auto-style-ef9ddf">Warning!</p>
           <p>
             This will generate a publicly accessible link. Ensure there are no
             passwords, API keys, or sensitive environment variables in the
             terminal scrollback before sharing.
           </p>
 
-          <div id="share-result" style="margin-top: 15px; display: none">
+          <div id="share-result" class="auto-style-b1d5df">
             <input
               type="text"
               id="share-link-input"
               readonly
-              style="
-                width: 100%;
-                margin-bottom: 10px;
-                color: #0dbc79;
-                padding: 5px;
-                background: #1e1e1e;
-                border: 1px solid #3c3c3c;
-                border-radius: 4px;
-              "
+              class="auto-style-d26a94"
             />
-            <div style="display: flex; gap: 10px">
-              <button class="primary" style="flex: 1" onclick="copyShareLink()">
+            <div class="auto-style-2be0d8">
+              <button
+                class="primary auto-style-d2dc0a"
+                data-onclick="copyShareLink()"
+              >
                 Copy Link
               </button>
               <button
-                class="success"
-                style="flex: 1"
-                onclick="window.open(document.getElementById('share-link-input').value, '_blank')"
+                class="success auto-style-d2dc0a"
+                data-onclick="window.open(document.getElementById('share-link-input').value, '_blank')"
               >
                 Open Link
               </button>
             </div>
           </div>
           <button
+            class="primary auto-style-a74b11"
             id="confirm-share-btn"
-            class="primary"
-            style="width: 100%; margin-top: 15px"
-            onclick="confirmShareSession()"
+            data-onclick="confirmShareSession()"
           >
             Generate Share Link
           </button>
@@ -687,73 +426,26 @@
     </div>
 
     <div id="preview-modal" class="modal">
-      <div
-        class="modal-content"
-        style="width: 80%; height: 80%; display: flex; flex-direction: column"
-      >
-        <span
-          onclick="closePreviewModal()"
-          style="
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            opacity: 0.7;
-          "
+      <div class="modal-content auto-style-1921c3">
+        <span data-onclick="closePreviewModal()" class="auto-style-6c8878"
           >&times;</span
         >
-        <h2 style="margin-top: 0">Snapshot Preview</h2>
-        <div
-          style="
-            flex-grow: 1;
-            background: #1e1e1e;
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-          "
-        >
-          <iframe
-            id="preview-iframe"
-            style="
-              width: 100%;
-              height: 100%;
-              border: none;
-              position: absolute;
-              top: 0;
-              left: 0;
-            "
-          ></iframe>
+        <h2 class="auto-style-b8f7c9">Snapshot Preview</h2>
+        <div class="auto-style-dc3c69">
+          <iframe id="preview-iframe" class="auto-style-73b108"></iframe>
         </div>
       </div>
     </div>
 
     <div id="quick-add-key-modal" class="modal">
       <div class="modal-content">
-        <span
-          onclick="closeQuickAddKey()"
-          style="
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            opacity: 0.7;
-          "
+        <span data-onclick="closeQuickAddKey()" class="auto-style-6c8878"
           >&times;</span
         >
-        <h2 style="margin-top: 0">Add SSH Key & Connect</h2>
-        <p
-          id="quick-add-host-info"
-          style="color: #3b8eea; font-family: monospace"
-        ></p>
-        <div
-          style="
-            background: #2a2d2e;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 15px;
-          "
-        >
-          <h4 style="margin: 0 0 10px 0; font-size: 13px">Paste Private Key</h4>
+        <h2 class="auto-style-b8f7c9">Add SSH Key & Connect</h2>
+        <p id="quick-add-host-info" class="auto-style-e56083"></p>
+        <div class="auto-style-a774ed">
+          <h4 class="auto-style-aecc05">Paste Private Key</h4>
           <input
             type="text"
             id="quick-key-name"
@@ -762,12 +454,11 @@
           <textarea
             id="quick-key-text"
             placeholder="-----BEGIN OPENSSH PRIVATE KEY----- ..."
-            style="height: 150px"
+            class="auto-style-5e9e78"
           ></textarea>
           <button
-            class="primary"
-            style="width: 100%; margin-top: 10px"
-            onclick="submitQuickAddKey()"
+            class="primary auto-style-5a91f7"
+            data-onclick="submitQuickAddKey()"
           >
             Save Key & Connect
           </button>
@@ -777,41 +468,51 @@
 
     <div id="add-prompt-modal" class="modal">
       <div class="modal-content">
-        <span
-          onclick="closeAddPromptModal()"
-          style="
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            opacity: 0.7;
-          "
+        <span data-onclick="closeAddPromptModal()" class="auto-style-6c8878"
           >×</span
         >
-        <h2 style="margin-top: 0">Add Prompt</h2>
-        <div
-          style="
-            background: #2a2d2e;
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 15px;
-          "
-        >
-          <h4 style="margin: 0 0 10px 0; font-size: 13px">Name</h4>
+        <h2 class="auto-style-b8f7c9">Add Prompt</h2>
+        <div class="auto-style-a774ed">
+          <h4 class="auto-style-aecc05">Name</h4>
           <input
             type="text"
             id="new-prompt-name"
             placeholder="Prompt Name"
-            style="margin-bottom: 15px"
+            class="auto-style-3bbb81"
           />
-          <h4 style="margin: 0 0 10px 0; font-size: 13px">Prompt</h4>
+          <h4 class="auto-style-aecc05">Prompt</h4>
           <textarea
             id="new-prompt-text"
             placeholder="Enter prompt text here..."
-            style="height: 100px; margin-bottom: 15px"
+            class="auto-style-46d6d7"
           ></textarea>
-          <button class="primary" style="width: 100%" onclick="saveNewPrompt()">
+          <button
+            class="primary auto-style-be70d9"
+            data-onclick="saveNewPrompt()"
+          >
             Save Prompt
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="connection-issue-modal" class="modal">
+      <div class="modal-content">
+        <h2 class="auto-style-b8f7c9">Connection Problem</h2>
+        <p>
+          We're having trouble maintaining a secure connection to the server.
+          This often happens after a server restart.
+        </p>
+        <p
+          id="connection-issue-details"
+          style="font-size: 0.9em; color: #888; margin-bottom: 20px"
+        ></p>
+        <div class="auto-style-a71f31">
+          <button
+            class="primary auto-style-cd7753"
+            data-onclick="window.location.reload()"
+          >
+            Reload Page
           </button>
         </div>
       </div>
@@ -837,20 +538,6 @@
     ></script>
     <script src="/static/mobile_input.js?v={{ version }}"></script>
     <script src="/static/app.js?v={{ version }}"></script>
-    <div
-      id="version-footer"
-      style="
-        position: fixed;
-        bottom: 5px;
-        right: 5px;
-        font-size: 10px;
-        color: rgba(255, 255, 255, 0.3);
-        pointer-events: none;
-        z-index: 9999;
-        font-family: monospace;
-      "
-    >
-      v{{ version }}
-    </div>
+    <div id="version-footer" class="auto-style-a9000a">v{{ version }}</div>
   </body>
 </html>
