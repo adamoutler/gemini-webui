@@ -3286,11 +3286,8 @@ function copyShareLink() {
 async function uploadPastedImage(file, tab, terminalEmitCallback) {
   const formData = new FormData();
   const ext = file.type ? file.type.split("/")[1] || "png" : "png";
-  formData.append(
-    "file",
-    file,
-    file.name || `pasted-image-${Date.now()}.${ext}`,
-  );
+  const filename = `pasted_images/pasted-image-${Date.now()}.${ext}`;
+  formData.append("file", file, filename);
 
   if (tab && tab.session && tab.session.type === "ssh") {
     if (!tab.session.ssh_target) {
@@ -3319,7 +3316,7 @@ async function uploadPastedImage(file, tab, terminalEmitCallback) {
 
     if (!response.ok) throw new Error("Upload failed: " + response.statusText);
     const data = await response.json();
-    terminalEmitCallback(`> I uploaded @${data.filename}\r`);
+    terminalEmitCallback(`> I pasted @${data.filename}\r`);
   } catch (error) {
     console.error("Paste upload error:", error);
     terminalEmitCallback(
