@@ -391,7 +391,14 @@ def build_terminal_command(
         setup_cmd += f"cd {quoted_work_dir} 2>/dev/null || cd /tmp; "
 
         # Use shell to ensure gemini is found in PATH and handled correctly
-        gemini_cmd = shlex.quote(gemini_bin)
+        # Split gemini_bin in case it contains arguments (e.g. "python3 mock.py")
+        bin_parts = shlex.split(gemini_bin)
+        gemini_executable = shlex.quote(bin_parts[0])
+        gemini_args = " ".join(
+            shlex.quote(arg) for i, arg in enumerate(bin_parts) if i > 0
+        )
+        gemini_cmd = f"{gemini_executable} {gemini_args}".strip()
+
         if resume is True or str(resume).lower() == "true":
             gemini_cmd += " -r"
         elif str(resume).lower() == "new":
