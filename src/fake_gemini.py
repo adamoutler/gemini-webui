@@ -11,13 +11,17 @@ import tty
 def get_char():
     """Reads a single character from stdin."""
     fd = sys.stdin.fileno()
-    old_settings = termios.tcgetattr(fd)
     try:
-        tty.setraw(sys.stdin.fileno())
-        ch = sys.stdin.read(1)
-    finally:
-        termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-    return ch
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+    except termios.error:
+        # Fallback for non-TTY or restricted environments
+        return sys.stdin.read(1)
 
 
 def run_fake_gemini():
@@ -36,19 +40,51 @@ def run_fake_gemini():
     # Hardcoded fake session database (simulates real gemini's session list)
     valid_sessions = {1: "FakeSessionOne", 3: "AnotherSession"}
 
+    # Dynamic session storage for testing discover_session_id
+    dynamic_sessions_file = "/tmp/fake_gemini_sessions.txt"
+
     if args.list_sessions:
         for sid, name in valid_sessions.items():
             status = "active" if sid == 1 else "paused"
             sys.stdout.write(f"  {sid}. {name} ({status}) [uuid-fake-{sid}]\n")
+
+        # Add dynamic sessions from file if they are still running
+        if os.path.exists(dynamic_sessions_file):
+            with open(dynamic_sessions_file, "r") as f:
+                for line in f:
+                    try:
+                        parts = line.strip().split(",")
+                        if len(parts) == 2:
+                            pid, harness_id = parts
+                            # Check if process is still running
+                            try:
+                                os.kill(int(pid), 0)
+                                sys.stdout.write(
+                                    f"  {pid}. DynamicSession (active) [{harness_id}]\n"
+                                )
+                            except (OSError, ValueError):
+                                pass  # Process dead
+                    except Exception:
+                        pass
         sys.exit(0)
 
     if args.resume is not None:
         if args.resume not in valid_sessions:
-            sys.stderr.write(
-                f"\r\n\033[1;31mError: Session ID {args.resume} not found.\033[0m\r\n"
-            )
-            sys.exit(1)
-        session_name = valid_sessions[args.resume]
+            # Check dynamic sessions too
+            found_dynamic = False
+            if os.path.exists(dynamic_sessions_file):
+                with open(dynamic_sessions_file, "r") as f:
+                    for line in f:
+                        if line.startswith(f"{args.resume},"):
+                            found_dynamic = True
+                            break
+
+            if not found_dynamic:
+                sys.stderr.write(
+                    f"\r\n\033[1;31mError: Session ID {args.resume} not found.\033[0m\r\n"
+                )
+                sys.exit(1)
+        session_name = valid_sessions.get(args.resume, "DynamicSession")
     else:
         session_name = "New Session"
 
@@ -59,7 +95,8 @@ def run_fake_gemini():
     sys.stdout.write(f"\x1b[1;34mScenario: {args.scenario}\x1b[0m\r\n")
     sys.stdout.write(f"\x1b[1;32mSession: {session_name}\x1b[0m\r\n")
 
-    if "GEMINI_WEBUI_HARNESS_ID" not in os.environ:
+    harness_id = os.environ.get("GEMINI_WEBUI_HARNESS_ID")
+    if not harness_id:
         sys.stderr.write("\x1b[31m[ERROR] Direct execution blocked.\x1b[0m\r\n")
         sys.stderr.write(
             "You must use the WebUI ephemeral session harness (/test-launcher) for testing.\r\n"
@@ -68,6 +105,10 @@ def run_fake_gemini():
             "Direct execution of fake_gemini.py is strictly prevented to ensure test fidelity.\r\n"
         )
         sys.exit(1)
+
+    # Register dynamic session
+    with open(dynamic_sessions_file, "a") as f:
+        f.write(f"{os.getpid()},{harness_id}\n")
 
     sys.stdout.write("\x1b[32mReady for input. Type 'EXIT' to quit.\x1b[0m\r\n")
     sys.stdout.write("> ")
