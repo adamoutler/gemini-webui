@@ -109,6 +109,7 @@
   padding: 5px;
   gap: 5px;
   flex-wrap: wrap;
+  touch-action: pan-y !important; /* Preserve pull-to-refresh on toolbar as per GEMWEBUI-54 */
 }
 
 .is-mobile #tab-bar {
@@ -118,10 +119,41 @@
   gap: 5px;
 }
 
-html,
-body {
-  overflow: visible !important;
-  overscroll-behavior-y: auto !important;
+.is-mobile html,
+.is-mobile body {
+  overflow: hidden !important;
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  height: var(--vh, 100dvh) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overscroll-behavior: none auto !important; /* Allow pull-to-refresh at the root if browser supports it */
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none; /* Prevent all layout viewport panning/zooming */
+}
+
+/* Allow intended scrolling and gestures on specific elements */
+.is-mobile #toolbar,
+.is-mobile #tab-bar {
+  touch-action: pan-y !important; /* Allow pull-to-refresh gesture */
+}
+
+.is-mobile #tab-bar {
+  touch-action: pan-x pan-y !important; /* Allow horizontal tab scrolling */
+}
+
+.is-mobile #terminal-container,
+.is-mobile .launcher,
+.is-mobile .modal-content,
+.is-mobile .mobile-scroll-proxy {
+  touch-action: pan-y;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* Adjust connection action buttons size on mobile */
