@@ -2263,13 +2263,25 @@ if (window.appVisualViewport) {
     }
 
     const viewHeight = window.appVisualViewport.height;
+    const offsetTop = window.appVisualViewport.offsetTop || 0;
+
+    // Use a CSS variable for height for smoother rendering across components
+    document.documentElement.style.setProperty("--vh", `${viewHeight}px`);
+
+    // Lock body to the visible viewport height to prevent scrolling past keyboard
     document.body.style.height = `${viewHeight}px`;
 
-    const offsetTop = window.appVisualViewport.offsetTop || 0;
-    const offsetLeft = window.appVisualViewport.offsetLeft || 0;
-    document.body.style.transform = `translate(${offsetLeft}px, ${offsetTop}px)`;
-
-    window.scrollTo(0, 0);
+    // On iOS Safari, the visual viewport moves independently of the layout viewport.
+    // We counteract this by positioning the body exactly where the visual viewport is.
+    if (Math.abs(offsetTop) > 0.1) {
+      document.body.style.top = `${offsetTop}px`;
+      // Prevent browser from trying to scroll the layout viewport
+      if (window.scrollY !== 0) {
+        window.scrollTo(0, 0);
+      }
+    } else {
+      document.body.style.top = "0";
+    }
   };
 
   window.appVisualViewport.addEventListener("resize", () => {
@@ -2279,13 +2291,19 @@ if (window.appVisualViewport) {
         return; // User is zooming, do not break layout
       }
       const viewHeight = window.appVisualViewport.height;
-      // Ignore tiny jitters (less than 20px) to prevent scroll interruption
-      if (Math.abs(viewHeight - lastViewHeight) < 20) return;
+      // Ignore tiny jitters (less than 10px) to prevent scroll interruption
+      if (Math.abs(viewHeight - lastViewHeight) < 10) return;
       lastViewHeight = viewHeight;
 
       updateViewport();
-      tabs.forEach((tab) => fitTerminal(tab));
-    }, 100);
+      tabs.forEach((tab) => {
+        fitTerminal(tab);
+        // Immediate alignment of proxy input after xterm resizes
+        if (tab.mobileProxy && tab.mobileProxy.ui && tab.term) {
+          tab.mobileProxy.ui.alignWithCursor(tab.term);
+        }
+      });
+    }, 60); // Faster response time for snappier keyboard feel
   });
 
   window.appVisualViewport.addEventListener("scroll", updateViewport);
