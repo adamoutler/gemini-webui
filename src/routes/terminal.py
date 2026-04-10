@@ -221,7 +221,7 @@ def terminate_remote_session():
         cmd = [GEMINI_BIN, "--terminate", str(session_id)]
 
     try:
-        subprocess.run(cmd)
+        subprocess.run(cmd, timeout=15, start_new_session=True)
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"error": str(e)}), 500

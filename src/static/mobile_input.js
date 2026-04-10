@@ -202,9 +202,9 @@ class WordBoundaryRule extends InputRule {
 
         if (input.value === "  ") {
           if (this.canDoubleSpacePeriod) {
-            // Manually handle double-space to period because OS requires word context
-            context.emitToTerminal(".");
-            input.value = " ";
+            // Emit backspace, period, space to replace the two spaces with a period and space
+            context.emitToTerminal("\x7f.\x20");
+            input.value = "";
             this.canDoubleSpacePeriod = false;
             return true;
           }
@@ -618,11 +618,16 @@ class MobileInputUI {
       if (this.proxyInput.value.length > 0 && isDictation) {
         this.dictationTimer = setTimeout(() => {
           if (this.proxyInput.value.length > 0) {
+            // Append a space to the end of the dictation result if it doesn't have one
+            let text = this.proxyInput.value;
+            if (!text.endsWith(" ")) {
+              text += " ";
+            }
             // force flush
             inputHandler(
               { data: "" },
               false,
-              this.proxyInput.value,
+              text,
               true,
               this.proxyInput.value,
               true,
@@ -630,7 +635,7 @@ class MobileInputUI {
             this.proxyInput.value = "";
             lastValue = "";
           }
-        }, 800);
+        }, 1500); // Increased from 800ms to 1500ms to reduce UI pressure during long dictation
       }
     });
     this.proxyInput.addEventListener("keydown", (e) => {

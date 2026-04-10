@@ -144,6 +144,28 @@ managed_ptys = set()
 managed_ptys_lock = threading.Lock()
 
 
+def sigchld_handler(signum, frame):
+    """Signal handler for SIGCHLD to reap zombie processes immediately."""
+    while True:
+        try:
+            # -1 means any child process, WNOHANG means non-blocking
+            pid, status = os.waitpid(-1, os.WNOHANG)
+            if pid == 0:
+                break
+            with managed_ptys_lock:
+                if pid in managed_ptys:
+                    managed_ptys.remove(pid)
+            logger.debug(f"Reaped child process {pid} via SIGCHLD")
+        except ChildProcessError:
+            break
+        except Exception as e:
+            logger.error(f"Error in SIGCHLD handler: {e}")
+            break
+
+
+signal.signal(signal.SIGCHLD, sigchld_handler)
+
+
 def add_managed_pty(pid):
     if pid is not None:
         with managed_ptys_lock:
@@ -176,10 +198,14 @@ def kill_and_reap(pid):
     if pid is None:
         return
     try:
-        os.kill(pid, signal.SIGKILL)
+        # Kill the entire process group started by setsid() in child
+        os.killpg(os.getpgid(pid), signal.SIGKILL)
     except OSError:
-        pass
-    # The actual waitpid reaping is handled by zombie_reaper_task
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except OSError:
+            pass
+    # Reaping via waitpid is now handled instantaneously by SIGCHLD handler
 
 
 def cleanup_orphaned_ptys():
@@ -230,6 +256,9 @@ def get_config_paths():
 
 
 def get_config():
+    import hashlib
+    import socket
+
     data_dir, config_file, ssh_dir = get_config_paths()
     conf = {
         "LDAP_SERVER": LDAP_SERVER,
@@ -251,6 +280,18 @@ def get_config():
                 conf.update(file_config)
         except Exception as e:
             logger.error(f"Error loading config file: {e}")
+
+    if not conf.get("host_id"):
+        hostname = socket.gethostname()
+        h_id = hashlib.sha512(hostname.encode()).hexdigest()[:4]
+        conf["host_id"] = h_id
+        # Persist if writable
+        if conf.get("DATA_WRITABLE"):
+            try:
+                with open(config_file, "w") as f:
+                    json.dump(conf, f, indent=4)
+            except Exception as e:
+                logger.error(f"Failed to persist host_id: {e}")
 
     return conf
 
@@ -359,8 +400,22 @@ def init_app():
     # Load secret key from config (env) or generate one
     import secrets
 
-    fallback_key = secrets.token_hex(32)
-    secret_key = config.get("SECRET_KEY") or env_config.SECRET_KEY or fallback_key
+    secret_key = config.get("SECRET_KEY") or env_config.SECRET_KEY
+    if not secret_key:
+        secret_key = secrets.token_hex(32)
+        # Persist the generated fallback key if writable
+        if config.get("DATA_WRITABLE"):
+            try:
+                config["SECRET_KEY"] = secret_key
+                with open(config_file, "w") as f:
+                    json.dump(config, f, indent=4)
+                logger.info("Generated and persisted new fallback SECRET_KEY")
+            except Exception as e:
+                logger.error(f"Failed to persist fallback SECRET_KEY: {e}")
+        else:
+            logger.warning(
+                "SECRET_KEY not found and storage not writable. Sessions will invalidate on restart."
+            )
 
     app.config.update(
         SECRET_KEY=secret_key,
@@ -381,10 +436,8 @@ csp = {
         "https://cdn.jsdelivr.net",
         "https://cdnjs.cloudflare.com",
         "https://unpkg.com",
-        "'unsafe-inline'",
-        "'unsafe-eval'",
     ],
-    "style-src": ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"],
+    "style-src": ["'self'", "https://cdn.jsdelivr.net"],
     "connect-src": [
         "'self'",
         "ws:",
@@ -494,14 +547,19 @@ def require_auth():
         session["authenticated"] = True
         return
 
-    if request.path in [
-        "/health",
-        "/api/health",
-        "/favicon.ico",
-        "/favicon.svg",
-        "/manifest.json",
-        "/sw.js",
-    ] or request.path.startswith("/s/"):
+    if (
+        request.path
+        in [
+            "/health",
+            "/api/health",
+            "/favicon.ico",
+            "/favicon.svg",
+            "/manifest.json",
+            "/sw.js",
+        ]
+        or request.path.startswith("/s/")
+        or request.path.startswith("/api/v1/")
+    ):
         return
 
     auth = request.authorization
@@ -846,6 +904,9 @@ def pty_restart(data):
 
     (child_pid, fd) = pty.fork()
     if child_pid == 0:
+        # Become session leader for this process group to ensure all
+        # subprocesses (ssh, gemini, etc) are reaped together.
+        os.setsid()
         os.closerange(3, 65536)
         env = os.environ.copy()
         env["TERM"] = "xterm-256color"
@@ -869,7 +930,7 @@ def pty_restart(data):
             ssh_dir=ssh_dir,
             resume=resume,
         )
-        session_manager.add_session(session_obj)
+        session_manager.add_session(session_obj, on_remove=kill_and_reap)
 
         _, _, ssh_dir_path = get_config_paths()
         app_config = {"SSH_DIR": ssh_dir_path}
@@ -1022,6 +1083,7 @@ if __name__ == "__main__":
         ):
             socketio.start_background_task(read_and_forward_pty_output)
             socketio.start_background_task(cleanup_orphaned_ptys)
+            socketio.start_background_task(zombie_reaper_task)
             if not env_config.SKIP_PRELOADER:
                 socketio.start_background_task(background_session_preloader)
 

@@ -236,12 +236,15 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             cmd = [gemini_bin, "--list-sessions"]
 
     try:
+        # Use a real timeout on subprocess.run to ensure we never block the main loop
+        # even if the shell-level timeout fails or the process hangs during setup.
         result = subprocess.run(
             cmd,
             capture_output=True,
             text=True,
             timeout=15,
             stdin=subprocess.DEVNULL,
+            start_new_session=True,  # Ensure it doesn't receive signals from parent
         )
         # Suppress auth errors from the CLI - just show as "no sessions"
         if result.returncode != 0 and (

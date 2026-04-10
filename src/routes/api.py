@@ -8,15 +8,39 @@ import zipfile
 import shlex
 import logging
 import secrets
+import hashlib
+import datetime
+from functools import wraps
 from flask import Blueprint, jsonify, request, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import generate_csrf
 
 from src.config import env_config
 from src.app import get_config, get_config_paths, authenticated_only, logger
-from src.process_manager import validate_ssh_target, build_ssh_args
+from src.process_manager import (
+    validate_ssh_target,
+    build_ssh_args,
+    build_terminal_command,
+)
+from src.session_manager import session_manager
 
 api_bp = Blueprint("api", __name__)
+
+
+def bearer_token_required(f):
+    @wraps(f)
+    def wrapped(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Unauthorized"}), 401
+        token = auth_header[7:]
+        hashed_token = hashlib.sha256(token.encode()).hexdigest()
+        conf = get_config()
+        if hashed_token not in conf.get("API_KEYS", []):
+            return jsonify({"error": "Unauthorized"}), 401
+        return f(*args, **kwargs)
+
+    return wrapped
 
 
 @api_bp.route("/api/config", methods=["GET"])
@@ -25,6 +49,7 @@ def get_current_config():
     conf = get_config()
     conf.pop("LDAP_BIND_PASS", None)
     conf.pop("ADMIN_PASS", None)
+    conf.pop("API_KEYS", None)  # Don't leak hashes even to authenticated users
     return jsonify(conf)
 
 
@@ -33,6 +58,8 @@ def get_current_config():
 def update_config():
     new_conf = request.json
     curr_conf = get_config()
+    # Don't allow updating API_KEYS via this generic endpoint
+    new_conf.pop("API_KEYS", None)
     curr_conf.update(new_conf)
     _, config_file, _ = get_config_paths()
     with open(config_file, "w") as f:
@@ -43,18 +70,35 @@ def update_config():
 @api_bp.route("/api/management/api-keys", methods=["GET"])
 @authenticated_only
 def list_api_keys():
+    # Only return metadata, not hashes
     conf = get_config()
-    return jsonify(conf.get("API_KEYS", []))
+    key_metadata = conf.get("API_KEYS_METADATA", [])
+    return jsonify(key_metadata)
 
 
 @api_bp.route("/api/management/api-keys", methods=["POST"])
 @authenticated_only
 def create_api_key():
     new_key = secrets.token_hex(32)
+    hashed_key = hashlib.sha256(new_key.encode()).hexdigest()
+    note = request.json.get("note", "New Key")
+
     curr_conf = get_config()
     api_keys = curr_conf.get("API_KEYS", [])
-    api_keys.append(new_key)
+    api_keys.append(hashed_key)
     curr_conf["API_KEYS"] = api_keys
+
+    metadata = curr_conf.get("API_KEYS_METADATA", [])
+    key_id = str(uuid.uuid4())[:8]
+    metadata.append(
+        {
+            "id": key_id,
+            "hash": hashed_key,
+            "note": note,
+            "created_at": str(datetime.datetime.now()),
+        }
+    )
+    curr_conf["API_KEYS_METADATA"] = metadata
 
     _, config_file, _ = get_config_paths()
     with open(config_file, "w") as f:
@@ -63,19 +107,137 @@ def create_api_key():
     return jsonify({"status": "success", "key": new_key})
 
 
-@api_bp.route("/api/management/api-keys/<key>", methods=["DELETE"])
+@api_bp.route("/api/management/api-keys/<hash_val>", methods=["DELETE"])
 @authenticated_only
-def delete_api_key(key):
+def delete_api_key(hash_val):
     curr_conf = get_config()
     api_keys = curr_conf.get("API_KEYS", [])
-    if key in api_keys:
-        api_keys.remove(key)
+    metadata = curr_conf.get("API_KEYS_METADATA", [])
+
+    if hash_val in api_keys:
+        api_keys.remove(hash_val)
         curr_conf["API_KEYS"] = api_keys
+
+        new_metadata = [m for m in metadata if m["hash"] != hash_val]
+        curr_conf["API_KEYS_METADATA"] = new_metadata
+
         _, config_file, _ = get_config_paths()
         with open(config_file, "w") as f:
             json.dump(curr_conf, f, indent=4)
         return jsonify({"status": "success"})
     return jsonify({"status": "error", "message": "Key not found"}), 404
+
+
+@api_bp.route("/api/v1/sessions/create", methods=["POST"])
+@bearer_token_required
+def v1_create_session():
+    data = request.json
+    host_id = data.get("host_id")
+    prompt = data.get("prompt")
+
+    if not host_id or not prompt:
+        return jsonify({"error": "Missing host_id or prompt"}), 400
+
+    conf = get_config()
+    if conf.get("host_id") != host_id:
+        return jsonify({"error": "Invalid host_id for this server"}), 403
+
+    # Use default local target for now, or extend to handle SSH targets if needed
+    ssh_target = None
+    ssh_dir = None
+    resume = "new"
+    tab_id = "v1-" + uuid.uuid4().hex[:8]
+
+    _, _, ssh_dir_path = get_config_paths()
+    cmd = build_terminal_command(
+        ssh_target,
+        ssh_dir,
+        resume,
+        ssh_dir_path,
+        env_config.GEMINI_BIN,
+    )
+
+    # In a real scenario, we'd pipe the prompt to the session.
+    # For this simplified implementation, we'll just run it once if possible.
+    # But the requirement is to "execute prompt via Gemini CLI on the target host".
+
+    # We can use subprocess to run the command directly and return output
+    # or start a background session. The requirement says "Response: Success/Failure with stdout and stderr".
+    # This implies a one-off execution.
+
+    full_cmd = cmd + [prompt]
+    try:
+        result = subprocess.run(full_cmd, capture_output=True, text=True, timeout=120)
+        return jsonify(
+            {
+                "status": "success" if result.returncode == 0 else "failure",
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "returncode": result.returncode,
+            }
+        )
+    except subprocess.TimeoutExpired:
+        return jsonify({"status": "failure", "error": "Timeout expired"}), 504
+    except Exception as e:
+        return jsonify({"status": "failure", "error": str(e)}), 500
+
+
+@api_bp.route("/api/v1/hosts/states", methods=["GET"])
+@bearer_token_required
+def v1_host_states():
+    # Return current session status for this host
+    sessions = session_manager.get_all_sessions()
+    states = []
+    for s in sessions:
+        states.append(
+            {
+                "tab_id": s.tab_id,
+                "title": s.title,
+                "ssh_target": s.ssh_target,
+                "last_seen": s.last_seen,
+                "orphaned_at": s.orphaned_at,
+            }
+        )
+    return jsonify({"host_id": get_config().get("host_id"), "sessions": states})
+
+
+@api_bp.route("/api/v1/hosts/states/wait/<host_id>/<wait_time>", methods=["GET"])
+@bearer_token_required
+def v1_wait_for_ready(host_id, wait_time):
+    conf = get_config()
+    if conf.get("host_id") != host_id:
+        return jsonify({"error": "Invalid host_id"}), 403
+
+    # Parse wait_time (eg. 10s, 5m, 2h)
+    seconds = 0
+    if wait_time.endswith("s"):
+        seconds = int(wait_time[:-1])
+    elif wait_time.endswith("m"):
+        seconds = int(wait_time[:-1]) * 60
+    elif wait_time.endswith("h"):
+        seconds = int(wait_time[:-1]) * 3600
+    else:
+        try:
+            seconds = int(wait_time)
+        except ValueError:
+            return jsonify({"error": "Invalid time format"}), 400
+
+    start_time = time.time()
+    while time.time() - start_time < seconds:
+        sessions = session_manager.get_all_sessions()
+        all_ready = True
+        for s in sessions:
+            # Simple heuristic: if title doesn't contain "Working" or "✋", it's ready
+            if s.title and ("Working" in s.title or "✋" in s.title):
+                all_ready = False
+                break
+
+        if all_ready and sessions:  # Ensure there are sessions to wait for
+            return jsonify({"status": "ready"})
+
+        time.sleep(2)
+
+    return jsonify({"status": "timeout"}), 504
 
 
 @api_bp.route("/api/settings/export", methods=["GET"])
