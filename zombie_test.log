@@ -1,0 +1,12 @@
+1. Clean Slate: Checking for 0 zombies.
+Zombies before test: 32
+Warning: There are existing zombies. Continuing anyway...
+2. Deploying container...
+Container/App deployed.
+3. Playwright verification...
+Found 0 sessions.
+Playwright verification: Found less than 4 sessions. We might not have enough configured hosts.
+4. Sleep for 1 minute
+5. Post-trigger observation
+Zombies after test: 32
+Test PASSED: No new zombies created.

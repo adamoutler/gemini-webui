@@ -1,0 +1,7 @@
+--- Starting Zombie Reproduction Test V2 ---
+Initial zombie count: 15
+Starting Gemini WebUI...
+Path 1: Testing Ctrl-Z + Restart
+Error during test: Page.wait_for_selector: Timeout 30000ms exceeded.
+Call log:
+  - waiting for locator(".session-item") to be visible

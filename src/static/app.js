@@ -1438,7 +1438,16 @@ function startSession(
         const deltaLines = Math.round(deltaScroll / rowHeight);
 
         if (deltaLines !== 0) {
-          tab.term.scrollLines(deltaLines);
+          if (tab.term.buffer.active.type === "alternate") {
+            // In alternate buffer, send arrow keys to the terminal
+            const seq = deltaLines < 0 ? "\x1b[A" : "\x1b[B";
+            const count = Math.abs(deltaLines);
+            for (let i = 0; i < count; i++) {
+              emitPtyInput(tab, seq);
+            }
+          } else {
+            tab.term.scrollLines(deltaLines);
+          }
           lastScrollTop += deltaLines * rowHeight;
           selectionOverlay.style.top = proxy.scrollTop + "px";
 
@@ -1954,8 +1963,16 @@ function startSession(
     }
   });
   tab.term.attachCustomKeyEventHandler((e) => {
-    if (e.type === "keydown" && e.ctrlKey && e.key === "Enter") {
-      if (tab.socket) emitPtyInput(tab, "\x1b\r");
+    if (e.type === "keydown" && (e.ctrlKey || e.altKey) && e.key === "Enter") {
+      if (tab.mobileProxy && tab.mobileProxy.ui) {
+        tab.mobileProxy.ui.proxyInput.value += "\n";
+        tab.mobileProxy.ui.proxyInput.dispatchEvent(
+          new Event("input", { bubbles: true }),
+        );
+      } else {
+        // Fallback for non-mobile if proxy isn't active
+        if (tab.socket) emitPtyInput(tab, "\n");
+      }
       return false;
     }
 
@@ -2118,7 +2135,7 @@ function switchTab(id) {
     const reclaimBtn = document.getElementById("reclaim-btn");
     if (reclaimBtn)
       reclaimBtn.style.display = tab.stolen ? "inline-block" : "none";
-    if (isMobile) mobileControls.style.display = "grid";
+    mobileControls.style.display = "grid";
     updateStatus(tab.session.ssh_target, tab.session.ssh_dir);
     if (tab.stolen) {
       const statusEl = document.getElementById("connection-status");
@@ -2210,6 +2227,23 @@ function renderTabs() {
     el.className = "tab" + (tab.id === activeTabId ? " active" : "");
     el.title = tab.title; // Add tooltip for full tab name
     el.onclick = () => switchTab(tab.id);
+
+    // Support for right-click context menu
+    el.oncontextmenu = (e) => {
+      e.preventDefault();
+      showTabContextMenu(tab.id, e.clientX, e.clientY);
+    };
+
+    // Support for long-press on mobile
+    let longPressTimer;
+    el.ontouchstart = (e) => {
+      longPressTimer = setTimeout(() => {
+        showTabContextMenu(tab.id, e.touches[0].clientX, e.touches[0].clientY);
+      }, 500);
+    };
+    el.ontouchend = () => clearTimeout(longPressTimer);
+    el.ontouchmove = () => clearTimeout(longPressTimer);
+
     el.innerHTML =
       `<span>${tab.title}</span>` +
       (tab.state === "launcher"
@@ -2217,6 +2251,71 @@ function renderTabs() {
         : `<span class="tab-close" data-onclick="closeTab('${tab.id}', event)">&times;</span>`);
     bar.appendChild(el);
   });
+}
+
+function showTabContextMenu(id, x, y) {
+  // Remove existing menu if any
+  const existingMenu = document.getElementById("tab-context-menu");
+  if (existingMenu) existingMenu.remove();
+
+  const menu = document.createElement("div");
+  menu.id = "tab-context-menu";
+  menu.className = "context-menu js-style-87d2f1"; // Shared style for menus
+  menu.style.left = x + "px";
+  menu.style.top = y + "px";
+
+  const options = [
+    {
+      label: "New Tab",
+      action: () => {
+        addNewTab();
+      },
+    },
+    {
+      label: "Rename Tab",
+      action: () => {
+        const tab = tabs.find((t) => t.id === id);
+        const newTitle = prompt("Enter new tab title:", tab.title);
+        if (newTitle) {
+          tab.title = newTitle;
+          renderTabs();
+          saveTabsToStorage();
+        }
+      },
+    },
+  ];
+
+  const tab = tabs.find((t) => t.id === id);
+  if (tab.state !== "launcher") {
+    options.push({
+      label: "Close Tab",
+      action: () => {
+        closeTab(id);
+      },
+    });
+  }
+
+  options.forEach((opt) => {
+    const item = document.createElement("div");
+    item.className = "context-menu-item";
+    item.innerText = opt.label;
+    item.onclick = () => {
+      opt.action();
+      menu.remove();
+    };
+    menu.appendChild(item);
+  });
+
+  document.body.appendChild(menu);
+
+  // Close menu on click outside
+  const closeMenu = (e) => {
+    if (!menu.contains(e.target)) {
+      menu.remove();
+      document.removeEventListener("click", closeMenu);
+    }
+  };
+  setTimeout(() => document.addEventListener("click", closeMenu), 10);
 }
 
 let resizeObserverTimeout;

@@ -8,35 +8,31 @@ if [[ "$tool_name" =~ run_shell_command|Bash|shell ]]; then
     command=$(echo "$INPUT" | jq -r '.tool_input.command')
 
     if [[ "$command" =~ git[[:space:]]+push ]]; then
-        if [ "$(hostname)" = "inferrence1" ]; then
-            echo "Detected git push on inferrence1. Restarting docker-compose in the background..." >&2
-            # Automatically recreate the docker container in the background
-            # nohup detaches the process from the terminal/current shell and & puts it in the background
-            nohup bash -c "docker compose up -d --build --force-recreate" > /dev/null 2>&1 &
-        fi
+        OWNER="adamoutler"
+        REPO="gemini-webui"
         
-        echo "Waiting 20 seconds for GitHub Actions to register the build..." >&2
-        sleep 20
+        echo "Waiting 10 seconds for GitHub Actions to register the build..." >&2
+        sleep 10
         
-        CURRENT_COMMIT=$(git rev-parse HEAD)
-        RUN_ID=$(gh run list --commit "$CURRENT_COMMIT" --json databaseId -q '.[0].databaseId')
+        echo "Watching CI status via Dash API..." >&2
+        # Use the wait endpoint to stream status and wait for completion
+        # Note: We use stderr for the dots/output so it doesn't break the JSON hook protocol
+        CI_RESULT=$(curl -N -s "https://dash.hackedyour.info/api/wait?provider=github&owner=${OWNER}&repo=${REPO}" | tee /dev/stderr | tail -n 1)
         
-        if [ -n "$RUN_ID" ] && [ "$RUN_ID" != "null" ]; then
-            echo "Found workflow run $RUN_ID. Watching for completion..." >&2
+        CI_STATUS=$(echo "$CI_RESULT" | jq -r '.status // empty')
+        
+        if [ "$CI_STATUS" = "failure" ]; then
+            # Fetch failed logs via Dash API
+            CI_LOGS=$(curl -s "https://dash.hackedyour.info/api/logs?provider=github&owner=${OWNER}&repo=${REPO}")
+            LAST_LINES=$(echo "$CI_LOGS" | jq -r '.log // empty' | tail -n 30)
             
-            # Watch the run and stream output to stderr so the user sees it without breaking JSON hook protocol
-            gh run watch "$RUN_ID" >&2
-            
-            # Get final status
-            STATUS=$(gh run view "$RUN_ID" --json conclusion -q '.conclusion')
-            
-            jq -n -c --arg result "GitHub Actions workflow run $RUN_ID for commit $CURRENT_COMMIT finished with status: $STATUS" \
+            jq -n -c --arg result "GitHub Actions workflow failed! Last 30 lines of log:\n$LAST_LINES" \
               '{"decision": "allow", "hookSpecificOutput": {"additionalContext": $result}}'
-            exit 0
         else
-            jq -n -c '{decision: "allow", "hookSpecificOutput": {"additionalContext": "Could not find a GitHub Actions run for the pushed commit."}}'
-            exit 0
+            jq -n -c --arg result "GitHub Actions workflow finished with status: $CI_STATUS" \
+              '{"decision": "allow", "hookSpecificOutput": {"additionalContext": $result}}'
         fi
+        exit 0
     fi
 fi
 

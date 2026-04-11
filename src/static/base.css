@@ -989,7 +989,7 @@ textarea {
 }
 
 .auto-style-9c7663 {
-  display: none;
+  display: flex;
 }
 
 .auto-style-c89dae {
@@ -1492,4 +1492,28 @@ textarea {
   color: #666;
   font-size: 11px;
   padding-left: 15px;
+}
+
+.js-style-87d2f1 {
+  position: fixed;
+  background: #222;
+  border: 1px solid #444;
+  box-shadow: 0 4px 12px rgb(0, 0, 0, 0.5);
+  padding: 4px 0;
+  z-index: 10000;
+  border-radius: 4px;
+  min-width: 150px;
+}
+
+.context-menu-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  color: #ddd;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.context-menu-item:hover {
+  background: #333;
+  color: #fff;
 }
