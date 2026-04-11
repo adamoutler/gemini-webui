@@ -306,46 +306,151 @@ window.addEventListener("focus", () => {
   }
 });
 
+async function loadTabsFromServer() {
+  try {
+    const response = await fetch("/api/sessions/persisted");
+    if (!response.ok) throw new Error("Failed to fetch sessions");
+    const persisted = await response.json();
+
+    // Clear existing tabs
+    tabs = [];
+    document.getElementById("terminal-container").innerHTML = "";
+
+    // Add persisted tabs
+    let foundActive = false;
+    for (const tid in persisted) {
+      const s = persisted[tid];
+      const tab = {
+        id: tid,
+        term: null,
+        fitAddon: null,
+        socket: null,
+        session: s,
+        title: s.title,
+        state: "terminal",
+      };
+      tabs.push(tab);
+      createTerminalContainer(tid);
+      if (tid === activeTabId) foundActive = true;
+    }
+
+    // Always add a launcher if none exist
+    if (!tabs.find((t) => t.state === "launcher")) {
+      const id = "tab_" + (Date.now() + Math.floor(Math.random() * 1000));
+      tabs.push({
+        id,
+        term: null,
+        fitAddon: null,
+        socket: null,
+        session: null,
+        title: "New Tab",
+        state: "launcher",
+      });
+      createTerminalContainer(id);
+      renderLauncher(id);
+    }
+
+    if (!foundActive) activeTabId = tabs[0].id;
+
+    renderTabs();
+    switchTab(activeTabId);
+
+    // Start sessions
+    tabs.forEach((t) => {
+      if (t.state === "terminal") {
+        recreateTerminalUI(t, true);
+      }
+    });
+
+    // Handle migration from legacy pinned tabs
+    const legacyPinned = localStorage.getItem("pinned_tabs");
+    if (legacyPinned) {
+      try {
+        const pins = JSON.parse(legacyPinned);
+        if (Array.isArray(pins) && pins.length > 0) {
+          fetch("/api/migrate-tabs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              tabs: pins.map((p) => ({
+                tab_id: p.id,
+                title: p.title,
+                ssh_target: p.ssh_target,
+                ssh_dir: p.ssh_dir,
+              })),
+            }),
+          }).then(() => localStorage.removeItem("pinned_tabs"));
+        } else {
+          localStorage.removeItem("pinned_tabs");
+        }
+      } catch (e) {
+        localStorage.removeItem("pinned_tabs");
+      }
+    }
+  } catch (e) {
+    debugLog("Error loading tabs from server:", e);
+    if (tabs.length === 0) addNewTab();
+  }
+}
+
+function syncTabs(serverTabs) {
+  debugLog("Syncing tabs from server:", serverTabs);
+  let changed = false;
+
+  // Remove tabs no longer on server
+  for (let i = tabs.length - 1; i >= 0; i--) {
+    const t = tabs[i];
+    if (t.state === "terminal" && !serverTabs[t.id]) {
+      closeTab(t.id, null, true);
+      changed = true;
+    }
+  }
+
+  // Add or update tabs
+  for (const tid in serverTabs) {
+    const s = serverTabs[tid];
+    const existing = tabs.find((t) => t.id === tid);
+    if (!existing) {
+      const tab = {
+        id: tid,
+        term: null,
+        fitAddon: null,
+        socket: null,
+        session: s,
+        title: s.title,
+        state: "terminal",
+      };
+      tabs.push(tab);
+      createTerminalContainer(tid);
+      recreateTerminalUI(tab, true);
+      changed = true;
+    } else if (existing.title !== s.title) {
+      existing.title = s.title;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    renderTabs();
+    updatePageTitle();
+  }
+}
+
+function createTerminalContainer(id) {
+  if (document.getElementById(id + "_instance")) return;
+  const container = document.createElement("div");
+  container.id = id + "_instance";
+  container.className = "tab-instance";
+  document.getElementById("terminal-container").appendChild(container);
+}
+
 function saveTabsToStorage() {
-  const data = tabs.map((t) => ({
-    id: t.id,
-    title: t.title,
-    state: t.state,
-    session: t.session,
-  }));
-  sessionStorage.setItem("gemini_tabs", JSON.stringify(data));
   sessionStorage.setItem("gemini_active_tab", activeTabId);
 }
 
 function loadTabsFromStorage() {
-  const stored = sessionStorage.getItem("gemini_tabs");
-  if (stored) {
-    try {
-      const data = JSON.parse(stored);
-      data.forEach((t) => {
-        const tab = { ...t, term: null, fitAddon: null, socket: null };
-        tabs.push(tab);
-        const container = document.createElement("div");
-        container.id = tab.id + "_instance";
-        container.className = "tab-instance";
-        document.getElementById("terminal-container").appendChild(container);
-        if (tab.state === "terminal") {
-          recreateTerminalUI(tab, true);
-        } else {
-          renderLauncher(tab.id);
-        }
-      });
-      activeTabId = sessionStorage.getItem("gemini_active_tab");
-      if (!tabs.find((t) => t.id === activeTabId)) activeTabId = tabs[0].id;
-      renderTabs();
-      switchTab(activeTabId);
-      return true;
-    } catch (e) {
-      console.error("Restore failed", e);
-      sessionStorage.clear();
-    }
-  }
-  return false;
+  loadTabsFromServer();
+  return true;
 }
 
 function recreateTerminalUI(tab, shouldReclaim = false) {
@@ -1070,6 +1175,15 @@ function getGlobalSocket() {
         globalSocket.auth = { csrf_token: newToken };
         globalSocket.connect();
       }
+    });
+
+    globalSocket.on("sync-tabs", (serverTabs) => {
+      syncTabs(serverTabs);
+    });
+
+    globalSocket.on("session-terminated", (data) => {
+      debugLog("Session terminated via global socket:", data.tab_id);
+      closeTab(data.tab_id, null, true);
     });
   }
   return globalSocket;
@@ -1798,6 +1912,7 @@ function startSession(
     } catch (e) {
       console.error("Failed to refresh CSRF token:", e);
     }
+    tab.socket.emit("join_room", { tab_id: tabId });
     tab.socket.emit("restart", {
       tab_id: tabId,
       reclaim: tab.shouldReclaim,
@@ -1887,6 +2002,11 @@ function startSession(
       saveTabsToStorage();
       localStorage.setItem("geminiResume", data.session_id.toString());
     }
+  });
+
+  tab.socket.on("session-terminated", () => {
+    debugLog("Session terminated via tab socket:", tabId);
+    closeTab(tabId, null, true);
   });
 
   tab.socket.on("pty-output", (data) => {
@@ -2193,12 +2313,26 @@ function restartActiveTab() {
   }
 }
 
-function closeTab(id, event) {
+function closeTab(id, event, isLocalOnly = false) {
   if (event) event.stopPropagation();
   const index = tabs.findIndex((t) => t.id === id);
   if (index === -1) return;
   const tab = tabs[index];
   if (tab.state === "launcher") return; // Cannot close the launcher (+ New) tab
+
+  if (!isLocalOnly) {
+    // Explicitly terminate backend session
+    fetchWithCSRF(`/api/management/sessions/${id}`, {
+      method: "DELETE",
+    }).then((resp) => {
+      if (!resp.ok && resp.status !== 404) {
+        resp.json().then((data) => {
+          debugLog("Termination failed for " + id + ": " + data.error);
+        });
+      }
+    });
+  }
+
   if (tab.socket) tab.socket.disconnect();
   if (tab.webglAddon) {
     try {
@@ -2248,7 +2382,7 @@ function renderTabs() {
       `<span>${tab.title}</span>` +
       (tab.state === "launcher"
         ? ""
-        : `<span class="tab-close" data-onclick="closeTab('${tab.id}', event)">&times;</span>`);
+        : `<span class="tab-close" data-onclick="closeTab('${tab.id}', event, false)">&times;</span>`);
     bar.appendChild(el);
   });
 }
@@ -2290,7 +2424,7 @@ function showTabContextMenu(id, x, y) {
     options.push({
       label: "Close Tab",
       action: () => {
-        closeTab(id);
+        closeTab(id, null, false);
       },
     });
   }

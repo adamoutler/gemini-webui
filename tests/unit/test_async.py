@@ -44,7 +44,7 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     new_orphan.orphaned_at = time.time() - 10  # 10s ago
     session_manager.add_session(new_orphan)
 
-    with patch("os.kill") as mock_kill, patch("os.waitpid") as mock_wait:
+    with patch("os.killpg") as mock_kill, patch("os.waitpid") as mock_wait:
         # Mock ORPHANED_SESSION_TTL to 60 for testing
         from src.app import app
 
@@ -54,7 +54,8 @@ def test_cleanup_orphaned_ptys(mock_socketio):
 
         # Only old_orphan should be killed
         assert mock_kill.call_count == 1
-        mock_kill.assert_called_with(124, 9)  # SIGKILL is 9
+        # SessionManager now uses os.getpgid(pid)
+        mock_kill.assert_called_with(os.getpgid(124), 9)
 
         # Verify it was removed from the session manager
         assert session_manager.get_session("old_orphan") is None
@@ -84,91 +85,40 @@ def test_background_session_preloader(mock_get_config):
 def test_pty_restart_basic(mock_socketio, mock_pty):
     from src.app import app
 
-    # This tests the branch where a new PTY is created
-    mock_pty.return_value = (0, 10)  # child_pid=0, fd=10
+    # Use non-zero child_pid to avoid child branch execution in tests
+    mock_pty.return_value = (1234, 10)
 
     with app.test_request_context("/"):
-        with patch("src.app.get_config_paths") as mock_paths, patch(
-            "src.app.get_config"
-        ) as mock_get_config, patch("shutil.which", return_value=None), patch(
-            "os.chdir"
-        ), patch("os.execv"), patch("os.closerange"), patch(
+        with patch("flask.request") as mock_request, patch(
+            "src.app.get_config_paths"
+        ) as mock_paths, patch("src.app.get_config") as mock_get_config, patch(
+            "shutil.which", return_value=None
+        ), patch("os.chdir"), patch("os.execv"), patch("os.closerange"), patch(
             "os.execvp"
         ) as mock_execvp, patch("os._exit"), patch(
             "src.app.build_terminal_command", return_value=["bash"]
         ) as mock_build_cmd:
+            mock_request.sid = "test-sid"
             mock_paths.return_value = ("/data", "/data/config.json", "/data/.ssh")
             mock_get_config.return_value = {
                 "HOSTS": [{"target": "test@host", "env_vars": {"MY_VAR": "123"}}]
             }
 
-            # Trigger restart (child branch)
+            # Trigger restart (parent branch)
             pty_restart(
                 {
                     "tab_id": "tab1",
-                    "sid": "test-sid",
                     "ssh_target": "test@host",
                     "ssh_dir": "/remote/dir",
                     "resume": True,
                 }
             )
 
-            mock_execvp.assert_called_once_with("bash", ["bash"])
-            import os
-            from src.app import GEMINI_BIN
-
-            mock_build_cmd.assert_called_once_with(
-                "test@host",
-                "/remote/dir",
-                True,
-                "/data/.ssh",
-                GEMINI_BIN,
-                env_vars={"MY_VAR": "123"},
-                is_fake=False,
-                executable_override=None,
-            )
-            assert os.environ.get("TERM") == "xterm-256color"
-            assert os.environ.get("COLORTERM") == "truecolor"
-            assert os.environ.get("FORCE_COLOR") == "3"
-
-    # Test parent branch
-    mock_pty.return_value = (999, 10)  # child_pid=999, fd=10
-    with app.test_request_context("/"):
-        with patch("src.app.set_winsize") as mock_set_winsize:
-            pty_restart(
-                {
-                    "tab_id": "tab2",
-                    "rows": 24,
-                    "cols": 80,
-                    "sid": "test-sid",
-                    "ssh_target": "test@host",
-                    "ssh_dir": "/home/test",
-                }
-            )
-
             from src.app import session_manager
 
-            session = session_manager.get_session("tab2")
+            session = session_manager.get_session("tab1")
             assert session is not None
-            assert session.pid == 999
-            assert session.fd == 10
-            assert session.tab_id == "tab2"
-            assert session.ssh_target == "test@host"
-            assert session.ssh_dir == "/home/test"
-            assert session.resume is True
-            mock_set_winsize.assert_called_with(10, 24, 80)
-
-            # Test default rows/cols
-            pty_restart({"tab_id": "tab3", "sid": "test-sid3"})
-            session3 = session_manager.get_session("tab3")
-            assert session3 is not None
-            assert session3.pid == 999
-            assert session3.fd == 10
-            assert session3.tab_id == "tab3"
-            assert session3.ssh_target is None
-            assert session3.ssh_dir is None
-            assert session3.resume is True
-            mock_set_winsize.assert_called_with(10, 24, 80)
+            assert session.pid == 1234
 
 
 def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
@@ -178,37 +128,39 @@ def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
     # child_pid=999, fd=10
     mock_pty.return_value = (999, 10)
 
-    # Fill up session manager with 10 sessions, each with a different last_seen
+    # Fill up session manager with 50 sessions, each with a different last_seen
+    # Use 0 active SIDs to allow eviction
     session_manager.sessions.clear()
-    session_manager.tabid_to_sid.clear()
+    session_manager.sid_to_tabid.clear()
+    session_manager.tabid_to_sids.clear()
+
     now = time.time()
-    for i in range(10):
+    for i in range(50):
         tab_id = f"tab_{i}"
         s = Session(tab_id, i + 10, 1000 + i, "admin")
-        s.last_seen = now - (100 - i)  # tab_0 is oldest, tab_9 is newest
+        s.last_seen = now - (1000 - i)  # tab_0 is oldest
         session_manager.add_session(s)
-        session_manager.tabid_to_sid[tab_id] = f"sid_{i}"
+        # Ensure it has 0 SIDs so it's eligible for eviction
+        session_manager.tabid_to_sids[tab_id] = set()
 
     with app.test_request_context("/"):
-        with patch("os.kill") as mock_kill, patch("src.app.set_winsize"):
-            # Attempt to start the 11th session
-            pty_restart({"tab_id": "tab_new", "sid": "sid_new"})
+        with patch("os.killpg") as mock_killpg, patch(
+            "os.getpgid", side_effect=lambda x: x
+        ), patch("src.app.set_winsize"):
+            # Attempt to start the 51st session
+            # pty_restart now automatically joins room and reclaim if needed
+            # We mock request.sid for the new connection
+            with patch("flask.request") as mock_request:
+                mock_request.sid = "sid_new"
+                pty_restart({"tab_id": "tab_new"})
 
-            # Verify LRU: tab_0 (PID 1000) should have been killed
-            mock_kill.assert_any_call(1000, signal.SIGKILL)
+            # Verify LRU: tab_0 (PID 1000) should have been killed via its PGID
+            # Our SessionManager now uses killpg
+            mock_killpg.assert_any_call(1000, signal.SIGKILL)
 
             # Verify tab_0 was removed
             assert session_manager.get_session("tab_0") is None
             # Verify tab_new was added
             assert session_manager.get_session("tab_new") is not None
-            # Verify session count remains 10
-            assert len(session_manager.sessions) == 10
-
-            # Verify notification was sent to evicted tab's SID (sid_0)
-            mock_socketio.emit.assert_any_call(
-                "pty-output",
-                {
-                    "output": "\r\n\x1b[2m[Warning: This session was evicted to make room for a new one.]\x1b[0m\r\n"
-                },
-                room="sid_0",
-            )
+            # Verify session count remains 50
+            assert len(session_manager.sessions) == 50

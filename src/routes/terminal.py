@@ -27,6 +27,56 @@ from src.process_manager import (
 terminal_bp = Blueprint("sessions", __name__)
 
 
+@terminal_bp.route("/api/sessions/persisted", methods=["GET"])
+@authenticated_only
+def list_persisted_sessions():
+    user_id = session.get("user_id") or (
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+    )
+    if not session_manager.persistence:
+        return jsonify({})
+    all_persisted = session_manager.persistence.load()
+    # Filter by user_id
+    user_persisted = {
+        tid: s for tid, s in all_persisted.items() if s.get("user_id") == user_id
+    }
+    return jsonify(user_persisted)
+
+
+@terminal_bp.route("/api/migrate-tabs", methods=["POST"])
+@authenticated_only
+def migrate_tabs():
+    user_id = session.get("user_id") or (
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+    )
+    data = request.json
+    tabs = data.get("tabs", [])
+    if not tabs or not session_manager.persistence:
+        return jsonify({"status": "ignored"})
+
+    current_persisted = session_manager.persistence.load()
+    updated = False
+    for tab in tabs:
+        tid = tab.get("tab_id")
+        if tid and tid not in current_persisted:
+            current_persisted[tid] = {
+                "tab_id": tid,
+                "title": tab.get("title"),
+                "ssh_target": tab.get("ssh_target"),
+                "ssh_dir": tab.get("ssh_dir"),
+                "user_id": user_id,
+                "resume": tab.get("resume", True),
+            }
+            updated = True
+
+    if updated:
+        session_manager.persistence.save(current_persisted)
+        # Broadcast sync to other clients
+        socketio.emit("sync-tabs", current_persisted, room=f"user_{user_id}")
+
+    return jsonify({"status": "success"})
+
+
 @terminal_bp.route("/api/management/sessions", methods=["GET"])
 @authenticated_only
 def list_active_sessions():
@@ -39,14 +89,16 @@ def list_active_sessions():
 @terminal_bp.route("/api/management/sessions/<tab_id>", methods=["DELETE"])
 @authenticated_only
 def terminate_managed_session(tab_id):
-    logger.error(
-        f"terminate_managed_session called with tab_id={tab_id!r}, type={type(tab_id)}\nAvailable keys: {list(session_manager.sessions.keys())}\nuser_id={session.get('user_id')!r}"
-    )
     user_id = session.get("user_id") or (
         "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
     if not tab_id:
         return jsonify({"error": "Tab ID required"}), 400
+
+    # Remove from persistence first to prevent re-sync
+    if session_manager.persistence:
+        session_manager.persistence.remove(tab_id)
+
     session_obj = session_manager.remove_session(tab_id, user_id)
     if session_obj:
         logger.info(f"Terminating managed session {tab_id}")
@@ -57,11 +109,13 @@ def terminate_managed_session(tab_id):
                 os.close(session_obj.fd)
             except OSError:
                 pass
-        return jsonify({"status": "success"})
-    return jsonify({"error": "Session not found"}), 404
+
+    # Broadcast termination to all clients in the room
+    socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
+    return jsonify({"status": "success"})
 
 
-@terminal_bp.route("/api/sessions/terminate_all", methods=["GET"])
+@terminal_bp.route("/api/sessions/terminate_all", methods=["GET", "POST"])
 @authenticated_only
 def terminate_all_managed_sessions():
     user_id = session.get("user_id") or (
@@ -73,6 +127,11 @@ def terminate_all_managed_sessions():
         tab_id = s.get("tab_id")
         if not tab_id:
             continue
+
+        # Remove from persistence
+        if session_manager.persistence:
+            session_manager.persistence.remove(tab_id)
+
         session_obj = session_manager.remove_session(tab_id, user_id)
         if session_obj:
             logger.info(f"Terminating managed session {tab_id}")
@@ -85,6 +144,10 @@ def terminate_all_managed_sessions():
                 except OSError:
                     pass
             count += 1
+
+        # Broadcast termination
+        socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
+
     return jsonify({"status": "success", "count": count})
 
 
