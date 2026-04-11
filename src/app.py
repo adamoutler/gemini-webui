@@ -43,7 +43,7 @@ from flask import (
     send_file,
 )
 from werkzeug.utils import secure_filename
-from flask_socketio import SocketIO, ConnectionRefusedError
+from flask_socketio import SocketIO, ConnectionRefusedError, join_room
 from flask_talisman import Talisman
 from flask_wtf.csrf import CSRFProtect, CSRFError, generate_csrf
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -515,6 +515,13 @@ def handle_connect(auth=None):
         app.logger.debug(f"CSRF validation failed (expected during token refresh): {e}")
         raise ConnectionRefusedError("invalid_csrf")
 
+    user_id = session.get("user_id") or (
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+    )
+    if user_id and sid:
+        join_room(f"user_{user_id}")
+        logger.debug(f"SID {sid} joined user room user_{user_id}")
+
     if env_config.BYPASS_AUTH_FOR_TESTING:
         return True
 
@@ -525,8 +532,10 @@ def handle_connect(auth=None):
 
 @socketio.on("disconnect")
 def handle_disconnect():
-    sid = request.sid
-    tab_id = session_manager.sid_to_tabid.pop(sid, None)
+    sid = getattr(request, "sid", None)
+    tab_id = session_manager.sid_to_tabid.get(sid)
+    if tab_id:
+        session_manager.orphan_session(tab_id, sid)
 
     with active_fake_sockets_lock:
         for t_id, active_sid in list(active_fake_sockets.items()):
@@ -611,10 +620,9 @@ def read_and_forward_pty_output():
             if not session_manager.sessions:
                 break
         socketio.sleep(0.01)
-        for tab_id, session in list(session_manager.sessions.items()):
-            fd = session.fd
-            decoder = session.decoder
-            sid = session_manager.tabid_to_sid.get(tab_id)
+        for tab_id, session_obj in list(session_manager.sessions.items()):
+            fd = session_obj.fd
+            decoder = session_obj.decoder
             break_eof = False
             try:
                 batched_output = []
@@ -625,7 +633,6 @@ def read_and_forward_pty_output():
                         if output:
                             batched_output.append(output)
                         else:
-                            # Flush before raising EOFError
                             break_eof = True
                             break
                     else:
@@ -642,20 +649,22 @@ def read_and_forward_pty_output():
                         else:
                             filtered_output = decoded_output
                         if filtered_output:
-                            session.append_buffer(filtered_output)
-                            if sid:
-                                socketio.emit(
-                                    "pty-output", {"output": filtered_output}, room=sid
-                                )
+                            session_obj.append_buffer(filtered_output)
+                            # Broadcast to the entire room for this tab_id
+                            socketio.emit(
+                                "pty-output", {"output": filtered_output}, room=tab_id
+                            )
 
-                if "break_eof" in locals() and break_eof:
+                if break_eof:
                     raise EOFError("EOF reached")
             except (OSError, IOError, EOFError):
                 logger.info(f"Removing session {tab_id} due to I/O error")
-                old_session = session_manager.remove_session(tab_id)
+                session_manager.remove_session(tab_id)
                 ephemeral_sessions.pop(tab_id, None)
-                if old_session and old_session.pid is not None:
-                    kill_and_reap(old_session.pid)
+                if session_obj and session_obj.pid is not None:
+                    kill_and_reap(session_obj.pid)
+                # Notify all clients that the session is closed
+                socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
 
 
 def background_session_preloader():
@@ -681,41 +690,53 @@ def background_session_preloader():
         socketio.sleep(3600)
 
 
-@socketio.on("update_title")
-def update_title(data):
-    sid = request.sid
-    user_id = session.get("user_id") or (
-        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
-    )
-    tab_id = data.get("tab_id") or session_manager.sid_to_tabid.get(sid)
-    title = data.get("title")
-    if tab_id and title:
-        session_manager.update_title(tab_id, title, user_id)
+@socketio.on("join_room")
+def on_join_room(data):
+    sid = getattr(request, "sid", None)
+    tab_id = data.get("tab_id")
+    if tab_id:
+        if sid:
+            join_room(tab_id)
+            logger.debug(f"SID {sid} joined room {tab_id}")
+
+        # Trigger a global sync for this user to ensure they have the full tab list
+        user_id = session.get("user_id") or (
+            "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+        )
+        if user_id:
+            if session_manager.persistence:
+                persisted = session_manager.persistence.load()
+                user_persisted = {
+                    tid: s
+                    for tid, s in persisted.items()
+                    if s.get("user_id") == user_id
+                }
+                socketio.emit("sync-tabs", user_persisted, room=f"user_{user_id}")
 
 
 @socketio.on("pty-input")
 def pty_input(data):
-    sid = request.sid
+    sid = getattr(request, "sid", None)
     user_id = session.get("user_id") or (
         "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
+    # Get tab_id from the session mapping
     tab_id = session_manager.sid_to_tabid.get(sid)
     session_obj = session_manager.get_session(tab_id, user_id)
     if session_obj:
         session_obj.last_seen = time.time()
-        # Filter out terminal identification responses (DA) to prevent loops
-        # e.g. \x1b[?1;2c or similar. These often get echoed back on reclaim.
         input_data = data.get("input", "")
         if not input_data:
             return
+        # Filter out terminal identification responses
         if input_data.startswith("\x1b[?") and input_data.endswith("c"):
             return
         os.write(session_obj.fd, input_data.encode())
 
 
-@socketio.on("resize")
+@socketio.on("pty-resize")
 def pty_resize(data):
-    sid = request.sid
+    sid = getattr(request, "sid", None)
     user_id = session.get("user_id") or (
         "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
@@ -730,7 +751,7 @@ def pty_resize(data):
 
 @socketio.on("restart")
 def pty_restart(data):
-    sid = data.get("sid") or getattr(request, "sid", None)
+    sid = getattr(request, "sid", None)
     user_id = session.get("user_id") or (
         "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
@@ -738,13 +759,16 @@ def pty_restart(data):
     mode = data.get("mode")
 
     if mode == "fake":
-        # For ephemeral sessions, the UUID is passed in the 'resume' field
         ephemeral_id = data.get("resume")
         if ephemeral_id in ephemeral_sessions:
             tab_id = ephemeral_id
 
     if not tab_id:
         return
+
+    # Automatically join the room for this tab if in a real Socket.io context
+    if sid:
+        join_room(tab_id)
 
     is_fake = (mode == "fake") or (tab_id in ephemeral_sessions)
     executable_override = None
@@ -792,16 +816,10 @@ def pty_restart(data):
 
     reclaim = data.get("reclaim", False)
     if reclaim:
-
-        def handle_steal(t_id, old_sid):
-            logger.info(f"Stealing session {t_id} from SID {old_sid} for new SID {sid}")
-            socketio.emit("session-stolen", {"tab_id": t_id}, room=old_sid)
-
-        session_obj = session_manager.reclaim_session(
-            tab_id, sid, user_id, on_steal=handle_steal
-        )
+        session_obj = session_manager.reclaim_session(tab_id, sid, user_id)
         if session_obj:
             logger.info(f"Reattached to session: {tab_id} (sid: {sid})")
+            # Send current scrollback buffer to the new client
             if session_obj.buffer:
                 full_buffer = "".join(session_obj.buffer)
                 chunk_size = 1024 * 64
@@ -830,36 +848,11 @@ def pty_restart(data):
                 room=sid,
             )
 
-    if len(session_manager.sessions) >= 10 and tab_id not in session_manager.sessions:
-        oldest_session = None
-        oldest_time = time.time()
-
-        for s in session_manager.sessions.values():
-            if s.last_seen < oldest_time:
-                oldest_time = s.last_seen
-                oldest_session = s
-
-        if oldest_session:
-            logger.debug(
-                f"LRU Eviction: Dropping session {oldest_session.tab_id} (last seen {oldest_time}) to make room."
-            )
-            sid_to_notify = session_manager.tabid_to_sid.get(oldest_session.tab_id)
-            if sid_to_notify:
-                socketio.emit(
-                    "pty-output",
-                    {
-                        "output": "\r\n\x1b[2m[Warning: This session was evicted to make room for a new one.]\x1b[0m\r\n"
-                    },
-                    room=sid_to_notify,
-                )
-
-            session_manager.remove_session(oldest_session.tab_id)
-            kill_and_reap(oldest_session.pid)
-
     old_session = session_manager.remove_session(tab_id, user_id)
     if old_session:
         logger.info(f"Killing old session {tab_id} for fresh restart")
         kill_and_reap(old_session.pid)
+
     resume = data.get("resume", True)
     if isinstance(resume, str):
         if resume.lower() == "true":
@@ -882,7 +875,7 @@ def pty_restart(data):
     if is_fake:
         env_vars["GEMINI_WEBUI_HARNESS_ID"] = tab_id
         ssh_target = None
-        gemini_bin_override = GEMINI_BIN  # not used if executable_override is set
+        gemini_bin_override = GEMINI_BIN
     else:
         gemini_bin_override = GEMINI_BIN
 
@@ -908,12 +901,9 @@ def pty_restart(data):
 
     (child_pid, fd) = pty.fork()
     if child_pid == 0:
-        # Become session leader for this process group to ensure all
-        # subprocesses (ssh, gemini, etc) are reaped together.
         try:
             os.setsid()
         except OSError:
-            # Already a session leader or not permitted
             pass
         os.closerange(3, 65536)
         env = os.environ.copy()
@@ -927,7 +917,6 @@ def pty_restart(data):
         os.execvpe(cmd[0], cmd, env)
         os._exit(0)
     else:
-        # Parent process: track pid and create a new session
         add_managed_pty(child_pid)
         session_obj = Session(
             tab_id,
@@ -939,6 +928,7 @@ def pty_restart(data):
             resume=resume,
         )
         session_manager.add_session(session_obj, on_remove=kill_and_reap)
+        session_manager.reclaim_session(tab_id, sid, user_id)
 
         _, _, ssh_dir_path = get_config_paths()
         app_config = {"SSH_DIR": ssh_dir_path}
@@ -947,14 +937,6 @@ def pty_restart(data):
             args=(tab_id, app_config),
             daemon=True,
         ).start()
-
-        def handle_steal(t_id, old_sid):
-            logger.info(f"Stealing session {t_id} from SID {old_sid} for new SID {sid}")
-            socketio.emit("session-stolen", {"tab_id": t_id}, room=old_sid)
-
-        session_manager.reclaim_session(
-            tab_id, sid, user_id, on_steal=handle_steal
-        )  # Connect current SID
 
         try:
             set_winsize(fd, rows, cols)
@@ -966,22 +948,17 @@ def pty_restart(data):
             if ssh_target
             else "\x1b[2mLoading Context...\x1b[0m\r\n"
         )
-        socketio.emit("pty-output", {"output": initial_msg}, room=sid)
+        socketio.emit("pty-output", {"output": initial_msg}, room=tab_id)
 
-        # Background task to discover and assign the real session ID
         if resume == "new":
 
             def discover_session_id(t_id, s_target, s_dir, s_id):
-                import time
-                import os
                 import re
-
                 from src.process_manager import fetch_sessions_for_host
 
-                # Wait for the session to register in the CLI
                 max_attempts = 10
                 for attempt in range(max_attempts):
-                    socketio.sleep(1.5)  # Wait for CLI to initialize
+                    socketio.sleep(1.5)
                     try:
                         _, _, ssh_dir_path = get_config_paths()
                         res = fetch_sessions_for_host(
@@ -1011,7 +988,6 @@ def pty_restart(data):
                                 break
 
                         if not found_id and sessions:
-                            # Fallback to highest ID if no UUID match
                             try:
                                 found_id = max(int(s["id"]) for s in sessions)
                             except (ValueError, TypeError):
@@ -1024,7 +1000,7 @@ def pty_restart(data):
                             socketio.emit(
                                 "session_assigned",
                                 {"tab_id": t_id, "session_id": found_id},
-                                room=s_id,
+                                room=t_id,
                             )
                             return
                     except Exception as e:
@@ -1044,7 +1020,33 @@ def handle_get_management_sessions(*args):
     user_id = session.get("user_id") or (
         "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
-    return session_manager.list_sessions(user_id)
+
+    active = session_manager.list_sessions(user_id)
+    if not session_manager.persistence:
+        return active
+
+    persisted = session_manager.persistence.load()
+    # Merge: Persisted sessions that are not currently active should be added
+    # with an 'inactive' or 'orphaned' state for the UI to show they can be resumed.
+    active_ids = {s["tab_id"] for s in active}
+
+    for tid, s in persisted.items():
+        if s.get("user_id") == user_id and tid not in active_ids:
+            # Add as inactive session
+            active.append(
+                {
+                    "tab_id": tid,
+                    "title": s["title"],
+                    "ssh_target": s["ssh_target"],
+                    "ssh_dir": s["ssh_dir"],
+                    "resume": s["resume"],
+                    "last_active": 0,
+                    "is_orphaned": True,
+                    "is_inactive": True,
+                }
+            )
+
+    return active
 
 
 @socketio.on("get_sessions")
