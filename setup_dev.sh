@@ -22,7 +22,6 @@ echo "Installing Playwright browsers..."
 playwright install --with-deps chromium webkit
 
 echo "Configuring git hooks..."
-chmod +x scripts/increment_version.sh
 
 echo "Injecting git push interceptor into virtual environment..."
 cat << 'EOF' >> $VENV_DIR/bin/activate
