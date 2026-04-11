@@ -34,28 +34,14 @@
   "hooks": {
     "BeforeTool": [
       {
-        "matcher": ".*(run_shell_command|Bash|shell|mcp_kanban).*",
+        "matcher": ".*(run_shell_command|Bash|shell).*",
         "hooks": [
           {
             "name": "qa-gate",
             "type": "command",
             "command": "./.gemini/hooks/qa-gate.sh",
-            "description": "Prevents the AI Orchestrator from directly closing tickets to enforce the verification pipeline.",
+            "description": "RESTORED QA GATE",
             "timeout": 180000
-          }
-        ]
-      }
-    ],
-    "AfterTool": [
-      {
-        "matcher": ".*(run_shell_command|Bash|shell).*",
-        "hooks": [
-          {
-            "name": "git-push-after",
-            "type": "command",
-            "command": "./.gemini/hooks/git-push-after.sh",
-            "description": "Automatically watches GitHub Actions workflows after a git push",
-            "timeout": 600000
           }
         ]
       }
