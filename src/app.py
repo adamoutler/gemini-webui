@@ -306,9 +306,13 @@ def init_app():
         LDAP_BIND_USER_DN, \
         LDAP_BIND_PASS, \
         LDAP_AUTHORIZED_GROUP, \
-        LDAP_FALLBACK_DOMAIN
+        LDAP_FALLBACK_DOMAIN, \
+        share_manager
     data_dir, config_file, ssh_dir = get_config_paths()
     logger.info(f"Initializing app with DATA_DIR: {data_dir}")
+
+    # Initialize ShareManager with the determined data_dir
+    share_manager = ShareManager(data_dir=data_dir)
 
     if not getattr(app, "_blueprints_registered", False):
         register_blueprints(app)

@@ -15,9 +15,16 @@ class ShareManager:
             self.base_dir = Path(data_dir)
 
         self.shares_dir = self.base_dir / "shares"
-        self.shares_dir.mkdir(parents=True, exist_ok=True)
-        self.db_path = self.shares_dir / "metadata.db"
-        self._init_db()
+        try:
+            self.shares_dir.mkdir(parents=True, exist_ok=True)
+            self.db_path = self.shares_dir / "metadata.db"
+            self._init_db()
+        except OSError:
+            # If storage is not writable, we just won't be able to store/list shares
+            # But the app shouldn't crash during initialization.
+            self.db_path = ":memory:"  # Fallback to in-memory DB if possible, but path matters for Path usage
+            # Actually, just let it fail gracefully on operations, but keep it alive
+            pass
 
     def _get_connection(self):
         # Using timeout to handle concurrent accesses gracefully
