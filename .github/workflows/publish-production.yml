@@ -38,8 +38,11 @@ jobs:
         run: |
           BASE_VERSION=$(cat VERSION)
           COMMIT_COUNT=$(git rev-list --count HEAD)
-          # Using '-' because Docker tags do not support '+'
-          echo "VERSION=${BASE_VERSION}-${COMMIT_COUNT}" >> $GITHUB_ENV
+          NEW_VERSION="${BASE_VERSION}.${COMMIT_COUNT}p"
+          echo "$NEW_VERSION" > VERSION
+          sed -i "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" src/static/manifest.json
+          sed -i "s/const CACHE_NAME = .*/const CACHE_NAME = \"gemini-webui-v$NEW_VERSION\";/" src/static/sw.js
+          echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
