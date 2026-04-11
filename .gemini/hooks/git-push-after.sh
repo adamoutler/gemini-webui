@@ -27,27 +27,11 @@ if [[ "$tool_name" =~ run_shell_command|Bash|shell ]]; then
             # Watch the run and stream output to stderr so the user sees it without breaking JSON hook protocol
             gh run watch "$RUN_ID" >&2
             
-            # Get final status with polling
-            STATUS=""
-            ATTEMPTS=0
-            while [[ -z "$STATUS" || "$STATUS" == "null" ]] && [[ $ATTEMPTS -lt 6 ]]; do
-                STATUS=$(gh run view "$RUN_ID" --json conclusion -q '.conclusion')
-                if [[ -z "$STATUS" || "$STATUS" == "null" ]]; then
-                    sleep 5
-                    ATTEMPTS=$((ATTEMPTS+1))
-                fi
-            done
+            # Get final status
+            STATUS=$(gh run view "$RUN_ID" --json conclusion -q '.conclusion')
             
-            if [ "$STATUS" = "failure" ]; then
-                LOG_FILE="/tmp/github_run_${RUN_ID}_failed.log"
-                gh run view "$RUN_ID" --log-failed > "$LOG_FILE"
-                LAST_LINES=$(tail -n 30 "$LOG_FILE")
-                jq -n -c --arg result "GitHub Actions workflow run $RUN_ID failed! Log saved to $LOG_FILE. Last 30 lines:\n$LAST_LINES" \
-                  '{"decision": "allow", "hookSpecificOutput": {"additionalContext": $result}}'
-            else
-                jq -n -c --arg result "GitHub Actions workflow run $RUN_ID for commit $CURRENT_COMMIT finished with status: $STATUS" \
-                  '{"decision": "allow", "hookSpecificOutput": {"additionalContext": $result}}'
-            fi
+            jq -n -c --arg result "GitHub Actions workflow run $RUN_ID for commit $CURRENT_COMMIT finished with status: $STATUS" \
+              '{"decision": "allow", "hookSpecificOutput": {"additionalContext": $result}}'
             exit 0
         else
             jq -n -c '{decision: "allow", "hookSpecificOutput": {"additionalContext": "Could not find a GitHub Actions run for the pushed commit."}}'
@@ -58,4 +42,3 @@ fi
 
 # Proceed normally
 echo '{"decision": "allow"}'
-# Test comment to trigger build
