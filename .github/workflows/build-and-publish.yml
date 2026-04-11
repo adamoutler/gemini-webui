@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -39,7 +41,11 @@ jobs:
 
       - name: Read Version
         id: get_version
-        run: echo "VERSION=$(cat VERSION)" >> $GITHUB_ENV
+        run: |
+          BASE_VERSION=$(cat VERSION)
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          # Using '-' because Docker tags do not support '+'
+          echo "VERSION=${BASE_VERSION}-${COMMIT_COUNT}" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
