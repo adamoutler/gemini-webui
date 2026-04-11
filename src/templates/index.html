@@ -74,7 +74,7 @@
     <div id="terminal-container"></div>
     <div id="mobile-controls" class="auto-style-9c7663">
       <div class="control-btn holdable" data-cmd="\x1b">Esc</div>
-      <div class="control-btn holdable" data-cmd="\x1bz">Super</div>
+      <div class="control-btn holdable" data-cmd="\x1b[1;2Z">Super</div>
       <div class="control-btn-group">
         <div class="control-btn holdable left" data-func-adjust="-1">A-</div>
         <div class="control-btn holdable right" data-func-adjust="1">A+</div>
@@ -498,6 +498,11 @@
 
     <div id="connection-issue-modal" class="modal">
       <div class="modal-content">
+        <span
+          data-onclick="document.getElementById('connection-issue-modal').style.display='none'"
+          class="auto-style-6c8878"
+          >&times;</span
+        >
         <h2 class="auto-style-b8f7c9">Connection Problem</h2>
         <p>
           We're having trouble maintaining a secure connection to the server.

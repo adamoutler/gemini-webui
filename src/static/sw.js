@@ -51,6 +51,23 @@ self.addEventListener("fetch", (event) => {
   ) {
     return; // Let the browser handle these normally
   }
+
+  // Network-first for the root path to keep CSRF tokens fresh
+  if (url.pathname === "/") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+          return response;
+        })
+        .catch(() => caches.match(event.request)),
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request);

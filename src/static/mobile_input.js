@@ -141,13 +141,13 @@ class ModifierRule extends InputRule {
           }
           context.emitToTerminal(char);
           return true;
-        } else if (event.key === "Enter" && event.altKey) {
+        } else if (event.key === "Enter" && (event.altKey || event.ctrlKey)) {
           event.preventDefault();
-          if (input && input.value.length > 0) {
-            context.emitToTerminal(input.value);
-            input.value = "";
+          if (input) {
+            input.value += "\n";
+            // Trigger input event to update any observers/proxies
+            input.dispatchEvent(new Event("input", { bubbles: true }));
           }
-          context.emitToTerminal("\x1b\r");
           return true;
         }
       }
@@ -618,6 +618,24 @@ class MobileInputUI {
       if (this.proxyInput.value.length > 0 && isDictation) {
         this.dictationTimer = setTimeout(() => {
           if (this.proxyInput.value.length > 0) {
+            // Context-aware spacing: check terminal buffer
+            let prefix = "";
+            if (this.ruleParser && this.ruleParser.context.term) {
+              const term = this.ruleParser.context.term;
+              const buffer = term.buffer.active;
+              const line = buffer.getLine(buffer.baseY + buffer.cursorY);
+              const lastChar = line
+                ? line.translateToString(
+                    false,
+                    buffer.cursorX - 1,
+                    buffer.cursorX,
+                  )
+                : "";
+              if (lastChar && lastChar !== " " && lastChar !== "\n") {
+                prefix = " ";
+              }
+            }
+
             // Append a space to the end of the dictation result if it doesn't have one
             let text = this.proxyInput.value;
             if (!text.endsWith(" ")) {
@@ -627,7 +645,7 @@ class MobileInputUI {
             inputHandler(
               { data: "" },
               false,
-              text,
+              prefix + text,
               true,
               this.proxyInput.value,
               true,
@@ -783,6 +801,7 @@ class MobileTerminalController {
         emitToTerminal: this.emitToTerminal.bind(this),
         getProxyInput: () => (this.ui ? this.ui.proxyInput : null),
         modifierState: this.modifierState,
+        term: tab.term,
       });
       this.ruleParser.registerRule(new CursorPlacementRule());
       this.ruleParser.registerRule(new BackspaceRule());
