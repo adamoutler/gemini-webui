@@ -500,6 +500,9 @@ def authenticated_only(f):
 
 @socketio.on("connect")
 def handle_connect(auth=None):
+    from flask import request as socket_request
+
+    sid = getattr(socket_request, "sid", None)
     from flask_wtf.csrf import validate_csrf, ValidationError
 
     auth = auth or {}
@@ -518,7 +521,11 @@ def handle_connect(auth=None):
     user_id = session.get("user_id") or (
         "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
+    logger.debug(f"handle_connect: user_id={user_id}")
     if user_id and sid:
+        logger.debug(
+            f"handle_connect: Attempting join_room user_{user_id} for SID {sid}"
+        )
         join_room(f"user_{user_id}")
         logger.debug(f"SID {sid} joined user room user_{user_id}")
 
@@ -692,7 +699,9 @@ def background_session_preloader():
 
 @socketio.on("join_room")
 def on_join_room(data):
-    sid = getattr(request, "sid", None)
+    from flask import request as socket_request
+
+    sid = getattr(socket_request, "sid", None)
     tab_id = data.get("tab_id")
     if tab_id:
         if sid:
@@ -714,9 +723,23 @@ def on_join_room(data):
                 socketio.emit("sync-tabs", user_persisted, room=f"user_{user_id}")
 
 
+@socketio.on("update_title")
+def update_title(data):
+    sid = getattr(request, "sid", None)
+    user_id = session.get("user_id") or (
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+    )
+    tab_id = data.get("tab_id") or session_manager.sid_to_tabid.get(sid)
+    title = data.get("title")
+    if tab_id and title:
+        session_manager.update_title(tab_id, title, user_id)
+
+
 @socketio.on("pty-input")
 def pty_input(data):
-    sid = getattr(request, "sid", None)
+    from flask import request as socket_request
+
+    sid = getattr(socket_request, "sid", None)
     user_id = session.get("user_id") or (
         "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
@@ -751,7 +774,9 @@ def pty_resize(data):
 
 @socketio.on("restart")
 def pty_restart(data):
-    sid = getattr(request, "sid", None)
+    from flask import request as socket_request
+
+    sid = getattr(socket_request, "sid", None)
     user_id = session.get("user_id") or (
         "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )

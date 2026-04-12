@@ -84,12 +84,16 @@ def test_background_session_preloader(mock_get_config):
 
 def test_pty_restart_basic(mock_socketio, mock_pty):
     from src.app import app
+    from unittest.mock import MagicMock
 
     # Use non-zero child_pid to avoid child branch execution in tests
     mock_pty.return_value = (1234, 10)
 
     with app.test_request_context("/"):
-        with patch("flask.request") as mock_request, patch(
+        mock_request = MagicMock()
+        mock_request.sid = "test-sid"
+        # Patch where it's USED in src.app
+        with patch("src.app.request", mock_request), patch(
             "src.app.get_config_paths"
         ) as mock_paths, patch("src.app.get_config") as mock_get_config, patch(
             "shutil.which", return_value=None
@@ -97,14 +101,15 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
             "os.execvp"
         ) as mock_execvp, patch("os._exit"), patch(
             "src.app.build_terminal_command", return_value=["bash"]
-        ) as mock_build_cmd:
-            mock_request.sid = "test-sid"
+        ) as mock_build_cmd, patch("src.app.set_winsize") as mock_set_winsize:
             mock_paths.return_value = ("/data", "/data/config.json", "/data/.ssh")
             mock_get_config.return_value = {
                 "HOSTS": [{"target": "test@host", "env_vars": {"MY_VAR": "123"}}]
             }
 
             # Trigger restart (parent branch)
+            from src.app import pty_restart
+
             pty_restart(
                 {
                     "tab_id": "tab1",
@@ -149,9 +154,13 @@ def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
         ), patch("src.app.set_winsize"):
             # Attempt to start the 51st session
             # pty_restart now automatically joins room and reclaim if needed
-            # We mock request.sid for the new connection
-            with patch("flask.request") as mock_request:
-                mock_request.sid = "sid_new"
+            from unittest.mock import MagicMock
+
+            mock_request = MagicMock()
+            mock_request.sid = "sid_new"
+            with patch("src.app.request", mock_request):
+                from src.app import pty_restart
+
                 pty_restart({"tab_id": "tab_new"})
 
             # Verify LRU: tab_0 (PID 1000) should have been killed via its PGID
