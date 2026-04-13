@@ -1,6 +1,12 @@
 import pytest
 from unittest.mock import patch
-from src.app import read_and_forward_pty_output, session_manager, Session
+from src.app import session_output_reader, session_manager, Session
+
+
+def read_and_forward_pty_output():
+    for tab_id in list(session_manager.sessions.keys()):
+        session_output_reader(tab_id)
+
 
 # Define a suite of bad/adversarial payloads
 BAD_PAYLOADS = [

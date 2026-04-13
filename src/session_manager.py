@@ -13,6 +13,9 @@ import time
 import collections
 import codecs
 import threading
+import fcntl
+import os
+import eventlet.greenio
 
 
 class Session:
@@ -42,6 +45,13 @@ class Session:
         self.last_seen = time.time()
         self.orphaned_at = None
         self.file_cache = []
+
+        # Set the FD to non-blocking mode to prevent Eventlet hub lockups.
+        # When O_NONBLOCK is set, Eventlet's monkey-patched os.read/os.write
+        # will automatically yield to the hub (using trampoline) instead of blocking.
+        if fd is not None:
+            flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+            fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
 
     def append_buffer(self, text):
         self.buffer.append(text)

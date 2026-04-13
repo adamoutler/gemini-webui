@@ -1,5 +1,6 @@
 import os
 import sys
+import errno
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -7,10 +8,76 @@ try:
     from config import env_config
 except ImportError:
     from src.config import env_config
+import threading
+
+abandoned_pids = set()
+abandoned_pids_lock = threading.Lock()
+
 if not env_config.SKIP_MONKEY_PATCH:
     import eventlet
 
     eventlet.monkey_patch()
+    # Manually patch subprocess.run to handle GreenletExit and prevent zombie processes
+    import subprocess
+    import eventlet.green.subprocess
+
+    def safe_subprocess_run(*popenargs, **kwargs):
+        timeout = kwargs.pop("timeout", None)
+        input_data = kwargs.pop("input", None)
+        check = kwargs.pop("check", False)
+        if kwargs.pop("capture_output", False):
+            kwargs["stdout"] = subprocess.PIPE
+            kwargs["stderr"] = subprocess.PIPE
+
+        with eventlet.green.subprocess.Popen(*popenargs, **kwargs) as process:
+            try:
+                text_mode = kwargs.get("text", False)
+                if input_data and process.stdin:
+                    if text_mode and isinstance(input_data, str):
+                        process.stdin.write(input_data)
+                    elif not text_mode and isinstance(input_data, bytes):
+                        process.stdin.write(input_data)
+                    process.stdin.close()
+
+                if timeout is not None:
+                    import time
+
+                    start_time = time.time()
+                    while process.poll() is None:
+                        if time.time() - start_time > timeout:
+                            process.kill()
+                            raise eventlet.green.subprocess.TimeoutExpired(
+                                process.args, timeout
+                            )
+                        eventlet.sleep(0.01)
+
+                stdout = process.stdout.read() if process.stdout else None
+                stderr = process.stderr.read() if process.stderr else None
+                if text_mode:
+                    if isinstance(stdout, bytes):
+                        stdout = stdout.decode("utf-8", "replace")
+                    if isinstance(stderr, bytes):
+                        stderr = stderr.decode("utf-8", "replace")
+
+                retcode = process.poll()
+                if check and retcode:
+                    raise eventlet.green.subprocess.CalledProcessError(
+                        retcode, process.args, output=stdout, stderr=stderr
+                    )
+                return eventlet.green.subprocess.CompletedProcess(
+                    process.args, retcode, stdout, stderr
+                )
+            except BaseException:
+                try:
+                    process.kill()
+                except OSError:
+                    pass
+                with abandoned_pids_lock:
+                    abandoned_pids.add(process.pid)
+                raise
+
+    subprocess.run = safe_subprocess_run
+    eventlet.green.subprocess.run = safe_subprocess_run
 
 import pty
 import select
@@ -144,28 +211,6 @@ managed_ptys = set()
 managed_ptys_lock = threading.Lock()
 
 
-def sigchld_handler(signum, frame):
-    """Signal handler for SIGCHLD to reap zombie processes immediately."""
-    while True:
-        try:
-            # -1 means any child process, WNOHANG means non-blocking
-            pid, status = os.waitpid(-1, os.WNOHANG)
-            if pid == 0:
-                break
-            with managed_ptys_lock:
-                if pid in managed_ptys:
-                    managed_ptys.remove(pid)
-            logger.debug(f"Reaped child process {pid} via SIGCHLD")
-        except ChildProcessError:
-            break
-        except Exception as e:
-            logger.error(f"Error in SIGCHLD handler: {e}")
-            break
-
-
-signal.signal(signal.SIGCHLD, sigchld_handler)
-
-
 def add_managed_pty(pid):
     if pid is not None:
         with managed_ptys_lock:
@@ -180,6 +225,7 @@ def zombie_reaper_task():
                 to_remove = set()
                 for pid in list(managed_ptys):
                     try:
+                        # Reap ONLY this specific PID to avoid stealing reaps from other subprocess calls
                         res = os.waitpid(pid, os.WNOHANG)
                         wpid = res[0] if isinstance(res, tuple) else res
                         if wpid == pid:
@@ -189,12 +235,27 @@ def zombie_reaper_task():
                     except OSError:
                         pass
                 managed_ptys.difference_update(to_remove)
+
+            with abandoned_pids_lock:
+                to_remove = set()
+                for pid in list(abandoned_pids):
+                    try:
+                        res = os.waitpid(pid, os.WNOHANG)
+                        wpid = res[0] if isinstance(res, tuple) else res
+                        if wpid == pid:
+                            to_remove.add(pid)
+                    except ChildProcessError:
+                        to_remove.add(pid)
+                    except OSError:
+                        pass
+                abandoned_pids.difference_update(to_remove)
         except Exception as e:
             logger.error(f"Error in zombie reaper: {e}")
         socketio.sleep(2)
 
 
 def kill_and_reap(pid):
+    """Kills a process and its entire group, then reaps the zombie immediately."""
     if pid is None:
         return
     try:
@@ -205,7 +266,16 @@ def kill_and_reap(pid):
             os.kill(pid, signal.SIGKILL)
         except OSError:
             pass
-    # Reaping via waitpid is now handled instantaneously by SIGCHLD handler
+
+    # Try an instantaneous reap for this specific PID (non-blocking)
+    try:
+        res = os.waitpid(pid, os.WNOHANG)
+        wpid = res[0] if isinstance(res, tuple) else res
+        if wpid == pid:
+            with managed_ptys_lock:
+                managed_ptys.discard(pid)
+    except OSError:
+        pass
 
 
 def cleanup_orphaned_ptys():
@@ -329,17 +399,20 @@ def init_app():
             try:
                 stat = os.stat(path)
                 if stat.st_uid == 0:
-                    shutil.chown(path, user="node", group="node")
-                    # Recursively fix if it was existing root data
-                    for root, dirs, files in os.walk(path):
-                        for d in dirs:
-                            shutil.chown(
-                                os.path.join(root, d), user="node", group="node"
-                            )
-                        for f in files:
-                            shutil.chown(
-                                os.path.join(root, f), user="node", group="node"
-                            )
+                    try:
+                        shutil.chown(path, user="node", group="node")
+                        # Recursively fix if it was existing root data
+                        for root, dirs, files in os.walk(path):
+                            for d in dirs:
+                                shutil.chown(
+                                    os.path.join(root, d), user="node", group="node"
+                                )
+                            for f in files:
+                                shutil.chown(
+                                    os.path.join(root, f), user="node", group="node"
+                                )
+                    except (LookupError, PermissionError):
+                        pass
             except Exception as e:
                 logger.warning(f"Failed to fix permissions on {path}: {e}")
 
@@ -441,7 +514,7 @@ csp = {
         "https://cdnjs.cloudflare.com",
         "https://unpkg.com",
     ],
-    "style-src": ["'self'", "https://cdn.jsdelivr.net"],
+    "style-src": ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
     "connect-src": [
         "'self'",
         "ws:",
@@ -619,35 +692,33 @@ def set_winsize(fd, row, col, xpix=0, ypix=0):
         logger.error(f"Failed to set winsize on fd {fd}: {e}")
 
 
-def read_and_forward_pty_output():
+def session_output_reader(tab_id):
+    """Background task to read output from a specific session's PTY."""
+    session_obj = session_manager.get_session(tab_id)
+    if not session_obj:
+        return
+
     max_read_bytes = 1024 * 20
-    while True:
-        if app.config.get("TESTING") and not session_manager.sessions:
-            socketio.sleep(0.1)
-            if not session_manager.sessions:
-                break
-        socketio.sleep(0.01)
-        for tab_id, session_obj in list(session_manager.sessions.items()):
-            fd = session_obj.fd
-            decoder = session_obj.decoder
-            break_eof = False
+    decoder = session_obj.decoder
+    fd = session_obj.fd
+
+    try:
+        while True:
+            # Eventlet's monkey-patched os.read will yield to the hub
+            # if O_NONBLOCK is set and data is not ready.
+            # Even without O_NONBLOCK, it should yield if it blocks.
             try:
-                batched_output = []
-                for _ in range(10):  # Read up to 200KB per tick
-                    (data_ready, _, _) = select.select([fd], [], [], 0)
-                    if data_ready:
-                        output = os.read(fd, max_read_bytes)
-                        if output:
-                            batched_output.append(output)
-                        else:
-                            break_eof = True
-                            break
-                    else:
+                # Use select to avoid calling os.read when no data is ready,
+                # which would yield via trampoline. This keeps the hub efficient.
+                (data_ready, _, _) = select.select([fd], [], [], 0.1)
+                if data_ready:
+                    output = os.read(fd, max_read_bytes)
+                    if not output:  # EOF
                         break
 
-                if batched_output:
-                    combined_output = b"".join(batched_output)
-                    decoded_output = decoder.decode(combined_output)
+                    print(f"DEBUG PTY READ: {output!r}")
+
+                    decoded_output = decoder.decode(output)
                     if decoded_output:
                         if "\x1b[" in decoded_output and "c" in decoded_output:
                             filtered_output = IDENTIFICATION_REGEX.sub(
@@ -655,23 +726,31 @@ def read_and_forward_pty_output():
                             )
                         else:
                             filtered_output = decoded_output
+
                         if filtered_output:
                             session_obj.append_buffer(filtered_output)
-                            # Broadcast to the entire room for this tab_id
                             socketio.emit(
                                 "pty-output", {"output": filtered_output}, room=tab_id
                             )
-
-                if break_eof:
-                    raise EOFError("EOF reached")
-            except (OSError, IOError, EOFError):
-                logger.info(f"Removing session {tab_id} due to I/O error")
-                session_manager.remove_session(tab_id)
-                ephemeral_sessions.pop(tab_id, None)
-                if session_obj and session_obj.pid is not None:
-                    kill_and_reap(session_obj.pid)
-                # Notify all clients that the session is closed
-                socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
+                else:
+                    # No data ready, yield to the hub
+                    socketio.sleep(0.01)
+            except (OSError, IOError) as e:
+                if getattr(e, "errno", None) in (errno.EAGAIN, errno.EWOULDBLOCK):
+                    socketio.sleep(0.01)
+                    continue
+                break
+    except Exception as e:
+        logger.error(f"Error in session output reader for {tab_id}: {e}")
+    finally:
+        logger.info(f"Session reader for {tab_id} exiting, cleaning up")
+        # Ensure the session is removed from manager if reader exits
+        session_manager.remove_session(tab_id)
+        if tab_id in ephemeral_sessions:
+            ephemeral_sessions.pop(tab_id)
+        if session_obj and session_obj.pid is not None:
+            kill_and_reap(session_obj.pid)
+        socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
 
 
 def background_session_preloader():
@@ -754,6 +833,7 @@ def pty_input(data):
         # Filter out terminal identification responses
         if input_data.startswith("\x1b[?") and input_data.endswith("c"):
             return
+        # os.write will yield to the hub if O_NONBLOCK is set and buffer is full
         os.write(session_obj.fd, input_data.encode())
 
 
@@ -795,6 +875,7 @@ def pty_restart(data):
     if sid:
         join_room(tab_id)
 
+    ssh_target = data.get("ssh_target")
     is_fake = (mode == "fake") or (tab_id in ephemeral_sessions)
     executable_override = None
     if is_fake:
@@ -903,6 +984,8 @@ def pty_restart(data):
         gemini_bin_override = GEMINI_BIN
     else:
         gemini_bin_override = GEMINI_BIN
+        if env_config.BYPASS_AUTH_FOR_TESTING:
+            env_vars["GEMINI_WEBUI_HARNESS_ID"] = tab_id
 
     _, _, ssh_dir_path = get_config_paths()
     cmd = build_terminal_command(
@@ -936,12 +1019,17 @@ def pty_restart(data):
         env["COLORTERM"] = "truecolor"
         env["FORCE_COLOR"] = "3"
 
-        if is_fake:
+        if is_fake or env_config.BYPASS_AUTH_FOR_TESTING:
             env["GEMINI_WEBUI_HARNESS_ID"] = tab_id
 
         os.execvpe(cmd[0], cmd, env)
         os._exit(0)
     else:
+        import fcntl
+
+        flags = fcntl.fcntl(fd, fcntl.F_GETFL)
+        fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+
         add_managed_pty(child_pid)
         session_obj = Session(
             tab_id,
@@ -954,6 +1042,9 @@ def pty_restart(data):
         )
         session_manager.add_session(session_obj, on_remove=kill_and_reap)
         session_manager.reclaim_session(tab_id, sid, user_id)
+
+        # Start the dedicated output reader for this session
+        socketio.start_background_task(session_output_reader, tab_id)
 
         _, _, ssh_dir_path = get_config_paths()
         app_config = {"SSH_DIR": ssh_dir_path}
@@ -1116,7 +1207,6 @@ if __name__ == "__main__":
             os.environ.get("WERKZEUG_RUN_MAIN") == "true"
             or not env_config.FLASK_USE_RELOADER
         ):
-            socketio.start_background_task(read_and_forward_pty_output)
             socketio.start_background_task(cleanup_orphaned_ptys)
             socketio.start_background_task(zombie_reaper_task)
             if not env_config.SKIP_PRELOADER:
