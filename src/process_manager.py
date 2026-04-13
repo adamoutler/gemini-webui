@@ -391,7 +391,9 @@ def build_terminal_command(
         setup_cmd += "printf 'To enable persistence and prevent data loss, mount a volume:\\r\\n\\r\\n'; "
         setup_cmd += "printf '\\033[1;34mDocker Compose:\\033[0m\\r\\n  volumes:\\r\\n    - data:/data\\r\\n\\r\\n'; "
         setup_cmd += "printf '\\033[1;34mDocker CLI:\\033[0m\\r\\n  docker run -v gemini_data:/data ...\\r\\n\\r\\n'; "
-        setup_cmd += "sleep 10; }; "
+        if not os.environ.get("GEMINI_WEBUI_HARNESS_ID"):
+            setup_cmd += "sleep 10; "
+        setup_cmd += "}; "
         setup_cmd += f"cd {quoted_work_dir} 2>/dev/null || cd /tmp; "
 
         # Use shell to ensure gemini is found in PATH and handled correctly
