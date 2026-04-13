@@ -27,6 +27,15 @@ When performing refactors for legibility:
 *   **E2E Tests**: Located in `tests/e2e/`. Uses Playwright to verify full user flows, including mobile viewport simulations and SSH multiplexing.
 *   **Mocks**: Use `src/mock_gemini_cli.py` for high-fidelity simulation of the terminal environment without requiring a real Gemini CLI installation.
 
+## 🛡️ Security & Integrity Mandates
+
+As a project focused on secure terminal access, the following security invariants must be maintained:
+
+1.  **Credential Protection**: Never log, print, or commit secrets, API keys, or sensitive credentials. Rigorously protect `.env` files, `.git`, and system configuration folders.
+2.  **Paranoid Input Validation**: Trust absolutely nothing from the network or user input. Perform strict bounds checking, sanitization, and type validation (e.g., using `shlex.quote` for shell arguments).
+3.  **Secure Component Communication**: All IPC and SocketIO communication should be authenticated and scoped to the specific session.
+4.  **Auditability**: Every major architectural pivot or security change should be documented in the corresponding `GEMINI.md` and verified with a regression test.
+
 ## 🚀 Future Incarnations
 
 When resuming work or onboarding new agents:
