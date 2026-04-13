@@ -7,7 +7,11 @@ except ImportError:
     from src.config import env_config
 import re
 import shlex
-import subprocess
+
+try:
+    import eventlet.green.subprocess as subprocess
+except ImportError:
+    import subprocess
 import time
 
 

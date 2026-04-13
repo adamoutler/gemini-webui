@@ -39,8 +39,10 @@ if "--list-sessions" in sys.argv:
         print(f"  {sid}. Mock Session (Just now) [{saved_uuid}]")
     sys.exit(0)
 
-# Simulate session creation if not resuming
-if "-r" not in sys.argv and "--list-sessions" not in sys.argv:
+# Simulate session creation if not resuming or if resuming a 'new' session
+is_new_session = "-r" not in sys.argv or ("-r" in sys.argv and "new" in sys.argv)
+print(f"DEBUG MOCK ARGV: {sys.argv}, is_new={is_new_session}", file=sys.stderr)
+if is_new_session and "--list-sessions" not in sys.argv:
     sessions = get_sessions()
     new_id = max(sessions) + 1 if sessions else 1
     sessions.append(new_id)
@@ -48,6 +50,10 @@ if "-r" not in sys.argv and "--list-sessions" not in sys.argv:
         json.dump(sessions, f)
     # Save the UUID if provided
     harness_id = os.environ.get("GEMINI_WEBUI_HARNESS_ID")
+    print(f"DEBUG MOCK HARNESS: harness_id={harness_id!r}", file=sys.stderr)
+    if not harness_id:
+        # Fallback to looking in args if passed differently
+        pass
     if harness_id:
         uuid_file = os.path.join(work_dir, f"gemini_mock_uuid_{new_id}.json")
         with open(uuid_file, "w") as f:

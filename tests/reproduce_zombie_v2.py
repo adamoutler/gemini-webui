@@ -31,14 +31,26 @@ def main():
     initial_zombies = get_zombie_count()
     log(f"Initial zombie count: {initial_zombies}")
 
+    # Create a fresh temporary data directory
+    test_temp_dir = os.path.abspath("test_gemini_data")
+    if os.path.exists(test_temp_dir):
+        import shutil
+
+        shutil.rmtree(test_temp_dir)
+    os.makedirs(test_temp_dir, exist_ok=True)
+
     # Start the app
     log("Starting Gemini WebUI...")
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["PORT"] = "5009"
     env["FLASK_USE_RELOADER"] = "false"
-    env["GEMINI_BIN"] = "python3 tests/mock/gemini"
-    app_process = subprocess.Popen(["python3", "src/app.py"], env=env)
+    env["SKIP_PRELOADER"] = "false"
+    env["DATA_DIR"] = test_temp_dir
+    env["GEMINI_BIN"] = os.path.abspath("tests/mock/gemini")
+    import sys
+
+    app_process = subprocess.Popen([sys.executable, "src/app.py"], env=env)
     time.sleep(5)
 
     try:
@@ -53,9 +65,23 @@ def main():
             # Reproduction Path 1: Ctrl-Z + Restart
             log("Path 1: Testing Ctrl-Z + Restart")
             page.goto(url)
-            page.wait_for_selector(".session-item")
-            page.click(".session-item:has-text('Local')")
+            # Wait for connection card to appear
+            page.wait_for_selector(".connection-card[data-label='local']")
+            # Click "Start New" on local card
+            page.locator(
+                ".connection-card[data-label='local'] button:has-text('Start New')"
+            ).first.click()
             page.wait_for_selector(".terminal-instance")
+
+            # Wait for terminal to be ready and show welcome message
+            page.wait_for_function(
+                """() => {
+                const term = document.querySelector('.xterm-rows');
+                return term && term.innerText.includes('Welcome');
+            }""",
+                timeout=15000,
+            )
+            log("Terminal is ready.")
 
             # Send Ctrl-Z twice
             page.keyboard.press("Control+z")
@@ -87,7 +113,6 @@ def main():
             for i in range(5):
                 log(f"Rapid-fire attempt {i+1}")
                 # Click "+ New" (it's the last tab usually, or has specific content)
-                # Looking at renderTabs, the launcher tab doesn't have a close button
                 page.click(".tab:not(:has(.tab-close))")
                 page.wait_for_selector("button:has-text('Start New')")
                 # Click "Start New" for Local (usually first)
@@ -105,7 +130,9 @@ def main():
 
             log("Reloads finished. Checking if UI is still responsive...")
             page.goto(url)
-            page.wait_for_selector(".session-item", timeout=5000)
+            page.wait_for_selector(
+                ".connection-card[data-label='local']", timeout=10000
+            )
             log("UI is still responsive: PASS")
 
             browser.close()
@@ -115,7 +142,10 @@ def main():
     finally:
         app_process.terminate()
         app_process.wait()
-        os.kill(app_process.pid, signal.SIGKILL)  # Ensure it's gone
+        try:
+            os.kill(app_process.pid, signal.SIGKILL)  # Ensure it's gone
+        except ProcessLookupError:
+            pass
 
     final_zombies = get_zombie_count()
     log(f"Final zombie count: {final_zombies}")

@@ -1,0 +1,19 @@
+{
+  "LDAP_SERVER": null,
+  "LDAP_BASE_DN": null,
+  "LDAP_BIND_USER_DN": null,
+  "LDAP_BIND_PASS": null,
+  "LDAP_AUTHORIZED_GROUP": null,
+  "LDAP_FALLBACK_DOMAIN": "example.com",
+  "ALLOWED_ORIGINS": "*",
+  "DATA_WRITABLE": true,
+  "TMP_WRITABLE": true,
+  "HOSTS": [
+    {
+      "label": "local",
+      "type": "local"
+    }
+  ],
+  "host_id": "d0c9",
+  "SECRET_KEY": "68ecce929079253a20cdefaf13acc1dfbaf4138994d2a7685f360afa48b95400"
+}

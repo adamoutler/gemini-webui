@@ -1437,6 +1437,8 @@ function startSession(
   termDiv.setAttribute("aria-relevant", "additions");
   container.appendChild(termDiv);
 
+  switchTab(tabId);
+
   if (!isMobile) {
     termDiv.addEventListener(
       "contextmenu",
