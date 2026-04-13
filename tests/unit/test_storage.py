@@ -58,7 +58,7 @@ def test_ssh_key_rotation_logic(test_data_dir):
         mock_run.side_effect = side_effect
 
         # Mock the rotate_instance_key API call indirectly or directly
-        from src.host_key_routes import (
+        from src.routes.host_keys import (
             rotate_instance_key,
         )  # We need a request context for API calls
 

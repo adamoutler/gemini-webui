@@ -19,7 +19,7 @@ def page(server):
 
 
 @pytest.mark.timeout(60)
-def test_fake_gemini_e2e_flow(page, server):
+def test_mock_gemini_cli_e2e_flow(page, server):
     # 1. Navigate to test-launcher
     page.goto(f"{server}/test-launcher", timeout=15000)
     expect(page.locator("h1:has-text('TEST LAUNCHER')")).to_be_visible()

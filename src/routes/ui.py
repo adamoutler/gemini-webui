@@ -24,7 +24,7 @@ def fake_session_init():
     scenario = request.args.get("scenario", "default")
     session_id = str(uuid.uuid4())
     ephemeral_sessions[session_id] = {
-        "executable": "python3 src/fake_gemini.py",
+        "executable": "python3 src/mock_gemini_cli.py",
         "args": scenario,
         "used": False,
     }

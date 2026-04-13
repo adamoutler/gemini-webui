@@ -407,11 +407,15 @@ def init_app():
                         for root, dirs, files in os.walk(path):
                             for d in dirs:
                                 shutil.chown(
-                                    os.path.join(root, d), user=current_uid, group=os.getgid()
+                                    os.path.join(root, d),
+                                    user=current_uid,
+                                    group=os.getgid(),
                                 )
                             for f in files:
                                 shutil.chown(
-                                    os.path.join(root, f), user=current_uid, group=os.getgid()
+                                    os.path.join(root, f),
+                                    user=current_uid,
+                                    group=os.getgid(),
                                 )
                     except (LookupError, PermissionError):
                         pass
@@ -800,12 +804,15 @@ def on_join_room(data):
         if user_id:
             if session_manager.persistence:
                 persisted = session_manager.persistence.load()
-                user_persisted = {
-                    tid: s
-                    for tid, s in persisted.items()
-                    if s.get("user_id") == user_id
-                }
-                socketio.emit("sync-tabs", user_persisted, room=f"user_{user_id}")
+                # ONLY sync if this tab is already known, or if we have other tabs.
+                # If this is a brand new tab, pty_restart will handle the sync.
+                if tab_id in persisted or len(persisted) > 0:
+                    user_persisted = {
+                        tid: s
+                        for tid, s in persisted.items()
+                        if s.get("user_id") == user_id
+                    }
+                    socketio.emit("sync-tabs", user_persisted, room=f"user_{user_id}")
 
 
 @socketio.on("update_title")
@@ -922,7 +929,7 @@ def pty_restart(data):
             active_fake_sockets[tab_id] = sid
 
         session_info["used"] = True
-        executable_base = session_info.get("executable", "python3 src/fake_gemini.py")
+        executable_base = session_info.get("executable", "python3 src/mock_gemini_cli.py")
         scenario = session_info.get("args", "default")
         executable_override = f"{executable_base} --scenario {shlex.quote(scenario)}"
 
@@ -1048,6 +1055,17 @@ def pty_restart(data):
         )
         session_manager.add_session(session_obj, on_remove=kill_and_reap)
         session_manager.reclaim_session(tab_id, sid, user_id)
+
+        # Broadcast sync to ensure client has the new session
+        if user_id:
+            if session_manager.persistence:
+                persisted = session_manager.persistence.load()
+                user_persisted = {
+                    tid: s
+                    for tid, s in persisted.items()
+                    if s.get("user_id") == user_id
+                }
+                socketio.emit("sync-tabs", user_persisted, room=f"user_{user_id}")
 
         # Start the dedicated output reader for this session
         socketio.start_background_task(session_output_reader, tab_id)
@@ -1190,7 +1208,7 @@ def handle_get_sessions(data):
 
 
 def register_blueprints(app_instance):
-    from src.host_key_routes import host_key_bp
+    from src.routes.host_keys import host_key_bp
     from src.routes.ui import ui_bp
     from src.routes.api import api_bp
     from src.routes.terminal import terminal_bp

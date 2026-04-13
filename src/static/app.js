@@ -139,6 +139,60 @@ if ("Notification" in window && Notification.permission === "default") {
 }
 
 let tabs = [];
+const DEFAULT_PROMPTS = [
+  {
+    name: "Explain Code",
+    text: "Please explain the code in the current context.",
+  },
+  {
+    name: "Refactor Code",
+    text: "Suggest improvements and refactor the code in the current context.",
+  },
+  {
+    name: "Summarize File",
+    text: "Provide a high-level summary of the file's purpose and functionality.",
+  },
+  {
+    name: "Gemini Audit",
+    text: "Please run a security audit on the current context.",
+  },
+];
+
+let currentEditPromptIndex = -1;
+let customPrompts = [];
+
+async function loadPromptsFromServer() {
+  try {
+    const response = await fetch("/api/prompts");
+    if (response.ok) {
+      customPrompts = await response.json();
+    }
+  } catch (e) {
+    console.error("Failed to load prompts from server:", e);
+    // Fallback to localStorage for backward compatibility or offline
+    try {
+      customPrompts = JSON.parse(localStorage.getItem("custom_prompts")) || [];
+    } catch (err) {
+      customPrompts = [];
+    }
+  }
+}
+
+function getCustomPrompts() {
+  return customPrompts;
+}
+
+function sendPromptToTab(tabId, text) {
+  const tab = tabs.find((t) => t.id === tabId);
+  if (tab && tab.socket && tab.state === "terminal") {
+    // Ensure it ends with a newline to execute
+    const input =
+      text.endsWith("\n") || text.endsWith("\r") ? text : text + "\r";
+    tab.socket.emit("pty-input", { input: input });
+  } else {
+    alert("Tab is not connected to a terminal.");
+  }
+}
 let activeTabId = null;
 let ctrlActive = false;
 let altActive = false;
@@ -1402,21 +1456,10 @@ function startSession(
   sessionName = null,
   shouldReclaim = false,
 ) {
-  if (
-    resumeParam &&
-    resumeParam !== true &&
-    resumeParam !== "new" &&
-    !isNaN(resumeParam)
-  ) {
-    const id = parseInt(resumeParam);
-    const localMax = parseInt(localStorage.getItem("geminiResume") || "0");
-    if (id > localMax) {
-      localStorage.setItem("geminiResume", id.toString());
-    }
-  }
-
   const tab = tabs.find((t) => t.id === tabId);
-  if (!tab) return;
+  if (!tab) {
+    return;
+  }
   tab.state = "terminal";
   tab.session = { type, ssh_target: target, ssh_dir: dir, resume: resumeParam };
   tab.title = sessionName || (target ? target.split("@").pop() : "Local");
@@ -1425,6 +1468,7 @@ function startSession(
   // Back button hijacking: push state so "back" has something to pop
   window.history.pushState({ terminal: true, tabId: tabId }, "");
   saveTabsToStorage();
+  renderTabs();
 
   const container = document.getElementById(tabId + "_instance");
   container.innerHTML = "";
@@ -2404,46 +2448,76 @@ function showTabContextMenu(id, x, y) {
   menu.style.left = x + "px";
   menu.style.top = y + "px";
 
-  const options = [
+  const tab = tabs.find((t) => t.id === id);
+  if (!tab) {
+    return;
+  }
+
+  const sections = [
     {
-      label: "New Tab",
-      action: () => {
-        addNewTab();
-      },
+      title: "Tab Actions",
+      items: [
+        { label: "New Tab", action: () => addNewTab() },
+        {
+          label: "Rename Tab",
+          action: () => {
+            const newTitle = prompt("Enter new tab title:", tab.title);
+            if (newTitle) {
+              tab.title = newTitle;
+              renderTabs();
+              saveTabsToStorage();
+            }
+          },
+        },
+        {
+          label: "Close Tab",
+          action: () => closeTab(id, null, false),
+          hide: tab.state === "launcher",
+        },
+      ],
     },
     {
-      label: "Rename Tab",
-      action: () => {
-        const tab = tabs.find((t) => t.id === id);
-        const newTitle = prompt("Enter new tab title:", tab.title);
-        if (newTitle) {
-          tab.title = newTitle;
-          renderTabs();
-          saveTabsToStorage();
-        }
-      },
+      title: "Prompts",
+      items: [
+        ...DEFAULT_PROMPTS.map((p) => ({
+          label: p.name,
+          action: () => sendPromptToTab(id, p.text),
+        })),
+        ...getCustomPrompts().map((p) => ({
+          label: p.name,
+          action: () => sendPromptToTab(id, p.text),
+        })),
+      ],
+      hide: tab.state !== "terminal",
+    },
+    {
+      title: "Manage",
+      items: [
+        { label: "Add Prompt", action: () => openAddPromptModal() },
+        { label: "Manage Prompts", action: () => openManagePromptsModal() },
+      ],
     },
   ];
 
-  const tab = tabs.find((t) => t.id === id);
-  if (tab.state !== "launcher") {
-    options.push({
-      label: "Close Tab",
-      action: () => {
-        closeTab(id, null, false);
-      },
-    });
-  }
+  sections.forEach((section) => {
+    if (section.hide) return;
 
-  options.forEach((opt) => {
-    const item = document.createElement("div");
-    item.className = "context-menu-item";
-    item.innerText = opt.label;
-    item.onclick = () => {
-      opt.action();
-      menu.remove();
-    };
-    menu.appendChild(item);
+    const header = document.createElement("div");
+    header.className = "context-menu-section-header";
+    header.innerText = section.title;
+    menu.appendChild(header);
+
+    section.items.forEach((opt) => {
+      if (opt.hide) return;
+      const item = document.createElement("div");
+      item.className = "context-menu-item";
+      item.innerText = opt.label;
+      item.onclick = () => {
+        opt.action();
+        menu.remove();
+      };
+      menu.appendChild(item);
+    });
   });
 
   document.body.appendChild(menu);
@@ -3053,6 +3127,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Failed to initialize CSRF token:", e);
   }
   envVarManager = new EnvVarManager();
+  await loadPromptsFromServer();
 });
 
 async function fetchWithCSRF(url, options = {}) {
@@ -3938,10 +4013,23 @@ if (
   checkInstallationStatus();
 }
 
-// --- Add Prompt Modal ---
-function openAddPromptModal() {
-  document.getElementById("new-prompt-name").value = "";
-  document.getElementById("new-prompt-text").value = "";
+// --- Prompts Modals ---
+function openAddPromptModal(index = -1) {
+  currentEditPromptIndex = index;
+  const nameInput = document.getElementById("new-prompt-name");
+  const textInput = document.getElementById("new-prompt-text");
+  const title = document.getElementById("prompt-modal-title");
+
+  if (index >= 0) {
+    const prompts = getCustomPrompts();
+    nameInput.value = prompts[index].name;
+    textInput.value = prompts[index].text;
+    if (title) title.innerText = "Edit Prompt";
+  } else {
+    nameInput.value = "";
+    textInput.value = "";
+    if (title) title.innerText = "Add Prompt";
+  }
   document.getElementById("add-prompt-modal").style.display = "block";
 }
 
@@ -3949,7 +4037,63 @@ function closeAddPromptModal() {
   document.getElementById("add-prompt-modal").style.display = "none";
 }
 
-function saveNewPrompt() {
+function openManagePromptsModal() {
+  renderPromptsList();
+  document.getElementById("manage-prompts-modal").style.display = "block";
+}
+
+function closeManagePromptsModal() {
+  document.getElementById("manage-prompts-modal").style.display = "none";
+}
+
+function renderPromptsList() {
+  const listEl = document.getElementById("prompts-list");
+  const prompts = getCustomPrompts();
+
+  if (prompts.length === 0) {
+    listEl.innerHTML =
+      '<div class="auto-style-8d107b">No custom prompts added yet.</div>';
+    return;
+  }
+
+  let html = "";
+  prompts.forEach((p, index) => {
+    html += `
+      <div class="prompt-manage-item">
+        <div class="prompt-manage-info">
+          <div class="prompt-manage-name">${p.name}</div>
+          <div class="prompt-manage-text">${p.text}</div>
+        </div>
+        <div class="prompt-manage-actions">
+          <button class="small primary" data-onclick="openAddPromptModal(${index})">Edit</button>
+          <button class="small danger" data-onclick="deletePrompt(${index})">Delete</button>
+        </div>
+      </div>
+    `;
+  });
+  listEl.innerHTML = html;
+}
+
+async function deletePrompt(index) {
+  if (confirm("Are you sure you want to delete this prompt?")) {
+    const prompt = customPrompts[index];
+    if (!prompt || !prompt.id) return;
+
+    try {
+      const response = await fetchWithCSRF(`/api/prompts/${prompt.id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) {
+        await loadPromptsFromServer();
+        renderPromptsList();
+      }
+    } catch (e) {
+      console.error("Failed to delete prompt:", e);
+    }
+  }
+}
+
+async function saveNewPrompt() {
   const name = document.getElementById("new-prompt-name").value.trim();
   const text = document.getElementById("new-prompt-text").value.trim();
 
@@ -3958,18 +4102,30 @@ function saveNewPrompt() {
     return;
   }
 
-  let prompts = [];
-  try {
-    prompts = JSON.parse(localStorage.getItem("custom_prompts")) || [];
-  } catch (e) {
-    prompts = [];
+  const payload = { name, text };
+  if (currentEditPromptIndex >= 0) {
+    payload.id = customPrompts[currentEditPromptIndex].id;
   }
 
-  prompts.push({ name, text });
-  localStorage.setItem("custom_prompts", JSON.stringify(prompts));
+  try {
+    const response = await fetchWithCSRF("/api/prompts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
-  closeAddPromptModal();
-  alert("Prompt saved successfully.");
+    if (response.ok) {
+      await loadPromptsFromServer();
+      closeAddPromptModal();
+      if (
+        document.getElementById("manage-prompts-modal").style.display === "block"
+      ) {
+        renderPromptsList();
+      }
+    }
+  } catch (e) {
+    console.error("Failed to save prompt:", e);
+  }
 }
 
 // CSP Event Delegation

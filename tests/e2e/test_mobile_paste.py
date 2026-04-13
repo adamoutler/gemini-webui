@@ -44,7 +44,7 @@ def test_mobile_paste(mobile_page):
     )
     time.sleep(0.5)
 
-    # Send enter so the fake_gemini echoes it
+    # Send enter so the mock_gemini_cli echoes it
     mobile_page.keyboard.press("Enter")
     time.sleep(1)
 

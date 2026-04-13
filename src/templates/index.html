@@ -466,12 +466,30 @@
       </div>
     </div>
 
+    <div id="manage-prompts-modal" class="modal">
+      <div class="modal-content">
+        <span data-onclick="closeManagePromptsModal()" class="auto-style-6c8878"
+          >&times;</span
+        >
+        <h2 class="auto-style-b8f7c9">Manage Prompts</h2>
+        <div class="auto-style-a774ed">
+          <div id="prompts-list" class="auto-style-752aa7"></div>
+          <button
+            class="success auto-style-be70d9"
+            data-onclick="openAddPromptModal()"
+          >
+            + Add New Prompt
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div id="add-prompt-modal" class="modal">
       <div class="modal-content">
         <span data-onclick="closeAddPromptModal()" class="auto-style-6c8878"
-          >×</span
+          >&times;</span
         >
-        <h2 class="auto-style-b8f7c9">Add Prompt</h2>
+        <h2 class="auto-style-b8f7c9" id="prompt-modal-title">Add Prompt</h2>
         <div class="auto-style-a774ed">
           <h4 class="auto-style-aecc05">Name</h4>
           <input

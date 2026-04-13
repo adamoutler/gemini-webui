@@ -89,7 +89,7 @@ def ssh_target_container(test_data_dir):
     subprocess.run(["docker", "cp", src_path, f"{container_name}:/app/src"], check=True)
 
     # Create the gemini executable wrapper
-    script = '#!/bin/bash\\nPYTHONPATH=/app python3 /app/src/fake_gemini.py "$@"'
+    script = '#!/bin/bash\\nPYTHONPATH=/app python3 /app/src/mock_gemini_cli.py "$@"'
     subprocess.run(
         [
             "docker",
