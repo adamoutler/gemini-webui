@@ -395,21 +395,23 @@ def init_app():
         os.makedirs(gemini_data, mode=0o700, exist_ok=True)
 
         # Fix permissions if volume mount made them root-owned
+        current_uid = os.getuid()
         for path in [gemini_data, ssh_dir]:
             try:
                 stat = os.stat(path)
                 if stat.st_uid == 0:
                     try:
-                        shutil.chown(path, user="node", group="node")
+                        # Attempt to use the current user/group instead of hardcoded 'node'
+                        shutil.chown(path, user=current_uid, group=os.getgid())
                         # Recursively fix if it was existing root data
                         for root, dirs, files in os.walk(path):
                             for d in dirs:
                                 shutil.chown(
-                                    os.path.join(root, d), user="node", group="node"
+                                    os.path.join(root, d), user=current_uid, group=os.getgid()
                                 )
                             for f in files:
                                 shutil.chown(
-                                    os.path.join(root, f), user="node", group="node"
+                                    os.path.join(root, f), user=current_uid, group=os.getgid()
                                 )
                     except (LookupError, PermissionError):
                         pass
@@ -440,8 +442,11 @@ def init_app():
                     ],
                     check=True,
                 )
-                shutil.chown(key_path, user="node", group="node")
-                shutil.chown(key_path + ".pub", user="node", group="node")
+                try:
+                    shutil.chown(key_path, user=current_uid, group=os.getgid())
+                    shutil.chown(key_path + ".pub", user=current_uid, group=os.getgid())
+                except (LookupError, PermissionError):
+                    pass
                 os.chmod(key_path, 0o600)
             except Exception as e:
                 logger.warning(f"Failed to generate SSH key: {e}")
@@ -450,19 +455,20 @@ def init_app():
             f"FS initialization partially failed (likely RO filesystem): {e}"
         )
 
-    # Manage symlink /home/node/.gemini -> [current gemini_data]
-    home_gemini = "/home/node/.gemini"
-    gemini_data = os.path.join(data_dir, ".gemini")
+    # Manage symlink in home directory if it exists and is writable
     try:
-        if os.path.islink(home_gemini):
-            if os.readlink(home_gemini) != gemini_data:
-                os.unlink(home_gemini)
+        home_dir = os.path.expanduser("~")
+        if os.path.exists(home_dir) and os.access(home_dir, os.W_OK):
+            home_gemini = os.path.join(home_dir, ".gemini")
+            gemini_data = os.path.join(data_dir, ".gemini")
+            if os.path.islink(home_gemini):
+                if os.readlink(home_gemini) != gemini_data:
+                    os.unlink(home_gemini)
+                    os.symlink(gemini_data, home_gemini)
+            elif not os.path.exists(home_gemini):
                 os.symlink(gemini_data, home_gemini)
-        elif not os.path.exists(home_gemini):
-            os.makedirs(os.path.dirname(home_gemini), exist_ok=True)
-            os.symlink(gemini_data, home_gemini)
     except Exception as e:
-        logger.warning(f"Failed to manage symlink for {home_gemini}: {e}")
+        logger.warning(f"Failed to manage symlink for .gemini: {e}")
 
     config = get_config()
     ADMIN_USER = config.get("ADMIN_USER", ADMIN_USER)
