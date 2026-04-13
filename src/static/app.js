@@ -1502,13 +1502,17 @@ function startSession(
   tab.term.open(termDiv);
 
   try {
-    if (typeof WebglAddon !== "undefined") {
+    const webglDisabled =
+      urlParams.get("webgl") === "false" || navigator.webdriver;
+    if (typeof WebglAddon !== "undefined" && !webglDisabled) {
       tab.webglAddon = new WebglAddon.WebglAddon();
       tab.term.loadAddon(tab.webglAddon);
       tab.webglAddon.onContextLoss(() => {
         console.warn("WebGL Context lost, disposing addon");
         tab.webglAddon.dispose();
       });
+    } else if (typeof WebglAddon !== "undefined") {
+      debugLog("WebGL addon explicitly disabled or test environment detected");
     }
   } catch (e) {
     debugLog("WebGL addon could not be loaded", e);
