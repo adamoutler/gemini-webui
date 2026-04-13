@@ -34,3 +34,15 @@
 ## Note on Pre-existing Zombies
 
 - Any `<defunct>` processes that were spawned by `src/app.py` (e.g., PID 6749) _before_ the fix was applied will remain as zombies until their parent process (6749) is restarted. When a parent process terminates, all its zombie children are inherited by `init` (PID 1) and automatically reaped by the OS.
+
+## Ticket Update (GEMWEBUI-320)
+
+I have implemented the fixes to resolve the zombie process leak:
+
+1. Fixed `kill_and_reap` to conditionally discard the PID only if the non-blocking wait successfully reaps it.
+2. Implemented `safe_subprocess_run` wrapper to catch `GreenletExit` and track orphaned PIDs in a global `abandoned_pids` set.
+3. Updated `zombie_reaper_task` to iterate over both `managed_ptys` and the new `abandoned_pids` list.
+4. Resolved the `no such user: 'node'` and `style-src` CSP errors that were flagged in the dash logs.
+5. Fixed WebGL dimensions error in frontend `src/static/app.js`.
+
+**Note**: The `tests/e2e/test_ctrl_enter.py` timeout is an existing architectural race condition in the main branch's testing harness (where `is_fake=False` for local connections bypasses the `GEMINI_WEBUI_HARNESS_ID` injection, causing a 15-second blocking query in the mock). I recommend opening a separate ticket for this test harness issue.
