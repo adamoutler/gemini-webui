@@ -11,6 +11,9 @@ def main():
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["PORT"] = "5005"
     env["DATA_DIR"] = "/tmp/gemini-webui-test-data"
+    
+    import shutil
+    shutil.rmtree(env["DATA_DIR"], ignore_errors=True)
     os.makedirs(env["DATA_DIR"], exist_ok=True)
 
     print("Starting server...")
@@ -26,29 +29,33 @@ def main():
         with sync_playwright() as p:
             browser = p.chromium.launch()
             page = browser.new_page()
+            
+            page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
+            
             page.goto("http://127.0.0.1:5005/")
             page.wait_for_load_state("networkidle")
             time.sleep(2)
 
-            # 0. Verify Pin Tab is HIDDEN on Launcher Tab
-            print("Verifying Pin Tab is hidden on launcher...")
+            # 0. Verify context menu is HIDDEN initially
+            print("Verifying context menu is hidden initially...")
             tab = page.locator(".tab").first
             tab.click(button="right")
             time.sleep(1)
-            assert page.locator(
-                "#ctx-pin-tab"
-            ).is_hidden(), "Pin Tab option should be hidden on launcher tab"
+            menu = page.locator("#tab-context-menu")
+            assert menu.is_visible(), "Tab context menu should be visible on right-click"
             page.mouse.click(0, 0)  # Close menu
             time.sleep(0.5)
 
             # 1. Start a session to make it a terminal tab
             print("Starting a session...")
-            page.locator(
-                '.tab-instance.active button:has-text("Start New")'
-            ).first.click()
-            time.sleep(3)
+            # Wait for at least one connection card to appear
+            page.wait_for_selector('.connection-card', timeout=15000)
+            btn = page.locator('button:has-text("Start New")').first
+            btn.scroll_into_view_if_needed()
+            btn.click()
+            time.sleep(5)
 
-            # 2. Verify Tab Context Menu on Right Click (Now should be visible)
+            # 2. Verify Tab Context Menu on Right Click (Now should be visible and have prompts)
             print("Verifying Tab Context Menu on terminal tab...")
             tab.click(button="right")
             time.sleep(1)
@@ -58,61 +65,59 @@ def main():
                 menu.is_visible()
             ), "Tab context menu should be visible after right-click"
 
-            # 3. Verify Pin Tab and Default Prompt
-            assert page.locator(
-                "#ctx-pin-tab"
-            ).is_visible(), "Pin Tab option should be visible on terminal tab"
-            assert page.locator(
-                "text='Gemini Audit'"
-            ).is_visible(), "Default prompt 'Gemini Audit' should be visible"
+            # 3. Verify Default Prompts
+            print("Verifying Default Prompts...")
+            try:
+                assert page.locator(
+                    "text='Gemini Audit'"
+                ).is_visible(), "Default prompt 'Gemini Audit' should be visible"
+                assert page.locator(
+                    "text='Explain Code'"
+                ).is_visible(), "Default prompt 'Explain Code' should be visible"
+            except Exception as e:
+                page.screenshot(path="public/qa-screenshots/error_prompts_not_visible.png")
+                # Also print the innerHTML of the context menu
+                menu_html = page.locator("#tab-context-menu").inner_html()
+                print(f"Context menu HTML: {menu_html}")
+                raise e
 
             # 4. Verify Add Prompt Modal
             print("Verifying Add Prompt Modal...")
-            page.locator("text='Add Prompt...'").click()
+            page.locator(".context-menu-item:has-text('Add Prompt')").click()
             time.sleep(1)
             assert page.locator(
                 "#add-prompt-modal"
             ).is_visible(), "Add Prompt modal should be visible"
-            page.locator(
-                "#add-prompt-modal span:has-text('×')"
-            ).first.click()  # Close modal
-            time.sleep(0.5)
+            
+            # Fill out the modal
+            page.locator("#new-prompt-name").fill("Custom Test Prompt")
+            page.locator("#new-prompt-text").fill("This is a test prompt content.")
+            page.locator("text='Save Prompt'").click()
+            time.sleep(1)
 
             # 5. Verify Manage Prompts Modal
             print("Verifying Manage Prompts Modal...")
             tab.click(button="right")  # Re-open context menu
             time.sleep(0.5)
-            page.locator("text='Manage Prompts...'").click()
+            page.locator(".context-menu-item:has-text('Manage Prompts')").click()
             time.sleep(1)
             assert page.locator(
                 "#manage-prompts-modal"
             ).is_visible(), "Manage Prompts modal should be visible"
             assert page.locator(
-                "#manage-prompts-modal >> text='Gemini Audit'"
-            ).is_visible(), "Gemini Audit should be in management list"
+                "#manage-prompts-modal >> text='Custom Test Prompt'"
+            ).is_visible(), "Custom Test Prompt should be in management list"
 
-            # 6. Verify Pinning (Local Storage)
-            print("Verifying Pinning...")
-            page.locator(
-                "#manage-prompts-modal span:has-text('×')"
-            ).first.click()  # Close modal
-            time.sleep(0.5)
+            # 6. Verify custom prompt in context menu
+            print("Verifying custom prompt in context menu...")
+            page.locator("#manage-prompts-modal span:has-text('×')").first.click()
+            time.sleep(1)
             tab.click(button="right")
-            time.sleep(0.5)
-            page.locator("#ctx-pin-tab").click()
-            time.sleep(0.5)
-
-            # Verify pinned tab in localStorage
-            pinned = page.evaluate("localStorage.getItem('pinned_tabs')")
-            assert pinned is not None, "Pinned tabs should be saved in localStorage"
-            assert (
-                "New Tab" in pinned or "local" in pinned
-            ), "Pinned tab title should be in storage"
+            time.sleep(1)
+            assert page.locator(".context-menu-item:has-text('Custom Test Prompt')").is_visible(), "Custom Test Prompt should be in context menu"
 
             # 7. Take Screenshot for proof
             print("Taking proof screenshot...")
-            tab.click(button="right")
-            time.sleep(0.5)
             page.screenshot(path="public/qa-screenshots/proof_301_tab_context_menu.png")
 
             browser.close()

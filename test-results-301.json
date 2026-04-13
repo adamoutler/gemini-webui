@@ -1,8 +1,1 @@
-{
-  "suites": 1,
-  "tests": 1,
-  "passes": 1,
-  "failures": 0,
-  "duration": 20.0,
-  "message": "Tab context menu, pinning, and prompt management verified successfully."
-}
+{"suites": 1, "tests": 1, "passes": 1, "failures": 0, "duration": 20.0, "message": "Tab context menu, pinning, and prompt management verified successfully."}

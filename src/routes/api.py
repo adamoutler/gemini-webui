@@ -23,6 +23,7 @@ from src.process_manager import (
     build_terminal_command,
 )
 from src.session_manager import session_manager
+from src.prompt_manager import prompt_manager
 
 api_bp = Blueprint("api", __name__)
 
@@ -461,3 +462,35 @@ def download_file(filename):
 @api_bp.route("/api/health")
 def health_check():
     return jsonify({"status": "ok"})
+
+
+@api_bp.route("/api/prompts", methods=["GET"])
+@authenticated_only
+def list_prompts():
+    return jsonify(prompt_manager.list_prompts())
+
+
+@api_bp.route("/api/prompts", methods=["POST"])
+@authenticated_only
+def save_prompt():
+    data = request.json
+    prompt_id = data.get("id")
+    name = data.get("name")
+    text = data.get("text")
+
+    if not name or not text:
+        return jsonify({"error": "Missing name or text"}), 400
+
+    if prompt_id:
+        success = prompt_manager.update_prompt(prompt_id, name, text)
+        return jsonify({"status": "success" if success else "error"})
+    else:
+        new_id = prompt_manager.add_prompt(name, text)
+        return jsonify({"status": "success", "id": new_id})
+
+
+@api_bp.route("/api/prompts/<prompt_id>", methods=["DELETE"])
+@authenticated_only
+def delete_prompt(prompt_id):
+    success = prompt_manager.delete_prompt(prompt_id)
+    return jsonify({"status": "success" if success else "error"})

@@ -26,7 +26,7 @@ def page(server):
         browser.close()
 
 
-def test_fake_gemini_ephemeral(page, server):
+def test_mock_gemini_cli_ephemeral(page, server):
     # 1. Navigate to /test-launcher
     page.goto(f"{server}/test-launcher", timeout=15000)
     expect(page.locator("h1:has-text('TEST LAUNCHER')")).to_be_visible()
