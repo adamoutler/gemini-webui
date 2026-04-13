@@ -1,6 +1,6 @@
 Flask==3.0.2
 Flask-SocketIO==5.3.6
-eventlet==0.35.1
+eventlet==0.40.3
 ldap3==2.9.1
 flask-talisman==1.1.0
 Flask-WTF==1.2.1
