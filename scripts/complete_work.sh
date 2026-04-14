@@ -241,7 +241,7 @@ fi
 GEMINI_STDERR="/tmp/gemini_stderr_${WORK_ITEM_ID}.log"
 RESULT=$(cat "$TICKET_FILE" | "${GEMINI_CMD[@]}" -p \
     " @reality-checker Please verify if work item $TICKET_ID is completed. The developer has provided the required documentation and proof directly in the ticket comments. Read the comments thoroughly. Your response MUST end with exactly one of these two verdicts on its own line: READY (if evidence is satisfactory) or NEEDS WORK (if not). The final line of your response must be the verdict word alone." \
-    2>"$GEMINI_STDERR")
+    2>"$GEMINI_STDERR") || true
 GEMINI_EXIT_CODE=$?
 
 # --- Gate: Gemini failure = automatic rejection ---
