@@ -45,6 +45,20 @@
           }
         ]
       }
+    ],
+    "AfterTool": [
+      {
+        "matcher": ".*(run_shell_command|Bash|shell).*",
+        "hooks": [
+          {
+            "name": "git-push-after",
+            "type": "command",
+            "command": "./.gemini/hooks/git-push-after.sh",
+            "description": "CI/CD status tracking on push via Dash",
+            "timeout": 300000
+          }
+        ]
+      }
     ]
   }
 }
