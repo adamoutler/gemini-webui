@@ -34,7 +34,7 @@
   "hooks": {
     "BeforeTool": [
       {
-        "matcher": ".*(run_shell_command|Bash|shell).*",
+        "matcher": ".*(run_shell_command|Bash|shell|mcp_kanban_).*",
         "hooks": [
           {
             "name": "qa-gate",
