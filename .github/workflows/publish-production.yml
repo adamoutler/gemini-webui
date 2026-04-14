@@ -31,7 +31,7 @@ jobs:
         env:
           DATA_DIR: /tmp/data
         run: |
-          timeout 10m PYTHONPATH=. .venv/bin/pytest -s tests/
+          PYTHONPATH=. timeout 10m .venv/bin/pytest -s tests/
 
       - name: Read Version
         id: get_version
