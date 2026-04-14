@@ -31,6 +31,10 @@
       }
     }
   },
+  "hooksConfig": {
+    "enabled": true,
+    "disabled": []
+  },
   "hooks": {
     "BeforeTool": [
       {
@@ -39,7 +43,7 @@
           {
             "name": "qa-gate",
             "type": "command",
-            "command": "./.gemini/hooks/qa-gate.sh",
+            "command": "${GEMINI_PROJECT_DIR}/.gemini/hooks/qa-gate.sh",
             "description": "The QA Gate checks all files are committed, all commits are pushed, abd CI has passed. If the checks pass then an independed reality-checker AI QA audit is conducted within the QA Gate",
             "timeout": 180000
           }
@@ -48,14 +52,14 @@
     ],
     "AfterTool": [
       {
-        "matcher": ".*(run_shell_command|Bash|shell).*",
+        "matcher": "run_shell_command",
         "hooks": [
           {
-            "name": "git-push-after",
+            "name": "git push after",
             "type": "command",
-            "command": "./.gemini/hooks/git-push-after.sh",
-            "description": "CI/CD status tracking on push via Dash",
-            "timeout": 300000
+            "command": "${GEMINI_PROJECT_DIR}/.gemini/hooks/git-push-after.sh",
+            "description": "The git after push provides feedback on the build status after push",
+            "timeout": 3000000
           }
         ]
       }
