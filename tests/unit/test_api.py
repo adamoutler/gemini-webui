@@ -1,6 +1,9 @@
 import pytest
 import json
 import os
+
+pytestmark = pytest.mark.timeout(30)
+
 from src.app import app, init_app
 
 

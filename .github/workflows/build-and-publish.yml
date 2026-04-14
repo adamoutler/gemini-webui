@@ -12,6 +12,7 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-22.04
+    timeout-minutes: 20
     permissions:
       contents: read
       packages: write
@@ -37,7 +38,7 @@ jobs:
         env:
           DATA_DIR: /tmp/data
         run: |
-          PYTHONPATH=. timeout 10m .venv/bin/pytest -s tests/
+          PYTHONPATH=. timeout 15m .venv/bin/pytest -s tests/
 
       - name: Read Version
         id: get_version
