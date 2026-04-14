@@ -31,16 +31,16 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     import time
 
     # 1. Active PTY
-    active_session = Session("active", 4, 123, "admin")
+    active_session = Session("active", None, 123, "admin")
     session_manager.add_session(active_session)
 
     # 2. Orphaned PTY (old)
-    old_orphan = Session("old_orphan", 5, 124, "admin")
+    old_orphan = Session("old_orphan", None, 124, "admin")
     old_orphan.orphaned_at = time.time() - 100  # 100s ago
     session_manager.add_session(old_orphan)
 
     # 3. Orphaned PTY (new)
-    new_orphan = Session("new_orphan", 6, 125, "admin")
+    new_orphan = Session("new_orphan", None, 125, "admin")
     new_orphan.orphaned_at = time.time() - 10  # 10s ago
     session_manager.add_session(new_orphan)
 
@@ -142,7 +142,7 @@ def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
     now = time.time()
     for i in range(50):
         tab_id = f"tab_{i}"
-        s = Session(tab_id, i + 10, 1000 + i, "admin")
+        s = Session(tab_id, None, 1000 + i, "admin")
         s.last_seen = now - (1000 - i)  # tab_0 is oldest
         session_manager.add_session(s)
         # Ensure it has 0 SIDs so it's eligible for eviction

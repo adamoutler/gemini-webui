@@ -19,9 +19,11 @@ def browser_context():
 def mobile_page(server, browser_context):
     page = browser_context.new_page()
     page.goto(server, timeout=15000)
-    # Start a local session to see controls
-    page.click("text=Start New", timeout=10000)
-    page.wait_for_selector("#mobile-controls", state="visible", timeout=10000)
+    try:
+        page.wait_for_selector("#mobile-controls", state="visible", timeout=2000)
+    except Exception:
+        page.click("text=Start New", timeout=10000)
+        page.wait_for_selector("#mobile-controls", state="visible", timeout=10000)
     yield page
     page.close()
 
@@ -101,22 +103,42 @@ def test_holdable_buttons_emit_commands(mobile_page):
     )
 
     # Test Tab button
-    mobile_page.click("text=Tab")
+    tab_btn = mobile_page.locator(".holdable:has-text('Tab')").first
+    tab_btn.dispatch_event("touchstart")
+    time.sleep(0.1)
+    tab_btn.dispatch_event("touchend")
     last_data = mobile_page.evaluate("window.lastSentData")
-    assert last_data == "	", "Tab button should send 	"
+    assert last_data == "\t", "Tab button should send \\t"
 
     # Test Shift+Tab button
-    mobile_page.click("text=Tab", modifiers=["Shift"])
+    # Shift modifier via evaluate
+    mobile_page.evaluate("""() => {
+        const event = new TouchEvent('touchstart', { shiftKey: true });
+        const el = Array.from(document.querySelectorAll('.holdable')).find(el => el.textContent === 'Tab');
+        el.dispatchEvent(event);
+    }""")
+    time.sleep(0.1)
+    mobile_page.evaluate("""() => {
+        const event = new TouchEvent('touchend');
+        const el = Array.from(document.querySelectorAll('.holdable')).find(el => el.textContent === 'Tab');
+        el.dispatchEvent(event);
+    }""")
     last_data = mobile_page.evaluate("window.lastSentData")
     assert last_data == "\x1b[Z", "Shift+Tab should send \\x1b[Z"
 
     # Test ▲ button (Esc[A)
-    mobile_page.click("text=▲")
+    up_btn = mobile_page.locator(".holdable:has-text('▲')").first
+    up_btn.dispatch_event("touchstart")
+    time.sleep(0.1)
+    up_btn.dispatch_event("touchend")
     last_data = mobile_page.evaluate("window.lastSentData")
     assert last_data == "\x1b[A", "Up arrow should send Esc[A"
 
     # Test Esc button
-    mobile_page.click("text=Esc")
+    esc_btn = mobile_page.locator(".holdable:has-text('Esc')").first
+    esc_btn.dispatch_event("touchstart")
+    time.sleep(0.1)
+    esc_btn.dispatch_event("touchend")
     last_data = mobile_page.evaluate("window.lastSentData")
     assert last_data == "\x1b", "Esc button should send Esc"
 

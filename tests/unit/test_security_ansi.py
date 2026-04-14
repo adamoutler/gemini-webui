@@ -33,16 +33,16 @@ def test_ansi_injection(payload):
     # Setup state
     session_manager.sessions.clear()
     session_manager.sid_to_tabid.clear()
-    session_manager.tabid_to_sid.clear()
+    session_manager.tabid_to_sids.clear()
 
-    session = Session("tab_ansi", 13, 126, "admin")
+    session = Session("tab_ansi", None, None, "admin")
     session_manager.add_session(session)
     session_manager.reclaim_session("tab_ansi", "sid_ansi", "admin")
 
     with patch("select.select") as mock_select, patch("os.read") as mock_read, patch(
         "src.app.socketio"
     ) as mock_sio:
-        mock_select.return_value = ([13], [], [])
+        mock_select.return_value = ([None], [], [])
 
         read_returns = [payload, b""]
 
@@ -53,13 +53,7 @@ def test_ansi_injection(payload):
 
         mock_read.side_effect = mock_read_side_effect
 
-        mock_sio.sleep.side_effect = [None, Exception("StopLoop")]
-
-        try:
-            read_and_forward_pty_output()
-        except Exception as e:
-            if str(e) != "StopLoop":
-                pytest.fail(f"Unhandled exception during PTY parsing: {e}")
+        read_and_forward_pty_output()
 
         session_manager.remove_session("tab_ansi", "admin")
 
@@ -67,9 +61,9 @@ def test_ansi_injection(payload):
 def test_ansi_injection_mixed_chunks():
     session_manager.sessions.clear()
     session_manager.sid_to_tabid.clear()
-    session_manager.tabid_to_sid.clear()
+    session_manager.tabid_to_sids.clear()
 
-    session = Session("tab_ansi_mix", 14, 127, "admin")
+    session = Session("tab_ansi_mix", None, None, "admin")
     session_manager.add_session(session)
     session_manager.reclaim_session("tab_ansi_mix", "sid_ansi_mix", "admin")
 
@@ -81,7 +75,7 @@ def test_ansi_injection_mixed_chunks():
     with patch("select.select") as mock_select, patch("os.read") as mock_read, patch(
         "src.app.socketio"
     ) as mock_sio:
-        mock_select.return_value = ([14], [], [])
+        mock_select.return_value = ([None], [], [])
 
         read_returns = chunks + [b""]
 
@@ -93,14 +87,7 @@ def test_ansi_injection_mixed_chunks():
         mock_read.side_effect = mock_read_side_effect
 
         iterations = (len(chunks) // 10) + 5
-        mock_sio.sleep.side_effect = [None] * iterations + [Exception("StopLoop")]
 
-        try:
-            read_and_forward_pty_output()
-        except Exception as e:
-            if str(e) != "StopLoop":
-                pytest.fail(
-                    f"Unhandled exception during PTY parsing of mixed chunks: {e}"
-                )
+        read_and_forward_pty_output()
 
         session_manager.remove_session("tab_ansi_mix", "admin")

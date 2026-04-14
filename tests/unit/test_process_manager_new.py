@@ -5,7 +5,7 @@ from src.app import pty_restart
 
 def test_fetch_sessions_for_host_local():
     host = {"type": "local", "target": None, "dir": None}
-    with patch("subprocess.run") as mock_run:
+    with patch("src.process_manager.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(
             returncode=0, stdout="  1. Local (test) [uuid]", stderr=""
         )
@@ -17,7 +17,7 @@ def test_fetch_sessions_for_host_local():
 
 def test_fetch_sessions_for_host_ssh():
     host = {"type": "ssh", "target": "user@remote", "dir": "~/myproject"}
-    with patch("subprocess.run") as mock_run:
+    with patch("src.process_manager.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(
             returncode=0, stdout="  1. Remote (test) [uuid]", stderr=""
         )
@@ -45,11 +45,11 @@ def test_validate_ssh_target_invalid():
 
 @patch("pty.fork")
 @patch("os.closerange")
-@patch("os.execvp")
+@patch("os.execvpe")
 @patch("os._exit")
 @patch("shutil.which", return_value=None)
 def test_pty_restart_local_cmd(
-    mock_which, mock_exit, mock_execvp, mock_closerange, mock_fork
+    mock_which, mock_exit, mock_execvpe, mock_closerange, mock_fork
 ):
     # Simulate being the child process
     mock_fork.return_value = (0, 1)  # child_pid=0, fd=1
@@ -62,8 +62,8 @@ def test_pty_restart_local_cmd(
     with app.test_request_context("/"):
         pty_restart(data)
 
-    mock_execvp.assert_called_once()
-    cmd = mock_execvp.call_args[0][1]
+    mock_execvpe.assert_called_once()
+    cmd = mock_execvpe.call_args[0][1]
     assert cmd[0] == "/bin/sh"
     assert "gemini -r" in cmd[2]
     assert "WARNING: Persistence volume not found" in cmd[2]
@@ -71,11 +71,11 @@ def test_pty_restart_local_cmd(
 
 @patch("pty.fork")
 @patch("os.closerange")
-@patch("os.execvp")
+@patch("os.execvpe")
 @patch("os._exit")
 @patch("shutil.which", return_value=None)
 def test_pty_restart_ssh_cmd(
-    mock_which, mock_exit, mock_execvp, mock_closerange, mock_fork
+    mock_which, mock_exit, mock_execvpe, mock_closerange, mock_fork
 ):
     # Simulate being the child process
     mock_fork.return_value = (0, 1)  # child_pid=0, fd=1
@@ -92,8 +92,8 @@ def test_pty_restart_ssh_cmd(
     with app.test_request_context("/"):
         pty_restart(data)
 
-    mock_execvp.assert_called_once()
-    cmd = mock_execvp.call_args[0][1]
+    mock_execvpe.assert_called_once()
+    cmd = mock_execvpe.call_args[0][1]
     assert cmd[0] == "ssh"
     assert "user@remote.com" in cmd
 

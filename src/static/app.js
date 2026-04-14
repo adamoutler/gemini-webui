@@ -3428,7 +3428,7 @@ document.querySelectorAll(".control-btn.holdable").forEach((btn) => {
       if (cmd === "\t" && e && e.shiftKey) {
         cmd = "\x1b[Z";
       }
-      sendToTerminal(cmd);
+      window.sendToTerminal(cmd);
     }
     if (adjust) {
       adjustFontSize(parseInt(adjust));
@@ -4118,7 +4118,8 @@ async function saveNewPrompt() {
       await loadPromptsFromServer();
       closeAddPromptModal();
       if (
-        document.getElementById("manage-prompts-modal").style.display === "block"
+        document.getElementById("manage-prompts-modal").style.display ===
+        "block"
       ) {
         renderPromptsList();
       }

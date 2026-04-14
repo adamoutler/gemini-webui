@@ -187,4 +187,4 @@ def run_fake_gemini():
 
 
 if __name__ == "__main__":
-    run_mock_gemini_cli()
+    run_fake_gemini()

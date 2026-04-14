@@ -12,7 +12,7 @@ def test_bola_get_sessions(client):
     # Add dummy sessions directly to the session manager
     session_manager.sessions.clear()
     session_manager.sid_to_tabid.clear()
-    session_manager.tabid_to_sid.clear()
+    session_manager.tabid_to_sids.clear()
 
     mock_session_a = Session("tab_A1", None, 1001, user_a)
     session_manager.add_session(mock_session_a)
@@ -43,7 +43,7 @@ def test_bola_terminate_session(client):
 
     session_manager.sessions.clear()
     session_manager.sid_to_tabid.clear()
-    session_manager.tabid_to_sid.clear()
+    session_manager.tabid_to_sids.clear()
 
     # Session owned by User A
     mock_session_a = Session("tab_A1", None, 1001, user_a)
@@ -74,7 +74,7 @@ def test_bola_websocket_events(client):
 
     session_manager.sessions.clear()
     session_manager.sid_to_tabid.clear()
-    session_manager.tabid_to_sid.clear()
+    session_manager.tabid_to_sids.clear()
 
     mock_session_a = Session("tab_A1", None, 1001, user_a)
     session_manager.add_session(mock_session_a)
