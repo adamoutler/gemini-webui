@@ -1,5 +1,11 @@
 import os
 import sys
+import eventlet
+
+# Perform monkey patching as early as possible
+if os.environ.get("SKIP_MONKEY_PATCH") != "true":
+    eventlet.monkey_patch()
+
 import errno
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,9 +20,6 @@ abandoned_pids = set()
 abandoned_pids_lock = threading.Lock()
 
 if not env_config.SKIP_MONKEY_PATCH:
-    import eventlet
-
-    eventlet.monkey_patch()
     # Manually patch subprocess.run to handle GreenletExit and prevent zombie processes
     import subprocess
     import eventlet.green.subprocess
@@ -929,7 +932,9 @@ def pty_restart(data):
             active_fake_sockets[tab_id] = sid
 
         session_info["used"] = True
-        executable_base = session_info.get("executable", "python3 src/mock_gemini_cli.py")
+        executable_base = session_info.get(
+            "executable", "python3 src/mock_gemini_cli.py"
+        )
         scenario = session_info.get("args", "default")
         executable_override = f"{executable_base} --scenario {shlex.quote(scenario)}"
 
