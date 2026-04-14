@@ -134,6 +134,7 @@ def test_extreme_data_injection_and_delta_updates():
 
         # 3. Resuming (reclaiming)
         # Re-add session because EOFError removed it
+        session.active = True
         session_manager.add_session(session)
         mock_sio.reset_mock()
         # Simulate app logic for reclaim: it emits the whole buffer

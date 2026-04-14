@@ -45,6 +45,7 @@ class Session:
         self.last_seen = time.time()
         self.orphaned_at = None
         self.file_cache = []
+        self.active = True
 
         # Set the FD to non-blocking mode to prevent Eventlet hub lockups.
         # When O_NONBLOCK is set, Eventlet's monkey-patched os.read/os.write
@@ -143,7 +144,8 @@ class SessionManager:
         with self._lock:
             # If a session with the same tab_id already exists, kill it first
             old_same_tab = self.sessions.pop(session.tab_id, None)
-            if old_same_tab:
+            if old_same_tab and old_same_tab is not session:
+                old_same_tab.active = False
                 if on_remove:
                     on_remove(old_same_tab.pid)
                 else:
@@ -177,6 +179,7 @@ class SessionManager:
 
                 if idle_sessions:
                     oldest = idle_sessions.pop(0)
+                    oldest.active = False
                     if on_remove:
                         on_remove(oldest.pid)
                     else:
@@ -225,6 +228,7 @@ class SessionManager:
         with self._lock:
             session = self.get_session(tab_id, user_id)
             if session:
+                session.active = False
                 self.sessions.pop(tab_id, None)
                 sids = self.tabid_to_sids.pop(tab_id, set())
                 for sid in sids:

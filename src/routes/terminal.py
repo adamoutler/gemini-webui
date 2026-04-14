@@ -100,15 +100,17 @@ def terminate_managed_session(tab_id):
         session_manager.persistence.remove(tab_id)
 
     session_obj = session_manager.remove_session(tab_id, user_id)
-    if session_obj:
-        logger.info(f"Terminating managed session {tab_id}")
-        ephemeral_sessions.pop(tab_id, None)
-        kill_and_reap(session_obj.pid)
-        if session_obj.fd is not None:
-            try:
-                os.close(session_obj.fd)
-            except OSError:
-                pass
+    if not session_obj:
+        return jsonify({"error": "Session not found"}), 404
+
+    logger.info(f"Terminating managed session {tab_id}")
+    ephemeral_sessions.pop(tab_id, None)
+    kill_and_reap(session_obj.pid)
+    if session_obj.fd is not None:
+        try:
+            os.close(session_obj.fd)
+        except OSError:
+            pass
 
     # Broadcast termination to all clients in the room
     socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)

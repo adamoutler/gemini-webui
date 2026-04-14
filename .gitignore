@@ -6,8 +6,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .coverage
-docs/qa-images/
-docs/qa/
 \n# Gemini CLI environment file\n.gemini/.env
 
 # Orphaned test/debug scripts

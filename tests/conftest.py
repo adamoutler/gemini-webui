@@ -1,11 +1,34 @@
 import os
-
-os.environ["SKIP_MONKEY_PATCH"] = "true"
-
 import time
 import subprocess
 import pytest
 import signal
+import requests
+
+os.environ["SKIP_MONKEY_PATCH"] = "true"
+
+
+@pytest.fixture(autouse=True)
+def clear_server_sessions(request):
+    # Check for any of the common server fixtures
+    server_fixtures = [
+        "server",
+        "custom_server",
+        "csrf_enabled_server",
+        "csrf_enabled_server_csrf",
+        "authenticated_server",
+        "docker_server",
+        "ssh_test_server",
+    ]
+
+    for fixture_name in server_fixtures:
+        if fixture_name in request.fixturenames:
+            try:
+                server_url = request.getfixturevalue(fixture_name)
+                requests.get(f"{server_url}/api/sessions/terminate_all", timeout=5)
+                break
+            except Exception:
+                pass
 
 
 @pytest.fixture(scope="session")

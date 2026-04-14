@@ -716,7 +716,7 @@ def session_output_reader(tab_id):
     fd = session_obj.fd
 
     try:
-        while True:
+        while getattr(session_obj, "active", True):
             # Eventlet's monkey-patched os.read will yield to the hub
             # if O_NONBLOCK is set and data is not ready.
             # Even without O_NONBLOCK, it should yield if it blocks.
@@ -724,6 +724,8 @@ def session_output_reader(tab_id):
                 # Use select to avoid calling os.read when no data is ready,
                 # which would yield via trampoline. This keeps the hub efficient.
                 (data_ready, _, _) = select.select([fd], [], [], 0.1)
+                if not getattr(session_obj, "active", True):
+                    break
                 if data_ready:
                     output = os.read(fd, max_read_bytes)
                     if not output:  # EOF
@@ -757,13 +759,14 @@ def session_output_reader(tab_id):
         logger.error(f"Error in session output reader for {tab_id}: {e}")
     finally:
         logger.info(f"Session reader for {tab_id} exiting, cleaning up")
-        # Ensure the session is removed from manager if reader exits
-        session_manager.remove_session(tab_id)
-        if tab_id in ephemeral_sessions:
-            ephemeral_sessions.pop(tab_id)
-        if session_obj and session_obj.pid is not None:
-            kill_and_reap(session_obj.pid)
-        socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
+        # Ensure the session is removed from manager if reader exits organically
+        if getattr(session_obj, "active", True):
+            session_manager.remove_session(tab_id)
+            if tab_id in ephemeral_sessions:
+                ephemeral_sessions.pop(tab_id)
+            if session_obj and session_obj.pid is not None:
+                kill_and_reap(session_obj.pid)
+            socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
 
 
 def background_session_preloader():
