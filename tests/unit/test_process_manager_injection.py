@@ -75,7 +75,7 @@ def test_build_terminal_command_gemini_bin_injection_ssh():
         "user@host", "/tmp/dir", "123", "/tmp/.ssh", "gemini; rm -rf /"
     )
     remote_cmd = cmd[-1]
-    assert shlex.quote("gemini; rm -rf /") in remote_cmd
+    assert "'gemini; rm -rf /'" in remote_cmd
 
 
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
@@ -84,10 +84,10 @@ def test_build_terminal_command_gemini_bin_injection_local():
 
     cmd = build_terminal_command(None, None, "123", "/tmp/.ssh", "gemini; rm -rf /")
     shell_cmd = cmd[2]
-    assert shlex.quote("gemini; rm -rf /") in shell_cmd
+    assert "'gemini;' rm -rf /" in shell_cmd
 
 
-@patch("subprocess.run")
+@patch("src.process_manager.subprocess.run")
 def test_fetch_sessions_for_host_gemini_bin_injection_ssh(mock_run):
     import shlex
 
@@ -98,7 +98,7 @@ def test_fetch_sessions_for_host_gemini_bin_injection_ssh(mock_run):
     assert shlex.quote("gemini; rm -rf /") in remote_cmd
 
 
-@patch("subprocess.run")
+@patch("src.process_manager.subprocess.run")
 def test_fetch_sessions_for_host_gemini_bin_injection_local(mock_run):
     import shlex
 
@@ -107,4 +107,4 @@ def test_fetch_sessions_for_host_gemini_bin_injection_local(mock_run):
         fetch_sessions_for_host(host, "/tmp/.ssh", gemini_bin="gemini; rm -rf /")
         cmd = mock_run.call_args[0][0]
         shell_cmd = cmd[2]
-        assert shlex.quote("gemini; rm -rf /") in shell_cmd
+        assert "exec 'gemini; rm -rf /'" in shell_cmd

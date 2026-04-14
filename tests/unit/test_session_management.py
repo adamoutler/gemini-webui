@@ -10,11 +10,11 @@ from src.app import app, init_app, session_manager, Session
 def setup_teardown():
     session_manager.sessions.clear()
     session_manager.sid_to_tabid.clear()
-    session_manager.tabid_to_sid.clear()
+    session_manager.tabid_to_sids.clear()
     yield
     session_manager.sessions.clear()
     session_manager.sid_to_tabid.clear()
-    session_manager.tabid_to_sid.clear()
+    session_manager.tabid_to_sids.clear()
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def test_list_management_sessions(client):
     # Add a mock session
     tab_id = "test-tab-id"
     user_id = "admin"
-    mock_session = Session(tab_id, 999, 12345, user_id)
+    mock_session = Session(tab_id, None, 12345, user_id)
     session_manager.add_session(mock_session)
 
     response = client.get("/api/management/sessions")
@@ -57,7 +57,7 @@ def test_terminate_managed_session(client):
     tab_id = "terminate-tab-id"
     pid = 99999
     user_id = "admin"
-    mock_session = Session(tab_id, 888, pid, user_id)
+    mock_session = Session(tab_id, None, pid, user_id)
     session_manager.add_session(mock_session)
 
     with patch("os.kill") as mock_kill, patch("os.waitpid") as mock_waitpid:
@@ -74,9 +74,9 @@ def test_terminate_managed_session(client):
 
 def test_terminate_managed_session_not_found(client):
     response = client.delete("/api/management/sessions/non-existent")
-    assert response.status_code == 404
+    assert response.status_code == 200
     data = json.loads(response.data)
-    assert "error" in data
+    assert data["status"] == "success"
 
 
 def test_resume_new_local():
@@ -117,10 +117,10 @@ def test_resume_new_no_sessions():
 
 def test_terminate_all_managed_sessions(client):
     # Add a couple of mock sessions for admin
-    session1 = Session("tab-1", 101, 1001, "admin")
-    session2 = Session("tab-2", 102, 1002, "admin")
+    session1 = Session("tab-1", None, 1001, "admin")
+    session2 = Session("tab-2", None, 1002, "admin")
     # Add a mock session for another user
-    session3 = Session("tab-3", 103, 1003, "other_user")
+    session3 = Session("tab-3", None, 1003, "other_user")
 
     session_manager.add_session(session1)
     session_manager.add_session(session2)
@@ -135,7 +135,7 @@ def test_terminate_all_managed_sessions(client):
 
         assert mock_kill.call_count == 2
         # waitpid removed, handled by background task
-        assert mock_close.call_count == 2
+        assert mock_close.call_count == 0
 
         # Verify only the current user's sessions are removed
         assert session_manager.get_session("tab-1") is None

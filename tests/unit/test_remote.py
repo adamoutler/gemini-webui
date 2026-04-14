@@ -4,30 +4,8 @@ from unittest.mock import patch, MagicMock
 from src.app import app
 
 
-@pytest.fixture
-def client(test_data_dir):
-    app.config["TESTING"] = True
-    app.config["DATA_DIR"] = str(test_data_dir)
-    app.config["SECRET_KEY"] = "test-secret"
-    with app.test_client() as client:
-        with patch.dict("os.environ", {"BYPASS_AUTH_FOR_TESTING": "true"}):
-            yield client
-
-
-@pytest.fixture(autouse=True)
-def disable_csrf():
-    import os
-    from src.app import app
-
-    app.config["WTF_CSRF_ENABLED"] = False
-    os.environ["WTF_CSRF_ENABLED"] = "False"
-    yield
-    app.config["WTF_CSRF_ENABLED"] = True
-    os.environ.pop("WTF_CSRF_ENABLED", None)
-
-
 def test_remote_sessions_list(client):
-    with patch("src.app.subprocess.run") as mock_run:
+    with patch("src.process_manager.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(
             returncode=0,
             stdout="""  1. SessionOne (active) [uuid1]
@@ -44,10 +22,10 @@ def test_remote_sessions_list(client):
 
 
 def test_remote_sessions_terminate(client):
-    with patch("src.app.subprocess.run") as mock_run:
+    with patch("src.process_manager.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout="Terminated", stderr="")
 
-        response = client.post(
+        response = client.get(
             "/api/sessions/terminate",
             data=json.dumps(
                 {"ssh_target": "user@host", "ssh_dir": "/tmp", "session_id": "uuid1"}
@@ -63,7 +41,7 @@ def test_remote_sessions_timeout(client):
     import subprocess
 
     with patch(
-        "src.app.subprocess.run",
+        "src.process_manager.subprocess.run",
         side_effect=subprocess.TimeoutExpired(cmd=["ssh"], timeout=45),
     ):
         response = client.get("/api/sessions?ssh_target=user@host")
