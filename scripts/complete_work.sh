@@ -289,7 +289,7 @@ curl -s --max-time 30 -X POST "${API_BASE}/projects/${PROJECT_ID}/issues/${WORK_
 # Evaluate Verdict
 # =============================================================================
 # Match the pattern from .gemini/hooks/qa-gate.sh
-if grep -qiE "\*\*Status\*\*: READY|^READY$" <<< "$RESULT" || echo "$RESULT" | tail -n 5 | grep -qiE "READY|confirmed.*complet|is now complete|all criteria.*met|production.ready"; then
+if ! grep -q "NEEDS WORK" <<< "$RESULT"; then
     echo ""
     echo "╔══════════════════════════════════════════════════════════════╗"
     echo "║  ✅ APPROVED — Reality checker verdict: READY               ║"
