@@ -20,11 +20,12 @@ class TestZombieFix(unittest.TestCase):
         ) as mock_getpgid, patch("src.session_manager.os.close") as mock_close:
             mock_getpgid.return_value = 100
 
-            s1 = Session("tab1", None, 100, "user1")
+            s1 = Session("tab1", 10, 100, "user1")
             sm.add_session(s1)
 
-            s2 = Session("tab1", None, 101, "user1")
-            # We don't pass on_remove here to test the default kill logic in add_session
+            s2 = Session(
+                "tab1", 11, 101, "user1"
+            )  # We don't pass on_remove here to test the default kill logic in add_session
             sm.add_session(s2)
 
             # Should have killed s1.pid (100)

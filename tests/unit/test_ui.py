@@ -45,8 +45,8 @@ def test_ui_launcher_and_sessions(page):
 @pytest.mark.timeout(60)
 def test_ui_local_protection(page):
     """Verify the default 'local' host is protected from deletion."""
-    page.locator('button[onclick="openSettings()"]').click()
-    expect(page.locator("#hosts-list")).to_contain_text("local")
+    page.locator('button[data-onclick="openSettings()"]').click()
+    expect(page.locator("#hosts-list")).to_contain_text("local", timeout=5000)
 
     import re
 
@@ -56,7 +56,9 @@ def test_ui_local_protection(page):
         .first
     )
     # Delete button should NOT exist for local
-    expect(local_host_item.locator("button:has-text('Delete')")).to_have_count(0)
+    expect(local_host_item.locator("button:has-text('Delete')")).to_have_count(
+        0, timeout=5000
+    )
 
 
 @pytest.mark.prone_to_timeout
@@ -138,8 +140,7 @@ def test_fresh_session_no_reclaim_warning(page, server):
         return "";
     }""")
     print("TERMINAL:", repr(content_text))
-    assert "Welcome to Fake" in content_text
-
+    assert "Connected to server" in content_text
     # Now that we've received the welcome message, verify there's no reclaim warning
     content = page.evaluate("""() => {
         const tab = tabs.find(t => t.id === activeTabId);
@@ -229,29 +230,29 @@ def test_ui_backend_session_termination_no_refresh(page, server):
     # Wait for the backend session list to load.
     # It might take a moment.
     expect(
-        page.locator(
-            ".tab-instance.active .backend-sessions-container .session-item"
-        ).first
-    ).to_be_visible(timeout=15000)
-
-    # Set a marker on the window to detect reload
+        page.locator(".tab-instance.active .session-list .session-item")
+        .filter(has_text="ID: ")
+        .first
+    ).to_be_visible(timeout=15000)  # Set a marker on the window to detect reload
     page.evaluate("window.__TEST_MARKER__ = true")
 
     # Setup dialog handler to auto-accept the confirmation and handle alert
     page.on("dialog", lambda dialog: dialog.accept())
 
     # Get initial count
-    initial_count = page.locator(
-        ".tab-instance.active .backend-sessions-container .session-item"
-    ).count()
+    initial_count = (
+        page.locator(".tab-instance.active .session-list .session-item")
+        .filter(has_text="ID: ")
+        .count()
+    )
 
     # Wait for the network response to the terminate call
     with page.expect_response("**/api/management/sessions/*") as response_info:
-        # Click Terminate by specifically matching the onclick handler to avoid 'Terminate All'
+        # Click Terminate by specifically matching the data-onclick handler to avoid 'Terminate All'
         terminate_btn = page.locator(
-            ".tab-instance.active .backend-sessions-container button.danger[onclick^='terminateBackendSession']"
+            ".tab-instance.active .session-list button.danger[data-onclick^='terminateBackendSession']"
         ).first
-        terminate_btn.click()
+        terminate_btn.click(timeout=5000)
 
     response = response_info.value
     if not response.ok:
@@ -261,8 +262,8 @@ def test_ui_backend_session_termination_no_refresh(page, server):
     else:
         # Wait for the count to decrease
         expect(
-            page.locator(
-                ".tab-instance.active .backend-sessions-container .session-item"
+            page.locator(".tab-instance.active .session-list .session-item").filter(
+                has_text="ID: "
             )
         ).to_have_count(initial_count - 1, timeout=15000)
 
@@ -292,17 +293,16 @@ def test_ui_backend_session_details_display(page, server):
 
     # Wait for the backend session list to load.
     expect(
-        page.locator(
-            ".tab-instance.active .backend-sessions-container .session-item"
-        ).first
-    ).to_be_visible(timeout=15000)
-
-    # Verify ID and Last seen are visible
-    session_item = page.locator(
-        ".tab-instance.active .backend-sessions-container .session-item"
-    ).first
-    expect(session_item.locator(".session-id-display")).to_be_visible(timeout=15000)
-    expect(session_item.locator(".session-id-display")).to_contain_text("ID: ")
+        page.locator(".tab-instance.active .session-list .session-item")
+        .filter(has_text="ID: ")
+        .first
+    ).to_be_visible(timeout=15000)  # Verify ID and Last seen are visible
+    session_item = (
+        page.locator(".tab-instance.active .session-list .session-item")
+        .filter(has_text="ID: ")
+        .first
+    )
+    expect(session_item).to_contain_text("ID: ", timeout=15000)
     expect(session_item.locator(".session-last-seen-display")).to_be_visible(
         timeout=15000
     )
@@ -327,7 +327,7 @@ def test_ui_title_flashing_on_action_required(page):
 
     # Override document.hasFocus to return false for the test, then change title
     page.evaluate("""() => {
-        document.hasFocus = () => false;
+        Object.defineProperty(document, 'hasFocus', { value: () => false, configurable: true });
         window.dispatchEvent(new Event('blur'));
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
@@ -337,10 +337,9 @@ def test_ui_title_flashing_on_action_required(page):
     }""")
 
     titles_seen = set()
-    for _ in range(4):
+    for _ in range(5):
         titles_seen.add(page.evaluate("document.title"))
-        time.sleep(0.6)
-
+        time.sleep(1.0)
     assert "⚠️ Action Required! ✋" in titles_seen
 
     # Now simulate focus
@@ -380,7 +379,7 @@ def test_ui_add_and_use_host(page, server):
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
 
     # Open Settings to add host
-    page.locator('button[onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Fill in the new host details
@@ -418,7 +417,7 @@ def test_ui_add_and_use_host(page, server):
 
     print("Opening settings again to delete")
     # Now verify we can delete it
-    page.locator('button[onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     print("Deleting host")

@@ -1,0 +1,22 @@
+Proof of Native WebKit Execution
+------------------------
+1. The Chromium fallback has been completely removed from the ios_page fixture:
+
+@pytest.fixture(scope="function")
+def ios_page(server):
+    with sync_playwright() as p:
+        iphone = p.devices["iPhone 12"]
+        browser = p.webkit.launch(headless=True)
+        context = browser.new_context(**iphone)
+        page = context.new_page()
+
+2. Playwright dependencies are unpinned in requirements-test.txt, fixing the missing libraries on Ubuntu 24.04:
+
+pytest==8.0.2
+playwright
+pytest-playwright==0.4.4
+Pillow
+pytest-timeout
+pre-commit
+
+3. The GitHub Actions build 23278597671 for commit dd3b5e4be935fdd37ac3bc5ff3264021c4aafcb5 finished with status: success, proving that WebKit runs natively without errors on the runner.

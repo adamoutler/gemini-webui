@@ -74,9 +74,7 @@ def test_terminate_managed_session(client):
 
 def test_terminate_managed_session_not_found(client):
     response = client.delete("/api/management/sessions/non-existent")
-    assert response.status_code == 200
-    data = json.loads(response.data)
-    assert data["status"] == "success"
+    assert response.status_code == 404
 
 
 def test_resume_new_local():
