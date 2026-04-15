@@ -3,8 +3,9 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
+def page(server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
 
@@ -26,7 +27,7 @@ def page(server):
 def test_esc_dismiss_settings(page):
     """Verify pressing Escape closes the Settings modal."""
     # Open settings
-    page.locator('button[onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Press Escape

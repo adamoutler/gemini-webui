@@ -22,7 +22,9 @@ def authenticated_server(test_data_dir):
     env["GEMWEBUI_HARNESS"] = "1"
     env["FLASK_DEBUG"] = "false"
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     process = subprocess.Popen(
@@ -59,8 +61,9 @@ def authenticated_server(test_data_dir):
 
 
 @pytest.mark.skip(reason="Flaky in CI")
-def test_new_deployment_login(authenticated_server):
-    with sync_playwright() as p:
+def test_new_deployment_login(authenticated_server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         # Create a mobile context since bug affects mobile/safari often and it is a good test vector
         iphone = p.devices["iPhone 13"]

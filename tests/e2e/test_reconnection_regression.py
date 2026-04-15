@@ -11,7 +11,9 @@ def docker_server(test_data_dir):
     import random
 
     port = str(random.randint(10000, 20000))
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     image_name = "gemwebui-test-image"
 
     # 1. build and launch a fresh container
@@ -74,8 +76,9 @@ def docker_server(test_data_dir):
 
 class TestReconnectionRegression:
     @pytest.mark.timeout(300)
-    def test_reconnection_regression(self, docker_server):
-        with sync_playwright() as p:
+    def test_reconnection_regression(self, docker_server, playwright):
+        p = playwright
+        if True:
             browser = p.chromium.launch(headless=True)
             context = browser.new_context()
 

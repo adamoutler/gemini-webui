@@ -3,8 +3,9 @@ import os
 from playwright.sync_api import sync_playwright, expect
 
 
-def run_test_with_viewport(server, width, height, expect_visible):
-    with sync_playwright() as p:
+def run_test_with_viewport(server, width, height, expect_visible, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": width, "height": height})
         page = context.new_page()

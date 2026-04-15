@@ -4,8 +4,9 @@ import json
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
+def page(server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()

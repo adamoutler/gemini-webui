@@ -4,8 +4,9 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
+def page(server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
 
@@ -102,9 +103,10 @@ def test_connection_health_indicators(page):
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
-def test_default_health_indicator_grey(server):
+def test_default_health_indicator_grey(server, playwright):
     """Verify that a server defaults to grey (⚪) and correctly turns red on manual failure."""
-    with sync_playwright() as p:
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
 
@@ -142,9 +144,10 @@ def test_default_health_indicator_grey(server):
 
 
 @pytest.mark.timeout(60)
-def test_sync_pulse_with_health_indicator(server):
+def test_sync_pulse_with_health_indicator(server, playwright):
     """Verify that calling updateHostHealthIndicator synchronously triggers the pulse animation."""
-    with sync_playwright() as p:
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
 

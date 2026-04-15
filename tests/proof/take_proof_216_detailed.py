@@ -7,7 +7,7 @@ import shutil
 from playwright.sync_api import sync_playwright
 
 
-def main():
+def main(playwright):
     proof_dir = "/tmp/proof-gemini-webui"
     os.makedirs(proof_dir, exist_ok=True)
     os.makedirs("docs/qa-images", exist_ok=True)
@@ -33,7 +33,8 @@ def main():
 
     try:
         time.sleep(3)
-        with sync_playwright() as p:
+        p = playwright
+        if True:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
 
@@ -89,7 +90,8 @@ def main():
 
     try:
         time.sleep(3)
-        with sync_playwright() as p:
+        p = playwright
+        if True:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
 

@@ -7,7 +7,7 @@ import glob
 from playwright.sync_api import sync_playwright
 
 
-def main():
+def main(playwright):
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["PORT"] = "5005"
@@ -29,7 +29,8 @@ def main():
 
     try:
         time.sleep(3)
-        with sync_playwright() as p:
+        p = playwright
+        if True:
             browser = p.chromium.launch()
             page = browser.new_page()
             page.goto("http://127.0.0.1:5005/")

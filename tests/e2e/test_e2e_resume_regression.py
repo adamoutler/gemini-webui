@@ -23,7 +23,9 @@ def custom_server(test_data_dir):
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     # Pre-configure mock gemini by adding tests/mock to PATH
@@ -77,7 +79,7 @@ def custom_server(test_data_dir):
 
 
 @pytest.mark.timeout(60)
-def test_new_session_no_resume(custom_server, test_data_dir):
+def test_new_session_no_resume(custom_server, test_data_dir, playwright):
     """
     Test that a 'Start New' connection executes without the -r flag.
     We verify this by pre-creating the mock state file. If -r is NOT passed,
@@ -87,7 +89,8 @@ def test_new_session_no_resume(custom_server, test_data_dir):
     with open(state_file, "w") as f:
         json.dump({"TEST_VALUE": "REGRESSION_FAIL"}, f)
 
-    with sync_playwright() as p:
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
@@ -142,7 +145,7 @@ def test_new_session_no_resume(custom_server, test_data_dir):
 
 
 @pytest.mark.timeout(60)
-def test_auto_resume_after_server_restart(custom_server, test_data_dir):
+def test_auto_resume_after_server_restart(custom_server, test_data_dir, playwright):
     """
     Test that after a server restart, the UI automatically reconnects and resumes the session using -r.
     """
@@ -150,7 +153,8 @@ def test_auto_resume_after_server_restart(custom_server, test_data_dir):
     if os.path.exists(state_file):
         os.remove(state_file)
 
-    with sync_playwright() as p:
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
@@ -233,11 +237,12 @@ def test_auto_resume_after_server_restart(custom_server, test_data_dir):
 
 
 @pytest.mark.timeout(60)
-def test_no_terminal_clear_on_stolen_session(custom_server, test_data_dir):
+def test_no_terminal_clear_on_stolen_session(custom_server, test_data_dir, playwright):
     """
     Test that session-stolen event does not clear the terminal buffer or loop.
     """
-    with sync_playwright() as p:
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         # Browser 1
         context1 = browser.new_context()

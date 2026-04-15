@@ -4,8 +4,9 @@ import time
 
 
 @pytest.fixture(scope="function")
-def android_page(server):
-    with sync_playwright() as p:
+def android_page(server, playwright):
+    p = playwright
+    if True:
         pixel = p.devices["Pixel 5"]
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**pixel)

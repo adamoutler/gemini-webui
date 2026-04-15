@@ -3,15 +3,9 @@ import time
 from playwright.sync_api import Page, expect
 
 
-@pytest.fixture(autouse=True)
-def setup_server():
-    # Server should be already running on 5001 with BYPASS_AUTH_FOR_TESTING=true
-    pass
-
-
-def test_deep_link_adhoc(page: Page):
+def test_deep_link_adhoc(page: Page, server):
     target = "test@localhost:2222"
-    url = f"http://127.0.0.1:5001/?target={target}"
+    url = f"{server}/?target={target}"
     page.goto(url)
 
     # Check if a tab is created and starts connecting
@@ -24,9 +18,9 @@ def test_deep_link_adhoc(page: Page):
     page.screenshot(path="public/qa-screenshots/proof_311_adhoc.png")
 
 
-def test_deep_link_host(page: Page):
+def test_deep_link_host(page: Page, server):
     host_label = "local"
-    url = f"http://127.0.0.1:5001/?host={host_label}"
+    url = f"{server}/?host={host_label}"
     page.goto(url)
 
     # Check if a tab is created with title "local"
@@ -35,12 +29,12 @@ def test_deep_link_host(page: Page):
     page.screenshot(path="public/qa-screenshots/proof_311_host.png")
 
 
-def test_csrf_recovery_loop(page: Page):
+def test_csrf_recovery_loop(page: Page, server):
     # This test might be tricky to trigger naturally.
     # We can try to simulate it by intercepting /api/csrf-token and returning 403 or 400
     # until the loop breaks.
 
-    url = "http://127.0.0.1:5001/"
+    url = f"{server}/"
     page.goto(url)
 
     # Mock /api/csrf-token to always fail

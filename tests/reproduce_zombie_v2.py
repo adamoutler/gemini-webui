@@ -22,7 +22,7 @@ def get_zombie_count():
     return int(result.stdout.strip())
 
 
-def main():
+def main(playwright):
     if os.path.exists("zombie_test_v2.log"):
         os.remove("zombie_test_v2.log")
 
@@ -54,7 +54,8 @@ def main():
     time.sleep(5)
 
     try:
-        with sync_playwright() as p:
+        p = playwright
+        if True:
             browser = p.chromium.launch(headless=True)
             context = browser.new_context()
             page = context.new_page()

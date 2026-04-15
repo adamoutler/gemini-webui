@@ -3,8 +3,9 @@ from playwright.sync_api import sync_playwright
 
 
 @pytest.fixture(scope="function")
-def mobile_page(server):
-    with sync_playwright() as p:
+def mobile_page(server, playwright):
+    p = playwright
+    if True:
         device = p.devices["Pixel 5"]
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**device)

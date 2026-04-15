@@ -65,8 +65,8 @@ def server(test_data_dir):
         [python_bin, "-m", "src.app"],
         env=env,
         cwd=project_root,
-        # stdout=subprocess.DEVNULL,
-        # stderr=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         preexec_fn=os.setsid,
     )
 
@@ -83,9 +83,9 @@ def server(test_data_dir):
             pass
         time.sleep(1)
         if process.poll() is not None:
-            pytest.fail("Server failed to start")
+            pytest.fail(f"Server failed to start. (stdout discarded)")
     else:
-        pytest.fail("Server health check timed out")
+        pytest.fail(f"Server health check timed out. (stdout discarded)")
 
     yield f"http://127.0.0.1:{port}"
 

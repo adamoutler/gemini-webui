@@ -5,7 +5,7 @@ import signal
 from playwright.sync_api import sync_playwright
 
 
-def main():
+def main(playwright):
     os.makedirs("docs/qa-images", exist_ok=True)
 
     # 1. Start the app without security to show splash screen
@@ -26,7 +26,8 @@ def main():
     try:
         time.sleep(3)
 
-        with sync_playwright() as p:
+        p = playwright
+        if True:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
 
@@ -70,7 +71,8 @@ def main():
 
     try:
         time.sleep(3)
-        with sync_playwright() as p:
+        p = playwright
+        if True:
             browser = p.chromium.launch(headless=True)
             page = browser.new_page()
 

@@ -20,7 +20,9 @@ def csrf_enabled_server(test_data_dir):
     env["ALLOWED_ORIGINS"] = "*"
     env["DATA_DIR"] = str(test_data_dir)
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     proc = subprocess.Popen(
@@ -48,8 +50,9 @@ def csrf_enabled_server(test_data_dir):
 
 
 @pytest.mark.timeout(30)
-def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir):
-    with sync_playwright() as p:
+def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
@@ -115,8 +118,9 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir):
 
 
 @pytest.mark.timeout(30)
-def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, test_data_dir):
-    with sync_playwright() as p:
+def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()

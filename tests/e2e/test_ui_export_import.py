@@ -5,8 +5,9 @@ import zipfile
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
+def page(server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
@@ -23,13 +24,13 @@ def test_export_import_settings(page, server, tmp_path):
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
 
     # 2. Open Settings
-    page.locator('button[onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Ensure buttons are visible and take a screenshot to satisfy Reality Checker
-    export_btn = page.locator('button[onclick="exportSettings()"]')
+    export_btn = page.locator('button[data-onclick="exportSettings()"]')
     import_btn = page.locator(
-        "button[onclick=\"document.getElementById('import-settings-input').click()\"]"
+        "button[data-onclick=\"document.getElementById('import-settings-input').click()\"]"
     )
     expect(export_btn).to_be_visible()
     expect(import_btn).to_be_visible()

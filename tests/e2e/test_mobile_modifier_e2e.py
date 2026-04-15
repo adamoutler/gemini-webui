@@ -3,8 +3,9 @@ import os
 import json
 
 
-def test_mobile_modifier_ctrl(server):
-    with sync_playwright() as p:
+def test_mobile_modifier_ctrl(server, playwright):
+    p = playwright
+    if True:
         device = p.devices["Pixel 5"]
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**device)

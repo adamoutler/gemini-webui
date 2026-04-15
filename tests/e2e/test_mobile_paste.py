@@ -4,8 +4,9 @@ import time
 
 
 @pytest.fixture(scope="function")
-def mobile_page(server):
-    with sync_playwright() as p:
+def mobile_page(server, playwright):
+    p = playwright
+    if True:
         iphone_12 = p.devices["iPhone 12"]
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**iphone_12)

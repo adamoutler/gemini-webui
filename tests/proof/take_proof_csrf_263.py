@@ -4,8 +4,9 @@ import json
 from playwright.sync_api import sync_playwright
 
 
-def test_take_proof_263():
-    with sync_playwright() as p:
+def test_take_proof_263(playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch()
         page = browser.new_page()
         page.goto("http://localhost:5000")

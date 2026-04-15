@@ -21,7 +21,9 @@ def custom_server(test_data_dir):
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     def start_server():
@@ -68,8 +70,9 @@ def custom_server(test_data_dir):
 
 
 @pytest.mark.timeout(40)
-def test_auto_reconnect_after_server_restart(custom_server):
-    with sync_playwright() as p:
+def test_auto_reconnect_after_server_restart(custom_server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()

@@ -4,8 +4,9 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
+def page(server, playwright):
+    p = playwright
+    if True:
         # Connect to host-based Chromium via CDP
         try:
             browser = p.chromium.connect_over_cdp(

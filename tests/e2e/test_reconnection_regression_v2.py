@@ -70,12 +70,13 @@ def custom_server(test_data_dir):
 
 
 @pytest.mark.timeout(60)
-def test_reconnect_after_reload_with_server_down(custom_server):
+def test_reconnect_after_reload_with_server_down(custom_server, playwright):
     """
     Test GEMWEBUI-265: Verify reconnection works after a page reload when server was down.
     This simulates the 'stale CSRF token in cached HTML' scenario.
     """
-    with sync_playwright() as p:
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()

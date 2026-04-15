@@ -79,7 +79,9 @@ def ssh_target_container(test_data_dir):
         check=True,
     )
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     src_path = os.path.join(project_root, "src")
 
     # Put src dir at /app/src
@@ -109,8 +111,9 @@ def ssh_target_container(test_data_dir):
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
+def page(server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
 
@@ -135,7 +138,7 @@ def test_ssh_drag_and_drop_upload(page, test_data_dir, ssh_target_container):
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
 
     # Open settings modal to add host
-    page.locator('button[onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Fill out the form

@@ -19,7 +19,9 @@ def ssh_test_server(test_data_dir):
     env["PORT"] = port
     env["DATA_DIR"] = str(test_data_dir)
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     proc = subprocess.Popen(
@@ -47,8 +49,9 @@ def ssh_test_server(test_data_dir):
 
 
 @pytest.mark.timeout(30)
-def test_ssh_multiplexing_loading_state(ssh_test_server):
-    with sync_playwright() as p:
+def test_ssh_multiplexing_loading_state(ssh_test_server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
@@ -81,8 +84,9 @@ def test_ssh_multiplexing_loading_state(ssh_test_server):
 
 
 @pytest.mark.timeout(45)
-def test_ssh_connection_error_bubbling(ssh_test_server):
-    with sync_playwright() as p:
+def test_ssh_connection_error_bubbling(ssh_test_server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
@@ -95,7 +99,7 @@ def test_ssh_connection_error_bubbling(ssh_test_server):
         )
 
         # Open Settings to add host
-        page.locator('button[onclick="openSettings()"]').click()
+        page.locator('button[data-onclick="openSettings()"]').click()
         expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
         # Fill in the new host details with a clearly invalid port to ensure it fails quickly
