@@ -1,12 +1,16 @@
 # tests Module
 
 ## Purpose
-This module contains the comprehensive test suite for the Gemini WebUI application, covering unit tests, end-to-end (E2E) tests with Playwright, and mocks for external services. It enforces a strict quality gate.
+
+The root of the `tests` directory acts as the foundational orchestration layer for the project's testing suite. It primarily provides shared fixtures (via `conftest.py`) for server and session management, baseline health/timeout tests (`test_timeout_validation.py`), and standalone reproduction scripts for debugging complex process-management and zombie issues (e.g., `reproduce_zombie_v2.py`). It establishes the testing context for all sub-directories.
 
 ## Internal Dependencies
-- Imports extensively from `src/` to test internal logic (e.g., `src.session_manager`, `src.utils`).
-- Uses `tests.conftest` for shared pytest fixtures.
-- Uses `tests.mock` and `tests.utils` for helper functions and mock data during test execution.
+
+- **`src.app`**: Depends heavily on the main application factory for initialization.
+- **`tests/mock/`**: Relies on mock environments and binaries for simulating terminal interactions.
+- **Python Libraries**: Uses `pytest`, `eventlet`, and `playwright` for infrastructure and debugging scripts.
 
 ## External Dependencies
-- Relied upon by GitHub Actions (`.github/workflows/`) and local development scripts (`scripts/smoke-test.sh`) to verify code integrity before merges or deployments.
+
+- **Sub-test Modules**: All subdirectories (`unit`, `e2e`, `proof`) depend on the shared fixtures and utilities provided by the root `conftest.py`.
+- **CI/CD Pipelines**: Jenkins and GitHub Actions depend on this root infrastructure to execute their automated checks.
