@@ -5,7 +5,7 @@ import signal
 from playwright.sync_api import sync_playwright
 
 
-def main():
+def main(playwright):
     # Start the app in the background with auth bypassed
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
@@ -23,7 +23,8 @@ def main():
         # Give the server a few seconds to start
         time.sleep(3)
 
-        with sync_playwright() as p:
+        p = playwright
+        if True:
             browser = p.chromium.launch()
             page = browser.new_page()
 

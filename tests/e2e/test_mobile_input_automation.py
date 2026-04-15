@@ -8,8 +8,9 @@ from tests.utils.playwright_mobile_utils import (
 
 
 @pytest.fixture(scope="function")
-def ios_page(server):
-    with sync_playwright() as p:
+def ios_page(server, playwright):
+    p = playwright
+    if True:
         iphone = p.devices["iPhone 12"]
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**iphone)
@@ -25,8 +26,9 @@ def ios_page(server):
 
 
 @pytest.fixture(scope="function")
-def android_page(server):
-    with sync_playwright() as p:
+def android_page(server, playwright):
+    p = playwright
+    if True:
         pixel = p.devices["Pixel 5"]
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**pixel)

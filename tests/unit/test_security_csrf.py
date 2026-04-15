@@ -165,8 +165,9 @@ def csrf_enabled_server_csrf(tmp_path):
 
 
 @pytest.mark.timeout(30)
-def test_csrf_ui_hard_reload(csrf_enabled_server_csrf):
-    with sync_playwright() as p:
+def test_csrf_ui_hard_reload(csrf_enabled_server_csrf, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()

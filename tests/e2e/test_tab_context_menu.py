@@ -6,13 +6,14 @@ import json
 from playwright.sync_api import sync_playwright
 
 
-def main():
+def main(playwright):
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["PORT"] = "5005"
     env["DATA_DIR"] = "/tmp/gemini-webui-test-data"
-    
+
     import shutil
+
     shutil.rmtree(env["DATA_DIR"], ignore_errors=True)
     os.makedirs(env["DATA_DIR"], exist_ok=True)
 
@@ -26,12 +27,13 @@ def main():
 
     try:
         time.sleep(5)
-        with sync_playwright() as p:
+        p = playwright
+        if True:
             browser = p.chromium.launch()
             page = browser.new_page()
-            
+
             page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
-            
+
             page.goto("http://127.0.0.1:5005/")
             page.wait_for_load_state("networkidle")
             time.sleep(2)
@@ -42,14 +44,16 @@ def main():
             tab.click(button="right")
             time.sleep(1)
             menu = page.locator("#tab-context-menu")
-            assert menu.is_visible(), "Tab context menu should be visible on right-click"
+            assert (
+                menu.is_visible()
+            ), "Tab context menu should be visible on right-click"
             page.mouse.click(0, 0)  # Close menu
             time.sleep(0.5)
 
             # 1. Start a session to make it a terminal tab
             print("Starting a session...")
             # Wait for at least one connection card to appear
-            page.wait_for_selector('.connection-card', timeout=15000)
+            page.wait_for_selector(".connection-card", timeout=15000)
             btn = page.locator('button:has-text("Start New")').first
             btn.scroll_into_view_if_needed()
             btn.click()
@@ -75,7 +79,9 @@ def main():
                     "text='Explain Code'"
                 ).is_visible(), "Default prompt 'Explain Code' should be visible"
             except Exception as e:
-                page.screenshot(path="public/qa-screenshots/error_prompts_not_visible.png")
+                page.screenshot(
+                    path="public/qa-screenshots/error_prompts_not_visible.png"
+                )
                 # Also print the innerHTML of the context menu
                 menu_html = page.locator("#tab-context-menu").inner_html()
                 print(f"Context menu HTML: {menu_html}")
@@ -88,7 +94,7 @@ def main():
             assert page.locator(
                 "#add-prompt-modal"
             ).is_visible(), "Add Prompt modal should be visible"
-            
+
             # Fill out the modal
             page.locator("#new-prompt-name").fill("Custom Test Prompt")
             page.locator("#new-prompt-text").fill("This is a test prompt content.")
@@ -114,7 +120,9 @@ def main():
             time.sleep(1)
             tab.click(button="right")
             time.sleep(1)
-            assert page.locator(".context-menu-item:has-text('Custom Test Prompt')").is_visible(), "Custom Test Prompt should be in context menu"
+            assert page.locator(
+                ".context-menu-item:has-text('Custom Test Prompt')"
+            ).is_visible(), "Custom Test Prompt should be in context menu"
 
             # 7. Take Screenshot for proof
             print("Taking proof screenshot...")

@@ -7,8 +7,9 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
+def page(server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
 
@@ -44,8 +45,7 @@ def test_bulk_random_upload_e2e(page, test_data_dir):
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
             let out = "";
-            for (let i = 0; i < 5; i++) {
-                const line = tab.term.buffer.active.getLine(i);
+            for (let i = 0; i < Math.min(10, tab.term.buffer.active.length); i++) {                const line = tab.term.buffer.active.getLine(i);
                 if (line) out += line.translateToString() + "\\n";
             }
             return out.includes("Welcome to Fake Gemini");

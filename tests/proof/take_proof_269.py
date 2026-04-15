@@ -6,7 +6,7 @@ import json
 from playwright.sync_api import sync_playwright
 
 
-def main():
+def main(playwright):
     os.makedirs("public/qa-screenshots", exist_ok=True)
 
     env = os.environ.copy()
@@ -24,7 +24,8 @@ def main():
     try:
         time.sleep(3)
 
-        with sync_playwright() as p:
+        p = playwright
+        if True:
             browser = p.chromium.launch()
 
             # Desktop

@@ -4,8 +4,9 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="module")
-def browser_context():
-    with sync_playwright() as p:
+def browser_context(playwright):
+    p = playwright
+    if True:
         device = p.devices["Pixel 5"]
         browser = p.chromium.launch(headless=True)
         # Use a single context for the whole module to save time

@@ -11,8 +11,9 @@ MAX_TEST_TIME = 20.0
 
 
 @pytest.fixture(scope="function")
-def mobile_page(server):
-    with sync_playwright() as p:
+def mobile_page(server, playwright):
+    p = playwright
+    if True:
         # Emulate Pixel 5
         device = p.devices["Pixel 5"]
         browser = p.chromium.launch(headless=True)
@@ -71,7 +72,9 @@ done
     env["SKIP_MONKEY_PATCH"] = "false"
     env["SKIP_MULTIPLEXER"] = "true"
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     log_file = open(os.path.join(str(data_dir), "server.log"), "w")
@@ -110,8 +113,9 @@ done
 
 
 @pytest.fixture(scope="function")
-def custom_mobile_page(custom_server):
-    with sync_playwright() as p:
+def custom_mobile_page(custom_server, playwright):
+    p = playwright
+    if True:
         device = p.devices["Pixel 5"]
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(**device)

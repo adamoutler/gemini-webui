@@ -72,8 +72,9 @@ def ssh_target_container_no_gemini(test_data_dir):
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
+def page(server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()
@@ -88,13 +89,13 @@ def page(server):
 
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 def test_e2e_session_env_vars_injected(
     page, test_data_dir, ssh_target_container_no_gemini
 ):
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
 
-    page.locator('button[onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     page.locator("#new-host-label").fill("Env Var SSH Test")

@@ -4,8 +4,9 @@ from playwright.sync_api import sync_playwright
 
 
 @pytest.fixture(scope="function")
-def desktop_page(server):
-    with sync_playwright() as p:
+def desktop_page(server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(viewport={"width": 1280, "height": 720})
         page = context.new_page()

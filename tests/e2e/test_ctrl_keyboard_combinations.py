@@ -4,8 +4,9 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="module")
-def browser_context():
-    with sync_playwright() as playwright:
+def browser_context(playwright):
+    playwright = playwright
+    if True:
         device = playwright.devices["Desktop Chrome"]
         browser = playwright.chromium.launch(headless=True)
         context = browser.new_context()

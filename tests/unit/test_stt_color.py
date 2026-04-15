@@ -3,8 +3,9 @@ from playwright.sync_api import sync_playwright
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
+def page(server, playwright):
+    p = playwright
+    if True:
         iphone = p.devices["iPhone 13"]
         browser = p.chromium.launch()
         context = browser.new_context(**iphone)

@@ -21,7 +21,9 @@ def custom_server(test_data_dir):
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     mock_dir = os.path.join(project_root, "tests", "mock")
@@ -72,12 +74,13 @@ def custom_server(test_data_dir):
 
 
 @pytest.mark.timeout(60)
-def test_csrf_fail_deadly_reload(custom_server, test_data_dir):
+def test_csrf_fail_deadly_reload(custom_server, test_data_dir, playwright):
     """
     Test that a CSRF expiration triggers a hard reload.
     Asserts Page Refresh Resilience, Visual Reload Assertion, and Reclaim logic.
     """
-    with sync_playwright() as p:
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
         page = context.new_page()

@@ -2,8 +2,9 @@ import pytest
 from playwright.sync_api import sync_playwright
 
 
-def run_proof():
-    with sync_playwright() as p:
+def run_proof(playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
             viewport={"width": 375, "height": 800},
