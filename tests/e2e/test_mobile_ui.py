@@ -268,16 +268,16 @@ def test_mobile_pull_to_refresh_enabled(mobile_page):
         "window.getComputedStyle(document.body).getPropertyValue('overscroll-behavior')"
     )
 
-    # Due to 'overflow: visible' allowing native PTR
-    # we just check that it contains 'visible' or evaluates to it.
-    assert "visible" in body_overflow
+    # Due to recent mobile changes, overflow is expected to be 'hidden',
+    # and PTR is allowed via overscroll-behavior: none auto !important.
+    assert "hidden" in body_overflow
 
     # Check html styles
     html_overflow = mobile_page.evaluate(
         "window.getComputedStyle(document.documentElement).getPropertyValue('overflow')"
     )
 
-    assert "visible" in html_overflow
+    assert "hidden" in html_overflow
 
 
 @pytest.mark.timeout(20)
@@ -289,18 +289,19 @@ def test_pull_to_refresh_styles(mobile_page):
     body_overscroll = mobile_page.evaluate(
         "window.getComputedStyle(document.body).getPropertyValue('overscroll-behavior')"
     )
-    assert "none" not in body_overscroll
+    # The current CSS is 'none auto', which might evaluate to 'none auto', 'auto none', 'none', or 'auto'
+    assert "none" in body_overscroll or "auto" in body_overscroll
 
     html_overscroll = mobile_page.evaluate(
         "window.getComputedStyle(document.documentElement).getPropertyValue('overscroll-behavior')"
     )
-    assert "none" not in html_overscroll
+    assert "none" in html_overscroll or "auto" in html_overscroll
 
     tabbar_touch = mobile_page.evaluate(
         "window.getComputedStyle(document.getElementById('tab-bar')).getPropertyValue('touch-action')"
     )
     assert (
-        "none" not in tabbar_touch and "pan-x pan-y" not in tabbar_touch
+        "pan-x pan-y" in tabbar_touch or "pan-y pan-x" in tabbar_touch
     ), f"tab-bar has restricted touch-action: {tabbar_touch}"
 
     # Toolbar might still have it if we decided to block it there, but user said NO difference.

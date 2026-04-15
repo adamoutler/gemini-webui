@@ -91,7 +91,7 @@ def test_status_animation_dom_persistence(page):
 
     # Wait for the backend session item to appear
     session_item = playwright_page.locator(
-        ".backend-sessions-container .session-item"
+        '[id$="_backend_sessions"] .session-item'
     ).first
     expect(session_item).to_be_attached(timeout=15000)
 
@@ -118,12 +118,12 @@ def test_status_animation_dom_persistence(page):
 
     # Re-evaluate the custom attribute on the first item
     html_after = playwright_page.locator(
-        ".backend-sessions-container .session-item"
+        '[id$="_backend_sessions"] .session-item'
     ).first.evaluate("el => el.outerHTML")
     print(f"HTML AFTER: {html_after}")
 
     marker = playwright_page.locator(
-        ".backend-sessions-container .session-item"
+        '[id$="_backend_sessions"] .session-item'
     ).first.evaluate("el => el.getAttribute('data-test-marker')")
     assert (
         marker == "persisted"
@@ -151,7 +151,7 @@ def test_status_flash_on_update(page):
 
     # Wait for the backend session item
     session_item = playwright_page.locator(
-        ".backend-sessions-container .session-item"
+        '[id$="_backend_sessions"] .session-item'
     ).first
     expect(session_item).to_be_attached(timeout=10000)
 

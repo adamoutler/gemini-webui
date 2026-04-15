@@ -13,6 +13,21 @@ def ssh_test_server(test_data_dir):
     env["SECRET_KEY"] = "testsecret"
     env["WTF_CSRF_ENABLED"] = "false"
     env["FLASK_USE_RELOADER"] = "false"
+    
+    # Cleanup any mock state files to prevent cross-test leakage
+    mock_sessions = test_data_dir / "gemini_mock_sessions.json"
+    mock_state_file = test_data_dir / "gemini_mock_state.json"
+    persisted_sessions = test_data_dir / "persisted_sessions.json"
+    
+    for state_file in [mock_sessions, mock_state_file, persisted_sessions]:
+        if state_file.exists():
+            state_file.unlink()
+            
+    # Also clean up any lingering mock UUIDs
+    import glob
+    for uuid_file in glob.glob(str(test_data_dir / "*.uuid")):
+        if os.path.exists(uuid_file):
+            os.remove(uuid_file)
     import random
 
     port = str(random.randint(10000, 20000))

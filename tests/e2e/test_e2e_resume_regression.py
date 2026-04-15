@@ -34,6 +34,22 @@ def custom_server(test_data_dir):
     env["PYTHONPATH"] = project_root
 
     def start_server():
+        state_file = test_data_dir / "gemini_mock_state.json"
+        if os.path.exists(state_file):
+            os.remove(state_file)
+            
+        sessions_file = test_data_dir / "gemini_mock_sessions.json"
+        if os.path.exists(sessions_file):
+            os.remove(sessions_file)
+            
+        persisted_sessions = test_data_dir / "persisted_sessions.json"
+        if os.path.exists(persisted_sessions):
+            os.remove(persisted_sessions)
+            
+        import glob
+        for f in glob.glob(str(test_data_dir / "gemini_mock_uuid_*.json")):
+            os.remove(f)
+            
         proc = subprocess.Popen(
             [python_bin, "-m", "src.app"],
             env=env,
@@ -149,10 +165,6 @@ def test_auto_resume_after_server_restart(custom_server, test_data_dir, playwrig
     """
     Test that after a server restart, the UI automatically reconnects and resumes the session using -r.
     """
-    state_file = test_data_dir / "gemini_mock_state.json"
-    if os.path.exists(state_file):
-        os.remove(state_file)
-
     p = playwright
     if True:
         browser = p.chromium.launch(headless=True)

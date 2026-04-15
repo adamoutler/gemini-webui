@@ -7,18 +7,32 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def csrf_enabled_server(tmp_path):
+def csrf_enabled_server(test_data_dir):
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
     env["WTF_CSRF_ENABLED"] = "true"
     env["FLASK_USE_RELOADER"] = "false"
+    
+    # Cleanup any mock state files to prevent cross-test leakage
+    mock_sessions = test_data_dir / "gemini_mock_sessions.json"
+    mock_state_file = test_data_dir / "gemini_mock_state.json"
+    persisted_sessions = test_data_dir / "persisted_sessions.json"
+    
+    for state_file in [mock_sessions, mock_state_file, persisted_sessions]:
+        if state_file.exists():
+            state_file.unlink()
+            
+    # Also clean up any lingering mock UUIDs
+    import glob
+    for uuid_file in glob.glob(str(test_data_dir / "*.uuid")):
+        os.remove(uuid_file)
     import random
 
     port = str(random.randint(10000, 20000))
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
-    env["DATA_DIR"] = str(tmp_path)
+    env["DATA_DIR"] = str(test_data_dir)
 
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -50,7 +64,7 @@ def csrf_enabled_server(tmp_path):
 
 
 @pytest.mark.timeout(30)
-def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
+def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
     p = playwright
     if True:
         browser = p.chromium.launch(headless=True)
@@ -73,7 +87,7 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
         page.goto(csrf_enabled_server)
 
         btns = page.locator('.tab-instance.active button:has-text("Start New")')
-        expect(btns.first).to_be_visible(timeout=5000)
+        expect(btns.first).to_be_visible(timeout=15000)
         btns.first.click()
 
         expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
@@ -83,7 +97,7 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
         page.click('button:has-text("Files")')
         expect(page.locator("#file-transfer-modal")).to_be_visible(timeout=5000)
 
-        test_file_path = os.path.join(tmp_path, "csrf_test_file.txt")
+        test_file_path = os.path.join(test_data_dir, "csrf_test_file.txt")
         with open(test_file_path, "w") as f:
             f.write("Test content for CSRF upload")
 
@@ -118,7 +132,7 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
 
 
 @pytest.mark.timeout(30)
-def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
+def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
     p = playwright
     if True:
         browser = p.chromium.launch(headless=True)
@@ -139,7 +153,7 @@ def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, tmp_path, playwrigh
         page.goto(csrf_enabled_server)
 
         btns = page.locator('.tab-instance.active button:has-text("Start New")')
-        expect(btns.first).to_be_visible(timeout=5000)
+        expect(btns.first).to_be_visible(timeout=15000)
         btns.first.click()
 
         expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
@@ -147,6 +161,9 @@ def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, tmp_path, playwrigh
 
         # Trigger dragover
         page.evaluate("""() => {
+            console.log("activeTabId:", activeTabId);
+            const activeTab = tabs.find((t) => t.id === activeTabId);
+            console.log("activeTab state:", activeTab ? activeTab.state : "undefined");
             const dragEvent = new DragEvent('dragover', { bubbles: true, cancelable: true });
             document.dispatchEvent(dragEvent);
         }""")

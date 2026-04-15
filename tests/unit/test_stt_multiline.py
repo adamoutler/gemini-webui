@@ -95,12 +95,12 @@ def run_test_with_viewport(server, width, height, expect_visible, playwright):
 
 
 @pytest.mark.timeout(30)
-def test_stt_multiline_overflow_mobile(server):
+def test_stt_multiline_overflow_mobile(server, playwright):
     # Test mobile view (visible)
-    run_test_with_viewport(server, 375, 667, expect_visible=True)
+    run_test_with_viewport(server, 375, 667, expect_visible=True, playwright=playwright)
 
 
 @pytest.mark.timeout(30)
-def test_stt_multiline_overflow_desktop(server):
+def test_stt_multiline_overflow_desktop(server, playwright):
     # Test desktop view (hidden)
-    run_test_with_viewport(server, 800, 600, expect_visible=False)
+    run_test_with_viewport(server, 800, 600, expect_visible=False, playwright=playwright)

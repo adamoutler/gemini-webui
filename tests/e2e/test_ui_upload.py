@@ -77,7 +77,7 @@ def test_drag_and_drop_upload(page, test_data_dir):
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
             let out = "";
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < tab.term.buffer.active.length; i++) {
                 const line = tab.term.buffer.active.getLine(i);
                 if (line) out += line.translateToString(true) + "\\n";
             }
@@ -172,7 +172,7 @@ def test_folder_drag_and_drop_upload(page, test_data_dir):
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
             let out = "";
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < tab.term.buffer.active.length; i++) {
                 const line = tab.term.buffer.active.getLine(i);
                 if (line) out += line.translateToString(true) + "\\n";
             }
@@ -234,7 +234,7 @@ def test_workspace_file_upload_button_injection(page, test_data_dir):
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
             let out = "";
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < tab.term.buffer.active.length; i++) {
                 const line = tab.term.buffer.active.getLine(i);
                 if (line) out += line.translateToString(true) + "\\n";
             }
