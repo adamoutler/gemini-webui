@@ -40,5 +40,3 @@ def simulateSpacebarTrackpad(page, offset, locator=".mobile-text-area"):
         }}
     """)
     time.sleep(0.1)
-
-

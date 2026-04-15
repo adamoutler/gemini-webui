@@ -6,6 +6,7 @@ from typing import List, Dict, Optional
 
 from src.config import env_config
 
+
 class PromptManager:
     def __init__(self, data_dir: Optional[str] = None):
         if data_dir is None:
@@ -77,5 +78,6 @@ class PromptManager:
             )
             conn.commit()
             return cursor.rowcount > 0
+
 
 prompt_manager = PromptManager()

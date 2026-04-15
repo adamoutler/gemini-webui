@@ -5,9 +5,9 @@ import time
 from playwright.sync_api import Page, expect
 
 
-def test_app_install_indicator_visibility(page: Page):
+def test_app_install_indicator_visibility(page: Page, server):
     # Load page in standard browser mode (not standalone)
-    page.goto("http://127.0.0.1:5001/")
+    page.goto(server)
 
     # The banner should be visible initially
     # Wait for the checkInstallationStatus logic to run
