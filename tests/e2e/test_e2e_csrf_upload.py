@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def csrf_enabled_server(test_data_dir):
+def csrf_enabled_server(tmp_path):
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
@@ -18,7 +18,7 @@ def csrf_enabled_server(test_data_dir):
     port = str(random.randint(10000, 20000))
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
-    env["DATA_DIR"] = str(test_data_dir)
+    env["DATA_DIR"] = str(tmp_path)
 
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -50,7 +50,7 @@ def csrf_enabled_server(test_data_dir):
 
 
 @pytest.mark.timeout(30)
-def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
+def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     p = playwright
     if True:
         browser = p.chromium.launch(headless=True)
@@ -83,7 +83,7 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
         page.click('button:has-text("Files")')
         expect(page.locator("#file-transfer-modal")).to_be_visible(timeout=5000)
 
-        test_file_path = os.path.join(test_data_dir, "csrf_test_file.txt")
+        test_file_path = os.path.join(tmp_path, "csrf_test_file.txt")
         with open(test_file_path, "w") as f:
             f.write("Test content for CSRF upload")
 
@@ -118,7 +118,7 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
 
 
 @pytest.mark.timeout(30)
-def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
+def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     p = playwright
     if True:
         browser = p.chromium.launch(headless=True)
