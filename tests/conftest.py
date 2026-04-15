@@ -24,8 +24,19 @@ def clear_server_sessions(request):
     for fixture_name in server_fixtures:
         if fixture_name in request.fixturenames:
             try:
-                server_url = request.getfixturevalue(fixture_name)
+                server_val = request.getfixturevalue(fixture_name)
+                server_url = getattr(server_val, "url", server_val)
                 requests.get(f"{server_url}/api/sessions/terminate_all", timeout=5)
+                
+                if "test_data_dir" in request.fixturenames:
+                    data_dir = request.getfixturevalue("test_data_dir")
+                    for fname in ["gemini_mock_sessions.json", "gemini_mock_state.json", "persisted_sessions.json"]:
+                        path = os.path.join(str(data_dir), fname)
+                        if os.path.exists(path):
+                            os.remove(path)
+                    import glob
+                    for f in glob.glob(os.path.join(str(data_dir), "*.uuid")):
+                        os.remove(f)
                 break
             except Exception:
                 pass

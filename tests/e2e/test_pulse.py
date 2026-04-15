@@ -33,7 +33,7 @@ def test_pulse(page):
 
     # wait for backend sessions list to populate
     expect(
-        page.locator(".backend-sessions-container .session-item").first
+        page.locator('[id$="_backend_sessions"] .session-item').first
     ).to_be_visible(timeout=15000)
 
     # check if the pulse indicator exists

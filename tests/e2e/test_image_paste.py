@@ -4,7 +4,7 @@ import base64
 from playwright.sync_api import Page, expect
 
 
-def test_image_paste_logic(page: Page, server):
+def test_image_paste_logic(page: Page, server, test_data_dir):
     page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
     page.on("pageerror", lambda err: print(f"BROWSER ERROR: {err.message}"))
 
@@ -51,7 +51,9 @@ def test_image_paste_logic(page: Page, server):
     page.screenshot(path="public/qa-screenshots/proof_260_image_paste.png")
 
     # 5. Check if the file was actually created in the workspace
-    workspace_dir = "/data/workspace/pasted_images"
+    import os
+
+    workspace_dir = os.path.join(str(test_data_dir), "workspace", "pasted_images")
     import time
 
     time.sleep(2)
