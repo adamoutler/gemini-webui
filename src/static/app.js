@@ -2135,13 +2135,13 @@ function startSession(
   tab.term.attachCustomKeyEventHandler((e) => {
     if (e.type === "keydown" && (e.ctrlKey || e.altKey) && e.key === "Enter") {
       if (tab.mobileProxy && tab.mobileProxy.ui) {
-        tab.mobileProxy.ui.proxyInput.value += "\n";
+        tab.mobileProxy.ui.proxyInput.value += "\x1b\r";
         tab.mobileProxy.ui.proxyInput.dispatchEvent(
           new Event("input", { bubbles: true }),
         );
       } else {
         // Fallback for non-mobile if proxy isn't active
-        if (tab.socket) emitPtyInput(tab, "\n");
+        if (tab.socket) emitPtyInput(tab, "\x1b\r");
       }
       return false;
     }

@@ -4,12 +4,12 @@ import base64
 from playwright.sync_api import Page, expect
 
 
-def test_image_paste_logic(page: Page):
+def test_image_paste_logic(page: Page, server):
     page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
     page.on("pageerror", lambda err: print(f"BROWSER ERROR: {err.message}"))
 
     # 1. Load the page
-    page.goto("http://127.0.0.1:5001/")
+    page.goto(server)
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=10000)
 
     # 2. Start a local session
