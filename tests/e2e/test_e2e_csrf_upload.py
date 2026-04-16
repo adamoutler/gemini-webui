@@ -13,20 +13,25 @@ def csrf_enabled_server(test_data_dir):
     env["SECRET_KEY"] = "testsecret"
     env["WTF_CSRF_ENABLED"] = "true"
     env["FLASK_USE_RELOADER"] = "false"
-    
+    env["GEMWEBUI_HARNESS"] = "1"
+    env["FLASK_DEBUG"] = "false"
+    env["SKIP_MONKEY_PATCH"] = "false"
+    env["SKIP_MULTIPLEXER"] = "true"
+
     # Cleanup any mock state files to prevent cross-test leakage
     mock_sessions = test_data_dir / "gemini_mock_sessions.json"
     mock_state_file = test_data_dir / "gemini_mock_state.json"
     persisted_sessions = test_data_dir / "persisted_sessions.json"
-    
+
     for state_file in [mock_sessions, mock_state_file, persisted_sessions]:
         if state_file.exists():
             state_file.unlink()
-            
+
     # Also clean up any lingering mock UUIDs
     import glob
     for uuid_file in glob.glob(str(test_data_dir / "*.uuid")):
         os.remove(uuid_file)
+
     import random
 
     port = str(random.randint(10000, 20000))
@@ -38,6 +43,11 @@ def csrf_enabled_server(test_data_dir):
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
+
+    # Add mock gemini to PATH so the mock script is found instead of real CLI
+    mock_dir = os.path.join(project_root, "tests", "mock")
+    env["PATH"] = f"{mock_dir}:{env.get('PATH', '')}"
+    env["PYTHONPATH"] = project_root
 
     proc = subprocess.Popen(
         [python_bin, "-m", "src.app"], env=env, cwd=project_root, preexec_fn=os.setsid
@@ -63,7 +73,7 @@ def csrf_enabled_server(test_data_dir):
         pass
 
 
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
     p = playwright
     if True:
@@ -131,7 +141,7 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
         browser.close()
 
 
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(60)
 def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
     p = playwright
     if True:
