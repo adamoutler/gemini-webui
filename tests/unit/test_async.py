@@ -44,7 +44,9 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     new_orphan.orphaned_at = time.time() - 10  # 10s ago
     session_manager.add_session(new_orphan)
 
-    with patch("os.killpg") as mock_kill, patch("os.waitpid") as mock_wait:
+    with patch("os.killpg") as mock_kill, patch("os.waitpid") as mock_wait, patch(
+        "os.getpgid", side_effect=lambda x: x
+    ):
         # Mock ORPHANED_SESSION_TTL to 60 for testing
         from src.app import app
 
@@ -54,8 +56,8 @@ def test_cleanup_orphaned_ptys(mock_socketio):
 
         # Only old_orphan should be killed
         assert mock_kill.call_count == 1
-        # SessionManager now uses os.getpgid(pid)
-        mock_kill.assert_called_with(os.getpgid(124), 9)
+        # SessionManager now uses os.getpgid(pid) — mocked to return pid itself
+        mock_kill.assert_called_with(124, 9)
 
         # Verify it was removed from the session manager
         assert session_manager.get_session("old_orphan") is None

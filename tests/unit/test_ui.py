@@ -326,74 +326,66 @@ def test_ui_title_flashing_on_action_required(page):
     initial_title = page.evaluate("document.title")
     assert "✋" not in initial_title
 
-    # Step 1: Set the action-required title and verify the flash interval is created.
-    # Override hasFocus and suppress focus events from Playwright interactions.
+    # Test the title flashing mechanism atomically to prevent Playwright's focus
+    # management from interfering between separate evaluate calls.
+    # On CI, the existing window focus handler fires between evaluate() invocations.
     result = page.evaluate("""() => {
-        // Override hasFocus to false
-        Object.defineProperty(document, 'hasFocus', { value: () => false, configurable: true });
+        const results = {};
 
-        // Prevent Playwright's DOM access from triggering the focus listener
-        window.__origAddEventListener = window.addEventListener;
-        window.addEventListener = function(type, fn, opts) {
-            if (type === 'focus') return; // Block focus events during this test phase
-            return window.__origAddEventListener(type, fn, opts);
+        // Phase 1: Override hasFocus and set action-required title
+        Object.defineProperty(document, 'hasFocus', { value: () => false, configurable: true });
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (!tab) return {error: 'no tab found'};
+
+        tab.title = "✋ Action needed";
+        updatePageTitle();
+        results.phase1 = {
+            intervalCreated: !!titleFlashInterval,
+            docTitle: document.title,
+            hasFocus: document.hasFocus()
         };
 
-        const tab = tabs.find(t => t.id === activeTabId);
-        if (tab) {
-            tab.title = "✋ Action needed";
-            updatePageTitle();
-            return {
-                intervalCreated: !!titleFlashInterval,
-                docTitle: document.title,
-                hasFocus: document.hasFocus()
-            };
-        }
-        return {error: 'no tab found'};
-    }""")
-    assert result.get("intervalCreated") is True, f"Flash interval was not created: {result}"
-    assert result.get("hasFocus") is False
-    assert "✋" in result.get("docTitle", "")
-
-    # Step 2: Simulate focus and verify the interval is cleared
-    focus_result = page.evaluate("""() => {
-        // Restore hasFocus to true
+        // Phase 2: Simulate focus — should stop the flashing
         Object.defineProperty(document, 'hasFocus', { value: () => true, configurable: true });
-
-        // Manually trigger the focus handler logic
         if (titleFlashInterval) {
             clearInterval(titleFlashInterval);
             titleFlashInterval = null;
         }
-        const hasActionRequired = tabs.some(t => t.title && t.title.includes("✋"));
-        document.title = hasActionRequired ? "✋ Gemini WebUI" : "Gemini WebUI";
-
-        // Restore addEventListener
-        if (window.__origAddEventListener) {
-            window.addEventListener = window.__origAddEventListener;
-        }
-
-        return {
+        const hasAction = tabs.some(t => t.title && t.title.includes("✋"));
+        document.title = hasAction ? "✋ Gemini WebUI" : "Gemini WebUI";
+        results.phase2 = {
             intervalCleared: !titleFlashInterval,
             docTitle: document.title
         };
-    }""")
-    assert focus_result.get("intervalCleared") is True
-    assert "✋" in focus_result.get("docTitle", "")
-    assert focus_result.get("docTitle") != "⚠️ Action Required! ✋"
 
-    # Step 3: Remove the action emoji and verify title resets
-    page.evaluate("""() => {
-        const tab = tabs.find(t => t.id === activeTabId);
-        if (tab) {
-            tab.title = "Normal Title";
-            updatePageTitle();
-        }
+        // Phase 3: Remove the action emoji
+        tab.title = "Normal Title";
+        updatePageTitle();
+        results.phase3 = {
+            docTitle: document.title
+        };
+
+        return results;
     }""")
-    time.sleep(0.3)
-    final_title = page.evaluate("document.title")
-    assert "✋" not in final_title
-    assert "⚠️ Action Required! ✋" not in final_title
+
+    assert "error" not in result, f"Test setup failed: {result}"
+
+    # Phase 1: Flash interval was created when !hasFocus + ✋ title
+    p1 = result["phase1"]
+    assert p1["intervalCreated"] is True, f"Flash interval not created: {p1}"
+    assert p1["hasFocus"] is False
+    assert "✋" in p1["docTitle"]
+
+    # Phase 2: Focus cleared the interval, title contains ✋ but not the flash variant
+    p2 = result["phase2"]
+    assert p2["intervalCleared"] is True
+    assert "✋" in p2["docTitle"]
+    assert p2["docTitle"] != "⚠️ Action Required! ✋"
+
+    # Phase 3: Removing ✋ from tab title resets the page title
+    p3 = result["phase3"]
+    assert "✋" not in p3["docTitle"]
+    assert "⚠️ Action Required! ✋" not in p3["docTitle"]
 
 
 @pytest.mark.prone_to_timeout
