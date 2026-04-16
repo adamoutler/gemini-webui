@@ -156,7 +156,10 @@ class ModifierRule extends InputRule {
     if (
       event.type === "input" &&
       modifierState &&
-      (modifierState.ctrlActive || modifierState.altActive)
+      (modifierState.ctrlActive ||
+        modifierState.altActive ||
+        modifierState.shiftActive ||
+        modifierState.superActive)
     ) {
       if (isComposing) return false;
       const char =
@@ -264,6 +267,8 @@ class MobileModifierState {
 
     this.ctrlActive = false;
     this.altActive = false;
+    this.shiftActive = false;
+    this.superActive = false;
 
     // Clone and replace buttons to strip old event listeners from previous connections
     const replaceBtn = (id) => {
@@ -276,10 +281,14 @@ class MobileModifierState {
 
     this.ctrlBtn = replaceBtn("ctrl-toggle");
     this.altBtn = replaceBtn("alt-toggle");
+    this.shiftBtn = replaceBtn("shift-toggle");
+    this.superBtn = replaceBtn("super-toggle");
 
     // Reset visual state on recreation
     if (this.ctrlBtn) this.ctrlBtn.classList.remove("active");
     if (this.altBtn) this.altBtn.classList.remove("active");
+    if (this.shiftBtn) this.shiftBtn.classList.remove("active");
+    if (this.superBtn) this.superBtn.classList.remove("active");
 
     this.setupListeners();
     MobileModifierState.instance = this;
@@ -314,6 +323,8 @@ class MobileModifierState {
     };
     bindBtn(this.ctrlBtn, () => this.toggleCtrl());
     bindBtn(this.altBtn, () => this.toggleAlt());
+    bindBtn(this.shiftBtn, () => this.toggleShift());
+    bindBtn(this.superBtn, () => this.toggleSuper());
   }
 
   toggleCtrl(force) {
@@ -332,9 +343,32 @@ class MobileModifierState {
     }
   }
 
+  toggleShift(force) {
+    this.shiftActive = force !== undefined ? force : !this.shiftActive;
+    if (this.shiftBtn) {
+      if (this.shiftActive) this.shiftBtn.classList.add("active");
+      else this.shiftBtn.classList.remove("active");
+    }
+  }
+
+  toggleSuper(force) {
+    this.superActive = force !== undefined ? force : !this.superActive;
+    if (this.superBtn) {
+      if (this.superActive) this.superBtn.classList.add("active");
+      else this.superBtn.classList.remove("active");
+    }
+  }
+
   applyModifiers(data) {
     if (!data) return data;
     let input = data;
+
+    if (this.shiftActive && data === "\t") {
+      input = "\x1b[Z";
+      this.toggleShift(false);
+      return input;
+    }
+
     if (this.ctrlActive && data.length === 1) {
       const code = data.charCodeAt(0);
       if (code >= 97 && code <= 122) {
@@ -367,6 +401,26 @@ class MobileModifierState {
     } else if (this.altActive) {
       this.toggleAlt(false);
     }
+
+    if (this.superActive && data.length === 1) {
+      // Super+key: send as Alt+key if it's a simple character,
+      // as Gemini CLI supports Alt+Z for undo.
+      input = "\x1b" + input;
+      this.toggleSuper(false);
+    } else if (this.superActive) {
+      this.toggleSuper(false);
+    }
+
+    if (this.shiftActive && data.length === 1) {
+      const code = data.charCodeAt(0);
+      if (code >= 97 && code <= 122) {
+        input = String.fromCharCode(code - 32);
+      }
+      this.toggleShift(false);
+    } else if (this.shiftActive) {
+      this.toggleShift(false);
+    }
+
     return input;
   }
 }
@@ -403,7 +457,10 @@ class MobileInputBuffer {
     // If modifiers are active, consume exactly 1 char from data, apply modifiers, emit, clear buffer
     if (
       this.modifierState &&
-      (this.modifierState.ctrlActive || this.modifierState.altActive)
+      (this.modifierState.ctrlActive ||
+        this.modifierState.altActive ||
+        this.modifierState.shiftActive ||
+        this.modifierState.superActive)
     ) {
       const char =
         e.data && e.data.length > 0
@@ -449,12 +506,22 @@ class MobileInputBuffer {
     // If it's an explicit control key, process it even if composing.
     if (passthroughKeys[e.key]) {
       e.preventDefault();
+      let input = passthroughKeys[e.key];
+      if (
+        e.key === "Tab" &&
+        (e.shiftKey || (this.modifierState && this.modifierState.shiftActive))
+      ) {
+        input = "\x1b[Z";
+        if (this.modifierState && this.modifierState.shiftActive) {
+          this.modifierState.toggleShift(false);
+        }
+      }
       if (e.key === "Escape") {
-        this.emitCallback(passthroughKeys[e.key]);
+        this.emitCallback(input);
         return ""; // clear buffer
       } else {
         // Tab completely bypasses buffer, but does not clear it
-        this.emitCallback(passthroughKeys[e.key]);
+        this.emitCallback(input);
         return undefined; // leave buffer intact
       }
     }
