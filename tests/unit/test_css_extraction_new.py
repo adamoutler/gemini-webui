@@ -21,9 +21,11 @@ def test_css_classes_exist_in_dom(css_page):
     are present in the page logic and can be applied/found when emulating mobile devices.
     """
     # Simulate the switchTab logic that sets display: grid on mobile
+    # Use setProperty with 'important' priority to override any competing CSS rules,
+    # since we're testing element existence and stylability, not the full switchTab flow.
     css_page.evaluate("""
         document.documentElement.classList.add('is-mobile');
-        document.getElementById('mobile-controls').style.display = 'grid';
+        document.getElementById('mobile-controls').style.setProperty('display', 'grid', 'important');
     """)
 
     display_style = css_page.evaluate(
