@@ -123,6 +123,18 @@ def test_new_session_no_resume(custom_server, test_data_dir, playwright):
         # Wait for terminal to load
         expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
 
+        # Wait for the mock CLI to fully initialize (welcome message appears)
+        page.wait_for_function("""() => {
+            if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return false;
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (!tab || !tab.term) return false;
+            for (let i = 0; i < 5; i++) {
+                const line = tab.term.buffer.active.getLine(i);
+                if (line && line.translateToString(true).includes('Fake')) return true;
+            }
+            return false;
+        }""", timeout=15000)
+
         # Focus terminal and type
         page.locator(".xterm").first.click()
         page.keyboard.type("What is the TEST_VALUE\r")
