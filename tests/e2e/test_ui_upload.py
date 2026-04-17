@@ -4,27 +4,27 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+def page(server, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
-        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(
+        ".launcher, .terminal-instance", state="attached", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
-def test_drag_and_drop_upload(page, test_data_dir):
+def test_drag_and_drop_upload(page, test_data_dir, playwright):
     # Start a terminal session so we can verify the text injection
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
@@ -76,7 +76,7 @@ def test_drag_and_drop_upload(page, test_data_dir):
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
             let out = "";
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 15; i++) {
                 const line = tab.term.buffer.active.getLine(i);
                 if (line) out += line.translateToString(true) + "\\n";
             }
@@ -99,7 +99,7 @@ def test_drag_and_drop_upload(page, test_data_dir):
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
-def test_folder_drag_and_drop_upload(page, test_data_dir):
+def test_folder_drag_and_drop_upload(page, test_data_dir, playwright):
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
@@ -171,7 +171,7 @@ def test_folder_drag_and_drop_upload(page, test_data_dir):
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
             let out = "";
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 15; i++) {
                 const line = tab.term.buffer.active.getLine(i);
                 if (line) out += line.translateToString(true) + "\\n";
             }
@@ -200,7 +200,7 @@ def test_folder_drag_and_drop_upload(page, test_data_dir):
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
-def test_workspace_file_upload_button_injection(page, test_data_dir):
+def test_workspace_file_upload_button_injection(page, test_data_dir, playwright):
     # Start a terminal session
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
@@ -233,7 +233,7 @@ def test_workspace_file_upload_button_injection(page, test_data_dir):
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
             let out = "";
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 15; i++) {
                 const line = tab.term.buffer.active.getLine(i);
                 if (line) out += line.translateToString(true) + "\\n";
             }
@@ -249,7 +249,7 @@ def test_workspace_file_upload_button_injection(page, test_data_dir):
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
-def test_drag_and_drop_disabled_on_launcher(page):
+def test_drag_and_drop_disabled_on_launcher(page, playwright):
     # Ensure we are on the launcher screen
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
 

@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def csrf_enabled_server(test_data_dir):
+def csrf_enabled_server(test_data_dir, playwright):
     import os
     import shutil
 
@@ -64,141 +64,141 @@ def csrf_enabled_server(test_data_dir):
 
 
 @pytest.mark.timeout(30)
-def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
+def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
 
-        # We need to capture requests to see if CSRF token is present or rejected
+    # We need to capture requests to see if CSRF token is present or rejected
 
-        upload_requests = []
-        page.on(
-            "request",
-            lambda request: upload_requests.append(request)
-            if "/api/upload" in request.url
-            else None,
-        )
+    upload_requests = []
+    page.on(
+        "request",
+        lambda request: upload_requests.append(request)
+        if "/api/upload" in request.url
+        else None,
+    )
 
-        # Capture console messages
-        page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
+    # Capture console messages
+    page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
 
-        page.goto(csrf_enabled_server)
+    page.goto(csrf_enabled_server)
 
-        page.locator("#new-tab-btn").click()
-        btns = page.locator('.tab-instance.active button:has-text("Start New")')
-        expect(btns.first).to_be_visible(timeout=15000)
-        btns.first.click()
+    page.locator("#new-tab-btn").click()
+    btns = page.locator('.tab-instance.active button:has-text("Start New")')
+    expect(btns.first).to_be_visible(timeout=15000)
+    btns.first.click()
 
-        expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
-        page.wait_for_timeout(3000)
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
+    page.wait_for_timeout(3000)
 
-        # Open file transfer
-        page.click('button:has-text("Files")')
-        expect(page.locator("#file-transfer-modal")).to_be_visible(timeout=5000)
+    # Open file transfer
+    page.click('button:has-text("Files")')
+    expect(page.locator("#file-transfer-modal")).to_be_visible(timeout=5000)
 
-        test_file_path = os.path.join(test_data_dir, "csrf_test_file.txt")
-        with open(test_file_path, "w") as f:
-            f.write("Test content for CSRF upload")
+    test_file_path = os.path.join(test_data_dir, "csrf_test_file.txt")
+    with open(test_file_path, "w") as f:
+        f.write("Test content for CSRF upload")
 
-        page.locator("#workspace-upload-file").set_input_files(test_file_path)
+    page.locator("#workspace-upload-file").set_input_files(test_file_path)
 
-        # Corrupt the token right before upload to simulate token expiration
-        page.evaluate("""() => {
-            const meta = document.querySelector('meta[name="csrf-token"]');
-            if (meta) meta.setAttribute('content', 'token_expired_123');
-        }""")
+    # Corrupt the token right before upload to simulate token expiration
+    page.evaluate("""() => {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) meta.setAttribute('content', 'token_expired_123');
+    }""")
 
-        page.once("dialog", lambda dialog: dialog.accept())
-        # accept any alerts (success or failure)
-        page.click('button:has-text("Upload File")')
+    page.once("dialog", lambda dialog: dialog.accept())
+    # accept any alerts (success or failure)
+    page.click('button:has-text("Upload File")')
 
-        page.wait_for_timeout(2000)
+    page.wait_for_timeout(2000)
 
-        assert len(upload_requests) > 0, "Upload API request should have been made"
+    assert len(upload_requests) > 0, "Upload API request should have been made"
 
-        req = upload_requests[-1]
-        # X-CSRFToken header check
-        csrf_header = req.headers.get("x-csrftoken")
-        assert csrf_header, "CSRF Token missing from upload request headers!"
+    req = upload_requests[-1]
+    # X-CSRFToken header check
+    csrf_header = req.headers.get("x-csrftoken")
+    assert csrf_header, "CSRF Token missing from upload request headers!"
 
-        # Verify response was not 400 Bad Request (CSRF failure)
-        resp = req.response()
-        assert resp.status != 400, "CSRF validation failed on backend!"
-        assert resp.status == 200, "Upload failed for another reason"
+    # Verify response was not 400 Bad Request (CSRF failure)
+    resp = req.response()
+    assert resp.status != 400, "CSRF validation failed on backend!"
+    assert resp.status == 200, "Upload failed for another reason"
 
-        context.close()
-        browser.close()
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(30)
-def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, test_data_dir):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
+def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, test_data_dir, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
 
-        upload_requests = []
-        page.on(
-            "request",
-            lambda request: upload_requests.append(request)
-            if "/api/upload" in request.url
-            else None,
-        )
+    upload_requests = []
+    page.on(
+        "request",
+        lambda request: upload_requests.append(request)
+        if "/api/upload" in request.url
+        else None,
+    )
 
-        # Capture console messages
-        page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
+    # Capture console messages
+    page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
 
-        page.goto(csrf_enabled_server)
+    page.goto(csrf_enabled_server)
 
-        page.locator("#new-tab-btn").click()
-        btns = page.locator('.tab-instance.active button:has-text("Start New")')
-        expect(btns.first).to_be_visible(timeout=15000)
-        btns.first.click()
+    page.locator("#new-tab-btn").click()
+    btns = page.locator('.tab-instance.active button:has-text("Start New")')
+    expect(btns.first).to_be_visible(timeout=15000)
+    btns.first.click()
 
-        expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
-        page.wait_for_timeout(3000)
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
+    page.wait_for_timeout(3000)
 
-        # Trigger dragover
-        page.evaluate("""() => {
-            const dragEvent = new DragEvent('dragover', { bubbles: true, cancelable: true });
-            document.dispatchEvent(dragEvent);
-        }""")
+    # Trigger dragover
+    page.evaluate("""() => {
+        const dragEvent = new DragEvent('dragover', { bubbles: true, cancelable: true });
+        document.dispatchEvent(dragEvent);
+    }""")
 
-        expect(page.locator(".drop-zone")).to_have_class("drop-zone active")
+    expect(page.locator(".drop-zone")).to_have_class("drop-zone active")
 
-        # Trigger drop
-        page.evaluate("""() => {
-            const file = new File(["dropped content"], "drop_test_csrf.txt", { type: 'text/plain' });
+    # Trigger drop
+    page.evaluate("""() => {
+        const file = new File(["dropped content"], "drop_test_csrf.txt", { type: 'text/plain' });
 
-            const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
-            dropEvent.dataTransfer = {
-                items: [
-                    {
-                        webkitGetAsEntry: () => ({
-                            isFile: true,
-                            isDirectory: false,
-                            name: 'drop_test_csrf.txt',
-                            file: (cb) => cb(file)
-                        })
-                    }
-                ],
-                files: [file]
-            };
-            document.dispatchEvent(dropEvent);
-        }""")
+        const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
+        dropEvent.dataTransfer = {
+            items: [
+                {
+                    webkitGetAsEntry: () => ({
+                        isFile: true,
+                        isDirectory: false,
+                        name: 'drop_test_csrf.txt',
+                        file: (cb) => cb(file)
+                    })
+                }
+            ],
+            files: [file]
+        };
+        document.dispatchEvent(dropEvent);
+    }""")
 
-        page.wait_for_timeout(2000)
+    page.wait_for_timeout(2000)
 
-        assert len(upload_requests) > 0, "Upload API request should have been made"
+    assert len(upload_requests) > 0, "Upload API request should have been made"
 
-        req = upload_requests[-1]
-        csrf_header = req.headers.get("x-csrftoken")
-        assert csrf_header, "CSRF Token missing from upload request headers!"
+    req = upload_requests[-1]
+    csrf_header = req.headers.get("x-csrftoken")
+    assert csrf_header, "CSRF Token missing from upload request headers!"
 
-        resp = req.response()
-        assert resp.status != 400, "CSRF validation failed on backend!"
-        assert resp.status == 200, "Upload failed for another reason"
+    resp = req.response()
+    assert resp.status != 400, "CSRF validation failed on backend!"
+    assert resp.status == 200, "Upload failed for another reason"
 
-        context.close()
-        browser.close()
+    context.close()
+    browser.close()

@@ -4,22 +4,22 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(viewport={"width": 1280, "height": 800})
+def page(server, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(viewport={"width": 1280, "height": 800})
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
-        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        yield page
-        context.close()
-        browser.close()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(60)
-def test_mock_gemini_cli_e2e_flow(page, server):
+def test_mock_gemini_cli_e2e_flow(page, server, playwright):
     # 1. Navigate to test-launcher
     page.goto(f"{server}/test-launcher", timeout=15000)
     expect(page.locator("h1:has-text('TEST LAUNCHER')")).to_be_visible()

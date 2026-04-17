@@ -4,19 +4,19 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="module")
-def browser_context():
-    with sync_playwright() as p:
-        device = p.devices["Pixel 5"]
-        browser = p.chromium.launch(headless=True)
-        # Use a single context for the whole module to save time
-        context = browser.new_context(**device)
-        yield context
-        context.close()
-        browser.close()
+def browser_context(playwright):
+    p = playwright
+    device = p.devices["Pixel 5"]
+    browser = p.chromium.launch(headless=True)
+    # Use a single context for the whole module to save time
+    context = browser.new_context(**device)
+    yield context
+    context.close()
+    browser.close()
 
 
 @pytest.fixture(scope="function")
-def mobile_page(server, browser_context):
+def mobile_page(server, browser_context, playwright):
     page = browser_context.new_page()
     page.goto(server, timeout=15000)
     try:
@@ -28,7 +28,7 @@ def mobile_page(server, browser_context):
     page.close()
 
 
-def test_font_size_controls(mobile_page):
+def test_font_size_controls(mobile_page, playwright):
     """Verify A+ and A- buttons adjust terminal font size."""
     # Since we enabled WebGL addon, the terminal is rendered on a canvas.
     # The font size is maintained within the `tab.term.options`
@@ -68,7 +68,7 @@ def test_font_size_controls(mobile_page):
     assert minus_font_size < plus_font_size, "A- should decrease font size"
 
 
-def test_ctrl_alt_toggles(mobile_page):
+def test_ctrl_alt_toggles(mobile_page, playwright):
     """Verify Ctrl and Alt buttons toggle active state."""
     ctrl_btn = mobile_page.locator("#ctrl-toggle")
     alt_btn = mobile_page.locator("#alt-toggle")
@@ -92,7 +92,7 @@ def test_ctrl_alt_toggles(mobile_page):
     expect(alt_btn).to_have_class("control-btn active")
 
 
-def test_holdable_buttons_emit_commands(mobile_page):
+def test_holdable_buttons_emit_commands(mobile_page, playwright):
     """Verify that buttons with data-cmd emit commands to the terminal."""
     # This is harder to test directly without checking socket output,
     # but we can verify they don't throw JS errors and maybe check if xterm reacts.
@@ -143,7 +143,7 @@ def test_holdable_buttons_emit_commands(mobile_page):
     assert last_data == "\x1b", "Esc button should send Esc"
 
 
-def test_haptic_feedback(mobile_page):
+def test_haptic_feedback(mobile_page, playwright):
     """Verify that tapping extended keyboard controls triggers haptic feedback via navigator.vibrate."""
     # Mock navigator.vibrate
     mobile_page.evaluate("""() => {
@@ -197,7 +197,7 @@ def test_haptic_feedback(mobile_page):
     assert mobile_page.evaluate("window.vibratedParams.length") == 0
 
 
-def test_haptic_feedback_hold_to_repeat(mobile_page):
+def test_haptic_feedback_hold_to_repeat(mobile_page, playwright):
     """Verify that holding a button triggers multiple haptic feedbacks at 5ms."""
     # Mock navigator.vibrate
     mobile_page.evaluate("""() => {

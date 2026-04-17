@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def custom_server(test_data_dir):
+def custom_server(test_data_dir, playwright):
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
@@ -70,55 +70,53 @@ def custom_server(test_data_dir):
 
 
 @pytest.mark.timeout(60)
-def test_reconnect_after_reload_with_server_down(custom_server):
+def test_reconnect_after_reload_with_server_down(custom_server, playwright):
     """
     Test GEMWEBUI-265: Verify reconnection works after a page reload when server was down.
     This simulates the 'stale CSRF token in cached HTML' scenario.
     """
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
 
-        # 1. Initial load
-        page.goto(custom_server.url)
-        expect(page.get_by_text("Select a Connection").first).to_be_visible(
-            timeout=10000
-        )
+    # 1. Initial load
+    page.goto(custom_server.url)
+    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=10000)
 
-        # 2. Stop server
-        custom_server.stop()
+    # 2. Stop server
+    custom_server.stop()
 
-        # 3. Reload page while server is down (Service Worker would serve from cache in real life)
-        # Here we just want to ensure that when it comes back, it refreshes CSRF.
-        # Since we don't have SW in this test environment easily, we simulate by having a stale state.
+    # 3. Reload page while server is down (Service Worker would serve from cache in real life)
+    # Here we just want to ensure that when it comes back, it refreshes CSRF.
+    # Since we don't have SW in this test environment easily, we simulate by having a stale state.
 
-        # 4. Wait a bit then start server
-        time.sleep(2)
-        custom_server.start()
+    # 4. Wait a bit then start server
+    time.sleep(2)
+    custom_server.start()
 
-        # 5. Reload page (now server is up)
-        page.reload()
+    # 5. Reload page (now server is up)
+    page.reload()
 
-        # 6. Verify it can connect to a session
-        btns = page.locator('.tab-instance.active button:has-text("Start New")')
-        expect(btns.first).to_be_visible(timeout=10000)
-        btns.first.click()
+    # 6. Verify it can connect to a session
+    btns = page.locator('.tab-instance.active button:has-text("Start New")')
+    expect(btns.first).to_be_visible(timeout=10000)
+    btns.first.click()
 
-        expect(page.locator("#connection-status")).to_have_text("local", timeout=20000)
+    expect(page.locator("#connection-status")).to_have_text("local", timeout=20000)
 
-        # 7. Simulate a CSRF token expiration by manually clearing the meta tag
-        # and calling an API that should trigger a refresh.
-        page.evaluate("""() => {
-            const meta = document.querySelector('meta[name="csrf-token"]');
-            if (meta) meta.content = "stale-token";
-        }""")
+    # 7. Simulate a CSRF token expiration by manually clearing the meta tag
+    # and calling an API that should trigger a refresh.
+    page.evaluate("""() => {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) meta.content = "stale-token";
+    }""")
 
-        # Trigger an API call that requires CSRF (e.g. update config or just fetch sessions with 403 mock)
-        # Our app.js handles 403/400 by calling refreshCsrfToken.
+    # Trigger an API call that requires CSRF (e.g. update config or just fetch sessions with 403 mock)
+    # Our app.js handles 403/400 by calling refreshCsrfToken.
 
-        # We can verify that it still works
-        expect(page.locator("#connection-status")).to_have_text("local", timeout=5000)
+    # We can verify that it still works
+    expect(page.locator("#connection-status")).to_have_text("local", timeout=5000)
 
-        context.close()
-        browser.close()
+    context.close()
+    browser.close()

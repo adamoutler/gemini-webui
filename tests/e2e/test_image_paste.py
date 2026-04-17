@@ -5,21 +5,21 @@ from playwright.sync_api import Page, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
+def page(server, playwright):
     from playwright.sync_api import sync_playwright
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.goto(server)
-        yield page
-        context.close()
-        browser.close()
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server)
+    yield page
+    context.close()
+    browser.close()
 
 
-def test_image_paste_logic(page, server):
+def test_image_paste_logic(page, server, playwright):
     page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
     page.on("pageerror", lambda err: print(f"BROWSER ERROR: {err.message}"))
 

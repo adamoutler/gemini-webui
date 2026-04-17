@@ -3,21 +3,21 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
-        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        yield page, server, context
-        context.close()
-        browser.close()
+def page(server, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    yield page, server, context
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(60)
-def test_status_indicator_animation(page):
+def test_status_indicator_animation(page, playwright):
     playwright_page, server_url, context = page
 
     # We need to simulate a session so it shows up in "Backend Managed Sessions"
@@ -65,7 +65,7 @@ def test_status_indicator_animation(page):
 
 
 @pytest.mark.timeout(60)
-def test_status_animation_dom_persistence(page):
+def test_status_animation_dom_persistence(page, playwright):
     playwright_page, server_url, context = page
 
     # Load app and start a session
@@ -129,7 +129,7 @@ def test_status_animation_dom_persistence(page):
     ), "DOM node was replaced upon reload, resetting animation state!"
 
 
-def test_status_flash_on_update(page):
+def test_status_flash_on_update(page, playwright):
     playwright_page, server_url, context = page
 
     # Start app and create a session

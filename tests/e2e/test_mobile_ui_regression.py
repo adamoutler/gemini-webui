@@ -4,21 +4,21 @@ from playwright.sync_api import Page, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
+def page(server, playwright):
     from playwright.sync_api import sync_playwright
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.goto(server)
-        yield page
-        context.close()
-        browser.close()
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server)
+    yield page
+    context.close()
+    browser.close()
 
 
-def test_mobile_layout_locked(page, server):
+def test_mobile_layout_locked(page, server, playwright):
     # Emulate iPhone 12
     from playwright.sync_api import sync_playwright
 
@@ -63,7 +63,7 @@ def test_mobile_layout_locked(page, server):
     context.close()
 
 
-def test_visual_viewport_listener_exists(page, server):
+def test_visual_viewport_listener_exists(page, server, playwright):
     page.goto(f"{server}/")
     # Check if appVisualViewport is defined (it should be window.visualViewport or a mock)
     is_defined = page.evaluate("typeof window.appVisualViewport !== 'undefined'")

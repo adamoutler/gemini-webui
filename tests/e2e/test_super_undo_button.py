@@ -3,23 +3,23 @@ from playwright.sync_api import expect, sync_playwright
 
 
 @pytest.fixture(scope="function")
-def mobile_page(server):
-    with sync_playwright() as p:
-        device = p.devices["Pixel 5"]
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(**device)
-        page = context.new_page()
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+def mobile_page(server, playwright):
+    p = playwright
+    device = p.devices["Pixel 5"]
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(**device)
+    page = context.new_page()
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(
+        ".launcher, .terminal-instance", state="attached", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(20)
-def test_super_undo_button(mobile_page):
+def test_super_undo_button(mobile_page, playwright):
     """
     Test that the Super button is rendered in the mobile controls,
     and the A+ and A- buttons are grouped.

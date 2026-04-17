@@ -5,13 +5,13 @@ import signal
 from playwright.sync_api import sync_playwright
 
 
-def log(msg):
+def log(msg, playwright):
     print(msg)
     with open("zombie_test_v2.log", "a") as f:
         f.write(msg + "\n")
 
 
-def get_zombie_count():
+def get_zombie_count(playwright):
     # Using the user's preferred command for monitoring
     result = subprocess.run(
         "ps -aux | grep defunct | grep -v grep | wc -l",
@@ -22,7 +22,7 @@ def get_zombie_count():
     return int(result.stdout.strip())
 
 
-def main():
+def main(playwright):
     if os.path.exists("zombie_test_v2.log"):
         os.remove("zombie_test_v2.log")
 
@@ -54,88 +54,86 @@ def main():
     time.sleep(5)
 
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context()
-            page = context.new_page()
-            page.on("console", lambda msg: log(f"BROWSER CONSOLE: {msg.text}"))
-            page.on("pageerror", lambda err: log(f"BROWSER ERROR: {err.message}"))
-            url = "http://127.0.0.1:5009/"
+        p = playwright
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+        page.on("console", lambda msg: log(f"BROWSER CONSOLE: {msg.text}"))
+        page.on("pageerror", lambda err: log(f"BROWSER ERROR: {err.message}"))
+        url = "http://127.0.0.1:5009/"
 
-            # Reproduction Path 1: Ctrl-Z + Restart
-            log("Path 1: Testing Ctrl-Z + Restart")
-            page.goto(url)
-            # Wait for connection card to appear
-            page.wait_for_selector(".connection-card[data-label='local']")
-            # Click "Start New" on local card
-            page.locator(
-                ".connection-card[data-label='local'] button:has-text('Start New')"
-            ).first.click()
-            page.wait_for_selector(".terminal-instance")
+        # Reproduction Path 1: Ctrl-Z + Restart
+        log("Path 1: Testing Ctrl-Z + Restart")
+        page.goto(url)
+        # Wait for connection card to appear
+        page.wait_for_selector(".connection-card[data-label='local']")
+        # Click "Start New" on local card
+        page.locator(
+            ".connection-card[data-label='local'] button:has-text('Start New')"
+        ).first.click()
+        page.wait_for_selector(".terminal-instance")
 
-            # Wait for terminal to be ready and show welcome message
-            page.wait_for_function(
-                """() => {
-                const term = document.querySelector('.xterm-rows');
-                return term && term.innerText.includes('Welcome');
-            }""",
-                timeout=15000,
-            )
-            log("Terminal is ready.")
+        # Wait for terminal to be ready and show welcome message
+        page.wait_for_function(
+            """() => {
+            const term = document.querySelector('.xterm-rows');
+            return term && term.innerText.includes('Welcome');
+        }""",
+            timeout=15000,
+        )
+        log("Terminal is ready.")
 
-            # Send Ctrl-Z twice
-            page.keyboard.press("Control+z")
+        # Send Ctrl-Z twice
+        page.keyboard.press("Control+z")
+        time.sleep(0.5)
+        page.keyboard.press("Control+z")
+        time.sleep(0.5)
+
+        # Click Restart
+        restart_btn = page.locator("button:has-text('Restart')")
+        if restart_btn.count() > 0:
+            restart_btn.first.click()
+            log("Clicked Restart button.")
+        else:
+            log("Warning: Restart button not found.")
+
+        time.sleep(5)  # Wait for reaping
+        count_after_p1 = get_zombie_count()
+        log(f"Zombies after Path 1: {count_after_p1}")
+
+        # Reproduction Path 2: Ctrl-C
+        log("Path 2: Testing Ctrl-C")
+        page.keyboard.press("Control+c")
+        time.sleep(5)
+        count_after_p2 = get_zombie_count()
+        log(f"Zombies after Path 2: {count_after_p2}")
+
+        # Reproduction Path 3: Rapid-fire "+ New"
+        log("Path 3: Testing Rapid-fire '+ New' -> 'Start New'")
+        for i in range(5):
+            log(f"Rapid-fire attempt {i+1}")
+            # Click "+ New" (it's the last tab usually, or has specific content)
+            page.click(".tab:not(:has(.tab-close))")
+            page.wait_for_selector("button:has-text('Start New')")
+            # Click "Start New" for Local (usually first)
+            page.locator("button:has-text('Start New')").first.click()
             time.sleep(0.5)
-            page.keyboard.press("Control+z")
-            time.sleep(0.5)
 
-            # Click Restart
-            restart_btn = page.locator("button:has-text('Restart')")
-            if restart_btn.count() > 0:
-                restart_btn.first.click()
-                log("Clicked Restart button.")
-            else:
-                log("Warning: Restart button not found.")
+        time.sleep(5)
+        count_after_p3 = get_zombie_count()
+        log(f"Zombies after Path 3: {count_after_p3}")
 
-            time.sleep(5)  # Wait for reaping
-            count_after_p1 = get_zombie_count()
-            log(f"Zombies after Path 1: {count_after_p1}")
+        # Reproduction Path 4: Rapid Page Reload (Lockup test)
+        log("Path 4: Testing Rapid Page Reload (Lockup test)")
+        for i in range(10):
+            page.reload()
 
-            # Reproduction Path 2: Ctrl-C
-            log("Path 2: Testing Ctrl-C")
-            page.keyboard.press("Control+c")
-            time.sleep(5)
-            count_after_p2 = get_zombie_count()
-            log(f"Zombies after Path 2: {count_after_p2}")
+        log("Reloads finished. Checking if UI is still responsive...")
+        page.goto(url)
+        page.wait_for_selector(".connection-card[data-label='local']", timeout=10000)
+        log("UI is still responsive: PASS")
 
-            # Reproduction Path 3: Rapid-fire "+ New"
-            log("Path 3: Testing Rapid-fire '+ New' -> 'Start New'")
-            for i in range(5):
-                log(f"Rapid-fire attempt {i+1}")
-                # Click "+ New" (it's the last tab usually, or has specific content)
-                page.click(".tab:not(:has(.tab-close))")
-                page.wait_for_selector("button:has-text('Start New')")
-                # Click "Start New" for Local (usually first)
-                page.locator("button:has-text('Start New')").first.click()
-                time.sleep(0.5)
-
-            time.sleep(5)
-            count_after_p3 = get_zombie_count()
-            log(f"Zombies after Path 3: {count_after_p3}")
-
-            # Reproduction Path 4: Rapid Page Reload (Lockup test)
-            log("Path 4: Testing Rapid Page Reload (Lockup test)")
-            for i in range(10):
-                page.reload()
-
-            log("Reloads finished. Checking if UI is still responsive...")
-            page.goto(url)
-            page.wait_for_selector(
-                ".connection-card[data-label='local']", timeout=10000
-            )
-            log("UI is still responsive: PASS")
-
-            browser.close()
+        browser.close()
 
     except Exception as e:
         log(f"Error during test: {e}")

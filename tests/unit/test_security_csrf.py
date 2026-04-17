@@ -3,7 +3,7 @@ import re
 from src.app import app
 
 
-def test_csrf_protection_missing_token(client):
+def test_csrf_protection_missing_token(client, playwright):
     # Enable CSRF for this test
     app.config["WTF_CSRF_ENABLED"] = True
 
@@ -23,7 +23,7 @@ def test_csrf_protection_missing_token(client):
     app.config["WTF_CSRF_ENABLED"] = False
 
 
-def test_csrf_protection_with_token(client):
+def test_csrf_protection_with_token(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = True
 
     # First, get the main page to extract the CSRF token from the meta tag
@@ -54,7 +54,7 @@ def test_csrf_protection_with_token(client):
     app.config["WTF_CSRF_ENABLED"] = False
 
 
-def test_csrf_failure_returns_json_for_api(client):
+def test_csrf_failure_returns_json_for_api(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = True
 
     # Make a DELETE request to /api/management/sessions/123 with an invalid CSRF token
@@ -77,7 +77,7 @@ def test_csrf_failure_returns_json_for_api(client):
     app.config["WTF_CSRF_ENABLED"] = False
 
 
-def test_csrf_failure_returns_expired_flag(client):
+def test_csrf_failure_returns_expired_flag(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = True
 
     response = client.post(
@@ -95,7 +95,7 @@ def test_csrf_failure_returns_expired_flag(client):
     app.config["WTF_CSRF_ENABLED"] = False
 
 
-def test_csrf_socketio_rejection(client):
+def test_csrf_socketio_rejection(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = True
 
     from src.app import handle_connect
@@ -122,7 +122,7 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def csrf_enabled_server_csrf(tmp_path):
+def csrf_enabled_server_csrf(tmp_path, playwright):
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
@@ -165,32 +165,32 @@ def csrf_enabled_server_csrf(tmp_path):
 
 
 @pytest.mark.timeout(30)
-def test_csrf_ui_hard_reload(csrf_enabled_server_csrf):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
+def test_csrf_ui_hard_reload(csrf_enabled_server_csrf, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
 
-        page.goto(csrf_enabled_server_csrf)
+    page.goto(csrf_enabled_server_csrf)
 
-        # Wait for page to load
-        btns = page.locator('.tab-instance.active button:has-text("Start New")')
-        expect(btns.first).to_be_visible(timeout=5000)
+    # Wait for page to load
+    btns = page.locator('.tab-instance.active button:has-text("Start New")')
+    expect(btns.first).to_be_visible(timeout=5000)
 
-        # Invalidate CSRF token in JS before connecting
-        page.evaluate("""() => {
-            const meta = document.querySelector('meta[name="csrf-token"]');
-            if(meta) meta.setAttribute('content', 'bad-token');
-        }""")
+    # Invalidate CSRF token in JS before connecting
+    page.evaluate("""() => {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if(meta) meta.setAttribute('content', 'bad-token');
+    }""")
 
-        # Start connection
-        with page.expect_navigation(timeout=10000):
-            btns.first.click()
+    # Start connection
+    with page.expect_navigation(timeout=10000):
+        btns.first.click()
 
-        # After reload, session storage restores the tab. We should see a terminal instance.
-        expect(
-            page.locator(".tab-instance.active .terminal-instance").first
-        ).to_be_visible(timeout=8000)
+    # After reload, session storage restores the tab. We should see a terminal instance.
+    expect(page.locator(".tab-instance.active .terminal-instance").first).to_be_visible(
+        timeout=8000
+    )
 
-        context.close()
-        browser.close()
+    context.close()
+    browser.close()

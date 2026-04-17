@@ -3,19 +3,19 @@ import pytest
 from playwright.sync_api import sync_playwright, expect
 
 
-@pytest.fixture(scope="module")
-def browser_context():
-    with sync_playwright() as playwright:
-        device = playwright.devices["Desktop Chrome"]
-        browser = playwright.chromium.launch(headless=True)
-        context = browser.new_context()
-        yield context
-        context.close()
-        browser.close()
+@pytest.fixture(scope="function")
+def browser_context(playwright):
+    playwright = playwright
+    device = playwright.devices["Desktop Chrome"]
+    browser = playwright.chromium.launch(headless=True)
+    context = browser.new_context()
+    yield context
+    context.close()
+    browser.close()
 
 
 @pytest.fixture(scope="function")
-def page(server, browser_context):
+def page(server, browser_context, playwright):
     page = browser_context.new_page()
     page.set_default_timeout(120000)
     page.goto(server, timeout=15000)
@@ -26,7 +26,7 @@ def page(server, browser_context):
     page.close()
 
 
-def test_physical_keyboard_combinations(page):
+def test_physical_keyboard_combinations(page, playwright):
     # Override emitPtyInput to catch what is being sent
     page.evaluate("""() => {
         window.sentInputs = [];
