@@ -3,8 +3,9 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
+def page(server, playwright):
+    p = playwright
+    if True:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
 
@@ -40,22 +41,40 @@ def test_ctrl_enter_aliases_to_alt_enter(page):
 
     # Wait for connection to establish and welcome message
 
-    page.wait_for_function(
-        """() => {
-        const tab = tabs.find(t => t.id === activeTabId);
-        if (tab && tab.term) {
-            let out = "";
-            for (let i = 0; i < 5; i++) {
-                const line = tab.term.buffer.active.getLine(i);
-                if (line) out += line.translateToString() + "\\n";
-            }
+    try:
+        page.wait_for_function(
+            """() => {
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (tab && tab.term) {
+                let out = "";
+                for (let i = 0; i < Math.min(10, tab.term.buffer.active.length); i++) {
+                    const line = tab.term.buffer.active.getLine(i);
+                    if (line) out += line.translateToString() + "\\n";
+                }
 
-            return out.includes("Welcome") && out.includes("Fake") && out.includes("Gemini");
-        }
-        return false;
-    }""",
-        timeout=15000,
-    )
+                return out.includes("Welcome") && out.includes("Fake") && out.includes("Gemini");
+            }
+            return false;
+        }""",
+            timeout=15000,
+        )
+    except Exception as e:
+        term_content = page.evaluate(
+            """() => {
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (tab && tab.term) {
+                let out = "";
+                for (let i = 0; i < tab.term.buffer.active.length; i++) {
+                    const line = tab.term.buffer.active.getLine(i);
+                    if (line) out += line.translateToString() + "\\n";
+                }
+                return out;
+            }
+            return "No terminal or tabs not found";
+        }"""
+        )
+        print(f"TERMINAL CONTENT WAS:\n{term_content}")
+        raise e
 
     # Focus the terminal
     page.locator(".xterm-helper-textarea").first.focus()
