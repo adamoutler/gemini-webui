@@ -1,40 +1,29 @@
-#!/bin/bash
-# Read input from Gemini CLI
-INPUT=$(cat)
+#!/usr/bin/bash
+input=$(cat)
+command=$(echo "$input" | jq -r '.tool_input.command // empty')
+echo  "${input}">> /tmp/input.json
 
-tool_name=$(echo "$INPUT" | jq -r '.tool_name')
+if [[ "$command" =~ (^|[[:space:]\;\&\|])git[[:space:]]+push([[:space:]]|$) ]]; then
+    OWNER="adamoutler"
+    REPO="gemini-webui"
+    sleep 10
 
-if [[ "$tool_name" =~ run_shell_command|Bash|shell ]]; then
-    command=$(echo "$INPUT" | jq -r '.tool_input.command')
+    # Use the wait endpoint to ensure we have waited for current build.
+    curl -N -s "https://dash.hackedyour.info/api/wait?provider=github&owner=${OWNER}&repo=${REPO}" 2>/dev/null | tail -n 1 
+    # get the actual status.
+    CI_STATUS=$(curl -s https://dash.hackedyour.info/api/status 2>/dev/null | jq -r '.[] | select(.provider == "github" and .owner == "adamoutler" and .repo == "gemini-webui") | .status')
 
-    if [[ "$command" =~ git[[:space:]]+push ]]; then
-        OWNER="adamoutler"
-        REPO="gemini-webui"
-        
-        echo "Waiting 10 seconds for GitHub Actions to register the build..." >&2
-        sleep 10
-        
-        echo "Watching CI status via Dash API..." >&2
-        # Use the wait endpoint to stream status and wait for completion
-        # Note: We use stderr for the dots/output so it doesn't break the JSON hook protocol
-        CI_RESULT=$(curl -N -s "https://dash.hackedyour.info/api/wait?provider=github&owner=${OWNER}&repo=${REPO}" | tee /dev/stderr | tail -n 1)
-        
-        CI_STATUS=$(echo "$CI_RESULT" | jq -r '.status // empty')
-        
-        if [ "$CI_STATUS" = "failure" ]; then
-            # Fetch failed logs via Dash API
-            CI_LOGS=$(curl -s "https://dash.hackedyour.info/api/logs?provider=github&owner=${OWNER}&repo=${REPO}")
-            LAST_LINES=$(echo "$CI_LOGS" | jq -r '.log // empty' | tail -n 30)
-            
-            jq -n -c --arg result "GitHub Actions workflow failed! Last 30 lines of log:\n$LAST_LINES" \
-              '{"decision": "allow", "hookSpecificOutput": {"additionalContext": $result}}'
-        else
-            jq -n -c --arg result "GitHub Actions workflow finished with status: $CI_STATUS" \
-              '{"decision": "allow", "hookSpecificOutput": {"additionalContext": $result}}'
-        fi
-        exit 0
+    if [ "$CI_STATUS" = "failed" ] || [ "$CI_STATUS" = "failure" ]; then
+        CI_LOGS=$(curl -s "https://dash.hackedyour.info/api/logs?provider=github&owner=${OWNER}&repo=${REPO}" 2>/dev/null)
+        LAST_LINES=$(echo "$CI_LOGS" | jq -r '.log // empty' | tail -n 30)
+        jq -n -c --arg status "$CI_STATUS" --arg logs "$LAST_LINES" \
+          '{"decision": "deny", "reason":"❌ CI/CD FAILURE", "hookSpecificOutput": {"hookEventName": "AfterTool", "additionalContext": "CRITICAL ALERT: The CI/CD build has FAILED. Per your core mandates, you MUST halt all current tasks, immediately fetch the logs, and fix the broken build. A broken build is an emergency.\nLast 30 lines of log:\n\($logs)\n❌ CI results: \($status)"}}'
+    else
+        jq -n -c --arg status "$CI_STATUS" \
+          '{"decision": "allow", "hookSpecificOutput": {"hookEventName": "AfterTool", "additionalContext": "CI results: \($status)"}}'
     fi
+    exit 0
 fi
-
 # Proceed normally
 echo '{"decision": "allow"}'
+
