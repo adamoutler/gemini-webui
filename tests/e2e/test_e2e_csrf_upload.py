@@ -112,19 +112,22 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
 
     page.once("dialog", lambda dialog: dialog.accept())
     # accept any alerts (success or failure)
-    page.click('button:has-text("Upload File")')
 
-    page.wait_for_timeout(2000)
+    with page.expect_response(
+        lambda response: "/api/upload" in response.url and response.status == 200,
+        timeout=15000,
+    ) as response_info:
+        page.click('button:has-text("Upload File")')
 
-    assert len(upload_requests) > 0, "Upload API request should have been made"
+    resp = response_info.value
+    assert resp is not None, "Upload API request should have been made"
 
-    req = upload_requests[-1]
     # X-CSRFToken header check
+    req = resp.request
     csrf_header = req.headers.get("x-csrftoken")
     assert csrf_header, "CSRF Token missing from upload request headers!"
 
     # Verify response was not 400 Bad Request (CSRF failure)
-    resp = req.response()
     assert resp.status != 400, "CSRF validation failed on backend!"
     assert resp.status == 200, "Upload failed for another reason"
 
@@ -169,36 +172,38 @@ def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, tmp_path, playwrigh
 
     expect(page.locator(".drop-zone")).to_have_class("drop-zone active")
 
-    # Trigger drop
-    page.evaluate("""() => {
-        const file = new File(["dropped content"], "drop_test_csrf.txt", { type: 'text/plain' });
+    with page.expect_response(
+        lambda response: "/api/upload" in response.url and response.status == 200,
+        timeout=15000,
+    ) as response_info:
+        # Trigger drop
+        page.evaluate("""() => {
+            const file = new File(["dropped content"], "drop_test_csrf.txt", { type: 'text/plain' });
 
-        const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
-        dropEvent.dataTransfer = {
-            items: [
-                {
-                    webkitGetAsEntry: () => ({
-                        isFile: true,
-                        isDirectory: false,
-                        name: 'drop_test_csrf.txt',
-                        file: (cb) => cb(file)
-                    })
-                }
-            ],
-            files: [file]
-        };
-        document.dispatchEvent(dropEvent);
-    }""")
+            const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
+            dropEvent.dataTransfer = {
+                items: [
+                    {
+                        webkitGetAsEntry: () => ({
+                            isFile: true,
+                            isDirectory: false,
+                            name: 'drop_test_csrf.txt',
+                            file: (cb) => cb(file)
+                        })
+                    }
+                ],
+                files: [file]
+            };
+            document.dispatchEvent(dropEvent);
+        }""")
 
-    page.wait_for_timeout(2000)
+    resp = response_info.value
+    assert resp is not None, "Upload API request should have been made"
 
-    assert len(upload_requests) > 0, "Upload API request should have been made"
-
-    req = upload_requests[-1]
+    req = resp.request
     csrf_header = req.headers.get("x-csrftoken")
     assert csrf_header, "CSRF Token missing from upload request headers!"
 
-    resp = req.response()
     assert resp.status != 400, "CSRF validation failed on backend!"
     assert resp.status == 200, "Upload failed for another reason"
 
