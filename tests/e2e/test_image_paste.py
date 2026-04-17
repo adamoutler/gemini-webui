@@ -19,7 +19,7 @@ def page(server, playwright):
     browser.close()
 
 
-def test_image_paste_logic(page, server, playwright):
+def test_image_paste_logic(page, server, test_data_dir, playwright):
     page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
     page.on("pageerror", lambda err: print(f"BROWSER ERROR: {err.message}"))
 
@@ -66,7 +66,7 @@ def test_image_paste_logic(page, server, playwright):
     page.screenshot(path="public/qa-screenshots/proof_260_image_paste.png")
 
     # 5. Check if the file was actually created in the workspace
-    workspace_dir = "/data/workspace/pasted_images"
+    workspace_dir = str(test_data_dir / "workspace" / "pasted_images")
     import time
 
     time.sleep(2)
@@ -77,6 +77,7 @@ def test_image_paste_logic(page, server, playwright):
     else:
         print(f"Directory {workspace_dir} does not exist!")
         # List workspace to see what's there
-        if os.path.exists("/data/workspace"):
-            print(f"Workspace content: {os.listdir('/data/workspace')}")
+        parent_dir = str(test_data_dir / "workspace")
+        if os.path.exists(parent_dir):
+            print(f"Workspace content: {os.listdir(parent_dir)}")
         assert False, f"Directory {workspace_dir} should exist after upload"

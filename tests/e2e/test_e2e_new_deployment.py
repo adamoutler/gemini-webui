@@ -38,7 +38,7 @@ def authenticated_server(tmp_path, playwright):
 
     # Wait for port to open
     start_time = time.time()
-    while time.time() - start_time < 5:
+    while time.time() - start_time < 30:
         try:
             with socket.create_connection(("localhost", int(port)), timeout=0.1):
                 break

@@ -61,6 +61,15 @@ def custom_server(tmp_path, playwright):
             except OSError:
                 pass
 
+            # Clear persisted sessions so the new server does not try to restore
+            # dead PTY file descriptors which immediately emit session-terminated.
+            persisted_file = tmp_path / "persisted_sessions.json"
+            if persisted_file.exists():
+                try:
+                    persisted_file.unlink()
+                except OSError:
+                    pass
+
         def start(self):
             self.process = self.start_fn()
 

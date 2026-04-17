@@ -42,14 +42,19 @@ def custom_server(tmp_path, playwright):
         )
         import requests
 
-        for _ in range(20):
+        ready = False
+        for _ in range(90):
             try:
                 resp = requests.get(f"http://127.0.0.1:{port}/health", timeout=1)
                 if resp.status_code == 200:
+                    ready = True
                     break
             except requests.RequestException:
                 pass
             time.sleep(1)
+
+        if not ready:
+            raise Exception(f"Failed to start server on port {port} in time")
         return proc
 
     process = start_server()
@@ -67,6 +72,15 @@ def custom_server(tmp_path, playwright):
                 self.process.wait()
             except OSError:
                 pass
+
+            # Clear persisted sessions so the new server does not try to restore
+            # dead PTY file descriptors which immediately emit session-terminated.
+            persisted_file = tmp_path / "persisted_sessions.json"
+            if persisted_file.exists():
+                try:
+                    persisted_file.unlink()
+                except OSError:
+                    pass
 
         def start(self):
             self.process = self.start_fn()

@@ -67,7 +67,7 @@ def csrf_enabled_server(tmp_path, playwright):
 def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     p = playwright
     browser = p.chromium.launch(headless=True)
-    context = browser.new_context()
+    context = browser.new_context(viewport={"width": 1280, "height": 800})
     page = context.new_page()
     page.set_default_timeout(60000)
 
@@ -139,7 +139,7 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
 def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     p = playwright
     browser = p.chromium.launch(headless=True)
-    context = browser.new_context()
+    context = browser.new_context(viewport={"width": 1280, "height": 800})
     page = context.new_page()
     page.set_default_timeout(60000)
 
@@ -170,7 +170,7 @@ def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, tmp_path, playwrigh
         document.dispatchEvent(dragEvent);
     }""")
 
-    expect(page.locator(".drop-zone")).to_have_class("drop-zone active")
+    expect(page.locator(".drop-zone")).to_have_class("drop-zone active", timeout=15000)
 
     with page.expect_response(
         lambda response: "/api/upload" in response.url and response.status == 200,

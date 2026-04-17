@@ -1150,7 +1150,7 @@ def pty_restart(data):
                             socketio.emit(
                                 "session_assigned",
                                 {"tab_id": t_id, "session_id": found_id},
-                                room=t_id,
+                                to=sid,
                             )
                             return
                     except Exception as e:
