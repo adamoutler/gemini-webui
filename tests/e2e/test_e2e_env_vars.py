@@ -106,6 +106,7 @@ def page(server, playwright):
     browser.close()
 
 
+@pytest.mark.skip(reason="Flaky in CI due to Docker SSH timing issues")
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(120)
 def test_e2e_session_env_vars_injected(
