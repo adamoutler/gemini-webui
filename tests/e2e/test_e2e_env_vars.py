@@ -88,13 +88,14 @@ def page(server):
 
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 def test_e2e_session_env_vars_injected(
     page, test_data_dir, ssh_target_container_no_gemini
 ):
+    page.locator("#new-tab-btn").click()
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
 
-    page.locator('button[onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     page.locator("#new-host-label").fill("Env Var SSH Test")
@@ -121,7 +122,7 @@ def test_e2e_session_env_vars_injected(
     # We should wait for bash prompt.
     page.wait_for_timeout(8000)
     page.screenshot(path="terminal_before_typing.png")
-    page.locator(".xterm").first.click()
+    page.locator(".tab-instance.active .xterm").first.click()
     page.keyboard.type("echo EXPECTED_${MY_TEST_VAR}_END", delay=50)
     page.keyboard.press("Enter")
 

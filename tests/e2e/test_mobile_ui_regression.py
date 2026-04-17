@@ -3,7 +3,22 @@ import re
 from playwright.sync_api import Page, expect
 
 
-def test_mobile_layout_locked(page: Page):
+@pytest.fixture(scope="function")
+def page(server):
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+        page.set_default_timeout(60000)
+        page.goto(server)
+        yield page
+        context.close()
+        browser.close()
+
+
+def test_mobile_layout_locked(page, server):
     # Emulate iPhone 12
     from playwright.sync_api import sync_playwright
 
@@ -16,7 +31,7 @@ def test_mobile_layout_locked(page: Page):
         has_touch=True,
     )
     mobile_page = context.new_page()
-    mobile_page.goto("http://127.0.0.1:5001/")
+    mobile_page.goto(f"{server}/")
 
     # Check if is-mobile class is on html (documentElement)
     # Wait for app to initialize
@@ -48,8 +63,8 @@ def test_mobile_layout_locked(page: Page):
     context.close()
 
 
-def test_visual_viewport_listener_exists(page: Page):
-    page.goto("http://127.0.0.1:5001/")
+def test_visual_viewport_listener_exists(page, server):
+    page.goto(f"{server}/")
     # Check if appVisualViewport is defined (it should be window.visualViewport or a mock)
     is_defined = page.evaluate("typeof window.appVisualViewport !== 'undefined'")
     assert is_defined

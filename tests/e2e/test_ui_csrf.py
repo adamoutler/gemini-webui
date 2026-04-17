@@ -21,7 +21,9 @@ def custom_server(test_data_dir):
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     mock_dir = os.path.join(project_root, "tests", "mock")
@@ -90,7 +92,7 @@ def test_csrf_fail_deadly_reload(custom_server, test_data_dir):
         page.locator('.tab-instance.active button:has-text("Start New")').first.click()
         expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
 
-        page.locator(".xterm").first.click()
+        page.locator(".tab-instance.active .xterm").first.click()
         page.keyboard.type("echo 'BEFORE_RELOAD_STATE'\r")
 
         def check_text(page):
@@ -156,7 +158,7 @@ def test_csrf_fail_deadly_reload(custom_server, test_data_dir):
 
         expect(status_el).to_have_text("local", timeout=10000)
 
-        page.locator(".xterm").first.click()
+        page.locator(".tab-instance.active .xterm").first.click()
         page.keyboard.type("echo 'AFTER_RECONNECT_STATE'\r")
         for _ in range(10):
             term_text = check_text(page)

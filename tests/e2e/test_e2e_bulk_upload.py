@@ -30,7 +30,22 @@ def page(server):
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
 def test_bulk_random_upload_e2e(page, test_data_dir):
+    import os
+    import shutil
+
+    try:
+        os.remove(os.path.join(str(test_data_dir), "sessions.db"))
+    except FileNotFoundError:
+        pass
+    shutil.rmtree(os.path.join(str(test_data_dir), "workspace"), ignore_errors=True)
+    os.makedirs(os.path.join(str(test_data_dir), "workspace"), exist_ok=True)
+    with open(
+        os.path.join(str(test_data_dir), "workspace", "gemini_mock_sessions.json"), "w"
+    ) as f:
+        f.write("[]")
+
     # 1. Start a terminal session
+    page.locator("#new-tab-btn").click()
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
@@ -44,7 +59,7 @@ def test_bulk_random_upload_e2e(page, test_data_dir):
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
             let out = "";
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 10; i++) {
                 const line = tab.term.buffer.active.getLine(i);
                 if (line) out += line.translateToString() + "\\n";
             }

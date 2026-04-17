@@ -4,12 +4,27 @@ import base64
 from playwright.sync_api import Page, expect
 
 
-def test_image_paste_logic(page: Page):
+@pytest.fixture(scope="function")
+def page(server):
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+        page.set_default_timeout(60000)
+        page.goto(server)
+        yield page
+        context.close()
+        browser.close()
+
+
+def test_image_paste_logic(page, server):
     page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
     page.on("pageerror", lambda err: print(f"BROWSER ERROR: {err.message}"))
 
     # 1. Load the page
-    page.goto("http://127.0.0.1:5001/")
+    page.goto(f"{server}/")
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=10000)
 
     # 2. Start a local session
