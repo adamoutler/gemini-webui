@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def docker_server(test_data_dir, playwright):
+def docker_server(tmp_path, playwright):
     import random
 
     port = str(random.randint(10000, 20000))
@@ -40,7 +40,7 @@ def docker_server(test_data_dir, playwright):
                 "-e",
                 "ALLOWED_ORIGINS=*",
                 "-v",
-                f"{test_data_dir}:/data",
+                f"{tmp_path}:/data",
                 image_name,
             ],
             check=True,

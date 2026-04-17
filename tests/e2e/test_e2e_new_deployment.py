@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def authenticated_server(test_data_dir, playwright):
+def authenticated_server(tmp_path, playwright):
     env = os.environ.copy()
     env["SECRET_KEY"] = "testsecret"
     env["BASIC_AUTH_USERNAME"] = "testuser"
@@ -17,7 +17,7 @@ def authenticated_server(test_data_dir, playwright):
 
     port = str(random.randint(10000, 20000))
     env["PORT"] = port
-    env["DATA_DIR"] = str(test_data_dir)
+    env["DATA_DIR"] = str(tmp_path)
     env["FLASK_USE_RELOADER"] = "false"
     env["GEMWEBUI_HARNESS"] = "1"
     env["FLASK_DEBUG"] = "false"
