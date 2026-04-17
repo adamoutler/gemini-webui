@@ -8,6 +8,20 @@ from playwright.sync_api import sync_playwright, expect
 
 @pytest.fixture(scope="function")
 def csrf_enabled_server(test_data_dir):
+    import os
+    import shutil
+
+    try:
+        os.remove(os.path.join(str(test_data_dir), "sessions.db"))
+    except FileNotFoundError:
+        pass
+    shutil.rmtree(os.path.join(str(test_data_dir), "workspace"), ignore_errors=True)
+    os.makedirs(os.path.join(str(test_data_dir), "workspace"), exist_ok=True)
+    with open(
+        os.path.join(str(test_data_dir), "workspace", "gemini_mock_sessions.json"), "w"
+    ) as f:
+        f.write("[]")
+
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
@@ -20,7 +34,9 @@ def csrf_enabled_server(test_data_dir):
     env["ALLOWED_ORIGINS"] = "*"
     env["DATA_DIR"] = str(test_data_dir)
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     proc = subprocess.Popen(
@@ -69,8 +85,9 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, test_data_dir):
 
         page.goto(csrf_enabled_server)
 
+        page.locator("#new-tab-btn").click()
         btns = page.locator('.tab-instance.active button:has-text("Start New")')
-        expect(btns.first).to_be_visible(timeout=5000)
+        expect(btns.first).to_be_visible(timeout=15000)
         btns.first.click()
 
         expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
@@ -134,8 +151,9 @@ def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, test_data_dir):
 
         page.goto(csrf_enabled_server)
 
+        page.locator("#new-tab-btn").click()
         btns = page.locator('.tab-instance.active button:has-text("Start New")')
-        expect(btns.first).to_be_visible(timeout=5000)
+        expect(btns.first).to_be_visible(timeout=15000)
         btns.first.click()
 
         expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)

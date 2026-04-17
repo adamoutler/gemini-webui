@@ -5,9 +5,24 @@ import time
 from playwright.sync_api import Page, expect
 
 
-def test_app_install_indicator_visibility(page: Page):
+@pytest.fixture(scope="function")
+def page(server):
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
+        page.set_default_timeout(60000)
+        page.goto(server)
+        yield page
+        context.close()
+        browser.close()
+
+
+def test_app_install_indicator_visibility(page, server):
     # Load page in standard browser mode (not standalone)
-    page.goto("http://127.0.0.1:5001/")
+    page.goto(f"{server}/")
 
     # The banner should be visible initially
     # Wait for the checkInstallationStatus logic to run

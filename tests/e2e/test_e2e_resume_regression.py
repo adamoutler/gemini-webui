@@ -23,7 +23,9 @@ def custom_server(test_data_dir):
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     # Pre-configure mock gemini by adding tests/mock to PATH
@@ -105,7 +107,7 @@ def test_new_session_no_resume(custom_server, test_data_dir):
         expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
 
         # Focus terminal and type
-        page.locator(".xterm").first.click()
+        page.locator(".tab-instance.active .xterm").first.click()
         page.keyboard.type("What is the TEST_VALUE\r")
 
         # Check output
@@ -166,7 +168,7 @@ def test_auto_resume_after_server_restart(custom_server, test_data_dir):
         expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
 
         # 2. Set state
-        page.locator(".xterm").first.click()
+        page.locator(".tab-instance.active .xterm").first.click()
         page.keyboard.type("Remember this TEST_VALUE: AUTO_RESUME_SUCCESS\r")
 
         def check_text(page):
@@ -215,7 +217,7 @@ def test_auto_resume_after_server_restart(custom_server, test_data_dir):
         # 6. Verify it resumed using -r by asking for the value
         # Wait a moment for terminal to settle after reconnect
         time.sleep(2)
-        page.locator(".xterm").first.click()
+        page.locator(".tab-instance.active .xterm").first.click()
         page.keyboard.type("What is the TEST_VALUE\r")
 
         for _ in range(10):
