@@ -261,12 +261,18 @@ def terminate_remote_session():
     if not session_id:
         return jsonify({"error": "Session ID required"}), 400
 
+    import re
+    # Validate session_id format to prevent command injection alerts
+    if not re.match(r"^[a-zA-Z0-9_-]+$", str(session_id)):
+        return jsonify({"error": "Invalid Session ID format"}), 400
+    safe_session_id = str(session_id)
+
     if ssh_target:
         if not validate_ssh_target(ssh_target):
             return jsonify({"error": "Invalid SSH target"}), 400
 
         remote_prefix = get_remote_command_prefix(ssh_dir, GEMINI_BIN)
-        remote_cmd = f"{remote_prefix} if command -v {GEMINI_BIN} >/dev/null 2>&1; then {GEMINI_BIN} --terminate {shlex.quote(str(session_id))}; fi"
+        remote_cmd = f"{remote_prefix} if command -v {GEMINI_BIN} >/dev/null 2>&1; then {GEMINI_BIN} --terminate {safe_session_id}; fi"
         login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
 
         cmd = ["ssh", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=no"]
@@ -289,7 +295,7 @@ def terminate_remote_session():
         subprocess.run(cmd, timeout=15, start_new_session=True)
         return jsonify({"status": "success"})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "An internal error occurred"}), 500
 
 
 @terminal_bp.route("/api/test_inject_session", methods=["GET"])
