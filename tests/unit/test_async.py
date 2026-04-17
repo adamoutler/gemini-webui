@@ -101,7 +101,9 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
             "os.execvp"
         ) as mock_execvp, patch("os._exit"), patch(
             "src.app.build_terminal_command", return_value=["bash"]
-        ) as mock_build_cmd, patch("src.app.set_winsize") as mock_set_winsize:
+        ) as mock_build_cmd, patch("src.app.set_winsize") as mock_set_winsize, patch(
+            "fcntl.fcntl"
+        ):
             mock_paths.return_value = ("/data", "/data/config.json", "/data/.ssh")
             mock_get_config.return_value = {
                 "HOSTS": [{"target": "test@host", "env_vars": {"MY_VAR": "123"}}]
@@ -151,7 +153,7 @@ def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
     with app.test_request_context("/"):
         with patch("os.killpg") as mock_killpg, patch(
             "os.getpgid", side_effect=lambda x: x
-        ), patch("src.app.set_winsize"):
+        ), patch("src.app.set_winsize"), patch("fcntl.fcntl"):
             # Attempt to start the 51st session
             # pty_restart now automatically joins room and reclaim if needed
             from unittest.mock import MagicMock
