@@ -4,21 +4,21 @@ from playwright.sync_api import sync_playwright
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
-        iphone = p.devices["iPhone 13"]
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(**iphone)
+def page(server, playwright):
+    p = playwright
+    iphone = p.devices["iPhone 13"]
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(**iphone)
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        yield page
-        context.close()
-        browser.close()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(60)
-def test_keyboard_per_word_overlay(page, server):
+def test_keyboard_per_word_overlay(page, server, playwright):
     page.goto(server)
 
     # Click "Start New" for local connection

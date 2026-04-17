@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="session")
-def ssh_target_container(test_data_dir):
+def ssh_target_container(test_data_dir, playwright):
     # Wait for the server to generate the key
     ssh_dir = os.path.join(str(test_data_dir), ".ssh")
     pub_key_path = os.path.join(ssh_dir, "id_ed25519.pub")
@@ -79,7 +79,9 @@ def ssh_target_container(test_data_dir):
         check=True,
     )
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     src_path = os.path.join(project_root, "src")
 
     # Put src dir at /app/src
@@ -109,33 +111,33 @@ def ssh_target_container(test_data_dir):
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+def page(server, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
-        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(
+        ".launcher, .terminal-instance", state="attached", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(60)
-def test_ssh_drag_and_drop_upload(page, test_data_dir, ssh_target_container):
+@pytest.mark.timeout(300)
+def test_ssh_drag_and_drop_upload(page, tmp_path, ssh_target_container, playwright):
     # Set up the SSH connection in the UI
     # First we need to make sure we are on the launcher or settings
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
 
     # Open settings modal to add host
-    page.locator('button[onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Fill out the form

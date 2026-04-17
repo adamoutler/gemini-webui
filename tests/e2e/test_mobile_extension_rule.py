@@ -4,20 +4,20 @@ import time
 
 
 @pytest.fixture(scope="function")
-def mobile_page(server):
-    with sync_playwright() as p:
-        iphone_12 = p.devices["iPhone 12"]
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(**iphone_12)
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+def mobile_page(server, playwright):
+    p = playwright
+    iphone_12 = p.devices["iPhone 12"]
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(**iphone_12)
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(
+        ".launcher, .terminal-instance", state="attached", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
 def get_terminal_text(page):
@@ -27,7 +27,7 @@ def get_terminal_text(page):
 
 
 @pytest.mark.timeout(60)
-def test_mobile_extension_rule_parser(mobile_page):
+def test_mobile_extension_rule_parser(mobile_page, playwright):
     mobile_page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
     mobile_page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
     btns = mobile_page.locator('.tab-instance.active button:has-text("Start New")')

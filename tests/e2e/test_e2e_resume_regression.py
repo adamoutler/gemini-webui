@@ -8,7 +8,14 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def custom_server(test_data_dir):
+def custom_server(tmp_path, playwright):
+    persisted_file = tmp_path / "persisted_sessions.json"
+    if persisted_file.exists():
+        try:
+            persisted_file.unlink()
+        except OSError:
+            pass
+
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
@@ -17,7 +24,7 @@ def custom_server(test_data_dir):
     port = str(random.randint(10000, 20000))
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
-    env["DATA_DIR"] = str(test_data_dir)
+    env["DATA_DIR"] = str(tmp_path)
     env["FLASK_USE_RELOADER"] = "false"
     env["GEMWEBUI_HARNESS"] = "1"
     env["FLASK_DEBUG"] = "false"
@@ -38,8 +45,8 @@ def custom_server(test_data_dir):
             [python_bin, "-m", "src.app"],
             env=env,
             cwd=str(
-                test_data_dir
-            ),  # run in test_data_dir so gemini_mock_state.json is written there
+                tmp_path
+            ),  # run in tmp_path so gemini_mock_state.json is written there
             preexec_fn=os.setsid,
         )
         import requests
@@ -79,220 +86,218 @@ def custom_server(test_data_dir):
 
 
 @pytest.mark.timeout(60)
-def test_new_session_no_resume(custom_server, test_data_dir):
+def test_new_session_no_resume(custom_server, tmp_path, playwright):
     """
     Test that a 'Start New' connection executes without the -r flag.
     We verify this by pre-creating the mock state file. If -r is NOT passed,
     the mock script clears the state file. If -r IS passed (regression), it keeps it.
     """
-    state_file = test_data_dir / "gemini_mock_state.json"
+    state_file = tmp_path / "gemini_mock_state.json"
     with open(state_file, "w") as f:
         json.dump({"TEST_VALUE": "REGRESSION_FAIL"}, f)
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        page.set_default_timeout(60000)
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.set_default_timeout(60000)
 
-        page.goto(custom_server.url)
-        expect(page.get_by_text("Select a Connection").first).to_be_visible(
-            timeout=15000
-        )
+    page.goto(custom_server.url)
+    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
 
-        # Click "Start New"
-        page.locator('.tab-instance.active button:has-text("Start New")').first.click()
+    # Click "Start New"
+    page.locator('.tab-instance.active button:has-text("Start New")').first.click()
 
-        # Wait for terminal to load
-        expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
+    # Wait for terminal to load
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
 
-        # Focus terminal and type
-        page.locator(".tab-instance.active .xterm").first.click()
-        page.keyboard.type("What is the TEST_VALUE\r")
+    # Focus terminal and type
+    page.locator(".tab-instance.active .xterm").first.click()
+    page.keyboard.type("What is the TEST_VALUE\r")
 
-        # Check output
-        def check_text(page):
-            return page.evaluate("""() => {
-                if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return '';
-                const tab = tabs.find(t => t.id === activeTabId);
-                if (!tab || !tab.term) return '';
-                let text = '';
-                for (let i = 0; i < tab.term.buffer.active.length; i++) {
-                    text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
-                    text += '\\n';
-                }
-                return text;
-            }""")
+    # Check output
+    def check_text(page):
+        return page.evaluate("""() => {
+            if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return '';
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (!tab || !tab.term) return '';
+            let text = '';
+            for (let i = 0; i < tab.term.buffer.active.length; i++) {
+                text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
+                text += '\\n';
+            }
+            return text;
+        }""")
 
-        term_text = ""
-        for _ in range(10):
-            term_text = check_text(page)
-            if (
-                "I don't know the TEST_VALUE" in term_text
-                or "The TEST_VALUE is REGRESSION_FAIL" in term_text
-            ):
-                break
-            time.sleep(0.5)
-
-        assert (
+    term_text = ""
+    for _ in range(10):
+        term_text = check_text(page)
+        if (
             "I don't know the TEST_VALUE" in term_text
-        ), "Start New incorrectly used -r, causing it to load previous state"
-        assert "The TEST_VALUE is REGRESSION_FAIL" not in term_text
+            or "The TEST_VALUE is REGRESSION_FAIL" in term_text
+        ):
+            break
+        time.sleep(0.5)
 
-        context.close()
-        browser.close()
+    assert (
+        "I don't know the TEST_VALUE" in term_text
+    ), "Start New incorrectly used -r, causing it to load previous state"
+    assert "The TEST_VALUE is REGRESSION_FAIL" not in term_text
+
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(60)
-def test_auto_resume_after_server_restart(custom_server, test_data_dir):
+def test_auto_resume_after_server_restart(custom_server, tmp_path, playwright):
     """
     Test that after a server restart, the UI automatically reconnects and resumes the session using -r.
     """
-    state_file = test_data_dir / "gemini_mock_state.json"
+    state_file = tmp_path / "gemini_mock_state.json"
     if os.path.exists(state_file):
         os.remove(state_file)
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        page.set_default_timeout(60000)
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.set_default_timeout(60000)
 
-        page.goto(custom_server.url)
-        expect(page.get_by_text("Select a Connection").first).to_be_visible(
-            timeout=15000
-        )
+    page.goto(custom_server.url)
+    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
 
-        # 1. Start New Session
-        page.locator('.tab-instance.active button:has-text("Start New")').first.click()
-        expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
+    # 1. Start New Session
+    page.locator('.tab-instance.active button:has-text("Start New")').first.click()
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
 
-        # 2. Set state
-        page.locator(".tab-instance.active .xterm").first.click()
-        page.keyboard.type("Remember this TEST_VALUE: AUTO_RESUME_SUCCESS\r")
+    # 2. Set state
+    page.locator(".tab-instance.active .xterm").first.click()
+    page.keyboard.type("Remember this TEST_VALUE: AUTO_RESUME_SUCCESS\r")
 
-        def check_text(page):
-            return page.evaluate("""() => {
-                if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return '';
-                const tab = tabs.find(t => t.id === activeTabId);
-                if (!tab || !tab.term) return '';
-                let text = '';
-                for (let i = 0; i < tab.term.buffer.active.length; i++) {
-                    text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
-                    text += '\\n';
-                }
-                return text;
-            }""")
+    def check_text(page):
+        return page.evaluate("""() => {
+            if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return '';
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (!tab || !tab.term) return '';
+            let text = '';
+            for (let i = 0; i < tab.term.buffer.active.length; i++) {
+                text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
+                text += '\\n';
+            }
+            return text;
+        }""")
 
-        for _ in range(10):
-            term_text = check_text(page)
-            if "I will remember TEST_VALUE: AUTO_RESUME_SUCCESS" in term_text:
-                break
-            time.sleep(0.5)
+    for _ in range(10):
+        term_text = check_text(page)
+        if "I will remember TEST_VALUE: AUTO_RESUME_SUCCESS" in term_text:
+            break
+        time.sleep(0.5)
 
-        assert "I will remember TEST_VALUE: AUTO_RESUME_SUCCESS" in term_text
+    assert "I will remember TEST_VALUE: AUTO_RESUME_SUCCESS" in term_text
 
-        # Wait for localStorage to be populated with geminiResume
-        for _ in range(10):
-            val = page.evaluate("localStorage.getItem('geminiResume')")
-            if val is not None and int(val) > 0:
-                break
-            time.sleep(0.5)
+    # Wait for localStorage to be populated with geminiResume
+    for _ in range(10):
+        val = page.evaluate("localStorage.getItem('geminiResume')")
+        if val is not None and int(val) > 0:
+            break
+        time.sleep(0.5)
 
-        # 3. Stop server for 10 seconds
-        custom_server.stop()
-        time.sleep(
-            10
-        )  # Requirement: verify if server is stopped for 10 seconds and restarted
+    # 3. Stop server for 10 seconds
+    custom_server.stop()
+    time.sleep(
+        10
+    )  # Requirement: verify if server is stopped for 10 seconds and restarted
 
-        status_el = page.locator("#connection-status")
-        expect(status_el).to_have_text("Reconnecting...", timeout=20000)
+    status_el = page.locator("#connection-status")
+    expect(status_el).to_have_text("Reconnecting...", timeout=20000)
 
-        # 4. Restart server
-        custom_server.start()
+    # 4. Restart server
+    custom_server.start()
 
-        # 5. Verify UI auto-reconnects
-        expect(status_el).to_have_text("local", timeout=30000)
+    # 5. Verify UI auto-reconnects
+    expect(status_el).to_have_text("local", timeout=30000)
 
-        # 6. Verify it resumed using -r by asking for the value
-        # Wait a moment for terminal to settle after reconnect
-        time.sleep(2)
-        page.locator(".tab-instance.active .xterm").first.click()
-        page.keyboard.type("What is the TEST_VALUE\r")
+    # 6. Verify it resumed using -r by asking for the value
+    # Wait a moment for terminal to settle after reconnect
+    time.sleep(2)
+    page.locator(".tab-instance.active .xterm").first.click()
+    page.keyboard.type("What is the TEST_VALUE\r")
 
-        for _ in range(10):
-            term_text = check_text(page)
-            if "The TEST_VALUE is AUTO_RESUME_SUCCESS" in term_text:
-                break
-            time.sleep(0.5)
+    for _ in range(10):
+        term_text = check_text(page)
+        if "The TEST_VALUE is AUTO_RESUME_SUCCESS" in term_text:
+            break
+        time.sleep(0.5)
 
-        assert (
-            "The TEST_VALUE is AUTO_RESUME_SUCCESS" in term_text
-        ), "Failed to auto-resume with -r after server restart"
+    assert (
+        "The TEST_VALUE is AUTO_RESUME_SUCCESS" in term_text
+    ), "Failed to auto-resume with -r after server restart"
 
-        context.close()
-        browser.close()
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(60)
-def test_no_terminal_clear_on_stolen_session(custom_server, test_data_dir):
+def test_no_terminal_clear_on_stolen_session(custom_server, tmp_path, playwright):
     """
     Test that session-stolen event does not clear the terminal buffer or loop.
     """
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        # Browser 1
-        context1 = browser.new_context()
-        page1 = context1.new_page()
-        page1.set_default_timeout(60000)
-        page1.goto(custom_server.url)
-        expect(page1.get_by_text("Select a Connection").first).to_be_visible(
-            timeout=15000
-        )
-        page1.locator('.tab-instance.active button:has-text("Start New")').first.click()
-        expect(page1.locator("#active-connection-info")).to_be_visible(timeout=15000)
-        page1.locator(".xterm").first.click()
-        page1.keyboard.type("Initial buffer state check\r")
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    # Browser 1
+    context1 = browser.new_context()
+    page1 = context1.new_page()
+    page1.set_default_timeout(60000)
+    page1.goto(custom_server.url)
+    expect(page1.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
+    page1.locator('.tab-instance.active button:has-text("Start New")').first.click()
+    expect(page1.locator("#active-connection-info")).to_be_visible(timeout=15000)
+    page1.locator(".xterm").first.click()
+    page1.keyboard.type("Initial buffer state check\r")
 
-        def check_text(page):
-            return page.evaluate("""() => {
-                if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return '';
-                const tab = tabs.find(t => t.id === activeTabId);
-                if (!tab || !tab.term) return '';
-                let text = '';
-                for (let i = 0; i < tab.term.buffer.active.length; i++) {
-                    text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
-                    text += '\\n';
-                }
-                return text;
-            }""")
-
-        # Wait for input to be processed
-        for _ in range(10):
-            term_text1 = check_text(page1)
-            if "Initial buffer state check" in term_text1:
-                break
-            time.sleep(0.5)
-
-        assert "Initial buffer state check" in term_text1
-
-        # Simulate session-stolen by dispatching it
-        page1.evaluate("""() => {
+    def check_text(page):
+        return page.evaluate("""() => {
+            if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return '';
             const tab = tabs.find(t => t.id === activeTabId);
-            tab.socket._callbacks['$session-stolen'][0]({});
+            if (!tab || !tab.term) return '';
+            let text = '';
+            for (let i = 0; i < tab.term.buffer.active.length; i++) {
+                text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
+                text += '\\n';
+            }
+            return text;
         }""")
 
-        # Check that 'Reclaim' button appeared
-        expect(page1.locator("#reclaim-btn")).to_be_visible(timeout=15000)
+    # Wait for input to be processed
+    for _ in range(10):
+        term_text1 = check_text(page1)
+        if "Initial buffer state check" in term_text1:
+            break
+        time.sleep(0.5)
 
-        # Check that connection status says Stolen
-        status_el = page1.locator("#connection-status")
-        expect(status_el).to_have_text("Stolen", timeout=15000)
+    assert "Initial buffer state check" in term_text1
 
-        # Buffer should still have initial text
-        term_text1_after = check_text(page1)
-        assert "Initial buffer state check" in term_text1_after
-        assert "Session stolen" in term_text1_after
+    # Simulate session-stolen by dispatching it
+    page1.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        tab.socket._callbacks['$session-stolen'][0]({});
+    }""")
 
-        context1.close()
-        browser.close()
+    # Check that 'Reclaim' button appeared
+    expect(page1.locator("#reclaim-btn")).to_be_visible(timeout=15000)
+
+    # Check that connection status says Stolen
+    status_el = page1.locator("#connection-status")
+    expect(status_el).to_have_text("Stolen", timeout=15000)
+
+    # Buffer should still have initial text
+    term_text1_after = check_text(page1)
+    assert "Initial buffer state check" in term_text1_after
+    assert "Session stolen" in term_text1_after
+
+    context1.close()
+    browser.close()

@@ -4,21 +4,21 @@ from playwright.sync_api import sync_playwright
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+def page(server, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
 
-        page = context.new_page()
-        page.set_default_timeout(5000)
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
-        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        yield page, server, context
-        context.close()
-        browser.close()
+    page = context.new_page()
+    page.set_default_timeout(5000)
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    yield page, server, context
+    context.close()
+    browser.close()
 
 
-def test_flash_strictly_on_timestamp_update(page):
+def test_flash_strictly_on_timestamp_update(page, playwright):
     playwright_page, server_url, context = page
 
     # intercept the sessions API to provide predictable last_active timestamps

@@ -4,20 +4,20 @@ import time
 
 
 @pytest.fixture(scope="function")
-def android_page(server):
-    with sync_playwright() as p:
-        pixel = p.devices["Pixel 5"]
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(**pixel)
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+def android_page(server, playwright):
+    p = playwright
+    pixel = p.devices["Pixel 5"]
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(**pixel)
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(
+        ".launcher, .terminal-instance", state="attached", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
 def get_terminal_text(page):
@@ -27,7 +27,7 @@ def get_terminal_text(page):
 
 
 @pytest.mark.timeout(60)
-def test_mobile_double_space(android_page):
+def test_mobile_double_space(android_page, playwright):
     btns = android_page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()

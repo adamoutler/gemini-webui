@@ -4,21 +4,21 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+def page(server, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(".launcher", state="attached", timeout=15000)
-        yield page
-        context.close()
-        browser.close()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(".launcher", state="attached", timeout=15000)
+    yield page
+    context.close()
+    browser.close()
 
 
-def test_pulse(page):
+def test_pulse(page, playwright):
     # Click "Start New" on local to start a backend session
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)

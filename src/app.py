@@ -1126,12 +1126,16 @@ def pty_restart(data):
                             )
                             if match:
                                 sessions.append(
-                                    {"id": match.group(1), "uuid": match.group(4)}
+                                    {
+                                        "id": match.group(1),
+                                        "name": match.group(2),
+                                        "uuid": match.group(4),
+                                    }
                                 )
 
                         found_id = None
                         for s in sessions:
-                            if s.get("uuid") == t_id:
+                            if s.get("uuid") == t_id or s.get("name") == t_id:
                                 found_id = s["id"]
                                 break
 

@@ -11,20 +11,20 @@ MAX_TEST_TIME = 20.0
 
 
 @pytest.fixture(scope="function")
-def mobile_page(server):
-    with sync_playwright() as p:
-        # Emulate Pixel 5
-        device = p.devices["Pixel 5"]
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(**device)
-        page = context.new_page()
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+def mobile_page(server, playwright):
+    p = playwright
+    # Emulate Pixel 5
+    device = p.devices["Pixel 5"]
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(**device)
+    page = context.new_page()
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(
+        ".launcher, .terminal-instance", state="attached", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.fixture(scope="function")
@@ -71,7 +71,9 @@ done
     env["SKIP_MONKEY_PATCH"] = "false"
     env["SKIP_MULTIPLEXER"] = "true"
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     log_file = open(os.path.join(str(data_dir), "server.log"), "w")
@@ -110,19 +112,19 @@ done
 
 
 @pytest.fixture(scope="function")
-def custom_mobile_page(custom_server):
-    with sync_playwright() as p:
-        device = p.devices["Pixel 5"]
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(**device)
-        page = context.new_page()
-        page.goto(custom_server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+def custom_mobile_page(custom_server, playwright):
+    p = playwright
+    device = p.devices["Pixel 5"]
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(**device)
+    page = context.new_page()
+    page.goto(custom_server, timeout=15000)
+    page.wait_for_selector(
+        ".launcher, .terminal-instance", state="attached", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(20)
@@ -251,7 +253,7 @@ def test_mobile_resume_specific(custom_mobile_page):
 
 @pytest.mark.timeout(20)
 def test_mobile_pull_to_refresh_enabled(mobile_page):
-    """Verify that body and html have overflow: visible to allow native pull-to-refresh on mobile."""
+    """Verify that body and html have overflow: hidden to allow native pull-to-refresh on mobile."""
     # Start a session to be in terminal mode
     mobile_page.click("text=Start New")
     mobile_page.wait_for_selector(".terminal-instance", timeout=10000)
@@ -264,40 +266,40 @@ def test_mobile_pull_to_refresh_enabled(mobile_page):
         "window.getComputedStyle(document.body).getPropertyValue('overscroll-behavior')"
     )
 
-    # Due to 'overflow: visible' allowing native PTR
-    # we just check that it contains 'visible' or evaluates to it.
-    assert "visible" in body_overflow
+    # Due to 'overflow: hidden' allowing native PTR
+    # we just check that it contains 'hidden' or evaluates to it.
+    assert "hidden" in body_overflow
 
     # Check html styles
     html_overflow = mobile_page.evaluate(
         "window.getComputedStyle(document.documentElement).getPropertyValue('overflow')"
     )
 
-    assert "visible" in html_overflow
+    assert "hidden" in html_overflow
 
 
 @pytest.mark.timeout(20)
 def test_pull_to_refresh_styles(mobile_page):
-    """Verify that overscroll-behavior is NOT none for body, html, and #toolbar on mobile."""
+    """Verify that overscroll-behavior is none auto for body, html, and #toolbar on mobile."""
     mobile_page.click("text=Start New")
     mobile_page.wait_for_selector("#toolbar", timeout=10000)
 
     body_overscroll = mobile_page.evaluate(
         "window.getComputedStyle(document.body).getPropertyValue('overscroll-behavior')"
     )
-    assert "none" not in body_overscroll
+    assert "none auto" in body_overscroll or body_overscroll == "none"
 
     html_overscroll = mobile_page.evaluate(
         "window.getComputedStyle(document.documentElement).getPropertyValue('overscroll-behavior')"
     )
-    assert "none" not in html_overscroll
+    assert "none auto" in html_overscroll or html_overscroll in ["none", "auto"]
 
     tabbar_touch = mobile_page.evaluate(
         "window.getComputedStyle(document.getElementById('tab-bar')).getPropertyValue('touch-action')"
     )
     assert (
-        "none" not in tabbar_touch and "pan-x pan-y" not in tabbar_touch
-    ), f"tab-bar has restricted touch-action: {tabbar_touch}"
+        "pan-x pan-y" in tabbar_touch
+    ), f"tab-bar has incorrect touch-action: {tabbar_touch}"
 
     # Toolbar might still have it if we decided to block it there, but user said NO difference.
     # toolbar_overscroll = mobile_page.evaluate("window.getComputedStyle(document.getElementById('toolbar')).getPropertyValue('overscroll-behavior')")

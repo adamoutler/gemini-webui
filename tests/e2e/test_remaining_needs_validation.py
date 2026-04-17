@@ -6,21 +6,21 @@ from playwright.sync_api import Page, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
+def page(server, playwright):
     from playwright.sync_api import sync_playwright
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.goto(server)
-        yield page
-        context.close()
-        browser.close()
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server)
+    yield page
+    context.close()
+    browser.close()
 
 
-def test_app_install_indicator_visibility(page, server):
+def test_app_install_indicator_visibility(page, server, playwright):
     # Load page in standard browser mode (not standalone)
     page.goto(f"{server}/")
 
@@ -40,7 +40,7 @@ def test_app_install_indicator_visibility(page, server):
     expect(page.locator("#install-banner")).not_to_be_visible()
 
 
-def test_ssh_socket_hardening():
+def test_ssh_socket_hardening(playwright):
     # This check runs on the host
     # We need to trigger an SSH connection first to ensure the directory exists
     # But we can also just check the process_manager logic via a unit test if needed.

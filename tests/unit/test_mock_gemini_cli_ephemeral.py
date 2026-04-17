@@ -4,29 +4,27 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
-        # Connect to host-based Chromium via CDP
-        try:
-            browser = p.chromium.connect_over_cdp(
-                "http://172.20.0.1:9223", timeout=2000
-            )
-        except Exception as e:
-            print(f"Failed to connect to CDP: {e}. Falling back to local launch.")
-            browser = p.chromium.launch(headless=True)
+def page(server, playwright):
+    p = playwright
+    # Connect to host-based Chromium via CDP
+    try:
+        browser = p.chromium.connect_over_cdp("http://172.20.0.1:9223", timeout=2000)
+    except Exception as e:
+        print(f"Failed to connect to CDP: {e}. Falling back to local launch.")
+        browser = p.chromium.launch(headless=True)
 
-        context = browser.new_context(viewport={"width": 1280, "height": 800})
+    context = browser.new_context(viewport={"width": 1280, "height": 800})
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
-        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        yield page
-        context.close()
-        browser.close()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    yield page
+    context.close()
+    browser.close()
 
 
-def test_mock_gemini_cli_ephemeral(page, server):
+def test_mock_gemini_cli_ephemeral(page, server, playwright):
     # 1. Navigate to /test-launcher
     page.goto(f"{server}/test-launcher", timeout=15000)
     expect(page.locator("h1:has-text('TEST LAUNCHER')")).to_be_visible()

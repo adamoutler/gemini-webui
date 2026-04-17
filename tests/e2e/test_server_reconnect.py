@@ -7,7 +7,14 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def custom_server(test_data_dir):
+def custom_server(tmp_path, playwright):
+    persisted_file = tmp_path / "persisted_sessions.json"
+    if persisted_file.exists():
+        try:
+            persisted_file.unlink()
+        except OSError:
+            pass
+
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
@@ -16,12 +23,14 @@ def custom_server(test_data_dir):
     port = str(random.randint(10000, 20000))
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
-    env["DATA_DIR"] = str(test_data_dir)
+    env["DATA_DIR"] = str(tmp_path)
     env["FLASK_USE_RELOADER"] = "false"
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
 
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    project_root = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     def start_server():
@@ -68,39 +77,37 @@ def custom_server(test_data_dir):
 
 
 @pytest.mark.timeout(40)
-def test_auto_reconnect_after_server_restart(custom_server):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
+def test_auto_reconnect_after_server_restart(custom_server, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
 
-        # 1. Load page and connect
-        page.goto(custom_server.url)
-        expect(page.get_by_text("Select a Connection").first).to_be_visible(
-            timeout=5000
-        )
+    # 1. Load page and connect
+    page.goto(custom_server.url)
+    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=5000)
 
-        btns = page.locator('.tab-instance.active button:has-text("Start New")')
-        expect(btns.first).to_be_visible(timeout=5000)
-        btns.first.click()
+    btns = page.locator('.tab-instance.active button:has-text("Start New")')
+    expect(btns.first).to_be_visible(timeout=5000)
+    btns.first.click()
 
-        # Wait for terminal to load and status to be connected
-        expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
-        status_el = page.locator("#connection-status")
-        expect(status_el).to_have_text("local")
+    # Wait for terminal to load and status to be connected
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
+    status_el = page.locator("#connection-status")
+    expect(status_el).to_have_text("local")
 
-        # 2. Stop server
-        custom_server.stop()
+    # 2. Stop server
+    custom_server.stop()
 
-        # 3. Verify UI shows "Reconnecting..."
-        expect(status_el).to_have_text("Reconnecting...", timeout=10000)
+    # 3. Verify UI shows "Reconnecting..."
+    expect(status_el).to_have_text("Reconnecting...", timeout=10000)
 
-        # 4. Wait a bit then restart server
-        time.sleep(2)
-        custom_server.start()
+    # 4. Wait a bit then restart server
+    time.sleep(2)
+    custom_server.start()
 
-        # 5. Verify UI auto-reconnects and shows "local" again (without manual refresh)
-        expect(status_el).to_have_text("local", timeout=20000)
+    # 5. Verify UI auto-reconnects and shows "local" again (without manual refresh)
+    expect(status_el).to_have_text("local", timeout=20000)
 
-        context.close()
-        browser.close()
+    context.close()
+    browser.close()

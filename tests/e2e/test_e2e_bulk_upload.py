@@ -7,29 +7,29 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+def page(server, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.goto(server)
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server)
 
-        # Log in if needed
-        if page.locator("text=Login").is_visible():
-            page.fill('input[name="username"]', "admin")
-            page.fill('input[name="password"]', "admin")
-            page.click('button[type="submit"]')
-            page.wait_for_selector(".launcher", state="attached", timeout=15000)
-        yield page
-        context.close()
-        browser.close()
+    # Log in if needed
+    if page.locator("text=Login").is_visible():
+        page.fill('input[name="username"]', "admin")
+        page.fill('input[name="password"]', "admin")
+        page.click('button[type="submit"]')
+        page.wait_for_selector(".launcher", state="attached", timeout=15000)
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
-def test_bulk_random_upload_e2e(page, test_data_dir):
+def test_bulk_random_upload_e2e(page, test_data_dir, playwright):
     import os
     import shutil
 

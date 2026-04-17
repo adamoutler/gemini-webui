@@ -4,22 +4,22 @@ from playwright.sync_api import sync_playwright
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
-        # Emulate a mobile device
-        iphone = p.devices["iPhone 13"]
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(**iphone)
+def page(server, playwright):
+    p = playwright
+    # Emulate a mobile device
+    iphone = p.devices["iPhone 13"]
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(**iphone)
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.goto(server, timeout=15000)
-        yield page
-        context.close()
-        browser.close()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server, timeout=15000)
+    yield page
+    context.close()
+    browser.close()
 
 
-def test_input_overlay_colors(page):
+def test_input_overlay_colors(page, playwright):
     page.locator('.tab-instance.active button:has-text("Start New")').first.click()
     page.wait_for_selector(".mobile-text-area", state="attached", timeout=15000)
 

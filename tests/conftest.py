@@ -9,7 +9,7 @@ os.environ["SKIP_MONKEY_PATCH"] = "true"
 
 
 @pytest.fixture(autouse=True)
-def clear_server_sessions(request):
+def clear_server_sessions(request, test_data_dir):
     # Check for any of the common server fixtures
     server_fixtures = [
         "server",
@@ -29,6 +29,14 @@ def clear_server_sessions(request):
                 break
             except Exception:
                 pass
+
+    # Also explicitly clear persisted sessions to avoid bleed
+    persisted_file = test_data_dir / "persisted_sessions.json"
+    if persisted_file.exists():
+        try:
+            persisted_file.unlink()
+        except OSError:
+            pass
 
 
 @pytest.fixture(scope="session")

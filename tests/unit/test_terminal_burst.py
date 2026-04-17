@@ -4,18 +4,18 @@ from playwright.sync_api import sync_playwright
 
 
 @pytest.fixture(scope="function")
-def desktop_page(server):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(viewport={"width": 1280, "height": 720})
-        page = context.new_page()
-        page.goto(server, timeout=15000)
-        yield page
-        context.close()
-        browser.close()
+def desktop_page(server, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(viewport={"width": 1280, "height": 720})
+    page = context.new_page()
+    page.goto(server, timeout=15000)
+    yield page
+    context.close()
+    browser.close()
 
 
-def test_terminal_burst_scroll(desktop_page):
+def test_terminal_burst_scroll(desktop_page, playwright):
     # Wait for the UI
     desktop_page.wait_for_selector(
         ".launcher, .terminal-instance", state="attached", timeout=15000

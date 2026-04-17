@@ -6,7 +6,7 @@ import json
 from playwright.sync_api import sync_playwright
 
 
-def main():
+def main(playwright):
     os.makedirs("public/qa-screenshots", exist_ok=True)
 
     env = os.environ.copy()
@@ -24,40 +24,40 @@ def main():
     try:
         time.sleep(3)
 
-        with sync_playwright() as p:
-            browser = p.chromium.launch()
+        p = playwright
+        browser = p.chromium.launch()
 
-            # Desktop
-            page = browser.new_page(viewport={"width": 1280, "height": 720})
-            page.goto("http://127.0.0.1:5003/")
-            page.wait_for_load_state("networkidle")
-            time.sleep(1)
-            page.screenshot(
-                path="public/qa-screenshots/proof_269_desktop.png", full_page=True
-            )
-            page.close()
+        # Desktop
+        page = browser.new_page(viewport={"width": 1280, "height": 720})
+        page.goto("http://127.0.0.1:5003/")
+        page.wait_for_load_state("networkidle")
+        time.sleep(1)
+        page.screenshot(
+            path="public/qa-screenshots/proof_269_desktop.png", full_page=True
+        )
+        page.close()
 
-            # Tablet
-            page = browser.new_page(viewport={"width": 768, "height": 1024})
-            page.goto("http://127.0.0.1:5003/")
-            page.wait_for_load_state("networkidle")
-            time.sleep(1)
-            page.screenshot(
-                path="public/qa-screenshots/proof_269_tablet.png", full_page=True
-            )
-            page.close()
+        # Tablet
+        page = browser.new_page(viewport={"width": 768, "height": 1024})
+        page.goto("http://127.0.0.1:5003/")
+        page.wait_for_load_state("networkidle")
+        time.sleep(1)
+        page.screenshot(
+            path="public/qa-screenshots/proof_269_tablet.png", full_page=True
+        )
+        page.close()
 
-            # Mobile
-            page = browser.new_page(viewport={"width": 375, "height": 667})
-            page.goto("http://127.0.0.1:5003/")
-            page.wait_for_load_state("networkidle")
-            time.sleep(1)
-            page.screenshot(
-                path="public/qa-screenshots/proof_269_mobile.png", full_page=True
-            )
-            page.close()
+        # Mobile
+        page = browser.new_page(viewport={"width": 375, "height": 667})
+        page.goto("http://127.0.0.1:5003/")
+        page.wait_for_load_state("networkidle")
+        time.sleep(1)
+        page.screenshot(
+            path="public/qa-screenshots/proof_269_mobile.png", full_page=True
+        )
+        page.close()
 
-            browser.close()
+        browser.close()
 
         with open("test-results.json", "w") as f:
             json.dump(

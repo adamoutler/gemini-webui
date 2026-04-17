@@ -3,19 +3,19 @@ import pytest
 from playwright.sync_api import sync_playwright, expect
 
 
-@pytest.fixture(scope="module")
-def browser_context():
-    with sync_playwright() as playwright:
-        device = playwright.devices["Pixel 5"]
-        browser = playwright.chromium.launch(headless=True)
-        context = browser.new_context(**device)
-        yield context
-        context.close()
-        browser.close()
+@pytest.fixture(scope="function")
+def browser_context(playwright):
+    playwright = playwright
+    device = playwright.devices["Pixel 5"]
+    browser = playwright.chromium.launch(headless=True)
+    context = browser.new_context(**device)
+    yield context
+    context.close()
+    browser.close()
 
 
 @pytest.fixture(scope="function")
-def mobile_page(server, browser_context):
+def mobile_page(server, browser_context, playwright):
     page = browser_context.new_page()
     page.set_default_timeout(60000)
     page.goto(server, timeout=15000)
@@ -29,7 +29,7 @@ def mobile_page(server, browser_context):
     page.close()
 
 
-def test_ctrl_sticky(mobile_page):
+def test_ctrl_sticky(mobile_page, playwright):
     # Tap Ctrl button (not holding it)
     ctrl_btn = mobile_page.locator("#ctrl-toggle")
 

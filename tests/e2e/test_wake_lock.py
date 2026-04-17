@@ -5,23 +5,23 @@ MAX_TEST_TIME = 60.0
 
 
 @pytest.fixture(scope="function")
-def page(server):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(permissions=["notifications"])
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
-        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        page.goto(server)
-        page.wait_for_selector(".launcher, .terminal-instance", state="attached")
-        yield page
-        context.close()
-        browser.close()
+def page(server, playwright):
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(permissions=["notifications"])
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.goto(server)
+    page.wait_for_selector(".launcher, .terminal-instance", state="attached")
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(60)
-def test_wake_lock(page):
+def test_wake_lock(page, playwright):
     """Verify Wake Lock API is invoked when a tab title changes to 'Working' and released on 'Ready'."""
     # Mock the wakeLock API in the browser
     page.evaluate("""() => {
