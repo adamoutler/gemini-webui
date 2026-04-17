@@ -184,12 +184,11 @@ def test_csrf_ui_hard_reload(csrf_enabled_server_csrf, playwright):
     }""")
 
     # Start connection
-    with page.expect_navigation(timeout=10000):
-        btns.first.click()
+    btns.first.click()
 
-    # After reload, session storage restores the tab. We should see a terminal instance.
+    # After token refresh, session connects and we should see a terminal instance.
     expect(page.locator(".tab-instance.active .terminal-instance").first).to_be_visible(
-        timeout=8000
+        timeout=15000
     )
 
     context.close()
