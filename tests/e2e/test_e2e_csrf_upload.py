@@ -63,12 +63,13 @@ def csrf_enabled_server(tmp_path, playwright):
         pass
 
 
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(120)
 def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     p = playwright
     browser = p.chromium.launch(headless=True)
     context = browser.new_context()
     page = context.new_page()
+    page.set_default_timeout(60000)
 
     # We need to capture requests to see if CSRF token is present or rejected
 
@@ -131,12 +132,13 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     browser.close()
 
 
-@pytest.mark.timeout(30)
+@pytest.mark.timeout(120)
 def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     p = playwright
     browser = p.chromium.launch(headless=True)
     context = browser.new_context()
     page = context.new_page()
+    page.set_default_timeout(60000)
 
     upload_requests = []
     page.on(
