@@ -731,8 +731,6 @@ def session_output_reader(tab_id):
                     if not output:  # EOF
                         break
 
-                    print(f"DEBUG PTY READ: {output!r}")
-
                     decoded_output = decoder.decode(output)
                     if decoded_output:
                         if "\x1b[" in decoded_output and "c" in decoded_output:
