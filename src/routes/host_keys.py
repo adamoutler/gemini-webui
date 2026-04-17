@@ -183,7 +183,7 @@ def rotate_instance_key():
             return jsonify({"status": "success", "key": f.read().strip()})
     except Exception as e:
         logger.error(f"Failed to rotate SSH key: {e}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": "An internal error occurred"}), 500
 
 
 @host_key_bp.route("/api/keys/text", methods=["POST"])

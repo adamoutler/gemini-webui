@@ -101,6 +101,7 @@ class SSHConnectionManager:
             "check",
             "-o",
             f"ControlPath={socket_path}",
+            "--",
             target_str,
         ]
         try:
@@ -116,6 +117,7 @@ class SSHConnectionManager:
                 "exit",
                 "-o",
                 f"ControlPath={socket_path}",
+                "--",
                 target_str,
             ]
             try:

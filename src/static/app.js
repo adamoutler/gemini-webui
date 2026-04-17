@@ -1395,10 +1395,10 @@ async function fetchSessions(
                                   conn.type
                                 }', '${conn.target || ""}', '${
                                   conn.dir || ""
-                                }', '${s.id}', '${s.name.replace(
+                                }', '${s.id}', '${s.name.replace(/\\/g, '\\\\').replace(
                                   /'/g,
                                   "\\'",
-                                )}')">Resume</button>
+                                ).replace(/"/g, '&quot;')}')">Resume</button>
                             </div>
                         </div>`;
       });

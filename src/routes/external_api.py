@@ -103,13 +103,17 @@ class SessionCreate(MethodView):
                 cmd = [
                     "/bin/sh",
                     "-c",
-                    f"cd {shlex.quote(work_dir)} && exec {shlex.quote(GEMINI_BIN)} {shlex.quote(prompt)}",
+                    f"cd {shlex.quote(work_dir)} && exec {shlex.quote(GEMINI_BIN)} \"$1\"",
+                    "--",
+                    prompt,
                 ]
             else:
                 cmd = [
                     "/bin/sh",
                     "-c",
-                    f"exec {shlex.quote(GEMINI_BIN)} {shlex.quote(prompt)}",
+                    f"exec {shlex.quote(GEMINI_BIN)} \"$1\"",
+                    "--",
+                    prompt,
                 ]
 
         try:
@@ -141,7 +145,7 @@ class SessionCreate(MethodView):
             )
         except Exception as e:
             logger.error(f"Error creating session: {e}")
-            return jsonify({"status": "error", "message": str(e)}), 500
+            return jsonify({"status": "error", "message": "An internal error occurred"}), 500
 
 
 @external_api_bp.route("/v1/hosts/<host_id>/states")
