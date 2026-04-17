@@ -47,19 +47,38 @@ def ssh_target_container_no_gemini(test_data_dir, playwright):
         check=True,
     )
 
-    for _ in range(30):
+    ready = False
+    for _ in range(90):
         try:
             result = subprocess.run(
-                ["docker", "exec", container_name, "bash", "-c", "echo ready"],
+                [
+                    "ssh",
+                    "-i",
+                    key_path,
+                    "-o",
+                    "StrictHostKeyChecking=no",
+                    "-o",
+                    "UserKnownHostsFile=/dev/null",
+                    "-p",
+                    str(port),
+                    "testuser@127.0.0.1",
+                    "echo ready",
+                ],
                 capture_output=True,
                 text=True,
+                timeout=5,
             )
             if "ready" in result.stdout:
-                time.sleep(2)
+                ready = True
                 break
         except Exception:
             pass
         time.sleep(1)
+
+    if not ready:
+        raise Exception(
+            f"Docker container {container_name} failed to become ready in time"
+        )
 
     subprocess.run(
         ["docker", "exec", container_name, "apk", "add", "--no-cache", "bash"],

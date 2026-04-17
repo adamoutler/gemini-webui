@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright, expect
 def page(server, playwright):
     p = playwright
     browser = p.chromium.launch(headless=True)
-    context = browser.new_context()
+    context = browser.new_context(viewport={"width": 1280, "height": 800})
 
     page = context.new_page()
     page.set_default_timeout(60000)

@@ -44,8 +44,9 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     new_orphan.orphaned_at = time.time() - 10  # 10s ago
     session_manager.add_session(new_orphan)
 
-    with patch("os.killpg") as mock_kill, patch("os.waitpid") as mock_wait:
-        # Mock ORPHANED_SESSION_TTL to 60 for testing
+    with patch("os.killpg") as mock_kill, patch("os.waitpid") as mock_wait, patch(
+        "os.getpgid", side_effect=lambda x: x
+    ):  # Mock ORPHANED_SESSION_TTL to 60 for testing
         from src.app import app
 
         app.config["ORPHANED_SESSION_TTL"] = 60

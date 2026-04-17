@@ -46,14 +46,21 @@ def docker_server(tmp_path, playwright):
             check=True,
         )
 
-        for _ in range(30):
+        ready = False
+        for _ in range(90):
             try:
                 resp = requests.get(f"http://127.0.0.1:{port}/health", timeout=1)
                 if resp.status_code == 200:
+                    ready = True
                     break
             except requests.RequestException:
                 pass
             time.sleep(1)
+
+        if not ready:
+            raise Exception(
+                f"Server in container {container_name} failed to become ready in time"
+            )
 
     start_server()
     url = f"http://127.0.0.1:{port}"
