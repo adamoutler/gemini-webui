@@ -84,25 +84,27 @@ class BackspaceRule extends InputRule {
 
     if (event.type === "keydown") {
       this.lastValue = input.value;
-      if (
-        (event.key === "Backspace" || event.keyCode === 8) &&
-        input.value.length === 0
-      ) {
-        event.preventDefault();
-        context.emitToTerminal("\x7f");
-        return true;
+      if (event.key === "Backspace" || event.keyCode === 8) {
+        context.canDoubleSpacePeriod = false;
+        if (input.value.length === 0) {
+          event.preventDefault();
+          context.emitToTerminal("\x7f");
+          return true;
+        }
       }
     }
 
     if (event.type === "input") {
       if (
-        (event.inputType === "deleteContentBackward" ||
-          event.inputType === "deleteWordBackward") &&
-        this.lastValue.length === 0
+        event.inputType === "deleteContentBackward" ||
+        event.inputType === "deleteWordBackward"
       ) {
-        context.emitToTerminal("\x7f");
-        input.value = "";
-        return true;
+        context.canDoubleSpacePeriod = false;
+        if (this.lastValue.length === 0) {
+          context.emitToTerminal("\x7f");
+          input.value = "";
+          return true;
+        }
       }
       this.lastValue = input.value;
     }
@@ -184,7 +186,6 @@ class WordBoundaryRule extends InputRule {
   constructor() {
     super();
     this.boundaryRegex = /[\s.,?!;\-—，。？！；]/;
-    this.canDoubleSpacePeriod = false;
   }
   handleEvent(event, context) {
     if (event.type === "input") {
@@ -204,11 +205,11 @@ class WordBoundaryRule extends InputRule {
         }
 
         if (input.value === "  ") {
-          if (this.canDoubleSpacePeriod) {
+          if (context.canDoubleSpacePeriod) {
             // Emit period and space to replace the two spaces in the proxy buffer
             context.emitToTerminal(".\x20");
             input.value = "";
-            this.canDoubleSpacePeriod = false;
+            context.canDoubleSpacePeriod = false;
             return true;
           }
         }
@@ -234,7 +235,7 @@ class WordBoundaryRule extends InputRule {
         if (toEmit) {
           context.emitToTerminal(toEmit);
           // If the emitted text doesn't end with a boundary, a double-space can trigger a period.
-          this.canDoubleSpacePeriod = !this.boundaryRegex.test(
+          context.canDoubleSpacePeriod = !this.boundaryRegex.test(
             toEmit.slice(-1),
           );
         }
