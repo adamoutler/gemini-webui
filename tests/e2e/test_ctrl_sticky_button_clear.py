@@ -3,20 +3,19 @@ import pytest
 from playwright.sync_api import sync_playwright, expect
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def browser_context(playwright):
     playwright = playwright
-    if True:
-        device = playwright.devices["Pixel 5"]
-        browser = playwright.chromium.launch(headless=True)
-        context = browser.new_context(**device)
-        yield context
-        context.close()
-        browser.close()
+    device = playwright.devices["Pixel 5"]
+    browser = playwright.chromium.launch(headless=True)
+    context = browser.new_context(**device)
+    yield context
+    context.close()
+    browser.close()
 
 
 @pytest.fixture(scope="function")
-def mobile_page(server, browser_context):
+def mobile_page(server, browser_context, playwright):
     page = browser_context.new_page()
     page.set_default_timeout(60000)
     page.goto(server, timeout=15000)
@@ -31,7 +30,7 @@ def mobile_page(server, browser_context):
 import re
 
 
-def test_ctrl_clears_on_control_button(mobile_page):
+def test_ctrl_clears_on_control_button(mobile_page, playwright):
     # Tap the software Ctrl button
     mobile_page.locator("#ctrl-toggle").click()
 
@@ -47,7 +46,7 @@ def test_ctrl_clears_on_control_button(mobile_page):
     )
 
 
-def test_ctrl_clears_on_paste(mobile_page):
+def test_ctrl_clears_on_paste(mobile_page, playwright):
     # Tap the software Ctrl button
     mobile_page.locator("#ctrl-toggle").click()
 

@@ -7,25 +7,24 @@ from playwright.sync_api import sync_playwright, expect
 @pytest.fixture(scope="function")
 def page(server, playwright):
     p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
-        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(
+        ".launcher, .terminal-instance", state="attached", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(60)
-def test_ui_settings_shared_sessions(page, server):
+def test_ui_settings_shared_sessions(page, server, playwright):
     """Verify that a user can view and delete shared sessions from Settings."""
     # 1. Start a fresh local session
     btns = page.locator('.tab-instance.active button:has-text("Start New")')

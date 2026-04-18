@@ -46,8 +46,7 @@ def test_cleanup_orphaned_ptys(mock_socketio):
 
     with patch("os.killpg") as mock_kill, patch("os.waitpid") as mock_wait, patch(
         "os.getpgid", side_effect=lambda x: x
-    ):
-        # Mock ORPHANED_SESSION_TTL to 60 for testing
+    ):  # Mock ORPHANED_SESSION_TTL to 60 for testing
         from src.app import app
 
         app.config["ORPHANED_SESSION_TTL"] = 60
@@ -56,8 +55,8 @@ def test_cleanup_orphaned_ptys(mock_socketio):
 
         # Only old_orphan should be killed
         assert mock_kill.call_count == 1
-        # SessionManager now uses os.getpgid(pid) — mocked to return pid itself
-        mock_kill.assert_called_with(124, 9)
+        # SessionManager now uses os.getpgid(pid)
+        mock_kill.assert_called_with(os.getpgid(124), 9)
 
         # Verify it was removed from the session manager
         assert session_manager.get_session("old_orphan") is None
@@ -103,7 +102,9 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
             "os.execvp"
         ) as mock_execvp, patch("os._exit"), patch(
             "src.app.build_terminal_command", return_value=["bash"]
-        ) as mock_build_cmd, patch("src.app.set_winsize") as mock_set_winsize:
+        ) as mock_build_cmd, patch("src.app.set_winsize") as mock_set_winsize, patch(
+            "fcntl.fcntl"
+        ):
             mock_paths.return_value = ("/data", "/data/config.json", "/data/.ssh")
             mock_get_config.return_value = {
                 "HOSTS": [{"target": "test@host", "env_vars": {"MY_VAR": "123"}}]
@@ -153,7 +154,7 @@ def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
     with app.test_request_context("/"):
         with patch("os.killpg") as mock_killpg, patch(
             "os.getpgid", side_effect=lambda x: x
-        ), patch("src.app.set_winsize"):
+        ), patch("src.app.set_winsize"), patch("fcntl.fcntl"):
             # Attempt to start the 51st session
             # pty_restart now automatically joins room and reclaim if needed
             from unittest.mock import MagicMock

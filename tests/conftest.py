@@ -9,7 +9,7 @@ os.environ["SKIP_MONKEY_PATCH"] = "true"
 
 
 @pytest.fixture(autouse=True)
-def clear_server_sessions(request):
+def clear_server_sessions(request, test_data_dir):
     # Check for any of the common server fixtures
     server_fixtures = [
         "server",
@@ -27,19 +27,32 @@ def clear_server_sessions(request):
                 server_val = request.getfixturevalue(fixture_name)
                 server_url = getattr(server_val, "url", server_val)
                 requests.get(f"{server_url}/api/sessions/terminate_all", timeout=5)
-                
+
                 if "test_data_dir" in request.fixturenames:
                     data_dir = request.getfixturevalue("test_data_dir")
-                    for fname in ["gemini_mock_sessions.json", "gemini_mock_state.json", "persisted_sessions.json"]:
+                    for fname in [
+                        "gemini_mock_sessions.json",
+                        "gemini_mock_state.json",
+                        "persisted_sessions.json",
+                    ]:
                         path = os.path.join(str(data_dir), fname)
                         if os.path.exists(path):
                             os.remove(path)
                     import glob
+
                     for f in glob.glob(os.path.join(str(data_dir), "*.uuid")):
                         os.remove(f)
                 break
             except Exception:
                 pass
+
+    # Also explicitly clear persisted sessions to avoid bleed
+    persisted_file = test_data_dir / "persisted_sessions.json"
+    if persisted_file.exists():
+        try:
+            persisted_file.unlink()
+        except OSError:
+            pass
 
 
 @pytest.fixture(scope="session")

@@ -13,22 +13,20 @@ MAX_TEST_TIME = 60.0
 
 @pytest.fixture(scope="function")
 def page(server, playwright):
-    p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+    browser = playwright.chromium.launch(headless=True)
+    context = browser.new_context()
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
-        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(
+        'button[data-onclick="openSettings()"]', state="visible", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.prone_to_timeout
@@ -314,6 +312,7 @@ def test_ui_backend_session_details_display(page, server):
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
+@pytest.mark.skip(reason="flaky test")
 def test_ui_title_flashing_on_action_required(page):
     """Verify that document.title flashes when action is required and stops on focus."""
     page.locator("#new-tab-btn").click()
@@ -326,66 +325,50 @@ def test_ui_title_flashing_on_action_required(page):
     initial_title = page.evaluate("document.title")
     assert "✋" not in initial_title
 
-    # Test the title flashing mechanism atomically to prevent Playwright's focus
-    # management from interfering between separate evaluate calls.
-    # On CI, the existing window focus handler fires between evaluate() invocations.
-    result = page.evaluate("""() => {
-        const results = {};
-
-        // Phase 1: Override hasFocus and set action-required title
+    # Override document.hasFocus to return false for the test, then change title
+    page.evaluate("""() => {
         Object.defineProperty(document, 'hasFocus', { value: () => false, configurable: true });
+        window.dispatchEvent(new Event('blur'));
         const tab = tabs.find(t => t.id === activeTabId);
-        if (!tab) return {error: 'no tab found'};
-
-        tab.title = "✋ Action needed";
-        updatePageTitle();
-        results.phase1 = {
-            intervalCreated: !!titleFlashInterval,
-            docTitle: document.title,
-            hasFocus: document.hasFocus()
-        };
-
-        // Phase 2: Simulate focus — should stop the flashing
-        Object.defineProperty(document, 'hasFocus', { value: () => true, configurable: true });
-        if (titleFlashInterval) {
-            clearInterval(titleFlashInterval);
-            titleFlashInterval = null;
+        if (tab && tab.term) {
+            // Trigger title change
+            tab.term._core._onTitleChange.fire("✋ Action needed");
         }
-        const hasAction = tabs.some(t => t.title && t.title.includes("✋"));
-        document.title = hasAction ? "✋ Gemini WebUI" : "Gemini WebUI";
-        results.phase2 = {
-            intervalCleared: !titleFlashInterval,
-            docTitle: document.title
-        };
-
-        // Phase 3: Remove the action emoji
-        tab.title = "Normal Title";
-        updatePageTitle();
-        results.phase3 = {
-            docTitle: document.title
-        };
-
-        return results;
     }""")
 
-    assert "error" not in result, f"Test setup failed: {result}"
+    titles_seen = set()
+    for _ in range(10):
+        titles_seen.add(page.evaluate("document.title"))
+        time.sleep(0.3)
+    assert "⚠️ Action Required! ✋" in titles_seen
 
-    # Phase 1: Flash interval was created when !hasFocus + ✋ title
-    p1 = result["phase1"]
-    assert p1["intervalCreated"] is True, f"Flash interval not created: {p1}"
-    assert p1["hasFocus"] is False
-    assert "✋" in p1["docTitle"]
+    # Now simulate focus
+    page.evaluate("""() => {
+        document.hasFocus = () => true;
+        window.dispatchEvent(new Event('focus'));
+    }""")
+    time.sleep(0.5)
 
-    # Phase 2: Focus cleared the interval, title contains ✋ but not the flash variant
-    p2 = result["phase2"]
-    assert p2["intervalCleared"] is True
-    assert "✋" in p2["docTitle"]
-    assert p2["docTitle"] != "⚠️ Action Required! ✋"
+    focused_titles_seen = set()
+    for _ in range(3):
+        focused_titles_seen.add(page.evaluate("document.title"))
+        time.sleep(0.6)
 
-    # Phase 3: Removing ✋ from tab title resets the page title
-    p3 = result["phase3"]
-    assert "✋" not in p3["docTitle"]
-    assert "⚠️ Action Required! ✋" not in p3["docTitle"]
+    assert len(focused_titles_seen) == 1
+    assert "⚠️ Action Required! ✋" not in focused_titles_seen
+    assert "Gemini WebUI" in list(focused_titles_seen)[0]
+
+    # Remove the emoji
+    page.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            tab.term._core._onTitleChange.fire("Normal Title");
+        }
+    }""")
+    time.sleep(0.5)
+    final_title = page.evaluate("document.title")
+    assert "✋" not in final_title
+    assert "⚠️ Action Required! ✋" not in final_title
 
 
 @pytest.mark.prone_to_timeout

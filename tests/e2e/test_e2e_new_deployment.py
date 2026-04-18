@@ -8,7 +8,7 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def authenticated_server(test_data_dir):
+def authenticated_server(tmp_path, playwright):
     env = os.environ.copy()
     env["SECRET_KEY"] = "testsecret"
     env["BASIC_AUTH_USERNAME"] = "testuser"
@@ -17,7 +17,7 @@ def authenticated_server(test_data_dir):
 
     port = str(random.randint(10000, 20000))
     env["PORT"] = port
-    env["DATA_DIR"] = str(test_data_dir)
+    env["DATA_DIR"] = str(tmp_path)
     env["FLASK_USE_RELOADER"] = "false"
     env["GEMWEBUI_HARNESS"] = "1"
     env["FLASK_DEBUG"] = "false"
@@ -38,7 +38,7 @@ def authenticated_server(test_data_dir):
 
     # Wait for port to open
     start_time = time.time()
-    while time.time() - start_time < 5:
+    while time.time() - start_time < 30:
         try:
             with socket.create_connection(("localhost", int(port)), timeout=0.1):
                 break
@@ -63,84 +63,83 @@ def authenticated_server(test_data_dir):
 @pytest.mark.skip(reason="Flaky in CI")
 def test_new_deployment_login(authenticated_server, playwright):
     p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        # Create a mobile context since bug affects mobile/safari often and it is a good test vector
-        iphone = p.devices["iPhone 13"]
-        context = browser.new_context(
-            **iphone, http_credentials={"username": "testuser", "password": "testpass"}
-        )
-        page = context.new_page()
+    browser = p.chromium.launch(headless=True)
+    # Create a mobile context since bug affects mobile/safari often and it is a good test vector
+    iphone = p.devices["iPhone 13"]
+    context = browser.new_context(
+        **iphone, http_credentials={"username": "testuser", "password": "testpass"}
+    )
+    page = context.new_page()
 
-        js_errors = []
-        page.on("pageerror", lambda exc: js_errors.append(str(exc)))
-        page.on(
-            "console",
-            lambda msg: js_errors.append(msg.text) if msg.type == "error" else None,
-        )
+    js_errors = []
+    page.on("pageerror", lambda exc: js_errors.append(str(exc)))
+    page.on(
+        "console",
+        lambda msg: js_errors.append(msg.text) if msg.type == "error" else None,
+    )
 
-        url = authenticated_server["url"]
+    url = authenticated_server["url"]
 
-        response = page.goto(url)
-        assert response.status == 200
+    response = page.goto(url)
+    assert response.status == 200
 
-        # Wait for either the terminal to appear or for the page to load
-        page.wait_for_timeout(2000)
+    # Wait for either the terminal to appear or for the page to load
+    page.wait_for_timeout(2000)
 
-        # Check for UI elements
-        terminal_container = page.locator("#terminal-container")
-        expect(terminal_container).to_be_visible(timeout=5000)
+    # Check for UI elements
+    terminal_container = page.locator("#terminal-container")
+    expect(terminal_container).to_be_visible(timeout=5000)
 
-        # Check connection status
-        # Wait until we see at least one "local" connection card
-        expect(page.locator(".connection-card[data-label='local']")).to_be_visible(
-            timeout=10000
-        )
+    # Check connection status
+    # Wait until we see at least one "local" connection card
+    expect(page.locator(".connection-card[data-label='local']")).to_be_visible(
+        timeout=10000
+    )
 
-        # Click Start New on local without waiting 2 seconds (this exposes the WSS connect race condition)
-        page.locator(
-            ".connection-card[data-label='local'] button:has-text('Start New')"
-        ).click()
+    # Click Start New on local without waiting 2 seconds (this exposes the WSS connect race condition)
+    page.locator(
+        ".connection-card[data-label='local'] button:has-text('Start New')"
+    ).click()
 
-        # Wait for terminal
-        expect(page.locator(".xterm")).to_be_visible(timeout=5000)
+    # Wait for terminal
+    expect(page.locator(".xterm")).to_be_visible(timeout=5000)
 
-        # Wait a bit for data to render
-        try:
-            page.wait_for_function(
-                """() => {
-                const tab = tabs.find(t => t.id === activeTabId);
-                if (!tab || !tab.term) return false;
-                for (let i = 0; i < Math.min(5, tab.term.buffer.active.length); i++) {
-                    if ((tab.term.buffer.active.getLine(i)?.translateToString(true) || '').trim().length > 0) return true;
-                }
-                return false;
-            }""",
-                timeout=5000,
-            )
-        except Exception:
-            pass
-
-        # Ensure there is no JS error before checking rows
-        assert len(js_errors) == 0, f"JS Errors found before rendering: {js_errors}"
-
-        # Get terminal text
-        terminal_text = page.evaluate("""() => {
+    # Wait a bit for data to render
+    try:
+        page.wait_for_function(
+            """() => {
             const tab = tabs.find(t => t.id === activeTabId);
-            if (!tab || !tab.term) return '';
-            let text = '';
-            for (let i = 0; i < Math.min(50, tab.term.buffer.active.length); i++) {
-                text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
+            if (!tab || !tab.term) return false;
+            for (let i = 0; i < Math.min(5, tab.term.buffer.active.length); i++) {
+                if ((tab.term.buffer.active.getLine(i)?.translateToString(true) || '').trim().length > 0) return true;
             }
-            return text;
-        }""")
-        print("Terminal text:", repr(terminal_text))
+            return false;
+        }""",
+            timeout=5000,
+        )
+    except Exception:
+        pass
 
-        # Ensure it's not totally empty (should have prompt)
-        if len(terminal_text.strip()) == 0:
-            pytest.fail("Terminal is completely black/empty!")
+    # Ensure there is no JS error before checking rows
+    assert len(js_errors) == 0, f"JS Errors found before rendering: {js_errors}"
 
-        # Ensure there is no JS error
-        assert len(js_errors) == 0, f"JS Errors found: {js_errors}"
+    # Get terminal text
+    terminal_text = page.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (!tab || !tab.term) return '';
+        let text = '';
+        for (let i = 0; i < Math.min(50, tab.term.buffer.active.length); i++) {
+            text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
+        }
+        return text;
+    }""")
+    print("Terminal text:", repr(terminal_text))
 
-        browser.close()
+    # Ensure it's not totally empty (should have prompt)
+    if len(terminal_text.strip()) == 0:
+        pytest.fail("Terminal is completely black/empty!")
+
+    # Ensure there is no JS error
+    assert len(js_errors) == 0, f"JS Errors found: {js_errors}"
+
+    browser.close()

@@ -7,7 +7,14 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def custom_server(test_data_dir):
+def custom_server(tmp_path, playwright):
+    persisted_file = tmp_path / "persisted_sessions.json"
+    if persisted_file.exists():
+        try:
+            persisted_file.unlink()
+        except OSError:
+            pass
+
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
@@ -16,7 +23,7 @@ def custom_server(test_data_dir):
     port = str(random.randint(10000, 20000))
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
-    env["DATA_DIR"] = str(test_data_dir)
+    env["DATA_DIR"] = str(tmp_path)
     env["FLASK_USE_RELOADER"] = "false"
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
@@ -34,7 +41,7 @@ def custom_server(test_data_dir):
         proc = subprocess.Popen(
             [python_bin, "-m", "src.app"],
             env=env,
-            cwd=str(test_data_dir),
+            cwd=str(tmp_path),
             preexec_fn=os.setsid,
         )
         import requests
@@ -74,100 +81,97 @@ def custom_server(test_data_dir):
 
 
 @pytest.mark.timeout(60)
-def test_csrf_fail_deadly_reload(custom_server, test_data_dir, playwright):
+def test_csrf_fail_deadly_reload(custom_server, tmp_path, playwright):
     """
     Test that a CSRF expiration triggers a hard reload.
     Asserts Page Refresh Resilience, Visual Reload Assertion, and Reclaim logic.
     """
     p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
 
-        page.goto(custom_server.url)
-        expect(page.get_by_text("Select a Connection").first).to_be_visible(
-            timeout=5000
-        )
+    page.goto(custom_server.url)
+    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=5000)
 
-        page.locator('.tab-instance.active button:has-text("Start New")').first.click()
-        expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
+    page.locator('.tab-instance.active button:has-text("Start New")').first.click()
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=5000)
 
-        page.locator(".xterm").first.click()
-        page.keyboard.type("echo 'BEFORE_RELOAD_STATE'\r")
+    page.locator(".tab-instance.active .xterm").first.click()
+    page.keyboard.type("echo 'BEFORE_RELOAD_STATE'\r")
 
-        def check_text(page):
-            return page.evaluate("""() => {
-                if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return '';
-                const tab = tabs.find(t => t.id === activeTabId);
-                if (!tab || !tab.term) return '';
-                let text = '';
-                for (let i = 0; i < tab.term.buffer.active.length; i++) {
-                    text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
-                    text += '\\n';
-                }
-                return text;
-            }""")
-
-        for _ in range(10):
-            term_text = check_text(page)
-            if "BEFORE_RELOAD_STATE" in term_text:
-                break
-            time.sleep(0.5)
-
-        assert "BEFORE_RELOAD_STATE" in term_text
-
-        # Simulate CSRF failure by monkeypatching the next fetch to return 403 with csrf_expired
-        page.evaluate("""() => {
-            const oldFetch = window.fetch;
-            window.fetch = async function(res, cfg) {
-                if (typeof res === 'string' && res.includes('/api/upload')) {
-                    return new Response(JSON.stringify({csrf_expired: true}), {
-                        status: 403,
-                        headers: { 'Content-Type': 'application/json' }
-                    });
-                }
-                return oldFetch.apply(this, arguments);
-            };
+    def check_text(page):
+        return page.evaluate("""() => {
+            if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return '';
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (!tab || !tab.term) return '';
+            let text = '';
+            for (let i = 0; i < tab.term.buffer.active.length; i++) {
+                text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
+                text += '\\n';
+            }
+            return text;
         }""")
 
-        # Trigger the fetch that will fail
-        page.evaluate("fetch('/api/upload', {method: 'POST'})")
+    for _ in range(10):
+        term_text = check_text(page)
+        if "BEFORE_RELOAD_STATE" in term_text:
+            break
+        time.sleep(0.5)
 
-        # Wait for the page to reload
-        page.wait_for_load_state("networkidle")
+    assert "BEFORE_RELOAD_STATE" in term_text
 
-        # Visual reload assertion: UI rehydrates terminal
-        expect(page.locator("#active-connection-info")).to_be_visible(timeout=10000)
+    # Simulate CSRF failure by monkeypatching the next fetch to return 403 with csrf_expired
+    page.evaluate("""() => {
+        const oldFetch = window.fetch;
+        window.fetch = async function(res, cfg) {
+            if (typeof res === 'string' && res.includes('/api/upload')) {
+                return new Response(JSON.stringify({csrf_expired: true}), {
+                    status: 403,
+                    headers: { 'Content-Type': 'application/json' }
+                });
+            }
+            return oldFetch.apply(this, arguments);
+        };
+    }""")
 
-        # Check that the buffer is rehydrated via WebSocket reclaim (not start new)
-        for _ in range(20):
-            term_text = check_text(page)
-            if "BEFORE_RELOAD_STATE" in term_text:
-                break
-            time.sleep(0.5)
+    # Trigger the fetch that will fail
+    page.evaluate("fetch('/api/upload', {method: 'POST'})")
 
-        assert (
-            "BEFORE_RELOAD_STATE" in term_text
-        ), "Failed to reclaim PTY buffer after CSRF reload"
+    # Wait for the page to reload
+    page.wait_for_load_state("networkidle")
 
-        # Verify App Background/Resume Resilience (network drop reclaim)
-        page.evaluate("tabs.find(t => t.id === activeTabId).socket.io.engine.close()")
+    # Visual reload assertion: UI rehydrates terminal
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=10000)
 
-        status_el = page.locator("#connection-status")
-        expect(status_el).to_have_text("Reconnecting...", timeout=10000)
+    # Check that the buffer is rehydrated via WebSocket reclaim (not start new)
+    for _ in range(20):
+        term_text = check_text(page)
+        if "BEFORE_RELOAD_STATE" in term_text:
+            break
+        time.sleep(0.5)
 
-        expect(status_el).to_have_text("local", timeout=10000)
+    assert (
+        "BEFORE_RELOAD_STATE" in term_text
+    ), "Failed to reclaim PTY buffer after CSRF reload"
 
-        page.locator(".xterm").first.click()
-        page.keyboard.type("echo 'AFTER_RECONNECT_STATE'\r")
-        for _ in range(10):
-            term_text = check_text(page)
-            if "AFTER_RECONNECT_STATE" in term_text:
-                break
-            time.sleep(0.5)
+    # Verify App Background/Resume Resilience (network drop reclaim)
+    page.evaluate("tabs.find(t => t.id === activeTabId).socket.io.engine.close()")
 
-        assert "AFTER_RECONNECT_STATE" in term_text
+    status_el = page.locator("#connection-status")
+    expect(status_el).to_have_text("Reconnecting...", timeout=10000)
 
-        context.close()
-        browser.close()
+    expect(status_el).to_have_text("local", timeout=10000)
+
+    page.locator(".tab-instance.active .xterm").first.click()
+    page.keyboard.type("echo 'AFTER_RECONNECT_STATE'\r")
+    for _ in range(10):
+        term_text = check_text(page)
+        if "AFTER_RECONNECT_STATE" in term_text:
+            break
+        time.sleep(0.5)
+
+    assert "AFTER_RECONNECT_STATE" in term_text
+
+    context.close()
+    browser.close()

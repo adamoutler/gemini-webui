@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def custom_server(test_data_dir):
+def custom_server(tmp_path, playwright):
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
@@ -16,22 +16,15 @@ def custom_server(test_data_dir):
     port = str(random.randint(10000, 20000))
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
-    env["DATA_DIR"] = str(test_data_dir)
+    env["DATA_DIR"] = str(tmp_path)
     env["FLASK_USE_RELOADER"] = "false"
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"
-    env["GEMWEBUI_HARNESS"] = "1"
-    env["SKIP_MULTIPLEXER"] = "true"
 
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
-
-    # Add mock gemini to PATH so the mock script is found instead of real CLI
-    mock_dir = os.path.join(project_root, "tests", "mock")
-    env["PATH"] = f"{mock_dir}:{env.get('PATH', '')}"
-    env["PYTHONPATH"] = project_root
 
     def start_server():
         proc = subprocess.Popen(
@@ -68,6 +61,15 @@ def custom_server(test_data_dir):
             except OSError:
                 pass
 
+            # Clear persisted sessions so the new server does not try to restore
+            # dead PTY file descriptors which immediately emit session-terminated.
+            persisted_file = tmp_path / "persisted_sessions.json"
+            if persisted_file.exists():
+                try:
+                    persisted_file.unlink()
+                except OSError:
+                    pass
+
         def start(self):
             self.process = self.start_fn()
 
@@ -83,50 +85,47 @@ def test_reconnect_after_reload_with_server_down(custom_server, playwright):
     This simulates the 'stale CSRF token in cached HTML' scenario.
     """
     p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
 
-        # 1. Initial load
-        page.goto(custom_server.url)
-        expect(page.get_by_text("Select a Connection").first).to_be_visible(
-            timeout=10000
-        )
+    # 1. Initial load
+    page.goto(custom_server.url)
+    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=10000)
 
-        # 2. Stop server
-        custom_server.stop()
+    # 2. Stop server
+    custom_server.stop()
 
-        # 3. Reload page while server is down (Service Worker would serve from cache in real life)
-        # Here we just want to ensure that when it comes back, it refreshes CSRF.
-        # Since we don't have SW in this test environment easily, we simulate by having a stale state.
+    # 3. Reload page while server is down (Service Worker would serve from cache in real life)
+    # Here we just want to ensure that when it comes back, it refreshes CSRF.
+    # Since we don't have SW in this test environment easily, we simulate by having a stale state.
 
-        # 4. Wait a bit then start server
-        time.sleep(2)
-        custom_server.start()
+    # 4. Wait a bit then start server
+    time.sleep(2)
+    custom_server.start()
 
-        # 5. Reload page (now server is up)
-        page.reload()
+    # 5. Reload page (now server is up)
+    page.reload()
 
-        # 6. Verify it can connect to a session
-        btns = page.locator('.tab-instance.active button:has-text("Start New")')
-        expect(btns.first).to_be_visible(timeout=10000)
-        btns.first.click()
+    # 6. Verify it can connect to a session
+    btns = page.locator('.tab-instance.active button:has-text("Start New")')
+    expect(btns.first).to_be_visible(timeout=10000)
+    btns.first.click()
 
-        expect(page.locator("#connection-status")).to_have_text("local", timeout=20000)
+    expect(page.locator("#connection-status")).to_have_text("local", timeout=20000)
 
-        # 7. Simulate a CSRF token expiration by manually clearing the meta tag
-        # and calling an API that should trigger a refresh.
-        page.evaluate("""() => {
-            const meta = document.querySelector('meta[name="csrf-token"]');
-            if (meta) meta.content = "stale-token";
-        }""")
+    # 7. Simulate a CSRF token expiration by manually clearing the meta tag
+    # and calling an API that should trigger a refresh.
+    page.evaluate("""() => {
+        const meta = document.querySelector('meta[name="csrf-token"]');
+        if (meta) meta.content = "stale-token";
+    }""")
 
-        # Trigger an API call that requires CSRF (e.g. update config or just fetch sessions with 403 mock)
-        # Our app.js handles 403/400 by calling refreshCsrfToken.
+    # Trigger an API call that requires CSRF (e.g. update config or just fetch sessions with 403 mock)
+    # Our app.js handles 403/400 by calling refreshCsrfToken.
 
-        # We can verify that it still works
-        expect(page.locator("#connection-status")).to_have_text("local", timeout=5000)
+    # We can verify that it still works
+    expect(page.locator("#connection-status")).to_have_text("local", timeout=5000)
 
-        context.close()
-        browser.close()
+    context.close()
+    browser.close()

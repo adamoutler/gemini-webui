@@ -161,12 +161,23 @@ def v1_create_session():
     # In a real scenario, we'd pipe the prompt to the session.
     # For this simplified implementation, we'll just run it once if possible.
     # But the requirement is to "execute prompt via Gemini CLI on the target host".
+    
+    # Since cmd is typically ["/bin/sh", "-c", "script"] or ["ssh", ... "bash -ilc 'script'"],
+    # appending prompt doesn't work correctly. We will pass the prompt safely by rebuilding
+    # the command specifically for one-off execution without PTY complex wrappers if needed,
+    # or just execute it securely.
+    
+    # A secure way for local execution:
+    safe_prompt = shlex.quote(prompt)
+    if not ssh_target:
+        gemini_bin = shlex.split(env_config.GEMINI_BIN)
+        full_cmd = gemini_bin + [prompt]
+    else:
+        _, _, ssh_dir_path = get_config_paths()
+        from src.process_manager import build_ssh_args
+        ssh_cmd_base = build_ssh_args(ssh_target, ssh_dir_path)
+        full_cmd = ssh_cmd_base + ["--", ssh_target, f"{env_config.GEMINI_BIN} {safe_prompt}"]
 
-    # We can use subprocess to run the command directly and return output
-    # or start a background session. The requirement says "Response: Success/Failure with stdout and stderr".
-    # This implies a one-off execution.
-
-    full_cmd = cmd + [prompt]
     try:
         result = subprocess.run(full_cmd, capture_output=True, text=True, timeout=120)
         return jsonify(
@@ -257,7 +268,7 @@ def export_settings():
         )
     except Exception as e:
         logger.error(f"Failed to export settings: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "An internal error occurred"}), 500
 
 
 @api_bp.route("/api/settings/import", methods=["POST"])
@@ -297,7 +308,7 @@ def import_settings():
         return jsonify({"error": "The uploaded file is not a valid zip archive"}), 400
     except Exception as e:
         logger.error(f"Failed to import settings: {e}")
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": "An internal error occurred"}), 500
 
 
 @api_bp.route("/api/csrf-token", methods=["GET"])
@@ -426,7 +437,7 @@ def upload_file():
                 filename = path_res.stdout.strip()
 
         except Exception as e:
-            return jsonify({"status": "error", "message": f"SCP error: {str(e)}"}), 500
+            return jsonify({"status": "error", "message": "An internal error occurred during SCP"}), 500
 
     return jsonify({"status": "success", "filename": filename})
 
@@ -456,7 +467,7 @@ def download_file(filename):
         import traceback
 
         traceback.print_exc()
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify({"status": "error", "message": "An internal error occurred"}), 500
 
 
 @api_bp.route("/api/health")

@@ -731,8 +731,6 @@ def session_output_reader(tab_id):
                     if not output:  # EOF
                         break
 
-                    print(f"DEBUG PTY READ: {output!r}")
-
                     decoded_output = decoder.decode(output)
                     if decoded_output:
                         if "\x1b[" in decoded_output and "c" in decoded_output:
@@ -1126,12 +1124,16 @@ def pty_restart(data):
                             )
                             if match:
                                 sessions.append(
-                                    {"id": match.group(1), "uuid": match.group(4)}
+                                    {
+                                        "id": match.group(1),
+                                        "name": match.group(2),
+                                        "uuid": match.group(4),
+                                    }
                                 )
 
                         found_id = None
                         for s in sessions:
-                            if s.get("uuid") == t_id:
+                            if s.get("uuid") == t_id or s.get("name") == t_id:
                                 found_id = s["id"]
                                 break
 
@@ -1148,7 +1150,7 @@ def pty_restart(data):
                             socketio.emit(
                                 "session_assigned",
                                 {"tab_id": t_id, "session_id": found_id},
-                                room=t_id,
+                                to=sid,
                             )
                             return
                     except Exception as e:

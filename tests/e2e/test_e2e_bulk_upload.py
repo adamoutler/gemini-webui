@@ -9,29 +9,43 @@ from playwright.sync_api import sync_playwright, expect
 @pytest.fixture(scope="function")
 def page(server, playwright):
     p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.goto(server)
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server)
 
-        # Log in if needed
-        if page.locator("text=Login").is_visible():
-            page.fill('input[name="username"]', "admin")
-            page.fill('input[name="password"]', "admin")
-            page.click('button[type="submit"]')
-            page.wait_for_selector(".launcher", state="attached", timeout=15000)
-        yield page
-        context.close()
-        browser.close()
+    # Log in if needed
+    if page.locator("text=Login").is_visible():
+        page.fill('input[name="username"]', "admin")
+        page.fill('input[name="password"]', "admin")
+        page.click('button[type="submit"]')
+        page.wait_for_selector(".launcher", state="attached", timeout=15000)
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
-def test_bulk_random_upload_e2e(page, test_data_dir):
+def test_bulk_random_upload_e2e(page, test_data_dir, playwright):
+    import os
+    import shutil
+
+    try:
+        os.remove(os.path.join(str(test_data_dir), "sessions.db"))
+    except FileNotFoundError:
+        pass
+    shutil.rmtree(os.path.join(str(test_data_dir), "workspace"), ignore_errors=True)
+    os.makedirs(os.path.join(str(test_data_dir), "workspace"), exist_ok=True)
+    with open(
+        os.path.join(str(test_data_dir), "workspace", "gemini_mock_sessions.json"), "w"
+    ) as f:
+        f.write("[]")
+
     # 1. Start a terminal session
+    page.locator("#new-tab-btn").click()
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
@@ -45,7 +59,8 @@ def test_bulk_random_upload_e2e(page, test_data_dir):
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
             let out = "";
-            for (let i = 0; i < Math.min(10, tab.term.buffer.active.length); i++) {                const line = tab.term.buffer.active.getLine(i);
+            for (let i = 0; i < 10; i++) {
+                const line = tab.term.buffer.active.getLine(i);
                 if (line) out += line.translateToString() + "\\n";
             }
             return out.includes("Welcome to Fake Gemini");

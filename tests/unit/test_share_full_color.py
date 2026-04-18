@@ -7,20 +7,19 @@ from playwright.sync_api import sync_playwright, expect
 @pytest.fixture(scope="function")
 def page(server, playwright):
     p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        page.set_default_timeout(120000)
-        page.goto(server)
-        page.wait_for_selector(".launcher, .terminal-instance", state="attached")
-        yield page
-        context.close()
-        browser.close()
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.set_default_timeout(120000)
+    page.goto(server)
+    page.wait_for_selector(".launcher, .terminal-instance", state="attached")
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(120)
-def test_full_color_logo(page, server):
+def test_full_color_logo(page, server, playwright):
     # Start a fresh local session which prints the Gemini logo
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)

@@ -5,15 +5,14 @@ from playwright.sync_api import sync_playwright, expect
 @pytest.fixture(scope="function")
 def page(server, playwright):
     p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        yield page
-        browser.close()
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    yield page
+    browser.close()
 
 
-def test_debug_logging(page, server):
+def test_debug_logging(page, server, playwright):
     logs = []
     page.on("console", lambda msg: logs.append(msg.text))
     page.goto(server)

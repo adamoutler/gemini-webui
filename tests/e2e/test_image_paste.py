@@ -4,12 +4,27 @@ import base64
 from playwright.sync_api import Page, expect
 
 
-def test_image_paste_logic(page: Page, server, test_data_dir):
+@pytest.fixture(scope="function")
+def page(server, playwright):
+    from playwright.sync_api import sync_playwright
+
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server)
+    yield page
+    context.close()
+    browser.close()
+
+
+def test_image_paste_logic(page, server, test_data_dir, playwright):
     page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
     page.on("pageerror", lambda err: print(f"BROWSER ERROR: {err.message}"))
 
     # 1. Load the page
-    page.goto(server)
+    page.goto(f"{server}/")
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=10000)
 
     # 2. Start a local session
@@ -51,9 +66,7 @@ def test_image_paste_logic(page: Page, server, test_data_dir):
     page.screenshot(path="public/qa-screenshots/proof_260_image_paste.png")
 
     # 5. Check if the file was actually created in the workspace
-    import os
-
-    workspace_dir = os.path.join(str(test_data_dir), "workspace", "pasted_images")
+    workspace_dir = str(test_data_dir / "workspace" / "pasted_images")
     import time
 
     time.sleep(2)
@@ -64,6 +77,7 @@ def test_image_paste_logic(page: Page, server, test_data_dir):
     else:
         print(f"Directory {workspace_dir} does not exist!")
         # List workspace to see what's there
-        if os.path.exists("/data/workspace"):
-            print(f"Workspace content: {os.listdir('/data/workspace')}")
+        parent_dir = str(test_data_dir / "workspace")
+        if os.path.exists(parent_dir):
+            print(f"Workspace content: {os.listdir(parent_dir)}")
         assert False, f"Directory {workspace_dir} should exist after upload"

@@ -5,20 +5,19 @@ from playwright.sync_api import sync_playwright, expect
 @pytest.fixture(scope="function")
 def page(server, playwright):
     p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
-        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        yield page, server, context
-        context.close()
-        browser.close()
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    yield page, server, context
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(60)
-def test_status_indicator_animation(page):
+def test_status_indicator_animation(page, playwright):
     playwright_page, server_url, context = page
 
     # We need to simulate a session so it shows up in "Backend Managed Sessions"
@@ -66,7 +65,7 @@ def test_status_indicator_animation(page):
 
 
 @pytest.mark.timeout(60)
-def test_status_animation_dom_persistence(page):
+def test_status_animation_dom_persistence(page, playwright):
     playwright_page, server_url, context = page
 
     # Load app and start a session
@@ -91,7 +90,7 @@ def test_status_animation_dom_persistence(page):
 
     # Wait for the backend session item to appear
     session_item = playwright_page.locator(
-        '[id$="_backend_sessions"] .session-item'
+        ".backend-sessions-container .session-item"
     ).first
     expect(session_item).to_be_attached(timeout=15000)
 
@@ -118,19 +117,19 @@ def test_status_animation_dom_persistence(page):
 
     # Re-evaluate the custom attribute on the first item
     html_after = playwright_page.locator(
-        '[id$="_backend_sessions"] .session-item'
+        ".backend-sessions-container .session-item"
     ).first.evaluate("el => el.outerHTML")
     print(f"HTML AFTER: {html_after}")
 
     marker = playwright_page.locator(
-        '[id$="_backend_sessions"] .session-item'
+        ".backend-sessions-container .session-item"
     ).first.evaluate("el => el.getAttribute('data-test-marker')")
     assert (
         marker == "persisted"
     ), "DOM node was replaced upon reload, resetting animation state!"
 
 
-def test_status_flash_on_update(page):
+def test_status_flash_on_update(page, playwright):
     playwright_page, server_url, context = page
 
     # Start app and create a session
@@ -151,7 +150,7 @@ def test_status_flash_on_update(page):
 
     # Wait for the backend session item
     session_item = playwright_page.locator(
-        '[id$="_backend_sessions"] .session-item'
+        ".backend-sessions-container .session-item"
     ).first
     expect(session_item).to_be_attached(timeout=10000)
 

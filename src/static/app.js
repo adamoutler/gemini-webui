@@ -875,7 +875,7 @@ async function renderLauncher(id) {
 
                     <div id="${id}_connections" class="connections-list"></div>
 
-                    <div>
+                    <div class="backend-sessions-container">
                         <div class="js-style-edad91">
                             <h3 class="js-style-36f181">Backend Managed Sessions</h3>
                             <button class="small danger js-style-eccf72" id="${id}_terminate_all_btn" data-onclick="terminateAllBackendSessions('${id}')">Terminate All</button>
@@ -1395,10 +1395,10 @@ async function fetchSessions(
                                   conn.type
                                 }', '${conn.target || ""}', '${
                                   conn.dir || ""
-                                }', '${s.id}', '${s.name.replace(
-                                  /'/g,
-                                  "\\'",
-                                )}')">Resume</button>
+                                }', '${s.id}', '${s.name
+                                  .replace(/\\/g, "\\\\")
+                                  .replace(/'/g, "\\'")
+                                  .replace(/"/g, "&quot;")}')">Resume</button>
                             </div>
                         </div>`;
       });
@@ -1650,11 +1650,12 @@ function startSession(
         let fontSizeStr = tab.term.options.fontSize + "px";
         let fontFamilyStr = tab.term.options.fontFamily;
         let letterSpacingStr = "normal";
-
         if (
+          tab.term &&
           tab.term._core &&
           tab.term._core._renderService &&
-          tab.term._core._renderService.dimensions
+          tab.term._core._renderService.dimensions &&
+          tab.term._core._renderService.dimensions.css
         ) {
           cellHeight = tab.term._core._renderService.dimensions.css.cell.height;
         }
@@ -4008,6 +4009,9 @@ function checkInstallationStatus() {
   if (!isInstalled && !isDismissed) {
     const banner = document.getElementById("install-banner");
     if (banner) banner.style.display = "flex";
+  } else {
+    const banner = document.getElementById("install-banner");
+    if (banner) banner.style.display = "none";
   }
 }
 
@@ -4147,40 +4151,55 @@ async function saveNewPrompt() {
 function executeDataAction(code, event) {
   if (!code) return;
 
-  if (code.startsWith("document.getElementById")) {
-    if (code.includes("'import-settings-input').click()")) {
-      document.getElementById("import-settings-input").click();
-    }
+  if (code === "document.getElementById('import-settings-input').click()") {
+    document.getElementById("import-settings-input").click();
     return;
   }
-  if (code.startsWith("window.open")) {
-    if (code.includes("'share-link-input'")) {
-      window.open(document.getElementById("share-link-input").value, "_blank");
-    }
-    return;
-  }
-  if (code.includes("window.location.href")) {
+  if (code === "window.location.href='/test-launcher'") {
     window.location.href = "/test-launcher";
     return;
   }
-  if (code.startsWith("event.stopPropagation();")) {
+  if (code.includes("event.stopPropagation();")) {
     event.stopPropagation();
     code = code.replace("event.stopPropagation();", "").trim();
   }
+  if (
+    code ===
+    "window.open(document.getElementById('share-link-input').value, '_blank')"
+  ) {
+    window.open(document.getElementById("share-link-input").value, "_blank");
+    return;
+  }
+  if (
+    code ===
+    "document.getElementById('connection-issue-modal').style.display='none'"
+  ) {
+    document.getElementById("connection-issue-modal").style.display = "none";
+    return;
+  }
+  if (code === "window.location.reload()") {
+    window.location.reload();
+    return;
+  }
   if (code.startsWith("window.expandedSessionLists")) {
-    let match = code.match(
-      /window\.expandedSessionLists\.(add|delete)\((.*)\)/,
+    let m1 = code.match(/expandedSessionLists\.(add|delete)\('([^']+)'\)/);
+    if (m1) {
+      if (m1[1] === "add") window.expandedSessionLists.add(m1[2]);
+      else window.expandedSessionLists.delete(m1[2]);
+    }
+    let m2 = code.match(
+      /fetchSessions\('([^']+)',\s*(\{.*\}),\s*'([^']+)',\s*(true|false),\s*true,\s*true\)/,
     );
-    if (match) {
-      let op = match[1];
-      let args = match[2].split(",").map((s) => {
-        s = s.trim().replace(/^['"]|['"]$/g, "");
-        if (s === "true") return true;
-        if (s === "false") return false;
-        return s;
-      });
-      if (op === "add") window.expandedSessionLists.add(...args);
-      else window.expandedSessionLists.delete(...args);
+    if (m2) {
+      let b1 = m2[4] === "true";
+      window.fetchSessions(
+        m2[1],
+        JSON.parse(m2[2].replace(/&quot;/g, '"')),
+        m2[3],
+        b1,
+        true,
+        true,
+      );
     }
     return;
   }
@@ -4191,19 +4210,66 @@ function executeDataAction(code, event) {
     let argsStr = match[2];
     let args = [];
     if (argsStr.trim()) {
-      // Basic split by comma. Since we don't use nested functions or commas inside strings
-      // in our inline handlers, this simple split is sufficient.
-      args = argsStr.split(",").map((s) => {
+      let inString = false;
+      let quoteChar = "";
+      let currentArg = "";
+      let braceCount = 0;
+      let bracketCount = 0;
+      for (let i = 0; i < argsStr.length; i++) {
+        let char = argsStr[i];
+        if (inString) {
+          if (char === quoteChar && argsStr[i - 1] !== "\\") inString = false;
+          currentArg += char;
+        } else {
+          if (char === "'" || char === '"') {
+            inString = true;
+            quoteChar = char;
+            currentArg += char;
+          } else if (char === "{") {
+            braceCount++;
+            currentArg += char;
+          } else if (char === "}") {
+            braceCount--;
+            currentArg += char;
+          } else if (char === "[") {
+            bracketCount++;
+            currentArg += char;
+          } else if (char === "]") {
+            bracketCount--;
+            currentArg += char;
+          } else if (char === "," && braceCount === 0 && bracketCount === 0) {
+            args.push(currentArg);
+            currentArg = "";
+          } else {
+            currentArg += char;
+          }
+        }
+      }
+      args.push(currentArg);
+
+      args = args.map((s) => {
         s = s.trim();
         if (s === "event") return event;
         if (s === "true") return true;
         if (s === "false") return false;
-        if (s.startsWith("'") && s.endsWith("'")) return s.slice(1, -1);
-        if (s.startsWith('"') && s.endsWith('"')) return s.slice(1, -1);
+        if (s.startsWith("'") && s.endsWith("'"))
+          return s.slice(1, -1).replace(/\\'/g, "'").replace(/\\\\/g, "\\");
+        if (s.startsWith('"') && s.endsWith('"'))
+          return s
+            .slice(1, -1)
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, "\\")
+            .replace(/&quot;/g, '"');
         if (!isNaN(s) && s !== "") return Number(s);
+        if (s.startsWith("{") || s.startsWith("[")) {
+          try {
+            return JSON.parse(s.replace(/&quot;/g, '"'));
+          } catch (err) {}
+        }
         return s;
       });
     }
+
     if (typeof window[funcName] === "function") {
       window[funcName].apply(null, args);
     } else {

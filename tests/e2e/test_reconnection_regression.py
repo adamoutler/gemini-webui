@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright, expect
 
 
 @pytest.fixture(scope="function")
-def docker_server(test_data_dir):
+def docker_server(tmp_path, playwright):
     import random
 
     port = str(random.randint(10000, 20000))
@@ -40,20 +40,27 @@ def docker_server(test_data_dir):
                 "-e",
                 "ALLOWED_ORIGINS=*",
                 "-v",
-                f"{test_data_dir}:/data",
+                f"{tmp_path}:/data",
                 image_name,
             ],
             check=True,
         )
 
-        for _ in range(30):
+        ready = False
+        for _ in range(90):
             try:
                 resp = requests.get(f"http://127.0.0.1:{port}/health", timeout=1)
                 if resp.status_code == 200:
+                    ready = True
                     break
             except requests.RequestException:
                 pass
             time.sleep(1)
+
+        if not ready:
+            raise Exception(
+                f"Server in container {container_name} failed to become ready in time"
+            )
 
     start_server()
     url = f"http://127.0.0.1:{port}"
@@ -78,86 +85,85 @@ class TestReconnectionRegression:
     @pytest.mark.timeout(300)
     def test_reconnection_regression(self, docker_server, playwright):
         p = playwright
-        if True:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context()
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
 
-            # Capture console messages
-            console_logs = []
+        # Capture console messages
+        console_logs = []
 
-            def log_console(msg):
-                console_logs.append(msg.text)
-                print(f"CONSOLE: {msg.text}")
+        def log_console(msg):
+            console_logs.append(msg.text)
+            print(f"CONSOLE: {msg.text}")
 
-            page = context.new_page()
-            page.on("console", log_console)
+        page = context.new_page()
+        page.on("console", log_console)
 
-            # 2. Visit the select a connection page (the root URL)
-            page.goto(docker_server.url)
+        # 2. Visit the select a connection page (the root URL)
+        page.goto(docker_server.url)
 
-            # Wait for service worker to install
-            page.wait_for_timeout(2000)
+        # Wait for service worker to install
+        page.wait_for_timeout(2000)
 
-            expect(page.get_by_text("Select a Connection").first).to_be_visible(
-                timeout=5000
-            )
+        expect(page.get_by_text("Select a Connection").first).to_be_visible(
+            timeout=5000
+        )
 
-            # 3. Observe green indicator on Local connection
-            local_health = page.locator(
-                'div[data-label="local"] .connection-title span[id$="_health_local"]'
-            )
+        # 3. Observe green indicator on Local connection
+        local_health = page.locator(
+            'div[data-label="local"] .connection-title span[id$="_health_local"]'
+        )
 
-            try:
-                expect(local_health).to_have_text("🟢", timeout=15000)
-            except AssertionError:
-                # If CI is slow and Socket.IO didn't bind in time for the first load, reload the page
-                page.reload()
-                expect(local_health).to_have_text("🟢", timeout=15000)
-
-            # 4. Restart the container
-            docker_server.stop()
-
-            # 5. Observe red indicator
-            expect(local_health).to_have_text("🔴", timeout=30000)
-
-            # Wait a bit to ensure the SW caches the failed responses if it does
-            page.wait_for_timeout(5000)
-
-            import os
-
-            os.makedirs("docs/qa-images/GEMWEBUI-265", exist_ok=True)
-            page.screenshot(path="docs/qa-images/GEMWEBUI-265/disconnected.png")
-
-            # 6. Observe accurate and helpful error messages in the browser console logs describing the condition.
-            error_found = any(
-                "error" in log.lower()
-                or "fail" in log.lower()
-                or "disconnect" in log.lower()
-                or "refused" in log.lower()
-                for log in console_logs
-            )
-            assert error_found, "Expected error or disconnect messages in console logs"
-
-            # Now restart the container
-            docker_server.start()
-
-            # Give the server a moment to be fully ready
-            page.wait_for_timeout(10000)
-
-            # 7. Refresh browser (standard F5/page.reload(), no cache wipe)
+        try:
+            expect(local_health).to_have_text("🟢", timeout=15000)
+        except AssertionError:
+            # If CI is slow and Socket.IO didn't bind in time for the first load, reload the page
             page.reload()
+            expect(local_health).to_have_text("🟢", timeout=15000)
 
-            expect(page.get_by_text("Select a Connection").first).to_be_visible(
-                timeout=5000
-            )
+        # 4. Restart the container
+        docker_server.stop()
 
-            # 8. Observe indicators turn green
-            local_health2 = page.locator(
-                'div[data-label="local"] .connection-title span[id$="_health_local"]'
-            )
-            expect(local_health2).to_have_text("🟢", timeout=60000)
+        # 5. Observe red indicator
+        expect(local_health).to_have_text("🔴", timeout=30000)
 
-            page.screenshot(path="docs/qa-images/GEMWEBUI-265/reconnected.png")
+        # Wait a bit to ensure the SW caches the failed responses if it does
+        page.wait_for_timeout(5000)
 
-            context.close()
-            browser.close()
+        import os
+
+        os.makedirs("docs/qa-images/GEMWEBUI-265", exist_ok=True)
+        page.screenshot(path="docs/qa-images/GEMWEBUI-265/disconnected.png")
+
+        # 6. Observe accurate and helpful error messages in the browser console logs describing the condition.
+        error_found = any(
+            "error" in log.lower()
+            or "fail" in log.lower()
+            or "disconnect" in log.lower()
+            or "refused" in log.lower()
+            for log in console_logs
+        )
+        assert error_found, "Expected error or disconnect messages in console logs"
+
+        # Now restart the container
+        docker_server.start()
+
+        # Give the server a moment to be fully ready
+        page.wait_for_timeout(10000)
+
+        # 7. Refresh browser (standard F5/page.reload(), no cache wipe)
+        page.reload()
+
+        expect(page.get_by_text("Select a Connection").first).to_be_visible(
+            timeout=5000
+        )
+
+        # 8. Observe indicators turn green
+        local_health2 = page.locator(
+            'div[data-label="local"] .connection-title span[id$="_health_local"]'
+        )
+        expect(local_health2).to_have_text("🟢", timeout=60000)
+
+        page.screenshot(path="docs/qa-images/GEMWEBUI-265/reconnected.png")
+
+        context.close()
+        browser.close()

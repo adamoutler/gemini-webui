@@ -30,21 +30,20 @@ def main(playwright):
     try:
         time.sleep(3)
         p = playwright
-        if True:
-            browser = p.chromium.launch()
-            page = browser.new_page()
-            page.goto("http://127.0.0.1:5005/")
-            page.wait_for_load_state("networkidle")
-            time.sleep(2)
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        page.goto("http://127.0.0.1:5005/")
+        page.wait_for_load_state("networkidle")
+        time.sleep(2)
 
-            # Send some keys to generate PTY output
-            page.keyboard.type("echo 'secret_data_123'\n")
-            time.sleep(2)
+        # Send some keys to generate PTY output
+        page.keyboard.type("echo 'secret_data_123'\n")
+        time.sleep(2)
 
-            page.screenshot(
-                path="public/qa-screenshots/proof_284_noleak.png", full_page=True
-            )
-            browser.close()
+        page.screenshot(
+            path="public/qa-screenshots/proof_284_noleak.png", full_page=True
+        )
+        browser.close()
 
         logs_found = glob.glob("/tmp/session-*-DEBUG.log")
         assert len(logs_found) == 0, f"Found debug logs! {logs_found}"

@@ -6,19 +6,18 @@ import time
 @pytest.fixture(scope="function")
 def mobile_page(server, playwright):
     p = playwright
-    if True:
-        iphone_12 = p.devices["iPhone 12"]
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(**iphone_12)
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+    iphone_12 = p.devices["iPhone 12"]
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(**iphone_12)
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(
+        ".launcher, .terminal-instance", state="attached", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
 def get_terminal_text(page):
@@ -28,7 +27,7 @@ def get_terminal_text(page):
 
 
 @pytest.mark.timeout(60)
-def test_mobile_single_word_buffer(mobile_page):
+def test_mobile_single_word_buffer(mobile_page, playwright):
     # Start a fresh session
     btns = mobile_page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)

@@ -6,68 +6,67 @@ from playwright.sync_api import sync_playwright
 @pytest.fixture(scope="function")
 def staggered_page(server, playwright):
     p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
 
-        # Mock /api/hosts to return 3 hosts
-        page.route(
-            "**/api/hosts",
-            lambda route: route.fulfill(
-                status=200,
-                content_type="application/json",
-                body='[{"label": "host1", "type": "local"}, {"label": "host2", "type": "local"}, {"label": "host3", "type": "local"}]',
-            ),
-        )
+    # Mock /api/hosts to return 3 hosts
+    page.route(
+        "**/api/hosts",
+        lambda route: route.fulfill(
+            status=200,
+            content_type="application/json",
+            body='[{"label": "host1", "type": "local"}, {"label": "host2", "type": "local"}, {"label": "host3", "type": "local"}]',
+        ),
+    )
 
-        page.route(
-            "**/api/health/*",
-            lambda route: route.fulfill(status=200, body='{"status":"up"}'),
-        )
+    page.route(
+        "**/api/health/*",
+        lambda route: route.fulfill(status=200, body='{"status":"up"}'),
+    )
 
-        # Track socket emits via a playwright binding
-        page.session_requests = []
+    # Track socket emits via a playwright binding
+    page.session_requests = []
 
-        def track_emit(event_data):
-            page.session_requests.append(time.time())
+    def track_emit(event_data):
+        page.session_requests.append(time.time())
 
-        page.expose_binding("trackSocketEmit", lambda source, data: track_emit(data))
+    page.expose_binding("trackSocketEmit", lambda source, data: track_emit(data))
 
-        # We must inject the mock after the page loads but before the scripts run, or right after.
-        # Actually, if we expose a binding, we can just patch getGlobalSocket's emit.
-        page.add_init_script("""
-            window.addEventListener('DOMContentLoaded', () => {
-                const originalGetGlobalSocket = window.getGlobalSocket;
-                if (originalGetGlobalSocket) {
-                    window.getGlobalSocket = function() {
-                        const socket = originalGetGlobalSocket();
-                        if (!socket._isMocked) {
-                            socket._isMocked = true;
-                            const origEmit = socket.emit.bind(socket);
-                            socket.emit = function(event, data, callback) {
-                                if (event === 'get_sessions' && data && data.cache === true) {
-                                    window.trackSocketEmit(data);
-                                }
-                                return origEmit(event, data, callback);
-                            };
-                        }
-                        return socket;
-                    };
-                }
-            });
-        """)
+    # We must inject the mock after the page loads but before the scripts run, or right after.
+    # Actually, if we expose a binding, we can just patch getGlobalSocket's emit.
+    page.add_init_script("""
+        window.addEventListener('DOMContentLoaded', () => {
+            const originalGetGlobalSocket = window.getGlobalSocket;
+            if (originalGetGlobalSocket) {
+                window.getGlobalSocket = function() {
+                    const socket = originalGetGlobalSocket();
+                    if (!socket._isMocked) {
+                        socket._isMocked = true;
+                        const origEmit = socket.emit.bind(socket);
+                        socket.emit = function(event, data, callback) {
+                            if (event === 'get_sessions' && data && data.cache === true) {
+                                window.trackSocketEmit(data);
+                            }
+                            return origEmit(event, data, callback);
+                        };
+                    }
+                    return socket;
+                };
+            }
+        });
+    """)
 
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(
+        ".launcher, .terminal-instance", state="attached", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
-def test_staggered_initial_load(staggered_page):
+def test_staggered_initial_load(staggered_page, playwright):
     # Wait for the stagger to complete (3 requests * 500ms = ~1500ms)
     staggered_page.wait_for_timeout(3000)
 

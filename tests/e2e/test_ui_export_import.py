@@ -7,18 +7,17 @@ import zipfile
 @pytest.fixture(scope="function")
 def page(server, playwright):
     p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        yield page
-        context.close()
-        browser.close()
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(60)
-def test_export_import_settings(page, server, tmp_path):
+def test_export_import_settings(page, server, tmp_path, playwright):
     # 1. Wait for app load
     page.goto(server)
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)

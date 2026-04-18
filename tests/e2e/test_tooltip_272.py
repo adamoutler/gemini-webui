@@ -22,22 +22,21 @@ def main(playwright):
     try:
         time.sleep(3)
         p = playwright
-        if True:
-            browser = p.chromium.launch()
-            page = browser.new_page()
-            page.goto("http://127.0.0.1:5004/")
-            page.wait_for_load_state("networkidle")
-            time.sleep(2)
+        browser = p.chromium.launch()
+        page = browser.new_page()
+        page.goto("http://127.0.0.1:5004/")
+        page.wait_for_load_state("networkidle")
+        time.sleep(2)
 
-            # Check the title attribute of the tab
-            tab_title = page.locator(".tab").first.get_attribute("title")
-            assert tab_title is not None and len(tab_title) > 0, "Tooltip title missing"
+        # Check the title attribute of the tab
+        tab_title = page.locator(".tab").first.get_attribute("title")
+        assert tab_title is not None and len(tab_title) > 0, "Tooltip title missing"
 
-            # Generate dummy screenshot
-            page.screenshot(
-                path="public/qa-screenshots/proof_272_tooltip.png", full_page=True
-            )
-            browser.close()
+        # Generate dummy screenshot
+        page.screenshot(
+            path="public/qa-screenshots/proof_272_tooltip.png", full_page=True
+        )
+        browser.close()
 
         with open("test-results-272.json", "w") as f:
             json.dump(

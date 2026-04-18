@@ -5,18 +5,17 @@ from playwright.sync_api import sync_playwright
 @pytest.fixture(scope="function")
 def mobile_page(server, playwright):
     p = playwright
-    if True:
-        device = p.devices["Pixel 5"]
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(**device)
-        page = context.new_page()
-        page.goto(server, timeout=15000)
-        yield page
-        context.close()
-        browser.close()
+    device = p.devices["Pixel 5"]
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context(**device)
+    page = context.new_page()
+    page.goto(server, timeout=15000)
+    yield page
+    context.close()
+    browser.close()
 
 
-def test_pinch(mobile_page):
+def test_pinch(mobile_page, playwright):
     mobile_page.wait_for_selector(
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )

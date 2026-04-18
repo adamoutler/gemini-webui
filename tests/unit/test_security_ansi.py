@@ -28,7 +28,7 @@ BAD_PAYLOADS = [
 ]
 
 
-@pytest.mark.parametrize("payload", BAD_PAYLOADS)
+@pytest.mark.parametrize("payload", BAD_PAYLOADS, ids=lambda p: f"payload_len_{len(p)}")
 def test_ansi_injection(payload):
     # Setup state
     session_manager.sessions.clear()

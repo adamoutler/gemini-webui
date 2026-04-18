@@ -3,7 +3,22 @@ import time
 from playwright.sync_api import Page, expect
 
 
-def test_deep_link_adhoc(page: Page, server):
+@pytest.fixture(scope="function")
+def page(server, playwright):
+    from playwright.sync_api import sync_playwright
+
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.goto(server)
+    yield page
+    context.close()
+    browser.close()
+
+
+def test_deep_link_adhoc(page, server, playwright):
     target = "test@localhost:2222"
     url = f"{server}/?target={target}"
     page.goto(url)
@@ -18,7 +33,7 @@ def test_deep_link_adhoc(page: Page, server):
     page.screenshot(path="public/qa-screenshots/proof_311_adhoc.png")
 
 
-def test_deep_link_host(page: Page, server):
+def test_deep_link_host(page, server, playwright):
     host_label = "local"
     url = f"{server}/?host={host_label}"
     page.goto(url)
@@ -29,7 +44,7 @@ def test_deep_link_host(page: Page, server):
     page.screenshot(path="public/qa-screenshots/proof_311_host.png")
 
 
-def test_csrf_recovery_loop(page: Page, server):
+def test_csrf_recovery_loop(page, server, playwright):
     # This test might be tricky to trigger naturally.
     # We can try to simulate it by intercepting /api/csrf-token and returning 403 or 400
     # until the loop breaks.

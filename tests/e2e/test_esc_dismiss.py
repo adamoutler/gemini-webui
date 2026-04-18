@@ -5,26 +5,25 @@ from playwright.sync_api import sync_playwright, expect
 @pytest.fixture(scope="function")
 def page(server, playwright):
     p = playwright
-    if True:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context()
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
 
-        page = context.new_page()
-        page.set_default_timeout(60000)
-        page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
-        page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
-        page.goto(server, timeout=15000)
-        page.wait_for_selector(
-            ".launcher, .terminal-instance", state="attached", timeout=15000
-        )
-        yield page
-        context.close()
-        browser.close()
+    page = context.new_page()
+    page.set_default_timeout(60000)
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.goto(server, timeout=15000)
+    page.wait_for_selector(
+        ".launcher, .terminal-instance", state="attached", timeout=15000
+    )
+    yield page
+    context.close()
+    browser.close()
 
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
-def test_esc_dismiss_settings(page):
+def test_esc_dismiss_settings(page, playwright):
     """Verify pressing Escape closes the Settings modal."""
     # Open settings
     page.locator('button[data-onclick="openSettings()"]').click()
@@ -39,7 +38,7 @@ def test_esc_dismiss_settings(page):
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
-def test_esc_dismiss_file_transfer(page):
+def test_esc_dismiss_file_transfer(page, playwright):
     """Verify pressing Escape closes the File Transfer modal."""
     # Start a terminal to ensure the Files button appears (or it might be visible anyway)
     # Actually, the Files button is in #active-connection-info which is visible when a terminal is active
@@ -65,7 +64,7 @@ def test_esc_dismiss_file_transfer(page):
 
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
-def test_esc_dismiss_launcher(page):
+def test_esc_dismiss_launcher(page, playwright):
     """Verify pressing Escape on the launcher returns to an active tab if one exists."""
     # Start a terminal session first
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
