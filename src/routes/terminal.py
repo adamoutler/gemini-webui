@@ -233,6 +233,10 @@ def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
 @authenticated_only
 def list_gemini_sessions():
     ssh_target = request.args.get("ssh_target")
+    from src.process_manager import validate_ssh_target
+
+    if ssh_target and not validate_ssh_target(ssh_target):
+        return jsonify({"error": "Invalid target"}), 400
     ssh_dir = request.args.get("ssh_dir")
     cache_key = (
         f"{'ssh' if ssh_target else 'local'}:{ssh_target or 'local'}:{ssh_dir or ''}"
@@ -258,10 +262,16 @@ def terminate_remote_session():
     ssh_dir = data.get("ssh_dir")
     session_id = data.get("session_id")
 
+    from src.process_manager import validate_ssh_target
+
+    if ssh_target and not validate_ssh_target(ssh_target):
+        return jsonify({"error": "Invalid target"}), 400
+
     if not session_id:
         return jsonify({"error": "Session ID required"}), 400
 
     import re
+
     # Validate session_id format to prevent command injection alerts
     if not re.match(r"^[a-zA-Z0-9_-]+$", str(session_id)):
         return jsonify({"error": "Invalid Session ID format"}), 400

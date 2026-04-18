@@ -1,3 +1,12 @@
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 window.ENABLE_DEBUG = localStorage.getItem("GEMINI_DEBUG") === "true";
 window.setDebug = function (enabled) {
   window.ENABLE_DEBUG = !!enabled;
@@ -757,7 +766,7 @@ function refreshBackendSessionsList(id) {
 
       const shortDir = s.ssh_dir ? s.ssh_dir.split("/").pop() : "";
       const dirContext = shortDir
-        ? `<span class="js-style-b629a7">[${shortDir}]</span>`
+        ? `<span class="js-style-b629a7">[${escapeHtml(shortDir)}]</span>`
         : "";
       const lastSeenDate = s.last_active
         ? new Date(s.last_active * 1000).toLocaleString()
@@ -1379,12 +1388,14 @@ async function fetchSessions(
       sorted.slice(0, displayCount).forEach((s) => {
         const shortDir = conn.dir ? conn.dir.split("/").pop() : "";
         const dirContext = shortDir
-          ? `<span class="js-style-b629a7">[${shortDir}]</span>`
+          ? `<span class="js-style-b629a7">[${escapeHtml(shortDir)}]</span>`
           : "";
         html += `<div>
                             <div class="js-style-57a00a">
                                 <div class="js-style-037e58">
-                                    ${dirContext}<span>${s.name}</span>
+                                    ${dirContext}<span>${escapeHtml(
+                                      s.name,
+                                    )}</span>
                                 </div>
                                 <div class="js-style-dbe504">ID #${s.id} • ${
                                   s.meta
@@ -1403,18 +1414,24 @@ async function fetchSessions(
                         </div>`;
       });
       if (!forceAll && sorted.length > 3) {
-        html += `<div class="session-item js-style-86c2b8" data-onclick="window.expandedSessionLists.add('${
-          conn.label
-        }'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(
+        html += `<div class="session-item js-style-86c2b8" data-onclick="window.expandedSessionLists.add('${escapeHtml(
+          conn.label,
+        ).replace(
+          /&#039;/g,
+          "\\'",
+        )}'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(
           /"/g,
           "&quot;",
         )}, '${targetId}', true, true, true)"><div class="js-style-d94350">... Show ${
           sorted.length - 3
         } more</div></div>`;
       } else if (forceAll && sorted.length > 3) {
-        html += `<div class="session-item js-style-86c2b8" data-onclick="window.expandedSessionLists.delete('${
-          conn.label
-        }'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(
+        html += `<div class="session-item js-style-86c2b8" data-onclick="window.expandedSessionLists.delete('${escapeHtml(
+          conn.label,
+        ).replace(
+          /&#039;/g,
+          "\\'",
+        )}'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(
           /"/g,
           "&quot;",
         )}, '${targetId}', false, true, true)"><div class="js-style-d94350">... Show less</div></div>`;

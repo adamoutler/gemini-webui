@@ -70,10 +70,16 @@ class SSHConnectionManager:
 
     @staticmethod
     def get_socket_path(user, host, port):
-        safe_user = "".join(c for c in user if c.isalnum() or c in "-_")
-        safe_host = "".join(c for c in host if c.isalnum() or c in "-_.")
+        safe_user = "".join(c for c in str(user) if c.isalnum() or c in "-_")
+        safe_host = "".join(c for c in str(host) if c.isalnum() or c in "-_.")
+        safe_port = "".join(c for c in str(port) if c.isdigit())
         prefix = f"{safe_user}@" if safe_user else ""
-        return str(SSH_SOCKET_DIR / f"{prefix}{safe_host}:{port}.sock")
+        safe_filename = f"{prefix}{safe_host}_{safe_port}.sock"
+        safe_filename = os.path.basename(safe_filename)  # Prevent path traversal
+        socket_path = os.path.abspath(os.path.join(str(SSH_SOCKET_DIR), safe_filename))
+        if not socket_path.startswith(os.path.abspath(str(SSH_SOCKET_DIR))):
+            raise ValueError("Invalid socket path")
+        return socket_path
 
     @staticmethod
     def get_base_ssh_args(user, host, port, control_master="auto"):
@@ -94,6 +100,8 @@ class SSHConnectionManager:
             return
 
         target_str = f"{user}@{host}" if user else host
+        if not validate_ssh_target(target_str):
+            raise ValueError("Invalid SSH target")
 
         check_cmd = [
             "ssh",

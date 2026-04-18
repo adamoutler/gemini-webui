@@ -161,12 +161,12 @@ def v1_create_session():
     # In a real scenario, we'd pipe the prompt to the session.
     # For this simplified implementation, we'll just run it once if possible.
     # But the requirement is to "execute prompt via Gemini CLI on the target host".
-    
+
     # Since cmd is typically ["/bin/sh", "-c", "script"] or ["ssh", ... "bash -ilc 'script'"],
     # appending prompt doesn't work correctly. We will pass the prompt safely by rebuilding
     # the command specifically for one-off execution without PTY complex wrappers if needed,
     # or just execute it securely.
-    
+
     # A secure way for local execution:
     safe_prompt = shlex.quote(prompt)
     if not ssh_target:
@@ -175,8 +175,13 @@ def v1_create_session():
     else:
         _, _, ssh_dir_path = get_config_paths()
         from src.process_manager import build_ssh_args
+
         ssh_cmd_base = build_ssh_args(ssh_target, ssh_dir_path)
-        full_cmd = ssh_cmd_base + ["--", ssh_target, f"{env_config.GEMINI_BIN} {safe_prompt}"]
+        full_cmd = ssh_cmd_base + [
+            "--",
+            ssh_target,
+            f"{env_config.GEMINI_BIN} {safe_prompt}",
+        ]
 
     try:
         result = subprocess.run(full_cmd, capture_output=True, text=True, timeout=120)
@@ -191,7 +196,10 @@ def v1_create_session():
     except subprocess.TimeoutExpired:
         return jsonify({"status": "failure", "error": "Timeout expired"}), 504
     except Exception as e:
-        return jsonify({"status": "failure", "error": str(e)}), 500
+        logger.error(f"Error in v1_sessions_create: {e}")
+        return jsonify(
+            {"status": "failure", "error": "An internal error occurred"}
+        ), 500
 
 
 @api_bp.route("/api/v1/hosts/states", methods=["GET"])
@@ -437,7 +445,9 @@ def upload_file():
                 filename = path_res.stdout.strip()
 
         except Exception as e:
-            return jsonify({"status": "error", "message": "An internal error occurred during SCP"}), 500
+            return jsonify(
+                {"status": "error", "message": "An internal error occurred during SCP"}
+            ), 500
 
     return jsonify({"status": "success", "filename": filename})
 
@@ -467,7 +477,9 @@ def download_file(filename):
         import traceback
 
         traceback.print_exc()
-        return jsonify({"status": "error", "message": "An internal error occurred"}), 500
+        return jsonify(
+            {"status": "error", "message": "An internal error occurred"}
+        ), 500
 
 
 @api_bp.route("/api/health")
