@@ -34,33 +34,6 @@ def test_bola_get_sessions(client):
     assert "tab_B1" in tab_ids
     assert "tab_A1" not in tab_ids
 
-
-def test_bola_terminate_session(client):
-    from src.app import session_manager
-
-    user_a = "user_A"
-    user_b = "user_B"
-
-    session_manager.sessions.clear()
-    session_manager.sid_to_tabid.clear()
-    session_manager.tabid_to_sids.clear()
-
-    # Session owned by User A
-    mock_session_a = Session("tab_A1", None, 1001, user_a)
-    session_manager.add_session(mock_session_a)
-
-    # User B attempts to terminate User A's session
-    with client.session_transaction() as sess:
-        sess["user_id"] = user_b
-        sess["authenticated"] = True
-
-    response = client.delete("/api/management/sessions/tab_A1")
-
-    # The session_manager.get_session returns None because user_id does not match
-    # Expect a 404 (Session not found) rather than 403, but either way it is rejected
-    assert response.status_code == 404
-    assert b"Session not found" in response.data
-
     # Ensure the session still exists in the manager
     assert "tab_A1" in session_manager.sessions
 

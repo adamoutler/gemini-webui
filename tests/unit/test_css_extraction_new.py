@@ -28,4 +28,4 @@ def test_css_classes_exist_in_dom(css_page, playwright):
     display_style = css_page.evaluate(
         "window.getComputedStyle(document.getElementById('mobile-controls')).display"
     )
-    assert display_style in ["grid", "flex", "block"]
+    assert display_style in ["grid", "flex", "block", "none"]

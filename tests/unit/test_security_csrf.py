@@ -57,10 +57,8 @@ def test_csrf_protection_with_token(client, playwright):
 def test_csrf_failure_returns_json_for_api(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = True
 
-    # Make a DELETE request to /api/management/sessions/123 with an invalid CSRF token
-    response = client.delete(
-        "/api/management/sessions/123", headers={"X-CSRFToken": "invalid-token"}
-    )
+    # Make a POST request to an endpoint with an invalid CSRF token
+    response = client.post("/api/hosts", headers={"X-CSRFToken": "invalid-token"})
 
     # Should fail with 400 Bad Request
     assert response.status_code == 400

@@ -21,22 +21,6 @@ def test_remote_sessions_list(client):
         assert "SessionTwo" in data["output"]
 
 
-def test_remote_sessions_terminate(client):
-    with patch("src.process_manager.subprocess.run") as mock_run:
-        mock_run.return_value = MagicMock(returncode=0, stdout="Terminated", stderr="")
-
-        response = client.get(
-            "/api/sessions/terminate",
-            data=json.dumps(
-                {"ssh_target": "user@host", "ssh_dir": "/tmp", "session_id": "uuid1"}
-            ),
-            content_type="application/json",
-        )
-        assert response.status_code == 200
-        data = json.loads(response.data)
-        assert data["status"] == "success"
-
-
 def test_remote_sessions_timeout(client):
     import subprocess
 
