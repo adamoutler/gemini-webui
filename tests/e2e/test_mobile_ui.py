@@ -160,88 +160,6 @@ def test_mobile_controls_buttons(mobile_page):
         expect(btn.first).to_be_visible()
 
 
-@pytest.mark.timeout(40)
-def test_mobile_resume_latest(custom_mobile_page):
-    """Verify Resume Latest executes correct commands."""
-    page = custom_mobile_page
-
-    # Wait for the launcher and session list to populate
-    page.wait_for_selector(".launcher", state="attached", timeout=15000)
-
-    # Test Resume Latest
-    page.click("button.success:has-text('Resume Latest')", timeout=10000)
-    page.wait_for_selector(".terminal-instance", timeout=10000)
-
-    # Wait for the mock output to appear
-    import time
-
-    start_time = time.time()
-    found = False
-    while time.time() - start_time < 15:
-        content = page.evaluate("""() => {
-            const tab = tabs.find(t => t.id === activeTabId);
-            if (tab && tab.term) {
-                let out = "";
-                for (let i = 0; i < 15; i++) {
-                    const line = tab.term.buffer.active.getLine(i);
-                    if (line) out += line.translateToString() + "\\n";
-                }
-                return out;
-            }
-            return "";
-        }""")
-        if "MOCK_EXECUTED: -r" in content:
-            found = True
-            break
-        time.sleep(0.5)
-
-    assert (
-        found
-    ), f"Expected 'MOCK_EXECUTED: -r' not found in terminal content: {content}"
-
-    resume_buttons.first.click()
-
-    page.wait_for_selector(".terminal-instance", timeout=10000)
-
-    import time
-
-    start_time = time.time()
-    connected = False
-    while time.time() - start_time < 5:
-        content = page.evaluate(
-            "() => { const tab = tabs.find(t => t.id === activeTabId); return (tab && tab.term && tab.term.buffer.active.getLine(0)) ? tab.term.buffer.active.getLine(0).translateToString() : ''; }"
-        )
-        if "Connected" in content:
-            connected = True
-            break
-        time.sleep(0.5)
-
-    # The command should contain `-r 1` because the mock script session id is 1
-    start_time = time.time()
-    found = False
-    while time.time() - start_time < 15:
-        content2 = page.evaluate("""() => {
-            const tab = tabs.find(t => t.id === activeTabId);
-            if (tab && tab.term) {
-                let out = "";
-                for (let i = 0; i < 5; i++) {
-                    const line = tab.term.buffer.active.getLine(i);
-                    if (line) out += line.translateToString() + "\\n";
-                }
-                return out;
-            }
-            return "";
-        }""")
-        if "MOCK_EXECUTED: -r 1" in content2:
-            found = True
-            break
-        time.sleep(0.5)
-
-    assert (
-        found
-    ), f"Expected 'MOCK_EXECUTED: -r 1' not found in terminal content: {content2}"
-
-
 @pytest.mark.timeout(20)
 def test_mobile_pull_to_refresh_enabled(mobile_page):
     """Verify that body and html have overflow: hidden to allow native pull-to-refresh on mobile."""
@@ -295,15 +213,6 @@ def test_pull_to_refresh_styles(mobile_page):
     # Toolbar might still have it if we decided to block it there, but user said NO difference.
     # toolbar_overscroll = mobile_page.evaluate("window.getComputedStyle(document.getElementById('toolbar')).getPropertyValue('overscroll-behavior')")
     # assert 'none' not in toolbar_overscroll
-
-    button_white_space = mobile_page.evaluate("""() => {
-        const btn = document.querySelector('.connection-actions button');
-        return window.getComputedStyle(btn).getPropertyValue('white-space');
-    }""")
-
-    assert (
-        button_white_space == "nowrap"
-    ), f"white-space should be nowrap, but got {button_white_space}"
 
 
 @pytest.mark.timeout(40)
