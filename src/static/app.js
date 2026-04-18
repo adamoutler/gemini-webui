@@ -806,9 +806,7 @@ function refreshBackendSessionsList(id) {
         let flashClass = shouldFlash ? " flash" : "";
         newNode.innerHTML = `
                             <div class="session-info">
-                                <div class="js-style-990843">${dirContext}${
-                                  s.title
-                                }</div>
+                                <div class="js-style-990843">${dirContext}${s.title}</div>
                                 <div class="js-style-2ef6c5">
                                     <span class="js-style-133a0c">
                                         <span class="status-node ${statusClass}${flashClass}"></span>
@@ -820,17 +818,7 @@ function refreshBackendSessionsList(id) {
                                     <span class="session-last-seen-display">Last seen: ${lastSeenDate}</span>
                                 </div>
                             </div>
-                            <div class="js-style-13262f">
-                                <button class="small primary js-style-f52211" data-onclick="reclaimBackendSession('${id}', '${
-                                  s.tab_id
-                                }', '${s.title}', ${JSON.stringify(s).replace(
-                                  /"/g,
-                                  "&quot;",
-                                )})">Reclaim</button>
-                                <button class="small danger js-style-f52211" data-onclick="terminateBackendSession('${id}', '${
-                                  s.tab_id
-                                }')">Terminate</button>
-                            </div>`;
+                            `;
         listEl.appendChild(newNode);
       }
     });
@@ -884,17 +872,7 @@ async function renderLauncher(id) {
 
                     <div id="${id}_connections" class="connections-list"></div>
 
-                    <div class="backend-sessions-container">
-                        <div class="js-style-edad91">
-                            <h3 class="js-style-36f181">Backend Managed Sessions</h3>
-                            <button class="small danger js-style-eccf72" id="${id}_terminate_all_btn" data-onclick="terminateAllBackendSessions('${id}')">Terminate All</button>
-                        </div>
-                        <div class="js-style-28ac8f">
-                            These are PTY processes running on the server. Reclaiming one will attach it to this window.
-                        </div>
-                        <div id="${id}_backend_sessions" class="session-list">
-                            <div class="js-style-536955">Checking for backend sessions...</div>
-                        </div>
+
                     </div>
                 </div>`;
 
@@ -959,11 +937,7 @@ async function renderLauncher(id) {
                             }', '${conn.target || ""}', '${
                               conn.dir || ""
                             }', 'new')">Start New</button>
-                            <button class="success" data-onclick="startSession('${id}', '${
-                              conn.type
-                            }', '${conn.target || ""}', '${
-                              conn.dir || ""
-                            }', true)">Resume Latest</button>
+
                         </div>
                     </div>
                     <div id="${sessionListId}" class="session-list-container"><div class="js-style-2a672e">Loading sessions...</div></div>`;
@@ -1401,16 +1375,7 @@ async function fetchSessions(
                                   s.meta
                                 }</div>
                             </div>
-                            <div class="js-style-c99770">
-                                <button class="small" data-onclick="startSession('${tabId}', '${
-                                  conn.type
-                                }', '${conn.target || ""}', '${
-                                  conn.dir || ""
-                                }', '${s.id}', '${s.name
-                                  .replace(/\\/g, "\\\\")
-                                  .replace(/'/g, "\\'")
-                                  .replace(/"/g, "&quot;")}')">Resume</button>
-                            </div>
+
                         </div>`;
       });
       if (!forceAll && sorted.length > 3) {
@@ -1479,7 +1444,9 @@ function startSession(
   }
   tab.state = "terminal";
   tab.session = { type, ssh_target: target, ssh_dir: dir, resume: resumeParam };
-  tab.title = sessionName || (target ? target.split("@").pop() : "Local");
+  if (!tab.title || tab.title === "New Tab" || tab.title.trim() === "") {
+    tab.title = sessionName || (target ? target.split("@").pop() : "Local");
+  }
   tab.shouldReclaim = shouldReclaim;
 
   // Back button hijacking: push state so "back" has something to pop

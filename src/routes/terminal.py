@@ -86,73 +86,6 @@ def list_active_sessions():
     return jsonify(session_manager.list_sessions(user_id))
 
 
-@terminal_bp.route("/api/management/sessions/<tab_id>", methods=["DELETE"])
-@authenticated_only
-def terminate_managed_session(tab_id):
-    user_id = session.get("user_id") or (
-        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
-    )
-    if not tab_id:
-        return jsonify({"error": "Tab ID required"}), 400
-
-    # Remove from persistence first to prevent re-sync
-    if session_manager.persistence:
-        session_manager.persistence.remove(tab_id)
-
-    session_obj = session_manager.remove_session(tab_id, user_id)
-    if not session_obj:
-        return jsonify({"error": "Session not found"}), 404
-
-    logger.info(f"Terminating managed session {tab_id}")
-    ephemeral_sessions.pop(tab_id, None)
-    kill_and_reap(session_obj.pid)
-    if session_obj.fd is not None:
-        try:
-            os.close(session_obj.fd)
-        except OSError:
-            pass
-
-    # Broadcast termination to all clients in the room
-    socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
-    return jsonify({"status": "success"})
-
-
-@terminal_bp.route("/api/sessions/terminate_all", methods=["GET", "POST"])
-@authenticated_only
-def terminate_all_managed_sessions():
-    user_id = session.get("user_id") or (
-        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
-    )
-    count = 0
-    sessions_to_remove = session_manager.list_sessions(user_id)
-    for s in sessions_to_remove:
-        tab_id = s.get("tab_id")
-        if not tab_id:
-            continue
-
-        # Remove from persistence
-        if session_manager.persistence:
-            session_manager.persistence.remove(tab_id)
-
-        session_obj = session_manager.remove_session(tab_id, user_id)
-        if session_obj:
-            logger.info(f"Terminating managed session {tab_id}")
-            ephemeral_sessions.pop(tab_id, None)
-            if session_obj.pid is not None:
-                kill_and_reap(session_obj.pid)
-            if session_obj.fd is not None:
-                try:
-                    os.close(session_obj.fd)
-                except OSError:
-                    pass
-            count += 1
-
-        # Broadcast termination
-        socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
-
-    return jsonify({"status": "success", "count": count})
-
-
 @terminal_bp.route("/api/sessions/<session_id>/search_files", methods=["GET"])
 @authenticated_only
 def search_files(session_id):
@@ -252,60 +185,6 @@ def list_gemini_sessions():
     ):
         return jsonify(res), 504
     return jsonify(res)
-
-
-@terminal_bp.route("/api/sessions/terminate", methods=["GET"])
-@authenticated_only
-def terminate_remote_session():
-    data = request.json
-    ssh_target = data.get("ssh_target")
-    ssh_dir = data.get("ssh_dir")
-    session_id = data.get("session_id")
-
-    from src.process_manager import validate_ssh_target
-
-    if ssh_target and not validate_ssh_target(ssh_target):
-        return jsonify({"error": "Invalid target"}), 400
-
-    if not session_id:
-        return jsonify({"error": "Session ID required"}), 400
-
-    import re
-
-    # Validate session_id format to prevent command injection alerts
-    if not re.match(r"^[a-zA-Z0-9_-]+$", str(session_id)):
-        return jsonify({"error": "Invalid Session ID format"}), 400
-    safe_session_id = str(session_id)
-
-    if ssh_target:
-        if not validate_ssh_target(ssh_target):
-            return jsonify({"error": "Invalid SSH target"}), 400
-
-        remote_prefix = get_remote_command_prefix(ssh_dir, GEMINI_BIN)
-        remote_cmd = f"{remote_prefix} if command -v {GEMINI_BIN} >/dev/null 2>&1; then {GEMINI_BIN} --terminate {safe_session_id}; fi"
-        login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
-
-        cmd = ["ssh", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=no"]
-        _, _, ssh_dir_path = get_config_paths()
-        known_hosts_path = os.path.join(ssh_dir_path, "known_hosts")
-        cmd.extend(["-o", f"UserKnownHostsFile={known_hosts_path}"])
-        if os.path.exists(ssh_dir_path):
-            for f in os.listdir(ssh_dir_path):
-                if (
-                    os.path.isfile(os.path.join(ssh_dir_path, f))
-                    and f not in ["config", "known_hosts"]
-                    and not f.endswith(".pub")
-                ):
-                    cmd.extend(["-i", os.path.join(ssh_dir_path, f)])
-        cmd.extend(["--", ssh_target, login_wrapped_cmd])
-    else:
-        cmd = [GEMINI_BIN, "--terminate", str(session_id)]
-
-    try:
-        subprocess.run(cmd, timeout=15, start_new_session=True)
-        return jsonify({"status": "success"})
-    except Exception as e:
-        return jsonify({"error": "An internal error occurred"}), 500
 
 
 @terminal_bp.route("/api/test_inject_session", methods=["GET"])
