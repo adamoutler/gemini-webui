@@ -2176,13 +2176,9 @@ function triggerHapticFeedback() {
 
 function emitPtyInput(tab, data) {
   if (!tab || !tab.socket || data == null) return;
-  const chunkSize = 1024;
   // Convert \n to \r so that bash processes STT newlines and multiline pastes as command submissions
   const strData = String(data).replace(/\n/g, "\r");
-  for (let i = 0; i < strData.length; i += chunkSize) {
-    const chunk = strData.slice(i, i + chunkSize);
-    tab.socket.emit("pty-input", { input: chunk });
-  }
+  tab.socket.emit("pty-input", { input: strData });
 }
 window.emitPtyInput = emitPtyInput;
 
@@ -3955,13 +3951,21 @@ function initDesktopContextMenu() {
   menu.querySelector("#ctx-paste").addEventListener("mousedown", async (e) => {
     e.preventDefault();
     try {
-      const text = await navigator.clipboard.readText();
+      let text = await navigator.clipboard.readText();
       const tab = tabs.find((t) => t.id === activeTabId);
       if (tab && tab.socket) {
-        tab.socket.emit("pty_input", {
-          session_id: tab.session.resume,
-          input: text,
-        });
+        const useBracketedPaste =
+          tab.term && tab.term.modes && tab.term.modes.bracketedPasteMode;
+        if (useBracketedPaste) {
+          text = "\x1b[200~" + text + "\x1b[201~";
+        }
+        if (window.emitPtyInput) {
+          window.emitPtyInput(tab, text);
+        } else {
+          tab.socket.emit("pty-input", {
+            input: text,
+          });
+        }
       }
     } catch (err) {
       console.error("Paste failed", err);

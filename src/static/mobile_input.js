@@ -935,6 +935,16 @@ class MobileTerminalController {
       let pasteText = (e.clipboardData || window.clipboardData).getData("text");
       if (pasteText) {
         e.preventDefault();
+
+        // Use bracketed paste if enabled by terminal
+        const useBracketedPaste =
+          this.tab.term &&
+          this.tab.term.modes &&
+          this.tab.term.modes.bracketedPasteMode;
+        if (useBracketedPaste) {
+          pasteText = "\x1b[200~" + pasteText + "\x1b[201~";
+        }
+
         // Force flush the pasted text immediately
         const newValue = this.buffer.handleInput(
           { data: pasteText, inputType: "insertFromPaste" },
@@ -1006,12 +1016,8 @@ class MobileTerminalController {
     if (window.emitPtyInput) {
       window.emitPtyInput(targetTab, data);
     } else {
-      const chunkSize = 1024;
       const strData = String(data).replace(/\n/g, "\r");
-      for (let i = 0; i < strData.length; i += chunkSize) {
-        const chunk = strData.slice(i, i + chunkSize);
-        targetTab.socket.emit("pty-input", { input: chunk });
-      }
+      targetTab.socket.emit("pty-input", { input: strData });
     }
   }
 }
