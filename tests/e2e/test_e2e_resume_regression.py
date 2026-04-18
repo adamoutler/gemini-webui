@@ -129,7 +129,8 @@ def test_new_session_no_resume(custom_server, tmp_path, playwright):
 
     # Focus terminal and type
     page.locator(".tab-instance.active .xterm").first.click()
-    page.keyboard.type("What is the TEST_VALUE\r")
+    page.keyboard.type("What is the TEST_VALUE", delay=50)
+    page.keyboard.press("Enter")
 
     # Check output
     def check_text(page):
@@ -190,7 +191,8 @@ def test_auto_resume_after_server_restart(custom_server, tmp_path, playwright):
 
     # 2. Set state
     page.locator(".tab-instance.active .xterm").first.click()
-    page.keyboard.type("Remember this TEST_VALUE: AUTO_RESUME_SUCCESS\r")
+    page.keyboard.type("Remember this TEST_VALUE: AUTO_RESUME_SUCCESS", delay=50)
+    page.keyboard.press("Enter")
 
     def check_text(page):
         return page.evaluate("""() => {
@@ -239,7 +241,8 @@ def test_auto_resume_after_server_restart(custom_server, tmp_path, playwright):
     # Wait a moment for terminal to settle after reconnect
     time.sleep(2)
     page.locator(".tab-instance.active .xterm").first.click()
-    page.keyboard.type("What is the TEST_VALUE\r")
+    page.keyboard.type("What is the TEST_VALUE", delay=50)
+    page.keyboard.press("Enter")
 
     for _ in range(10):
         term_text = check_text(page)
@@ -271,7 +274,8 @@ def test_no_terminal_clear_on_stolen_session(custom_server, tmp_path, playwright
     page1.locator('.tab-instance.active button:has-text("Start New")').first.click()
     expect(page1.locator("#active-connection-info")).to_be_visible(timeout=15000)
     page1.locator(".xterm").first.click()
-    page1.keyboard.type("Initial buffer state check\r")
+    page1.keyboard.type("Initial buffer state check", delay=50)
+    page1.keyboard.press("Enter")
 
     def check_text(page):
         return page.evaluate("""() => {
