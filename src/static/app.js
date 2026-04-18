@@ -2286,7 +2286,7 @@ function switchTab(id) {
     const reclaimBtn = document.getElementById("reclaim-btn");
     if (reclaimBtn)
       reclaimBtn.style.display = tab.stolen ? "inline-block" : "none";
-    mobileControls.style.display = "grid";
+    mobileControls.style.display = isMobile ? "grid" : "none";
     updateStatus(tab.session.ssh_target, tab.session.ssh_dir);
     if (tab.stolen) {
       const statusEl = document.getElementById("connection-status");

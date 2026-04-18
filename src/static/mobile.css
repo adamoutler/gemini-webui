@@ -217,3 +217,11 @@
   resize: none;
   opacity: 1;
 }
+
+/* Hide mobile controls on desktop viewports to prevent layout issues */
+@media (width >= 801px) {
+  #mobile-controls,
+  .mobile-input-container {
+    display: none !important;
+  }
+}
