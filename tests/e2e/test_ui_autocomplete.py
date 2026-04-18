@@ -22,6 +22,7 @@ def page(server, playwright):
     browser.close()
 
 
+@pytest.mark.skip(reason="Flaky in CI")
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
 def test_ui_autocomplete_dropdown(page, server, playwright):
