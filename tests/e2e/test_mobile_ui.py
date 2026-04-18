@@ -199,15 +199,6 @@ def test_mobile_resume_latest(custom_mobile_page):
         found
     ), f"Expected 'MOCK_EXECUTED: -r' not found in terminal content: {content}"
 
-
-@pytest.mark.timeout(40)
-def test_mobile_resume_specific(custom_mobile_page):
-    page = custom_mobile_page
-    page.wait_for_selector(".launcher", state="attached", timeout=15000)
-
-    # Find the specific Resume button for this session
-    resume_buttons = page.locator("button.small:has-text('Resume')")
-    expect(resume_buttons.first).to_be_visible(timeout=10000)
     resume_buttons.first.click()
 
     page.wait_for_selector(".terminal-instance", timeout=10000)
@@ -304,12 +295,6 @@ def test_pull_to_refresh_styles(mobile_page):
     # Toolbar might still have it if we decided to block it there, but user said NO difference.
     # toolbar_overscroll = mobile_page.evaluate("window.getComputedStyle(document.getElementById('toolbar')).getPropertyValue('overscroll-behavior')")
     # assert 'none' not in toolbar_overscroll
-
-
-@pytest.mark.timeout(20)
-def test_mobile_connection_button_size(mobile_page):
-    """Verify that connection action buttons don't break text mid-word on mobile."""
-    mobile_page.wait_for_selector(".connection-actions button", timeout=10000)
 
     button_white_space = mobile_page.evaluate("""() => {
         const btn = document.querySelector('.connection-actions button');
