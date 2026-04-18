@@ -316,7 +316,13 @@ def test_no_terminal_clear_on_stolen_session(custom_server, tmp_path, playwright
     expect(status_el).to_have_text("Stolen", timeout=15000)
 
     # Buffer should still have initial text
-    term_text1_after = check_text(page1)
+    term_text1_after = ""
+    for _ in range(10):
+        term_text1_after = check_text(page1)
+        if "Session stolen" in term_text1_after:
+            break
+        time.sleep(0.5)
+
     assert "Initial buffer state check" in term_text1_after
     assert "Session stolen" in term_text1_after
 
