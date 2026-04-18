@@ -1,10 +1,12 @@
 import os
 import sys
 import eventlet
+import eventlet.debug
 
 # Perform monkey patching as early as possible
 if os.environ.get("SKIP_MONKEY_PATCH") != "true":
     eventlet.monkey_patch()
+    eventlet.debug.hub_prevent_multiple_readers(False)
 
 import errno
 
