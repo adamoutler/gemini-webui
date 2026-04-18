@@ -24,8 +24,24 @@ def clear_server_sessions(request, test_data_dir):
     for fixture_name in server_fixtures:
         if fixture_name in request.fixturenames:
             try:
-                server_url = request.getfixturevalue(fixture_name)
+                server_val = request.getfixturevalue(fixture_name)
+                server_url = getattr(server_val, "url", server_val)
                 requests.get(f"{server_url}/api/sessions/terminate_all", timeout=5)
+
+                if "test_data_dir" in request.fixturenames:
+                    data_dir = request.getfixturevalue("test_data_dir")
+                    for fname in [
+                        "gemini_mock_sessions.json",
+                        "gemini_mock_state.json",
+                        "persisted_sessions.json",
+                    ]:
+                        path = os.path.join(str(data_dir), fname)
+                        if os.path.exists(path):
+                            os.remove(path)
+                    import glob
+
+                    for f in glob.glob(os.path.join(str(data_dir), "*.uuid")):
+                        os.remove(f)
                 break
             except Exception:
                 pass
@@ -73,8 +89,8 @@ def server(test_data_dir):
         [python_bin, "-m", "src.app"],
         env=env,
         cwd=project_root,
-        # stdout=subprocess.DEVNULL,
-        # stderr=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         preexec_fn=os.setsid,
     )
 
@@ -91,9 +107,9 @@ def server(test_data_dir):
             pass
         time.sleep(1)
         if process.poll() is not None:
-            pytest.fail("Server failed to start")
+            pytest.fail(f"Server failed to start. (stdout discarded)")
     else:
-        pytest.fail("Server health check timed out")
+        pytest.fail(f"Server health check timed out. (stdout discarded)")
 
     yield f"http://127.0.0.1:{port}"
 

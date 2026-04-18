@@ -24,3 +24,5 @@ test_ssh_pty3.py
 # Local plans (antigravity artifacts)
 plans/
 terminal_before_typing.png
+
+node_modules/

@@ -3426,8 +3426,22 @@ document.querySelectorAll(".control-btn.holdable").forEach((btn) => {
       cmd = cmd.replace(/\\t/g, "\t");
       cmd = cmd.replace(/\\r/g, "\r");
       cmd = cmd.replace(/\\n/g, "\n");
-      if (cmd === "\t" && e && e.shiftKey) {
+
+      // Handle Shift modifier toggle from MobileModifierState for Tab key
+      const isShift =
+        (e && e.shiftKey) ||
+        (typeof MobileModifierState !== "undefined" &&
+          MobileModifierState.instance &&
+          MobileModifierState.instance.shiftActive);
+
+      if (cmd === "\t" && isShift) {
         cmd = "\x1b[Z";
+        if (
+          MobileModifierState.instance &&
+          MobileModifierState.instance.shiftActive
+        ) {
+          MobileModifierState.instance.toggleShift(false);
+        }
       }
       window.sendToTerminal(cmd);
     }

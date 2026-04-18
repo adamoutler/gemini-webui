@@ -1,12 +1,16 @@
 # src/static Module
 
 ## Purpose
-This directory contains all the frontend assets for the Gemini WebUI. This includes the monolithic `app.js` which manages the Xterm.js terminal instances and SocketIO connections, styles (`base.css`, `mobile.css`), and PWA manifests. 
+
+The `src/static` directory is the hub for all client-side logic and presentation in the Gemini WebUI. It provides the interactive terminal interface through `app.js` (core logic) and `mobile_input.js` (mobile-specific UX enhancements). It supports Progressive Web App (PWA) features via `manifest.json`, `sw.js` (Service Worker), and dedicated icons/styling. Additionally, it contains the `openapi.yaml` specification for the external REST API.
 
 ## Internal Dependencies
-- Uses `openapi.yaml` for API definitions.
-- Depends on external CDNs or bundled node_modules (via HTML templates) for libraries like Xterm.js and Socket.IO.
+
+- **Backend APIs**: The code relies on the backend Flask application for REST APIs (`/api/*`), WebSocket communication (`socket.io`), and security (CSRF tokens).
+- **External Libraries**: Depends on several external libraries (Xterm.js and its addons, Socket.IO client) typically served via CDNs.
 
 ## External Dependencies
-- Served directly by the Flask application to the client's browser.
-- Relied upon by `src/templates/index.html` to provide the interactive behavior and styling.
+
+- **`src/templates/index.html`**: The primary consumer which brings the assets together.
+- **Backend Servers**: `src/app.py` and `src/docs_server.py` are responsible for serving these files.
+- **E2E Test Suite**: `tests/e2e/` is heavily dependent on the behavior defined within these static files for validating the application's functionality.
