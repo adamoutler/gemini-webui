@@ -128,6 +128,7 @@ def test_new_session_no_resume(custom_server, tmp_path, playwright):
     expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
 
     # Focus terminal and type
+    page.wait_for_timeout(3000)
     page.locator(".tab-instance.active .xterm").first.click()
     page.keyboard.type("What is the TEST_VALUE", delay=50)
     page.keyboard.press("Enter")
@@ -190,6 +191,7 @@ def test_auto_resume_after_server_restart(custom_server, tmp_path, playwright):
     expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
 
     # 2. Set state
+    page.wait_for_timeout(3000)
     page.locator(".tab-instance.active .xterm").first.click()
     page.keyboard.type("Remember this TEST_VALUE: AUTO_RESUME_SUCCESS", delay=50)
     page.keyboard.press("Enter")
@@ -273,6 +275,7 @@ def test_no_terminal_clear_on_stolen_session(custom_server, tmp_path, playwright
     expect(page1.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
     page1.locator('.tab-instance.active button:has-text("Start New")').first.click()
     expect(page1.locator("#active-connection-info")).to_be_visible(timeout=15000)
+    page1.wait_for_timeout(3000)
     page1.locator(".xterm").first.click()
     page1.keyboard.type("Initial buffer state check", delay=50)
     page1.keyboard.press("Enter")
