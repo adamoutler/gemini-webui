@@ -25,7 +25,7 @@ def ssh_target_container_no_gemini(test_data_dir, playwright):
     container_name = "test-ssh-env-vars"
     subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
 
-    port = str(random.randint(2500, 2800))
+    port = str(random.randint(30000, 40000))
 
     subprocess.run(
         [
@@ -106,7 +106,7 @@ def page(server, playwright):
     browser.close()
 
 
-@pytest.mark.skip(reason="Flaky in CI due to Docker SSH timing issues")
+@pytest.mark.skip(reason="Flaky in CI")
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(120)
 def test_e2e_session_env_vars_injected(

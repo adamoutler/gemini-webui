@@ -27,7 +27,7 @@ def ssh_target_container(test_data_dir, playwright):
     container_name = "test-gemini-ssh-target"
     subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
 
-    port = str(random.randint(2200, 2500))
+    port = str(random.randint(40000, 50000))
 
     subprocess.run(
         [
@@ -148,7 +148,7 @@ def page(server, playwright):
     browser.close()
 
 
-@pytest.mark.skip(reason="Flaky in CI due to Playwright drag and drop timing")
+@pytest.mark.skip(reason="Flaky in CI")
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(300)
 def test_ssh_drag_and_drop_upload(page, tmp_path, ssh_target_container, playwright):
