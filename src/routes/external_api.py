@@ -7,7 +7,7 @@ from marshmallow import Schema, fields
 from flask_smorest import Blueprint, Api
 
 from src.app import get_config, get_config_paths, logger, GEMINI_BIN, api_key_required
-from src.process_manager import (
+from src.services.process_engine import (
     fetch_sessions_for_host,
     validate_ssh_target,
     get_remote_command_prefix,
@@ -103,7 +103,7 @@ class SessionCreate(MethodView):
                 cmd = [
                     "/bin/sh",
                     "-c",
-                    f"cd {shlex.quote(work_dir)} && exec {shlex.quote(GEMINI_BIN)} \"$1\"",
+                    f'cd {shlex.quote(work_dir)} && exec {shlex.quote(GEMINI_BIN)} "$1"',
                     "--",
                     prompt,
                 ]
@@ -111,7 +111,7 @@ class SessionCreate(MethodView):
                 cmd = [
                     "/bin/sh",
                     "-c",
-                    f"exec {shlex.quote(GEMINI_BIN)} \"$1\"",
+                    f'exec {shlex.quote(GEMINI_BIN)} "$1"',
                     "--",
                     prompt,
                 ]
@@ -145,7 +145,9 @@ class SessionCreate(MethodView):
             )
         except Exception as e:
             logger.error(f"Error creating session: {e}")
-            return jsonify({"status": "error", "message": "An internal error occurred"}), 500
+            return jsonify(
+                {"status": "error", "message": "An internal error occurred"}
+            ), 500
 
 
 @external_api_bp.route("/v1/hosts/<host_id>/states")

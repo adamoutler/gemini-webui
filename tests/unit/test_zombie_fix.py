@@ -10,15 +10,15 @@ sys.path.append(os.getcwd())
 
 class TestZombieFix(unittest.TestCase):
     def test_session_manager_replaces_and_kills_old_pid(self):
-        from src.session_manager import SessionManager
+        from src.services.session_store import SessionManager
         from src.models.session import Session
 
         sm = SessionManager()
 
         # Mock os.killpg and os.getpgid and os.close
-        with patch("src.session_manager.os.killpg") as mock_killpg, patch(
-            "src.session_manager.os.getpgid"
-        ) as mock_getpgid, patch("src.session_manager.os.close") as mock_close:
+        with patch("src.services.session_store.os.killpg") as mock_killpg, patch(
+            "src.services.session_store.os.getpgid"
+        ) as mock_getpgid, patch("src.services.session_store.os.close") as mock_close:
             mock_getpgid.return_value = 100
 
             s1 = Session("tab1", 10, 100, "user1")
@@ -34,9 +34,9 @@ class TestZombieFix(unittest.TestCase):
             mock_close.assert_called_with(10)
             self.assertEqual(sm.get_session("tab1").pid, 101)
 
-    @patch("src.process_manager.subprocess.run")
+    @patch("src.services.process_engine.subprocess.run")
     def test_fetch_sessions_has_timeout_and_session_group(self, mock_run):
-        from src.process_manager import fetch_sessions_for_host
+        from src.services.process_engine import fetch_sessions_for_host
 
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
 

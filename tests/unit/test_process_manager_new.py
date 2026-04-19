@@ -1,11 +1,11 @@
 from unittest.mock import patch, MagicMock
-from src.process_manager import fetch_sessions_for_host, validate_ssh_target
+from src.services.process_engine import fetch_sessions_for_host, validate_ssh_target
 from src.app import pty_restart
 
 
 def test_fetch_sessions_for_host_local():
     host = {"type": "local", "target": None, "dir": None}
-    with patch("src.process_manager.subprocess.run") as mock_run:
+    with patch("src.services.process_engine.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(
             returncode=0, stdout="  1. Local (test) [uuid]", stderr=""
         )
@@ -17,7 +17,7 @@ def test_fetch_sessions_for_host_local():
 
 def test_fetch_sessions_for_host_ssh():
     host = {"type": "ssh", "target": "user@remote", "dir": "~/myproject"}
-    with patch("src.process_manager.subprocess.run") as mock_run:
+    with patch("src.services.process_engine.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(
             returncode=0, stdout="  1. Remote (test) [uuid]", stderr=""
         )
@@ -105,7 +105,7 @@ def test_pty_restart_ssh_cmd(
 
 
 def test_build_terminal_command_resume_new():
-    from src.process_manager import build_terminal_command
+    from src.services.process_engine import build_terminal_command
 
     # Test local
     cmd = build_terminal_command(None, None, "new", "/tmp/.ssh")
@@ -119,7 +119,7 @@ def test_build_terminal_command_resume_new():
 
 
 def test_build_terminal_command_resume_id():
-    from src.process_manager import build_terminal_command
+    from src.services.process_engine import build_terminal_command
 
     # Test local
     cmd = build_terminal_command(None, None, "123", "/tmp/.ssh")
@@ -133,7 +133,7 @@ def test_build_terminal_command_resume_id():
 
 
 def test_build_terminal_command_resume_true():
-    from src.process_manager import build_terminal_command
+    from src.services.process_engine import build_terminal_command
 
     # Test local
     cmd = build_terminal_command(None, None, True, "/tmp/.ssh")

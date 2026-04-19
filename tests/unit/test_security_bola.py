@@ -2,7 +2,7 @@ from src.models.session import Session
 
 
 def test_bola_get_sessions(client):
-    # Important: import session_manager here because conftest reloads src.app
+    # Important: import services.session_store here because conftest reloads src.app
     from src.app import session_manager
 
     # Setup two different users

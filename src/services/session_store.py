@@ -4,10 +4,10 @@ import shlex
 
 try:
     from config import env_config
-    from process_manager import build_ssh_args, get_remote_command_prefix
+    from services.process_engine import build_ssh_args, get_remote_command_prefix
 except ImportError:
     from src.config import env_config
-    from src.process_manager import build_ssh_args, get_remote_command_prefix
+    from src.services.process_engine import build_ssh_args, get_remote_command_prefix
 import signal
 import time
 import collections

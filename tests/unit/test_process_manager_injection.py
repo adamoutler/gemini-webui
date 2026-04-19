@@ -1,6 +1,6 @@
 import os
 from unittest.mock import patch
-from src.process_manager import build_terminal_command, fetch_sessions_for_host
+from src.services.process_engine import build_terminal_command, fetch_sessions_for_host
 
 
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
@@ -87,7 +87,7 @@ def test_build_terminal_command_gemini_bin_injection_local():
     assert "'gemini;' rm -rf /" in shell_cmd
 
 
-@patch("src.process_manager.subprocess.run")
+@patch("src.services.process_engine.subprocess.run")
 def test_fetch_sessions_for_host_gemini_bin_injection_ssh(mock_run):
     import shlex
 
@@ -98,7 +98,7 @@ def test_fetch_sessions_for_host_gemini_bin_injection_ssh(mock_run):
     assert shlex.quote("gemini; rm -rf /") in remote_cmd
 
 
-@patch("src.process_manager.subprocess.run")
+@patch("src.services.process_engine.subprocess.run")
 def test_fetch_sessions_for_host_gemini_bin_injection_local(mock_run):
     import shlex
 

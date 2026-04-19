@@ -2,7 +2,7 @@ import pytest
 import os
 import subprocess
 import getpass
-from src.process_manager import SSHConnectionManager, build_ssh_args
+from src.services.process_engine import SSHConnectionManager, build_ssh_args
 
 
 @pytest.mark.timeout(30)

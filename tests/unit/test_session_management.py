@@ -58,10 +58,10 @@ def test_terminate_managed_session_not_found(client):
 
 
 def test_resume_new_local():
-    from src.process_manager import build_terminal_command
+    from src.services.process_engine import build_terminal_command
     from unittest.mock import patch
 
-    with patch("src.process_manager.fetch_sessions_for_host") as mock_fetch:
+    with patch("src.services.process_engine.fetch_sessions_for_host") as mock_fetch:
         mock_fetch.return_value = {
             "output": "  1. Session A (date)\n  3. Session B (date)\n",
             "error": None,

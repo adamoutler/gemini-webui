@@ -32,12 +32,12 @@ def test_local_project_session_fetching(test_data_dir):
     # Test the branch where /data/workspace exists
     os.makedirs(os.path.join(str(test_data_dir), "workspace"), exist_ok=True)
 
-    with patch("src.process_manager.subprocess.run") as mock_run:
+    with patch("src.services.process_engine.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0, stdout="sessions", stderr="")
-        from src.process_manager import fetch_sessions_for_host
+        from src.services.process_engine import fetch_sessions_for_host
 
         # Force the branch that checks for workspace
-        with patch("src.process_manager.os.path.exists", return_value=True):
+        with patch("src.services.process_engine.os.path.exists", return_value=True):
             fetch_sessions_for_host({"type": "local"}, "/tmp/.ssh")
         # Verify it used /bin/sh -c or direct gemini
         cmd = mock_run.call_args[0][0]

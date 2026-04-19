@@ -26,7 +26,7 @@ from flask_socketio import ConnectionRefusedError, join_room
 
 from src.extensions import socketio
 from src.config import env_config
-from src.session_manager import session_manager
+from src.services.session_store import session_manager
 from src.shared_state import active_fake_sockets, active_fake_sockets_lock
 
 logger = logging.getLogger(__name__)

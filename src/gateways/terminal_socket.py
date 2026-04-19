@@ -5,12 +5,12 @@ from flask_socketio import ConnectionRefusedError, join_room
 
 from src.extensions import socketio
 from src.config import env_config
-from src.session_manager import session_manager
+from src.services.session_store import session_manager
 
 logger = logging.getLogger(__name__)
 
 # We need access to these for the handlers
-from src.process_manager import build_terminal_command, fetch_sessions_for_host
+from src.services.process_engine import build_terminal_command, fetch_sessions_for_host
 import threading
 from src.routes.terminal import _get_gemini_sessions_impl
 

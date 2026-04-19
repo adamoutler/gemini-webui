@@ -1,5 +1,5 @@
 from unittest.mock import patch, MagicMock
-from src.session_manager import SessionManager
+from src.services.session_store import SessionManager
 from src.models.session import Session
 
 
@@ -17,7 +17,7 @@ def test_session_to_dict_file_cache():
     assert d["file_cache"] == ["file1.txt", "dir1/"]
 
 
-@patch("src.session_manager.subprocess.run")
+@patch("src.services.session_store.subprocess.run")
 def test_update_file_cache_local(mock_run):
     manager = SessionManager()
     session = Session("tab1", None, 1234, "user1")
@@ -38,7 +38,7 @@ def test_update_file_cache_local(mock_run):
     assert "find ." in args[2]
 
 
-@patch("src.session_manager.subprocess.run")
+@patch("src.services.session_store.subprocess.run")
 def test_update_file_cache_ssh(mock_run):
     manager = SessionManager()
     session = Session(

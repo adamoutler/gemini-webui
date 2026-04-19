@@ -73,7 +73,7 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
 
         import os
         import shlex
-        from src.process_manager import build_ssh_args
+        from src.services.process_engine import build_ssh_args
 
         base_ssh_args = build_ssh_args("user@host", "/tmp/ssh_dir")[1:]
         workspace_dir = os.path.join(test_data_dir, "workspace")
@@ -141,7 +141,7 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
 
         import os
         import shlex
-        from src.process_manager import build_ssh_args
+        from src.services.process_engine import build_ssh_args
 
         base_ssh_args = build_ssh_args("user@host", "/tmp/ssh_dir")[1:]
         workspace_dir = os.path.join(test_data_dir, "workspace")

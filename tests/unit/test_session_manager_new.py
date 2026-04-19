@@ -2,7 +2,7 @@ from unittest.mock import patch, MagicMock
 
 # Import from current location for the pre-refactor test run
 try:
-    from src.session_manager import SessionManager
+    from src.services.session_store import SessionManager
     from src.models.session import Session
 except ImportError:
     from src.app import Session, SessionManager

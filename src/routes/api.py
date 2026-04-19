@@ -21,13 +21,12 @@ from src.routes.auth_utils import authenticated_only
 import logging
 
 logger = logging.getLogger(__name__)
-from src.process_manager import (
-    validate_ssh_target,
+from src.services.process_engine import (
     build_ssh_args,
     build_terminal_command,
 )
 from src.utils import smart_file_search
-from src.session_manager import session_manager
+from src.services.session_store import session_manager
 from src.prompt_manager import prompt_manager
 
 api_bp = Blueprint("api", __name__)
@@ -179,7 +178,7 @@ def v1_create_session():
         full_cmd = gemini_bin + [prompt]
     else:
         _, _, ssh_dir_path = get_config_paths()
-        from src.process_manager import build_ssh_args
+        from src.services.process_engine import build_ssh_args
 
         ssh_cmd_base = build_ssh_args(ssh_target, ssh_dir_path)
         full_cmd = ssh_cmd_base + [
@@ -371,84 +370,19 @@ def upload_file():
 
     ssh_target = request.form.get("ssh_target")
     if ssh_target:
-        if not validate_ssh_target(ssh_target):
-            return jsonify({"status": "error", "message": "Invalid SSH target"}), 400
-
         ssh_dir = request.form.get("ssh_dir")
         _, _, ssh_dir_path = get_config_paths()
 
-        if not ssh_dir or ssh_dir == "~":
-            remote_path = filename
-        elif ssh_dir.startswith("~/"):
-            remote_path = f"{ssh_dir[2:]}/{filename}"
-        else:
-            remote_path = os.path.join(ssh_dir, filename).replace("\\", "/")
+        from src.services.remote_fs import upload_to_remote
 
-        remote_dir = os.path.dirname(remote_path)
-        port = None
-        clean_target = ssh_target
-        if ":" in ssh_target:
-            parts = ssh_target.rsplit(":", 1)
-            if parts[1].isdigit():
-                clean_target = parts[0]
-                port = parts[1]
-
-        ssh_cmd_base = build_ssh_args(ssh_target, ssh_dir_path)
-        if port:
-            ssh_cmd_base.extend(["-p", port])
-
-        scp_cmd_base = ["scp"] + build_ssh_args(ssh_target, ssh_dir_path)[1:]
-        if port:
-            scp_cmd_base.extend(["-P", port])
-
-        if remote_dir:
-            ssh_cmd = ssh_cmd_base + [
-                "--",
-                clean_target,
-                f"mkdir -p {shlex.quote(remote_dir)}",
-            ]
-            res = subprocess.run(ssh_cmd, capture_output=True, text=True, timeout=15)
-            if res.returncode != 0:
-                return jsonify(
-                    {
-                        "status": "error",
-                        "message": f"Failed to create remote directory: {res.stderr}",
-                    }
-                ), 500
-
-        scp_cmd = scp_cmd_base + ["--", save_path, f"{clean_target}:{remote_path}"]
         try:
-            result = subprocess.run(scp_cmd, capture_output=True, text=True, timeout=60)
-            if result.returncode != 0:
-                return jsonify(
-                    {"status": "error", "message": f"SCP failed: {result.stderr}"}
-                ), 500
-
-            verify_cmd = ssh_cmd_base + [
-                "--",
-                clean_target,
-                f"ls {shlex.quote(remote_path)}",
-            ]
-            verify_res = subprocess.run(verify_cmd, capture_output=True, timeout=15)
-            if verify_res.returncode != 0:
-                return jsonify(
-                    {
-                        "status": "error",
-                        "message": "SCP returned 0, but file verification failed on remote host.",
-                    }
-                ), 500
-
-            path_cmd = ssh_cmd_base + [
-                "--",
-                clean_target,
-                f"realpath {shlex.quote(remote_path)} 2>/dev/null || readlink -m {shlex.quote(remote_path)} 2>/dev/null || echo {shlex.quote(remote_path)}",
-            ]
-            path_res = subprocess.run(
-                path_cmd, capture_output=True, text=True, timeout=15
+            filename = upload_to_remote(
+                save_path, filename, ssh_target, ssh_dir, ssh_dir_path
             )
-            if path_res.returncode == 0 and path_res.stdout.strip():
-                filename = path_res.stdout.strip()
-
+        except ValueError as e:
+            return jsonify({"status": "error", "message": str(e)}), 400
+        except RuntimeError as e:
+            return jsonify({"status": "error", "message": str(e)}), 500
         except Exception as e:
             return jsonify(
                 {"status": "error", "message": "An internal error occurred during SCP"}

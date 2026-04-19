@@ -2,7 +2,7 @@ import time
 import os
 import signal
 from unittest.mock import patch
-from src.session_manager import SessionManager
+from src.services.session_store import SessionManager
 from src.models.session import Session
 
 

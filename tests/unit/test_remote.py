@@ -5,7 +5,7 @@ from src.app import app
 
 
 def test_remote_sessions_list(client):
-    with patch("src.process_manager.subprocess.run") as mock_run:
+    with patch("src.services.process_engine.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(
             returncode=0,
             stdout="""  1. SessionOne (active) [uuid1]
@@ -25,7 +25,7 @@ def test_remote_sessions_timeout(client):
     import subprocess
 
     with patch(
-        "src.process_manager.subprocess.run",
+        "src.services.process_engine.subprocess.run",
         side_effect=subprocess.TimeoutExpired(cmd=["ssh"], timeout=45),
     ):
         response = client.get("/api/sessions?ssh_target=user@host")

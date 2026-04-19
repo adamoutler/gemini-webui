@@ -1,5 +1,5 @@
 import threading
-from src.session_manager import SessionManager
+from src.services.session_store import SessionManager
 from src.models.session import Session
 
 

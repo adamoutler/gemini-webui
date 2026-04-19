@@ -1,7 +1,7 @@
 import sys
 
 sys.path.append("src")
-from process_manager import build_terminal_command
+from services.process_engine import build_terminal_command
 
 # Test 1: local, start new
 print(build_terminal_command(None, None, False, "/tmp", "gemini-test"))
