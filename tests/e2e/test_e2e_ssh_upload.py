@@ -27,7 +27,11 @@ def ssh_target_container(test_data_dir, playwright):
     container_name = "test-gemini-ssh-target"
     subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
 
-    port = str(random.randint(40000, 50000))
+    import socket
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        port = str(s.getsockname()[1])
 
     subprocess.run(
         [

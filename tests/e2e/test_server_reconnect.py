@@ -18,9 +18,11 @@ def custom_server(tmp_path, playwright):
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["SECRET_KEY"] = "testsecret"
-    import random
+    import socket
 
-    port = str(random.randint(10000, 20000))
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        port = str(s.getsockname()[1])
     env["PORT"] = port
     env["ALLOWED_ORIGINS"] = "*"
     env["DATA_DIR"] = str(tmp_path)

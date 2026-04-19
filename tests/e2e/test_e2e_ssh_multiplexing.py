@@ -20,9 +20,11 @@ def ssh_test_server(tmp_path, playwright):
     env["SECRET_KEY"] = "testsecret"
     env["WTF_CSRF_ENABLED"] = "false"
     env["FLASK_USE_RELOADER"] = "false"
-    import random
+    import socket
 
-    port = str(random.randint(10000, 20000))
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("", 0))
+        port = str(s.getsockname()[1])
     env["PORT"] = port
     env["DATA_DIR"] = str(tmp_path)
 
