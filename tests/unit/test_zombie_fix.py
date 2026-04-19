@@ -15,10 +15,12 @@ class TestZombieFix(unittest.TestCase):
 
         sm = SessionManager()
 
-        # Mock os.killpg and os.getpgid and os.close
+        # Mock os.killpg and os.getpgid and os.close and fcntl.fcntl
         with patch("src.services.session_store.os.killpg") as mock_killpg, patch(
             "src.services.session_store.os.getpgid"
-        ) as mock_getpgid, patch("src.services.session_store.os.close") as mock_close:
+        ) as mock_getpgid, patch(
+            "src.services.session_store.os.close"
+        ) as mock_close, patch("src.models.session.fcntl.fcntl") as mock_fcntl:
             mock_getpgid.return_value = 100
 
             s1 = Session("tab1", 10, 100, "user1")

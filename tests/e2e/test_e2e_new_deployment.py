@@ -21,6 +21,7 @@ def authenticated_server(tmp_path, playwright):
     env["PORT"] = port
     env["DATA_DIR"] = str(tmp_path)
     env["FLASK_USE_RELOADER"] = "false"
+    env["SKIP_MONKEY_PATCH"] = "false"
     env["GEMWEBUI_HARNESS"] = "1"
     env["FLASK_DEBUG"] = "false"
 
