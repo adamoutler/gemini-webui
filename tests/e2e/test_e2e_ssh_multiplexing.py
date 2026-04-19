@@ -70,9 +70,13 @@ def test_ssh_multiplexing_loading_state(ssh_test_server, playwright):
     # Intercept the /api/management/sessions to return empty
     page.route("**/api/management/sessions", lambda route: route.fulfill(json=[]))
 
-    # We want to capture the "Establishing connection" text. To do this, we can simulate
-    # a slow fetch request when listing sessions.
-    page.route("**/api/hosts", lambda route: (time.sleep(1.5), route.continue_()))
+    # Intercept the /api/hosts to return slowly without blocking the Python thread
+    page.route(
+        "**/api/hosts",
+        lambda route: route.fulfill(
+            status=200, json=[], headers={"Content-Type": "application/json"}
+        ),
+    )
 
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=5000)
