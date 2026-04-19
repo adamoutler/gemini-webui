@@ -6,12 +6,11 @@ for root, _, files in os.walk("tests"):
             path = os.path.join(root, file)
             with open(path, "r") as f:
                 content = f.read()
-            if 'env["FLASK_USE_RELOADER"] = "false"' in content:
-                if 'env["SKIP_MONKEY_PATCH"] = "false"' not in content:
-                    new_content = content.replace(
-                        'env["FLASK_USE_RELOADER"] = "false"',
-                        'env["FLASK_USE_RELOADER"] = "false"\n    env["SKIP_MONKEY_PATCH"] = "false"',
-                    )
-                    with open(path, "w") as f:
-                        f.write(new_content)
-                    print(f"Fixed {path}")
+            if 'env["SKIP_MONKEY_PATCH"] = "false"' in content:
+                new_content = content.replace(
+                    'env["SKIP_MONKEY_PATCH"] = "false"',
+                    'env["SKIP_MONKEY_PATCH"] = "true"',
+                )
+                with open(path, "w") as f:
+                    f.write(new_content)
+                print(f"Fixed {path}")

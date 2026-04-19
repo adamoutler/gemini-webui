@@ -45,7 +45,7 @@ def main(playwright):
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
     env["PORT"] = "5009"
     env["FLASK_USE_RELOADER"] = "false"
-    env["SKIP_MONKEY_PATCH"] = "false"
+    env["SKIP_MONKEY_PATCH"] = "true"
     env["SKIP_PRELOADER"] = "false"
     env["DATA_DIR"] = test_temp_dir
     env["GEMINI_BIN"] = os.path.abspath("tests/mock/gemini")

@@ -20,7 +20,7 @@ def ssh_test_server(tmp_path, playwright):
     env["SECRET_KEY"] = "testsecret"
     env["WTF_CSRF_ENABLED"] = "false"
     env["FLASK_USE_RELOADER"] = "false"
-    env["SKIP_MONKEY_PATCH"] = "false"
+    env["SKIP_MONKEY_PATCH"] = "true"
     import socket
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
