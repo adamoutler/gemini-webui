@@ -70,8 +70,7 @@ done
     env["GEMINI_BIN"] = str(mock_script)
     env["FLASK_USE_RELOADER"] = "false"
     env["FLASK_DEBUG"] = "false"
-    env["SKIP_MONKEY_PATCH"] = "false"
-    env["SKIP_MULTIPLEXER"] = "true"
+    env["SKIP_MONKEY_PATCH"] = "true"
 
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

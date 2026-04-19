@@ -20,9 +20,8 @@ def custom_server(tmp_path, playwright):
     env["ALLOWED_ORIGINS"] = "*"
     env["DATA_DIR"] = str(tmp_path)
     env["FLASK_USE_RELOADER"] = "false"
-    env["SKIP_MULTIPLEXER"] = "true"
     env["FLASK_DEBUG"] = "false"
-    env["SKIP_MONKEY_PATCH"] = "false"
+    env["SKIP_MONKEY_PATCH"] = "true"
 
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
