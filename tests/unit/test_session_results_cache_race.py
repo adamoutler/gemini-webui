@@ -40,13 +40,14 @@ def test_concurrent_list_sessions(client, monkeypatch):
             except Exception as e:
                 errors.append(e)
 
+    import eventlet
+
     threads = []
     for _ in range(10):
-        t = threading.Thread(target=worker)
+        t = eventlet.spawn(worker)
         threads.append(t)
-        t.start()
 
     for t in threads:
-        t.join()
+        t.wait()
 
     assert not errors, f"Errors during concurrent requests: {errors}"
