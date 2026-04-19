@@ -8,7 +8,8 @@ from src.app import app, init_app
 
 
 @pytest.fixture
-def client(test_data_dir):
+def client(test_data_dir, monkeypatch):
+    monkeypatch.setenv("DATA_DIR", str(test_data_dir))
     app.config["TESTING"] = True
     app.config["DATA_DIR"] = str(test_data_dir)
     app.config["BYPASS_AUTH_FOR_TESTING"] = "true"

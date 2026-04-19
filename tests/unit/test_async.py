@@ -65,7 +65,7 @@ def test_cleanup_orphaned_ptys(mock_socketio):
         assert session_manager.get_session("new_orphan") is not None
 
 
-@patch("src.app.get_config")
+@patch("src.config.get_config")
 def test_background_session_preloader(mock_get_config):
     mock_get_config.return_value = {"HOSTS": [{"label": "local", "type": "local"}]}
 
@@ -95,8 +95,8 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
         mock_request.sid = "test-sid"
         # Patch where it's USED in src.app
         with patch("src.app.request", mock_request), patch(
-            "src.app.get_config_paths"
-        ) as mock_paths, patch("src.app.get_config") as mock_get_config, patch(
+            "src.config.get_config_paths"
+        ) as mock_paths, patch("src.config.get_config") as mock_get_config, patch(
             "shutil.which", return_value=None
         ), patch("os.chdir"), patch("os.execv"), patch("os.closerange"), patch(
             "os.execvp"

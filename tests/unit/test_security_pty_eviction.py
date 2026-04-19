@@ -2,7 +2,8 @@ import time
 import os
 import signal
 from unittest.mock import patch
-from src.session_manager import Session, SessionManager
+from src.session_manager import SessionManager
+from src.models.session import Session
 
 
 def test_lru_pty_eviction():

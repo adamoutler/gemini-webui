@@ -423,3 +423,31 @@ def build_terminal_command(
             gemini_cmd += f" -r {shlex.quote(str(resume))}"
         cmd = ["/bin/sh", "-c", f"{setup_cmd} exec {gemini_cmd}"]
         return _wrap_with_multiplexer(cmd)
+
+
+import os
+import signal
+from src.shared_state import abandoned_pids, abandoned_pids_lock
+
+
+def kill_and_reap(pid):
+    """Kills a process and its entire group, then reaps the zombie immediately."""
+    if pid is None:
+        return
+    try:
+        os.killpg(os.getpgid(pid), signal.SIGKILL)
+    except OSError:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except OSError:
+            pass
+
+    try:
+        res = os.waitpid(pid, os.WNOHANG)
+        if res == (0, 0):
+            with abandoned_pids_lock:
+                abandoned_pids.add(pid)
+    except ChildProcessError:
+        pass
+    except OSError:
+        pass

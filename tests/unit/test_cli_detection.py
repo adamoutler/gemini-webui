@@ -10,7 +10,7 @@ def test_remote_gemini_detection_missing(test_data_dir):
     with app.test_request_context("/"):
         # Mock PTY and other logic to focus on remote command construction
         with patch("src.app.pty.fork") as mock_fork, patch(
-            "src.app.get_config_paths"
+            "src.config.get_config_paths"
         ) as mock_paths, patch("os.chdir"), patch("os.closerange"), patch(
             "os.execvpe"
         ), patch("os._exit"):

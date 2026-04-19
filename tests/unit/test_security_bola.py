@@ -1,4 +1,4 @@
-from src.session_manager import Session
+from src.models.session import Session
 
 
 def test_bola_get_sessions(client):

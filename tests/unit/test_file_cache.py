@@ -1,5 +1,6 @@
 from unittest.mock import patch, MagicMock
-from src.session_manager import Session, SessionManager
+from src.session_manager import SessionManager
+from src.models.session import Session
 
 
 def test_session_init_file_cache():

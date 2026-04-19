@@ -1,6 +1,6 @@
 import os
 from unittest.mock import patch, MagicMock
-from src.app import get_config_paths
+from src.config import get_config_paths
 
 
 def test_get_config_paths_env_override():
@@ -13,8 +13,10 @@ def test_get_config_paths_env_override():
 
 def test_init_app_full(test_data_dir):
     from src.app import app
+    import src.config
 
     app.config["DATA_DIR"] = str(test_data_dir)
+    src.config.app_config.init_config(str(test_data_dir))
     app.config["TESTING"] = True
 
     with patch("src.app.os.makedirs") as mock_mkdir, patch(
@@ -36,6 +38,9 @@ def test_ssh_key_rotation_logic(test_data_dir):
     from src.app import app
 
     app.config["DATA_DIR"] = str(test_data_dir)
+    import src.config
+
+    src.config.app_config.init_config(str(test_data_dir))
     ssh_dir = os.path.join(str(test_data_dir), ".ssh")
     os.makedirs(ssh_dir, exist_ok=True)
     key_path = os.path.join(ssh_dir, "id_ed25519")
@@ -62,7 +67,10 @@ def test_ssh_key_rotation_logic(test_data_dir):
             rotate_instance_key,
         )  # We need a request context for API calls
 
-        with patch.dict(os.environ, {"BYPASS_AUTH_FOR_TESTING": "true"}):
+        with patch.dict(
+            os.environ,
+            {"BYPASS_AUTH_FOR_TESTING": "true", "DATA_DIR": str(test_data_dir)},
+        ):
             with app.test_request_context():
                 response = rotate_instance_key()
                 # Flask routes called directly return (body, status) or response object

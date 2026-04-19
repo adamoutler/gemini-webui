@@ -16,12 +16,17 @@ from werkzeug.utils import secure_filename
 from flask_wtf.csrf import generate_csrf
 
 from src.config import env_config
-from src.app import get_config, get_config_paths, authenticated_only, logger
+from src.config import get_config, get_config_paths, env_config
+from src.routes.auth_utils import authenticated_only
+import logging
+
+logger = logging.getLogger(__name__)
 from src.process_manager import (
     validate_ssh_target,
     build_ssh_args,
     build_terminal_command,
 )
+from src.utils import smart_file_search
 from src.session_manager import session_manager
 from src.prompt_manager import prompt_manager
 

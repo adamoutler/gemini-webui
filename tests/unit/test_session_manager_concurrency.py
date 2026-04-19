@@ -1,5 +1,6 @@
 import threading
-from src.session_manager import SessionManager, Session
+from src.session_manager import SessionManager
+from src.models.session import Session
 
 
 def test_session_manager_concurrency():

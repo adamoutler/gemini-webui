@@ -10,7 +10,8 @@ sys.path.append(os.getcwd())
 
 class TestZombieFix(unittest.TestCase):
     def test_session_manager_replaces_and_kills_old_pid(self):
-        from src.session_manager import SessionManager, Session
+        from src.session_manager import SessionManager
+        from src.models.session import Session
 
         sm = SessionManager()
 

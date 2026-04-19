@@ -1,5 +1,6 @@
 import os
-from src.app import validate_ssh_target, get_config_paths, set_winsize
+from src.config import get_config_paths
+from src.app import validate_ssh_target, set_winsize
 
 
 def test_validate_ssh_target():
@@ -15,17 +16,20 @@ from unittest.mock import patch
 
 
 def test_get_config_paths_failover(tmp_path):
-    with patch("src.app.app.config.get") as mock_get:
+    with patch("src.config.env_config") as mock_env:
         # Simulate that the initially configured DATA_DIR is not writable
-        mock_get.return_value = "/ro/data_dir"
+        mock_env.DATA_DIR = "/ro/data_dir"
 
-        # Mock os.access to return False for the RO dir and True for /tmp
+        orig_access = (
+            os.access
+        )  # Mock os.access to return False for the RO dir and True for /tmp
+
         def mock_access(path, mode):
             if path in ("/ro/data_dir", "/ro"):
                 return False
             if path == "/tmp":
                 return True
-            return os.access(path, mode)
+            return orig_access(path, mode)
 
         with patch("os.access", side_effect=mock_access):
             with patch("os.makedirs") as mock_makedirs:

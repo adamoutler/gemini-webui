@@ -104,6 +104,7 @@ import uuid
 import tempfile
 from functools import wraps
 from flask import (
+    current_app,
     Flask,
     render_template,
     request,
@@ -115,7 +116,8 @@ from flask import (
     send_file,
 )
 from werkzeug.utils import secure_filename
-from flask_socketio import SocketIO, ConnectionRefusedError, join_room
+from flask_socketio import ConnectionRefusedError, join_room
+from src.extensions import socketio
 from flask_talisman import Talisman
 from flask_wtf.csrf import CSRFProtect, CSRFError, generate_csrf
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -200,13 +202,16 @@ app.wsgi_app = ProxyFix(
 share_manager = ShareManager()
 
 # Background session cache: key -> {"output": str, "error": str, "timestamp": float}
-session_results_cache = {}
-session_results_cache_lock = threading.Lock()
+from src.shared_state import (
+    ephemeral_sessions,
+    session_results_cache,
+    session_results_cache_lock,
+    abandoned_pids,
+    abandoned_pids_lock,
+    active_fake_sockets,
+    active_fake_sockets_lock,
+)
 
-from src.shared_state import ephemeral_sessions
-
-active_fake_sockets = {}
-active_fake_sockets_lock = threading.Lock()
 
 # Precompile terminal ID regex for performance
 IDENTIFICATION_REGEX = re.compile(r"\x1b\[\??\d+(?:;\d+)*c")
@@ -369,6 +374,9 @@ def get_config():
                 logger.error(f"Failed to persist host_id: {e}")
 
     return conf
+
+
+import src.gateways.terminal_socket
 
 
 def init_app():
@@ -551,21 +559,22 @@ Talisman(
 )  # Set to True if proxy handles SSL
 
 # Only allow origins from environment or localhost
-if env_config.BYPASS_AUTH_FOR_TESTING:
-    socketio = SocketIO(app, cors_allowed_origins="*", async_mode="eventlet")
-else:
-    # Default to '*' for ease of use if not specified, but log it
-    allowed_origins_raw = env_config.ALLOWED_ORIGINS_RAW
-    if allowed_origins_raw:
-        allowed_origins = allowed_origins_raw.split(",")
+if getattr(socketio, "server", None) is None:
+    if env_config.BYPASS_AUTH_FOR_TESTING:
+        socketio.init_app(app, cors_allowed_origins="*", async_mode="eventlet")
     else:
-        logger.warning(
-            "ALLOWED_ORIGINS not set. Defaulting to '*' (CORS restricted disabled)."
+        # Default to '*' for ease of use if not specified, but log it
+        allowed_origins_raw = env_config.ALLOWED_ORIGINS_RAW
+        if allowed_origins_raw:
+            allowed_origins = allowed_origins_raw.split(",")
+        else:
+            logger.warning(
+                "ALLOWED_ORIGINS not set. Defaulting to '*' (CORS restricted disabled)."
+            )
+            allowed_origins = "*"
+        socketio.init_app(
+            app, cors_allowed_origins=allowed_origins, async_mode="eventlet"
         )
-        allowed_origins = "*"
-    socketio = SocketIO(
-        app, cors_allowed_origins=allowed_origins, async_mode="eventlet"
-    )
 
 
 def authenticate():
@@ -597,13 +606,15 @@ def handle_connect(auth=None):
     csrf_token = auth.get("csrf_token")
 
     try:
-        if app.config.get("WTF_CSRF_ENABLED", True):
+        if current_app.config.get("WTF_CSRF_ENABLED", True):
             validate_csrf(csrf_token)
-            app.logger.debug("CSRF validation passed")
+            current_app.logger.debug("CSRF validation passed")
         else:
             logger.info("CSRF validation disabled via config")
     except ValidationError as e:
-        app.logger.debug(f"CSRF validation failed (expected during token refresh): {e}")
+        current_app.logger.debug(
+            f"CSRF validation failed (expected during token refresh): {e}"
+        )
         raise ConnectionRefusedError("invalid_csrf")
 
     user_id = session.get("user_id") or (
@@ -650,7 +661,7 @@ def handle_disconnect():
 def require_auth():
     if (
         env_config.BYPASS_AUTH_FOR_TESTING
-        or app.config.get("BYPASS_AUTH_FOR_TESTING") == "true"
+        or current_app.config.get("BYPASS_AUTH_FOR_TESTING") == "true"
     ):
         session["authenticated"] = True
         return

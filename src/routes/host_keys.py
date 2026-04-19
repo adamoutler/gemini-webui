@@ -9,7 +9,8 @@ import logging
 from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
 
-from src.app import get_config, get_config_paths, authenticated_only
+from src.config import get_config, get_config_paths
+from src.routes.auth_utils import authenticated_only
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +184,9 @@ def rotate_instance_key():
             return jsonify({"status": "success", "key": f.read().strip()})
     except Exception as e:
         logger.error(f"Failed to rotate SSH key: {e}")
-        return jsonify({"status": "error", "message": "An internal error occurred"}), 500
+        return jsonify(
+            {"status": "error", "message": "An internal error occurred"}
+        ), 500
 
 
 @host_key_bp.route("/api/keys/text", methods=["POST"])

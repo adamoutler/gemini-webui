@@ -52,7 +52,8 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
     with patch("src.routes.api.subprocess.run") as mock_run, patch(
         "src.app.validate_ssh_target", return_value=True
     ), patch(
-        "src.app.get_config_paths", return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir")
+        "src.config.get_config_paths",
+        return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
     ):
         mock_run.return_value = MagicMock(returncode=0, stdout="mock_path")
         response = client.post(
@@ -122,7 +123,8 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
     with patch("src.routes.api.subprocess.run") as mock_run, patch(
         "src.app.validate_ssh_target", return_value=True
     ), patch(
-        "src.app.get_config_paths", return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir")
+        "src.config.get_config_paths",
+        return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
     ):
         mock_run.return_value = MagicMock(returncode=0, stdout="mock_path")
         response = client.post(
@@ -194,7 +196,8 @@ def test_upload_file_ssh_proxy_mkdir_failure(client, test_data_dir):
     with patch("src.routes.api.subprocess.run") as mock_run, patch(
         "src.app.validate_ssh_target", return_value=True
     ), patch(
-        "src.app.get_config_paths", return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir")
+        "src.config.get_config_paths",
+        return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
     ):
         mock_run.return_value = MagicMock(returncode=1, stderr="Permission denied")
         response = client.post(
@@ -216,7 +219,8 @@ def test_upload_file_ssh_proxy_scp_failure(client, test_data_dir):
     with patch("src.routes.api.subprocess.run") as mock_run, patch(
         "src.app.validate_ssh_target", return_value=True
     ), patch(
-        "src.app.get_config_paths", return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir")
+        "src.config.get_config_paths",
+        return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
     ):
 
         def run_side_effect(*args, **kwargs):
@@ -245,7 +249,8 @@ def test_upload_file_ssh_proxy_verify_failure(client, test_data_dir):
     with patch("src.routes.api.subprocess.run") as mock_run, patch(
         "src.app.validate_ssh_target", return_value=True
     ), patch(
-        "src.app.get_config_paths", return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir")
+        "src.config.get_config_paths",
+        return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
     ):
 
         def run_side_effect(*args, **kwargs):

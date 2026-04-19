@@ -78,6 +78,7 @@ def server(test_data_dir):
     env["FLASK_DEBUG"] = "false"
     env["SKIP_MONKEY_PATCH"] = "false"  # Server SHOULD monkeypatch
     env["SKIP_MULTIPLEXER"] = "true"
+    env["PYTHONUNBUFFERED"] = "1"
 
     mock_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mock")
     env["PATH"] = f"{mock_dir}:{env.get('PATH', '')}"
@@ -85,12 +86,13 @@ def server(test_data_dir):
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
+    log_file = open("/tmp/pytest_server.log", "w")
     process = subprocess.Popen(
         [python_bin, "-m", "src.app"],
         env=env,
         cwd=project_root,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+        stdout=log_file,
+        stderr=subprocess.STDOUT,
         preexec_fn=os.setsid,
     )
 
@@ -129,9 +131,10 @@ def app_obj(test_data_dir):
 
 
 @pytest.fixture
-def client(test_data_dir):
+def client(test_data_dir, monkeypatch):
     from src.app import app, init_app
 
+    monkeypatch.setenv("DATA_DIR", str(test_data_dir))
     app.config["TESTING"] = True
     app.config["BYPASS_AUTH_FOR_TESTING"] = "true"
     app.config["WTF_CSRF_ENABLED"] = False

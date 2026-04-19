@@ -1,7 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, jsonify
+from flask import Blueprint, render_template, request, redirect, jsonify, current_app
 import uuid
 import logging
-from src.app import app
 from src.shared_state import ephemeral_sessions
 
 logger = logging.getLogger(__name__)
@@ -34,17 +33,17 @@ def fake_session_init():
 @ui_bp.route("/favicon.ico")
 @ui_bp.route("/favicon.svg")
 def favicon():
-    return app.send_static_file("favicon.svg")
+    return current_app.send_static_file("favicon.svg")
 
 
 @ui_bp.route("/manifest.json")
 def manifest():
-    return app.send_static_file("manifest.json")
+    return current_app.send_static_file("manifest.json")
 
 
 @ui_bp.route("/sw.js")
 def service_worker():
-    response = app.send_static_file("sw.js")
+    response = current_app.send_static_file("sw.js")
     response.headers["Service-Worker-Allowed"] = "/"
     return response
 

@@ -1,28 +1,29 @@
-from src.shared_state import ephemeral_sessions
+from src.shared_state import (
+    ephemeral_sessions,
+    session_results_cache,
+    session_results_cache_lock,
+)
 import os
 import shlex
 import subprocess
 from flask import Blueprint, jsonify, request, session
 
-from src.config import env_config
+from src.config import env_config, get_config_paths
 from src.session_manager import session_manager
-from src.app import (
-    get_config_paths,
-    authenticated_only,
-    logger,
-    # removed direct import
-    kill_and_reap,
-    GEMINI_BIN,
-    session_results_cache,
-    session_results_cache_lock,
-    socketio,
-)
-from src.utils import smart_file_search
+from src.routes.auth_utils import authenticated_only
+import logging
+
+logger = logging.getLogger(__name__)
+
 from src.process_manager import (
     fetch_sessions_for_host,
     validate_ssh_target,
     get_remote_command_prefix,
+    kill_and_reap,
 )
+from src.config import env_config
+from src.extensions import socketio
+from src.utils import smart_file_search
 
 terminal_bp = Blueprint("sessions", __name__)
 
@@ -129,7 +130,7 @@ def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
                             "type": "ssh" if target else "local",
                         },
                         ssh_dir_path,
-                        GEMINI_BIN,
+                        env_config.GEMINI_BIN,
                     )
                     with session_results_cache_lock:
                         session_results_cache[key] = res
@@ -155,7 +156,7 @@ def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
             "type": "ssh" if ssh_target else "local",
         },
         ssh_dir_path,
-        GEMINI_BIN,
+        env_config.GEMINI_BIN,
     )
     with session_results_cache_lock:
         session_results_cache[cache_key] = result
@@ -190,7 +191,8 @@ def list_gemini_sessions():
 @terminal_bp.route("/api/test_inject_session", methods=["GET"])
 def inject_sess():
     import time
-    from src.session_manager import Session, session_manager
+    from src.session_manager import session_manager
+    from src.models.session import Session
 
     user_id = session.get("user_id") or (
         "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
