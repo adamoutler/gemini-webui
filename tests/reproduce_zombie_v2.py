@@ -46,7 +46,7 @@ def main(playwright):
     env["PORT"] = "5009"
     env["FLASK_USE_RELOADER"] = "false"
     env["SKIP_MULTIPLEXER"] = "true"
-    env["SKIP_MONKEY_PATCH"] = "true"
+    env["SKIP_MONKEY_PATCH"] = "false"
     env["SKIP_PRELOADER"] = "false"
     env["DATA_DIR"] = test_temp_dir
     env["GEMINI_BIN"] = os.path.abspath("tests/mock/gemini")

@@ -21,7 +21,7 @@ def custom_server(tmp_path, playwright):
     env["DATA_DIR"] = str(tmp_path)
     env["FLASK_USE_RELOADER"] = "false"
     env["FLASK_DEBUG"] = "false"
-    env["SKIP_MONKEY_PATCH"] = "true"
+    env["SKIP_MONKEY_PATCH"] = "false"
 
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
