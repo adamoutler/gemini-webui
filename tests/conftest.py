@@ -78,7 +78,7 @@ def server(test_data_dir):
     env["GEMWEBUI_HARNESS"] = "1"
     env["FLASK_USE_RELOADER"] = "false"
     env["FLASK_DEBUG"] = "false"
-    env["SKIP_MONKEY_PATCH"] = "true"  # Server SHOULD monkeypatch
+    env["SKIP_MONKEY_PATCH"] = "false"  # Server SHOULD monkeypatch
     env["SKIP_MULTIPLEXER"] = "true"
     env["PYTHONUNBUFFERED"] = "1"
 
