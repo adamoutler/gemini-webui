@@ -1,3 +1,4 @@
+from src.gateways.terminal_socket import update_title
 from unittest.mock import patch, MagicMock
 
 # Import from current location for the pre-refactor test run

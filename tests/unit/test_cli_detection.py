@@ -1,6 +1,7 @@
+from src.gateways.terminal_socket import pty_restart
 import os
 from unittest.mock import patch, MagicMock
-from src.app import pty_restart, app
+from src.app import app
 
 
 def test_remote_gemini_detection_missing(test_data_dir):

@@ -1,6 +1,6 @@
+from src.gateways.terminal_socket import pty_restart
 from unittest.mock import patch, MagicMock
 from src.services.process_engine import fetch_sessions_for_host, validate_ssh_target
-from src.app import pty_restart
 
 
 def test_fetch_sessions_for_host_local():

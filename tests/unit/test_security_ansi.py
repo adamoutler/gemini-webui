@@ -1,6 +1,7 @@
+from src.gateways.terminal_socket import session_output_reader
 import pytest
 from unittest.mock import patch
-from src.app import session_output_reader, session_manager, Session
+from src.app import session_manager, Session
 
 
 def read_and_forward_pty_output():
@@ -40,7 +41,7 @@ def test_ansi_injection(payload):
     session_manager.reclaim_session("tab_ansi", "sid_ansi", "admin")
 
     with patch("select.select") as mock_select, patch("os.read") as mock_read, patch(
-        "src.app.socketio"
+        "src.gateways.terminal_socket.socketio"
     ) as mock_sio:
         mock_select.return_value = ([None], [], [])
 
@@ -73,7 +74,7 @@ def test_ansi_injection_mixed_chunks():
     ]
 
     with patch("select.select") as mock_select, patch("os.read") as mock_read, patch(
-        "src.app.socketio"
+        "src.gateways.terminal_socket.socketio"
     ) as mock_sio:
         mock_select.return_value = ([None], [], [])
 

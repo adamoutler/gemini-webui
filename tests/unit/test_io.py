@@ -1,6 +1,7 @@
+from src.gateways.terminal_socket import session_output_reader
 import logging
 from unittest.mock import MagicMock, patch
-from src.app import session_output_reader, session_manager, Session
+from src.app import session_manager, Session
 
 
 def read_and_forward_pty_output():
@@ -23,7 +24,7 @@ def test_read_and_forward_pty_output_basic(test_data_dir):
     session_manager.reclaim_session("tab1", "sid1", "admin")
 
     with patch("select.select") as mock_select, patch("os.read") as mock_read, patch(
-        "src.app.socketio"
+        "src.gateways.terminal_socket.socketio"
     ) as mock_sio:
         # 1. Simulate data ready
         mock_select.return_value = ([None], [], [])
@@ -54,7 +55,7 @@ def test_read_and_forward_pty_output_error():
 
     with patch("select.select") as mock_select, patch(
         "os.read", side_effect=OSError("Read error")
-    ), patch("src.app.socketio") as mock_sio:
+    ), patch("src.gateways.terminal_socket.socketio") as mock_sio:
         mock_select.return_value = ([None], [], [])
         mock_sio.sleep.side_effect = [None, Exception("Stop")]
 
@@ -100,7 +101,7 @@ def test_extreme_data_injection_and_delta_updates():
     session.decoder.decode.side_effect = lambda x: x.decode("utf-8")
 
     with patch("select.select") as mock_select, patch("os.read") as mock_read, patch(
-        "src.app.socketio"
+        "src.gateways.terminal_socket.socketio"
     ) as mock_sio:
         mock_select.return_value = ([None], [], [])
 

@@ -1,13 +1,16 @@
+from src.gateways.terminal_socket import (
+    pty_input,
+    pty_resize,
+    set_winsize,
+    handle_connect,
+    handle_disconnect,
+    update_title,
+)
 import pytest
 import os
 from unittest.mock import patch
 from src.app import (
     app,
-    pty_input,
-    pty_resize,
-    handle_connect,
-    handle_disconnect,
-    update_title,
     session_manager,
     Session,
 )
@@ -29,7 +32,9 @@ def setup_teardown():
 
 def test_pty_input_handling():
     with app.test_request_context("/"):
-        with patch("src.app.request") as mock_req, patch("os.write") as mock_write:
+        with patch("src.gateways.terminal_socket.request") as mock_req, patch(
+            "os.write"
+        ) as mock_write:
             mock_req.sid = "sid1"
             session = Session("tab1", None, 123, "admin")
             session_manager.add_session(session)
@@ -48,8 +53,8 @@ def test_pty_input_handling():
 
 def test_pty_resize_handling():
     with app.test_request_context("/"):
-        with patch("src.app.request") as mock_req, patch(
-            "src.app.set_winsize"
+        with patch("src.gateways.terminal_socket.request") as mock_req, patch(
+            "src.gateways.terminal_socket.set_winsize"
         ) as mock_resize:
             mock_req.sid = "sid1"
             session = Session("tab1", None, 123, "admin")
@@ -62,7 +67,7 @@ def test_pty_resize_handling():
 
 def test_connect_disconnect_logic():
     with app.test_request_context("/"):
-        with patch("src.app.request") as mock_req:
+        with patch("src.gateways.terminal_socket.request") as mock_req:
             mock_req.sid = "sid_new"
             handle_connect()
             # Just verify it doesn't crash
@@ -71,7 +76,7 @@ def test_connect_disconnect_logic():
             session_manager.add_session(session)
             session_manager.reclaim_session("tab_new", "sid_new", "admin")
 
-            with patch("src.app.request") as mock_disconnect_req:
+            with patch("src.gateways.terminal_socket.request") as mock_disconnect_req:
                 mock_disconnect_req.sid = "sid_new"
                 handle_disconnect()
 
@@ -84,7 +89,7 @@ def test_connect_disconnect_logic():
 
 def test_update_title_handling():
     with app.test_request_context("/"):
-        with patch("src.app.request") as mock_req:
+        with patch("src.gateways.terminal_socket.request") as mock_req:
             mock_req.sid = "sid_new"
             session = Session("tab_new", None, 123, "admin", "Old Title")
             session_manager.add_session(session)

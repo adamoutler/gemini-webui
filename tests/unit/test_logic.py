@@ -1,6 +1,7 @@
+from src.gateways.terminal_socket import set_winsize
 import os
 from src.config import get_config_paths
-from src.app import validate_ssh_target, set_winsize
+from src.app import validate_ssh_target
 
 
 def test_validate_ssh_target():

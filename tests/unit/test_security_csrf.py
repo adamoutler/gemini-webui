@@ -1,3 +1,4 @@
+from src.gateways.terminal_socket import handle_connect
 import pytest
 import re
 from src.app import app
@@ -96,7 +97,6 @@ def test_csrf_failure_returns_expired_flag(client, playwright):
 def test_csrf_socketio_rejection(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = True
 
-    from src.app import handle_connect
     from flask_socketio import ConnectionRefusedError
 
     try:
