@@ -11,8 +11,8 @@ from playwright.sync_api import sync_playwright, expect
 def authenticated_server(tmp_path, playwright):
     env = os.environ.copy()
     env["SECRET_KEY"] = "testsecret"
-    env["BASIC_AUTH_USERNAME"] = "testuser"
-    env["BASIC_AUTH_PASSWORD"] = "testpass"
+    env["ADMIN_USER"] = "testuser"
+    env["ADMIN_PASS"] = "testpass"
     import random
 
     port = str(random.randint(10000, 20000))
@@ -60,7 +60,6 @@ def authenticated_server(tmp_path, playwright):
             pass
 
 
-@pytest.mark.skip(reason="Flaky in CI")
 def test_new_deployment_login(authenticated_server, playwright):
     p = playwright
     browser = p.chromium.launch(headless=True)

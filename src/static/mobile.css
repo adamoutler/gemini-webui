@@ -219,9 +219,7 @@
 }
 
 /* Hide mobile controls on desktop viewports to prevent layout issues */
-@media (width >= 801px) {
-  #mobile-controls,
-  .mobile-input-container {
-    display: none !important;
-  }
+html:not(.is-mobile) #mobile-controls,
+html:not(.is-mobile) .mobile-input-container {
+  display: none !important;
 }

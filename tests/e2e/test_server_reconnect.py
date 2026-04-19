@@ -90,7 +90,6 @@ def custom_server(tmp_path, playwright):
     controller.stop()
 
 
-@pytest.mark.skip(reason="Flaky in CI")
 @pytest.mark.timeout(40)
 def test_auto_reconnect_after_server_restart(custom_server, playwright):
     p = playwright

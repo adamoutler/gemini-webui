@@ -1,0 +1,148 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #000;
+  height: 100dvh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+body {
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+}
+
+#toolbar {
+  background-color: #333;
+  padding: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+#tab-bar {
+  background-color: #222;
+  display: flex;
+  overflow-x: auto;
+  padding: 0 5px;
+  flex-shrink: 0;
+}
+
+.install-banner {
+  background-color: #2472c8;
+  color: white;
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  z-index: 1000;
+  border-bottom: 1px solid rgb(255, 255, 255, 0.1);
+  flex-shrink: 0;
+}
+
+.tab {
+  padding: 8px 12px;
+  background-color: #333;
+  color: #ccc;
+  cursor: pointer;
+  border-right: 1px solid #222;
+  font-size: 13px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 200px;
+  min-width: 120px;
+  flex-shrink: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.tab span {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tab.active {
+  background-color: #1e1e1e;
+  color: white;
+  border-top: 2px solid #2472c8;
+  font-weight: bold;
+  min-width: 132px;
+  max-width: 220px;
+}
+
+.tab:hover {
+  background-color: #444;
+}
+
+.tab-close {
+  font-weight: bold;
+  font-size: 18px;
+  cursor: pointer;
+  color: #888;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-close:hover {
+  color: #f14c4c;
+}
+
+button {
+  background-color: #555;
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  cursor: pointer;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+button:hover {
+  background-color: #777;
+}
+
+button.primary {
+  background-color: #2472c8;
+}
+
+button.primary:hover {
+  background-color: #3b8eea;
+}
+
+button.success {
+  background-color: #0dbc79;
+}
+
+button.success:hover {
+  background-color: #23d18b;
+}
+
+button.danger {
+  background-color: #cd3131;
+}
+
+button.danger:hover {
+  background-color: #f14c4c;
+}
+
+button.small {
+  padding: 2px 8px;
+  font-size: 11px;
+}

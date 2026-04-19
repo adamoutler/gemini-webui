@@ -148,7 +148,6 @@ def page(server, playwright):
     browser.close()
 
 
-@pytest.mark.skip(reason="Flaky in CI")
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(300)
 def test_ssh_drag_and_drop_upload(page, tmp_path, ssh_target_container, playwright):

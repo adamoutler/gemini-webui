@@ -539,10 +539,12 @@ const checkMobile = () => {
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
       navigator.userAgent,
     );
+  const isIPadOS =
+    navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
   const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
   const isNarrow = window.innerWidth <= 800;
   // True mobile devices OR narrow touch screens (like phones/small tablets)
-  return isMobileUA || (isNarrow && isTouch);
+  return isMobileUA || isIPadOS || (isNarrow && isTouch);
 };
 const isMobile = checkMobile();
 if (isMobile) {

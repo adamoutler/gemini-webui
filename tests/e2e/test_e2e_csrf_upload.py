@@ -63,7 +63,6 @@ def csrf_enabled_server(tmp_path, playwright):
         pass
 
 
-@pytest.mark.skip(reason="Flaky in CI")
 @pytest.mark.timeout(120)
 def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     p = playwright
@@ -88,7 +87,7 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     page.goto(csrf_enabled_server)
 
     page.locator("#new-tab-btn").click()
-    card = page.locator(".connection-card").filter(has_text="Local Terminal").first
+    card = page.locator(".connection-card[data-label='local']").first
     btns = card.locator("button", has_text="Start New")
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
@@ -137,7 +136,6 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     browser.close()
 
 
-@pytest.mark.skip(reason="Flaky in CI")
 @pytest.mark.timeout(120)
 def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     p = playwright
@@ -160,7 +158,7 @@ def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, tmp_path, playwrigh
     page.goto(csrf_enabled_server)
 
     page.locator("#new-tab-btn").click()
-    card = page.locator(".connection-card").filter(has_text="Local Terminal").first
+    card = page.locator(".connection-card[data-label='local']").first
     btns = card.locator("button", has_text="Start New")
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()

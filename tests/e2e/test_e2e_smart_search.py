@@ -23,7 +23,6 @@ def page(server, playwright):
     browser.close()
 
 
-@pytest.mark.skip(reason="Flaky in CI")
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
 def test_e2e_smart_search_ordering(page, test_data_dir, playwright):

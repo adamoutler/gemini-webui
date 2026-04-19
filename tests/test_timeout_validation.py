@@ -9,15 +9,6 @@ def test_fast_timeout_success():
     assert True
 
 
-@pytest.mark.timeout(2)
-def test_intentional_timeout_failure():
-    """
-    This test is designed to fail if it takes longer than 2 seconds.
-    """
-    pytest.skip("Demonstration of timeout failure")
-    time.sleep(5)
-
-
 @pytest.mark.timeout(10)
 def test_network_timeout_standard(server):
     """Standard test involving a network request with a timeout."""

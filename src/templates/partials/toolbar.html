@@ -1,0 +1,29 @@
+<div id="toolbar">
+  <div class="auto-style-f6779d">
+    <button id="new-tab-btn" data-onclick="addNewTab()">+ New</button>
+    <button data-onclick="openSettings()" class="auto-style-ec55d0">
+      Settings
+    </button>
+  </div>
+  <div id="active-connection-info" class="auto-style-6e66f0">
+    <button
+      id="reclaim-btn"
+      data-onclick="reclaimStolenSession()"
+      class="auto-style-73c9d6"
+    >
+      Reclaim
+    </button>
+    <button data-onclick="restartActiveTab()">Restart</button>
+    <button data-onclick="openFileTransfer()" class="auto-style-e81544">
+      Files
+    </button>
+    <button
+      id="share-session-btn"
+      data-onclick="shareSession()"
+      class="auto-style-aab0ec"
+    >
+      Share
+    </button>
+  </div>
+  <div id="connection-status" class="auto-style-193302"></div>
+</div>

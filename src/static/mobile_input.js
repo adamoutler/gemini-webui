@@ -858,9 +858,7 @@ class MobileTerminalController {
   constructor(tab) {
     this.tab = tab;
 
-    this.isMobile =
-      window.matchMedia("(max-width: 768px) and (pointer: coarse)").matches ||
-      "ontouchstart" in window;
+    this.isMobile = document.documentElement.classList.contains("is-mobile");
 
     if (this.isMobile) {
       this.modifierState = new MobileModifierState();
