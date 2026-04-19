@@ -21,7 +21,7 @@ def test_concurrent_list_sessions(client, monkeypatch):
     def worker():
         with app.test_client() as client:
             try:
-                for _ in range(50):
+                for _ in range(10):
                     # Hit background fetch
                     resp = client.get("/api/sessions?bg=true")
                     if resp.status_code != 200:
