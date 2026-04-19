@@ -1636,15 +1636,18 @@ function startSession(
         let fontSizeStr = tab.term.options.fontSize + "px";
         let fontFamilyStr = tab.term.options.fontFamily;
         let letterSpacingStr = "normal";
-        if (
-          tab.term &&
-          tab.term._core &&
-          tab.term._core._renderService &&
-          tab.term._core._renderService.dimensions &&
-          tab.term._core._renderService.dimensions.css
-        ) {
-          cellHeight = tab.term._core._renderService.dimensions.css.cell.height;
-        }
+        try {
+          if (
+            tab.term &&
+            tab.term._core &&
+            tab.term._core._renderService &&
+            tab.term._core._renderService.dimensions &&
+            tab.term._core._renderService.dimensions.css
+          ) {
+            cellHeight =
+              tab.term._core._renderService.dimensions.css.cell.height;
+          }
+        } catch (e) {}
 
         const termRows = termDiv.querySelector(".xterm-rows");
         if (termRows) {
@@ -2166,7 +2169,7 @@ function fitTerminal(tab) {
       }
     }
   } catch (e) {
-    console.error("Fit error", e);
+    // Silently ignore fit errors during initialization (e.g. xterm-addon-fit dimensions getter throws)
   }
 }
 

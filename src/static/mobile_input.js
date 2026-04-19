@@ -767,41 +767,43 @@ class MobileInputUI {
 
       // Fallback for WebGL/Canvas renderer where .xterm-cursor is hidden or non-existent
       let cellW = 9;
-      if (
-        !foundCursor &&
-        term._core &&
-        term._core._renderService &&
-        term._core._renderService.dimensions
-      ) {
-        const dims = term._core._renderService.dimensions;
-        cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
-        const cellH = dims.css?.cell?.height || dims.actualCellHeight || 17;
+      try {
+        if (
+          !foundCursor &&
+          term._core &&
+          term._core._renderService &&
+          term._core._renderService.dimensions
+        ) {
+          const dims = term._core._renderService.dimensions;
+          cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
+          const cellH = dims.css?.cell?.height || dims.actualCellHeight || 17;
 
-        const screenEl =
-          term.element.querySelector(".xterm-screen") || term.element;
-        const screenRect = screenEl.getBoundingClientRect();
+          const screenEl =
+            term.element.querySelector(".xterm-screen") || term.element;
+          const screenRect = screenEl.getBoundingClientRect();
 
-        const cursorX = term.buffer.active.cursorX;
-        const cursorY = term.buffer.active.cursorY;
+          const cursorX = term.buffer.active.cursorX;
+          const cursorY = term.buffer.active.cursorY;
 
-        // Account for scroll offset
-        const viewportY = term.buffer.active.viewportY;
-        const baseY = term.buffer.active.baseY;
-        const scrollOffsetLines = baseY - viewportY;
-        const visualCursorY = cursorY + scrollOffsetLines;
+          // Account for scroll offset
+          const viewportY = term.buffer.active.viewportY;
+          const baseY = term.buffer.active.baseY;
+          const scrollOffsetLines = baseY - viewportY;
+          const visualCursorY = cursorY + scrollOffsetLines;
 
-        left = screenRect.left + cursorX * cellW;
-        top = screenRect.top + visualCursorY * cellH;
-        foundCursor = true;
-      } else if (
-        foundCursor &&
-        term._core &&
-        term._core._renderService &&
-        term._core._renderService.dimensions
-      ) {
-        const dims = term._core._renderService.dimensions;
-        cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
-      }
+          left = screenRect.left + cursorX * cellW;
+          top = screenRect.top + visualCursorY * cellH;
+          foundCursor = true;
+        } else if (
+          foundCursor &&
+          term._core &&
+          term._core._renderService &&
+          term._core._renderService.dimensions
+        ) {
+          const dims = term._core._renderService.dimensions;
+          cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
+        }
+      } catch (e) {}
 
       if (foundCursor) {
         let proxyLeft = left + cellW;
