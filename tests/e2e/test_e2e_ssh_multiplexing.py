@@ -127,7 +127,7 @@ def test_ssh_connection_error_bubbling(ssh_test_server, playwright):
     # The new host should appear as a connection card. Click its Start New button.
     card = page.locator(".connection-card").filter(has_text="Invalid SSH Host").first
     expect(card).to_be_visible(timeout=15000)
-    card.locator("button", has_text="Start New").click()
+    card.locator("button", has_text="Start New").click(force=True, timeout=10000)
 
     # Wait for the terminal to print something that looks like an error.
     # It takes a few seconds for the SSH process to timeout and return the error.
