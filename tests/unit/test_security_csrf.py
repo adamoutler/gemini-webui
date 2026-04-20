@@ -162,7 +162,7 @@ def csrf_enabled_server_csrf(tmp_path, playwright):
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
         proc.wait(timeout=5)
-    except OSError:
+    except Exception:
         pass
 
 

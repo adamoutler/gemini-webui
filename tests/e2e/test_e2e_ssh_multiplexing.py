@@ -12,7 +12,7 @@ def ssh_test_server(tmp_path, playwright):
     if persisted_file.exists():
         try:
             persisted_file.unlink()
-        except OSError:
+        except Exception:
             pass
 
     env = os.environ.copy()
@@ -54,7 +54,7 @@ def ssh_test_server(tmp_path, playwright):
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
         proc.wait(timeout=5)
-    except OSError:
+    except Exception:
         pass
 
 
