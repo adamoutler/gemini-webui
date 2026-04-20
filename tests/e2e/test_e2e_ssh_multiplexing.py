@@ -53,7 +53,7 @@ def ssh_test_server(tmp_path, playwright):
 
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-        proc.wait()
+        proc.wait(timeout=5)
     except OSError:
         pass
 
@@ -124,10 +124,10 @@ def test_ssh_connection_error_bubbling(ssh_test_server, playwright):
     page.evaluate("closeSettings()")
     expect(page.locator("#settings-modal")).not_to_be_visible(timeout=15000)
 
-    # The new host should appear as a connection card. Click it.
+    # The new host should appear as a connection card. Click its Start New button.
     card = page.locator(".connection-card").filter(has_text="Invalid SSH Host").first
     expect(card).to_be_visible(timeout=15000)
-    card.click()
+    card.locator("button", has_text="Start New").click()
 
     # Wait for the terminal to print something that looks like an error.
     # It takes a few seconds for the SSH process to timeout and return the error.
