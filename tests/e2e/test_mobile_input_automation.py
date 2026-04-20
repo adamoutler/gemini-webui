@@ -8,11 +8,11 @@ from tests.utils.playwright_mobile_utils import (
 
 
 @pytest.fixture(scope="function")
-def ios_page(server, playwright):
+def android_page(server, playwright):
     p = playwright
-    iphone = p.devices["iPhone 12"]
+    pixel = p.devices["Pixel 5"]
     browser = p.chromium.launch(headless=True)
-    context = browser.new_context(**iphone)
+    context = browser.new_context(**pixel)
     page = context.new_page()
     page.set_default_timeout(60000)
     page.goto(server, timeout=15000)
@@ -20,8 +20,8 @@ def ios_page(server, playwright):
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )
     yield page
-    context.close()
-    browser.close()
+    # context.close()
+    # browser.close()
 
 
 @pytest.fixture(scope="function")
@@ -37,8 +37,8 @@ def android_page(server, playwright):
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )
     yield page
-    context.close()
-    browser.close()
+    # context.close()
+    # browser.close()
 
 
 def get_terminal_text(page):
@@ -48,21 +48,21 @@ def get_terminal_text(page):
 
 
 @pytest.mark.timeout(60)
-def test_mobile_utils_webkit(ios_page, playwright):
+def test_mobile_utils_webkit(android_page, playwright):
     # Start a fresh session
-    btns = ios_page.locator('.tab-instance.active button:has-text("Start New")')
+    btns = android_page.locator('.tab-instance.active button:has-text("Start New")')
     expect(btns.first).to_be_visible(timeout=15000)
     btns.first.click()
 
-    expect(ios_page.locator(".xterm-screen")).to_be_visible(timeout=15000)
+    expect(android_page.locator(".xterm-screen")).to_be_visible(timeout=15000)
     time.sleep(1)
 
-    textarea = ios_page.locator(".mobile-text-area")
+    textarea = android_page.locator(".mobile-text-area")
     textarea.focus()
 
     # Just ensure the utility functions execute without exceptions
-    simulateAutocorrect(ios_page, "teh", "the")
-    simulateSpacebarTrackpad(ios_page, -1)
+    simulateAutocorrect(android_page, "teh", "the")
+    simulateSpacebarTrackpad(android_page, -1)
 
     assert True
 

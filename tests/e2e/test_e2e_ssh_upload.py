@@ -83,8 +83,9 @@ def ssh_target_container(test_data_dir, playwright):
         time.sleep(1)
 
     if not ready:
+        err = result.stderr if "result" in locals() else "No result"
         raise Exception(
-            f"Docker container {container_name} failed to become ready in time"
+            f"Docker container {container_name} failed to become ready in time. stderr: {err}"
         )
 
     # Install python3 and copy app
@@ -148,8 +149,8 @@ def page(server, playwright):
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )
     yield page
-    context.close()
-    browser.close()
+    # context.close()
+    # browser.close()
 
 
 @pytest.mark.prone_to_timeout

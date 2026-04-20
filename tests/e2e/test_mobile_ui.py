@@ -23,8 +23,8 @@ def mobile_page(server, playwright):
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )
     yield page
-    context.close()
-    browser.close()
+    # context.close()
+    # browser.close()
 
 
 @pytest.fixture(scope="function")
@@ -77,14 +77,13 @@ done
     )
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
-    log_file = open(os.path.join(str(data_dir), "server.log"), "w")
     process = subprocess.Popen(
         [python_bin, "-m", "src.app"],
         env=env,
         cwd=project_root,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         start_new_session=True,
-        stdout=log_file,
-        stderr=subprocess.STDOUT,
     )
 
     import requests
@@ -124,8 +123,8 @@ def custom_mobile_page(custom_server, playwright):
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )
     yield page
-    context.close()
-    browser.close()
+    # context.close()
+    # browser.close()
 
 
 @pytest.mark.timeout(20)

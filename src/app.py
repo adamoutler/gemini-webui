@@ -293,7 +293,10 @@ def cleanup_orphaned_ptys():
     is_testing = app.config.get("TESTING") or env_config.BYPASS_AUTH_FOR_TESTING
     while True:
         try:
-            ttl = app.config.get("ORPHANED_SESSION_TTL", 3600)
+            # Use config TTL if available, otherwise fallback to 2s in testing or 3600s in production
+            ttl = app.config.get("ORPHANED_SESSION_TTL")
+            if ttl is None:
+                ttl = 2 if is_testing else 3600
             now = time.time()
             for session in session_manager.get_all_sessions():
                 if (
@@ -305,9 +308,10 @@ def cleanup_orphaned_ptys():
         except Exception as e:
             logger.error(f"Error in cleanup_orphaned_ptys: {e}")
 
-        if is_testing:
+        # In testing, we sleep briefly to allow rapid reaping of leaking processes
+        socketio.sleep(1 if is_testing else 60)
+        if is_testing and os.environ.get("GEMWEBUI_HARNESS") != "1":
             break
-        socketio.sleep(60)
 
 
 def get_config_paths():

@@ -14,19 +14,19 @@ def page(server, playwright):
     page.set_default_timeout(60000)
     page.goto(server)
     yield page
-    context.close()
-    browser.close()
+    # context.close()
+    # browser.close()
 
 
 def test_mobile_layout_locked(page, server, playwright):
-    # Emulate iPhone 12
+    # Emulate Pixel 5
     from playwright.sync_api import sync_playwright
 
     # We need a new context with mobile emulation
     browser = page.context.browser
     context = browser.new_context(
-        viewport={"width": 390, "height": 844},
-        user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1",
+        viewport={"width": 393, "height": 851},
+        user_agent="Mozilla/5.0 (Linux; Android 11; Pixel 5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.91 Mobile Safari/537.36",
         is_mobile=True,
         has_touch=True,
     )
@@ -60,7 +60,7 @@ def test_mobile_layout_locked(page, server, playwright):
     assert "pan-y" in toolbar_touch
 
     mobile_page.screenshot(path="public/qa-screenshots/proof_270_mobile_locked.png")
-    context.close()
+    # context.close()
 
 
 def test_visual_viewport_listener_exists(page, server, playwright):

@@ -7,9 +7,9 @@ import os
 @pytest.fixture(scope="function")
 def mobile_page(server, playwright):
     p = playwright
-    iphone_12 = p.devices["iPhone 12"]
+    pixel = p.devices["Pixel 5"]
     browser = p.chromium.launch(headless=True)
-    context = browser.new_context(**iphone_12)
+    context = browser.new_context(**pixel)
 
     page = context.new_page()
     page.set_default_timeout(60000)
@@ -20,8 +20,8 @@ def mobile_page(server, playwright):
 
     yield page
 
-    context.close()
-    browser.close()
+    # context.close()
+    # browser.close()
 
 
 @pytest.mark.timeout(60)

@@ -35,7 +35,12 @@ def ssh_test_server(tmp_path, playwright):
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     proc = subprocess.Popen(
-        [python_bin, "-m", "src.app"], env=env, cwd=project_root, start_new_session=True
+        [python_bin, "-m", "src.app"],
+        env=env,
+        cwd=project_root,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
     )
     import requests
 
@@ -48,8 +53,7 @@ def ssh_test_server(tmp_path, playwright):
             pass
         time.sleep(1)
 
-    url = f"http://127.0.0.1:{port}"
-    yield url
+    yield {"url": f"http://127.0.0.1:{port}", "proc": proc}
 
     try:
         os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
@@ -60,12 +64,13 @@ def ssh_test_server(tmp_path, playwright):
 
 @pytest.mark.timeout(30)
 def test_ssh_multiplexing_loading_state(ssh_test_server, playwright):
+    server_url = ssh_test_server["url"]
     p = playwright
     browser = p.chromium.launch(headless=True)
     context = browser.new_context()
     page = context.new_page()
 
-    page.goto(ssh_test_server)
+    page.goto(server_url)
 
     # Intercept the /api/management/sessions to return empty
     page.route("**/api/management/sessions", lambda route: route.fulfill(json=[]))

@@ -6,9 +6,9 @@ import time
 @pytest.fixture(scope="function")
 def mobile_page(server, playwright):
     p = playwright
-    iphone_12 = p.devices["iPhone 12"]
+    pixel = p.devices["Pixel 5"]
     browser = p.chromium.launch(headless=True)
-    context = browser.new_context(**iphone_12)
+    context = browser.new_context(**pixel)
     page = context.new_page()
     page.set_default_timeout(60000)
     page.goto(server, timeout=15000)
@@ -16,8 +16,8 @@ def mobile_page(server, playwright):
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )
     yield page
-    context.close()
-    browser.close()
+    # context.close()
+    # browser.close()
 
 
 def get_terminal_text(page):

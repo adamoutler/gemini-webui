@@ -5,16 +5,16 @@ from playwright.sync_api import sync_playwright
 @pytest.fixture(scope="function")
 def page(server, playwright):
     p = playwright
-    iphone = p.devices["iPhone 13"]
+    pixel = p.devices["Pixel 5"]
     browser = p.chromium.launch()
-    context = browser.new_context(**iphone)
+    context = browser.new_context(**pixel)
 
     page = context.new_page()
     page.set_default_timeout(60000)
     page.goto(server, timeout=15000)
     yield page
-    context.close()
-    browser.close()
+    # context.close()
+    # browser.close()
 
 
 def test_stt_color(page, playwright):

@@ -1,11 +1,12 @@
 import os
+
+os.environ["SKIP_MONKEY_PATCH"] = "true"
+
 import time
 import subprocess
 import pytest
 import signal
 import requests
-
-os.environ["SKIP_MONKEY_PATCH"] = "false"
 
 
 @pytest.fixture(autouse=True)
@@ -88,13 +89,12 @@ def server(test_data_dir):
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
-    log_file = open("/tmp/pytest_server.log", "w")
     process = subprocess.Popen(
         [python_bin, "-m", "src.app"],
         env=env,
         cwd=project_root,
-        stdout=log_file,
-        stderr=subprocess.STDOUT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         start_new_session=True,
     )
 
@@ -119,9 +119,12 @@ def server(test_data_dir):
 
     try:
         os.killpg(os.getpgid(process.pid), signal.SIGKILL)
-    except OSError:
+    except Exception:
         pass
-    process.wait()
+    try:
+        process.wait(timeout=5)
+    except Exception:
+        pass
 
 
 @pytest.fixture

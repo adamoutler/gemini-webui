@@ -535,16 +535,18 @@ function recreateTerminalUI(tab, shouldReclaim = false) {
 }
 
 const checkMobile = () => {
-  const isMobileUA =
-    /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      navigator.userAgent,
-    );
-  const isIPadOS =
-    navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  // Strictly target Android as requested
+  const isAndroid = /Android/i.test(navigator.userAgent);
   const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-  const isNarrow = window.innerWidth <= 800;
-  // True mobile devices OR narrow touch screens (like phones/small tablets)
-  return isMobileUA || isIPadOS || (isNarrow && isTouch);
+
+  // Increase width threshold to 1024px to support Android tablets (Nexus 9/Pixel Tablet)
+  const isNarrow = window.innerWidth <= 1024;
+
+  // Explicitly exclude Apple devices
+  const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
+
+  // Return true if explicitly Android, or a narrow touch device that is not Apple
+  return isAndroid || (isNarrow && isTouch && !isApple);
 };
 const isMobile = checkMobile();
 if (isMobile) {

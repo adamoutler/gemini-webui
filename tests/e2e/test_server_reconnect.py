@@ -40,6 +40,8 @@ def custom_server(tmp_path, playwright):
             [python_bin, "-m", "src.app"],
             env=env,
             cwd=project_root,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             start_new_session=True,
         )
         import requests
@@ -71,8 +73,11 @@ def custom_server(tmp_path, playwright):
         def stop(self):
             try:
                 os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
-                self.process.wait()
-            except OSError:
+            except Exception:
+                pass
+            try:
+                self.process.wait(timeout=5)
+            except Exception:
                 pass
 
             # Clear persisted sessions so the new server does not try to restore
@@ -130,5 +135,5 @@ def test_auto_reconnect_after_server_restart(custom_server, playwright):
         body_html = page.evaluate("document.body.innerHTML")
         print(f"FAILED DOM DUMP:\n{body_html}\n\nException: {e}")
         raise
-    context.close()
-    browser.close()
+    # context.close()
+    # browser.close()

@@ -590,6 +590,7 @@ class MobileInputUI {
     this.proxyInput.id = "terminal-input-mobile-" + tabId;
     this.proxyInput.className = "mobile-text-area";
     this.proxyInput.placeholder = "";
+    this.proxyInput.setAttribute("inputmode", "text");
 
     // Make it visible, transparent background, positioned at cursor
     this.proxyInput.style.position = "absolute";

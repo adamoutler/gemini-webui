@@ -7,16 +7,16 @@ from playwright.sync_api import sync_playwright
 def page(server, playwright):
     p = playwright
     # Emulate a mobile device
-    iphone = p.devices["iPhone 13"]
+    pixel = p.devices["Pixel 5"]
     browser = p.chromium.launch(headless=True)
-    context = browser.new_context(**iphone)
+    context = browser.new_context(**pixel)
 
     page = context.new_page()
     page.set_default_timeout(60000)
     page.goto(server, timeout=15000)
     yield page
-    context.close()
-    browser.close()
+    # context.close()
+    # browser.close()
 
 
 def test_input_overlay_colors(page, playwright):

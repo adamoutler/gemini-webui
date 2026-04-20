@@ -33,10 +33,10 @@ def authenticated_server(tmp_path, playwright):
     process = subprocess.Popen(
         [python_bin, "src/app.py"],
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
+        cwd=project_root,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         start_new_session=True,
-        text=True,
     )
 
     # Wait for port to open
@@ -67,9 +67,9 @@ def test_new_deployment_login(authenticated_server, playwright):
     p = playwright
     browser = p.chromium.launch(headless=True)
     # Create a mobile context since bug affects mobile/safari often and it is a good test vector
-    iphone = p.devices["iPhone 13"]
+    pixel = p.devices["Pixel 5"]
     context = browser.new_context(
-        **iphone, http_credentials={"username": "testuser", "password": "testpass"}
+        **pixel, http_credentials={"username": "testuser", "password": "testpass"}
     )
     page = context.new_page()
 
@@ -154,4 +154,5 @@ def test_new_deployment_login(authenticated_server, playwright):
     # Ensure there is no JS error
     assert len(js_errors) == 0, f"JS Errors found: {js_errors}"
 
-    browser.close()
+    # context.close()
+    # browser.close()
