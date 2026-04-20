@@ -32,6 +32,8 @@ def ssh_test_server(tmp_path, playwright):
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
+    mock_dir = os.path.join(project_root, "tests", "mock")
+    env["PATH"] = f"{mock_dir}:{env.get('PATH', '')}"
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     proc = subprocess.Popen(
