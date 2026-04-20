@@ -94,12 +94,14 @@ def test_ssh_multiplexing_loading_state(ssh_test_server, playwright):
 
 @pytest.mark.timeout(120)
 def test_ssh_connection_error_bubbling(ssh_test_server, playwright):
+    server_url = ssh_test_server["url"]
+    server_proc = ssh_test_server["proc"]
     p = playwright
     browser = p.chromium.launch(headless=True)
     context = browser.new_context()
     page = context.new_page()
 
-    page.goto(ssh_test_server)
+    page.goto(server_url)
 
     # Ensure launcher is loaded
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
@@ -138,6 +140,11 @@ def test_ssh_connection_error_bubbling(ssh_test_server, playwright):
     print(
         f"Empirical Evidence: Error bubbled up cleanly. Visual proof saved to {screenshot_path}"
     )
+
+    try:
+        os.killpg(os.getpgid(server_proc.pid), signal.SIGKILL)
+    except Exception:
+        pass
 
     context.close()
     browser.close()
