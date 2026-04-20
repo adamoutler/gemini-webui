@@ -49,7 +49,7 @@ def custom_server(tmp_path, playwright):
             cwd=str(
                 tmp_path
             ),  # run in tmp_path so gemini_mock_state.json is written there
-            preexec_fn=os.setsid,
+            start_new_session=True,
         )
         import requests
 

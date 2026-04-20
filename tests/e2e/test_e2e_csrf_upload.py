@@ -43,7 +43,7 @@ def csrf_enabled_server(tmp_path, playwright):
     python_bin = os.path.join(project_root, ".venv", "bin", "python")
 
     proc = subprocess.Popen(
-        [python_bin, "-m", "src.app"], env=env, cwd=project_root, preexec_fn=os.setsid
+        [python_bin, "-m", "src.app"], env=env, cwd=project_root, start_new_session=True
     )
     import requests
 

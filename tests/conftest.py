@@ -95,7 +95,7 @@ def server(test_data_dir):
         cwd=project_root,
         stdout=log_file,
         stderr=subprocess.STDOUT,
-        preexec_fn=os.setsid,
+        start_new_session=True,
     )
 
     # Wait for server to be ready

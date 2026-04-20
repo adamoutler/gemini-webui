@@ -82,7 +82,7 @@ done
         [python_bin, "-m", "src.app"],
         env=env,
         cwd=project_root,
-        preexec_fn=os.setsid,
+        start_new_session=True,
         stdout=log_file,
         stderr=subprocess.STDOUT,
     )

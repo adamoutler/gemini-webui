@@ -35,7 +35,7 @@ def authenticated_server(tmp_path, playwright):
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        preexec_fn=os.setsid,
+        start_new_session=True,
         text=True,
     )
 

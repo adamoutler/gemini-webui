@@ -33,7 +33,7 @@ def custom_server(tmp_path, playwright):
             [python_bin, "-m", "src.app"],
             env=env,
             cwd=project_root,
-            preexec_fn=os.setsid,
+            start_new_session=True,
         )
         import requests
 
