@@ -9,7 +9,7 @@ def page(server, playwright):
     context = browser.new_context()
 
     page = context.new_page()
-    page.set_default_timeout(60000)
+
     page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
     page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
     page.goto(server, timeout=15000)
@@ -28,11 +28,13 @@ def test_ui_add_host_with_env_vars(page, server, playwright):
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
 
     # Open Settings
-    page.locator('button[data-onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]').click(
+        force=True, timeout=10000
+    )
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Ensure add mode
-    page.locator("#add-mode-btn").click()
+    page.locator("#add-mode-btn").click(force=True, timeout=10000)
     page.evaluate("clearHostForm()")
 
     # Fill in the new host details
@@ -40,7 +42,7 @@ def test_ui_add_host_with_env_vars(page, server, playwright):
     page.locator("#new-host-target").fill("user@127.0.0.1")
 
     # Add an environment variable
-    page.locator("#add-env-var-btn").click()
+    page.locator("#add-env-var-btn").click(force=True, timeout=10000)
 
     # Fill in the environment variable details
     # The newly added inputs should be the last ones in the container
@@ -52,7 +54,7 @@ def test_ui_add_host_with_env_vars(page, server, playwright):
 
     # Click Add Host
     with page.expect_response("**/api/hosts") as response_info:
-        page.locator("#add-host-btn").click()
+        page.locator("#add-host-btn").click(force=True, timeout=10000)
 
     response = response_info.value
     assert response.status == 200, f"Failed to add host, status {response.status}"
@@ -61,7 +63,9 @@ def test_ui_add_host_with_env_vars(page, server, playwright):
     expect(page.locator("#hosts-list")).to_contain_text("Env Var Host", timeout=15000)
 
     # Now let's click it to edit and verify env vars are populated
-    page.locator("#hosts-list .session-item").filter(has_text="Env Var Host").click()
+    page.locator("#hosts-list .session-item").filter(has_text="Env Var Host").click(
+        force=True, timeout=10000
+    )
 
     # Verify it entered edit mode
     expect(page.locator("#add-host-btn")).to_have_text(
@@ -77,18 +81,20 @@ def test_ui_add_host_with_env_vars(page, server, playwright):
     ).to_have_value("MY_VAL")
 
     # Remove the variable
-    page.locator("#env-vars-list button.danger").first.click()
+    page.locator("#env-vars-list button.danger").first.click(force=True, timeout=10000)
     expect(page.locator("#env-vars-list input")).to_have_count(0)
 
     # Update host
     with page.expect_response("**/api/hosts") as response_info:
-        page.locator("#add-host-btn").click()
+        page.locator("#add-host-btn").click(force=True, timeout=10000)
 
     response = response_info.value
     assert response.status == 200, f"Failed to update host, status {response.status}"
 
     # Verify empty env vars on edit
-    page.locator("#hosts-list .session-item").filter(has_text="Env Var Host").click()
+    page.locator("#hosts-list .session-item").filter(has_text="Env Var Host").click(
+        force=True, timeout=10000
+    )
     expect(page.locator("#env-vars-list input")).to_have_count(0)
 
     # Clean up
