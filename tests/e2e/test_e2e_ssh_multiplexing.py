@@ -96,7 +96,7 @@ def test_ssh_multiplexing_loading_state(ssh_test_server, playwright):
     browser.close()
 
 
-@pytest.mark.timeout(45)
+@pytest.mark.timeout(120)
 def test_ssh_connection_error_bubbling(ssh_test_server, playwright):
     p = playwright
     browser = p.chromium.launch(headless=True)

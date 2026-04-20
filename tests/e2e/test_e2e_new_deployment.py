@@ -130,8 +130,9 @@ def test_new_deployment_login(authenticated_server, playwright):
         pass
 
     # Ensure there is no JS error before checking rows
+    if len(js_errors) > 0:
+        print(f"DEBUG JS ERRORS: {js_errors}")
     assert len(js_errors) == 0, f"JS Errors found before rendering: {js_errors}"
-
     # Get terminal text
     terminal_text = page.evaluate("""() => {
         const tab = tabs.find(t => t.id === activeTabId);
