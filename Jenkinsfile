@@ -33,30 +33,60 @@ pipeline {
             }
         }
 
-        stage('Lint') {
+        stage('Build Image') {
             steps {
-                sh '''
-                    # Setup python env for pre-commit
-                    python3 -m venv .venv
-                    . .venv/bin/activate
-                    pip install pre-commit
-                    pre-commit run --all-files
-                '''
+                sh 'docker pull python:3.11-slim'
+                sh "docker buildx build --load -t gemini-webui:${BUILD_NUMBER} ."
             }
         }
 
-        stage('Test') {
-            steps {
-                sh '''
-                    # Setup virtual environment and install dependencies
-                    ./setup_dev.sh
-                    # Generate JUnit XML for sound evidence
-                    PYTHONPATH=. .venv/bin/pytest -s tests/ --junitxml=results.xml
-                '''
-            }
-            post {
-                always {
-                    junit 'results.xml'
+        stage('Parallel Tests') {
+            parallel {
+                stage('Lint & NPM') {
+                    steps {
+                        sh '''
+                            # Setup python env for pre-commit
+                            python3 -m venv .venv
+                            . .venv/bin/activate
+                            pip install pre-commit
+                            pre-commit run --all-files
+
+                            # Run NPM tests if package.json has a test script
+                            npm install || true
+                            npm run test --if-present || true
+                        '''
+                    }
+                }
+                stage('Unit Tests') {
+                    steps {
+                        sh '''
+                            # Setup virtual environment and install dependencies
+                            ./setup_dev.sh
+                            # Generate JUnit XML for sound evidence
+                            PYTHONPATH=. .venv/bin/pytest -s tests/unit/ --junitxml=unit-results.xml
+                        '''
+                    }
+                    post {
+                        always {
+                            junit 'unit-results.xml'
+                        }
+                    }
+                }
+                stage('E2E Tests') {
+                    steps {
+                        sh '''
+                            # Setup virtual environment and install dependencies
+                            ./setup_dev.sh
+                            .venv/bin/playwright install-deps
+                            # Generate JUnit XML for sound evidence
+                            PYTHONPATH=. timeout 15m .venv/bin/pytest -s tests/e2e/ --junitxml=e2e-results.xml
+                        '''
+                    }
+                    post {
+                        always {
+                            junit 'e2e-results.xml'
+                        }
+                    }
                 }
             }
         }
@@ -68,8 +98,8 @@ pipeline {
                         usernamePassword(credentialsId: 'ldap-bind-auth-user', passwordVariable: 'LDAP_BIND_PASS', usernameVariable: 'LDAP_BIND_USER_DN')
                     ]) {
                         sh "sed -i 's/\\\${USERNAME}/jenkins/g' .gemini/GEMINI.md || true"
-                        sh 'docker pull python:3.11-slim'
-                        sh "docker buildx build --load -t gemini-webui ."
+                        // Tag the already built image for deployment
+                        sh "docker tag gemini-webui:${BUILD_NUMBER} gemini-webui:latest"
                         sh 'docker compose down --remove-orphans || true'
                         sh 'docker compose up -d --force-recreate'
                     }
