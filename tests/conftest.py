@@ -61,7 +61,7 @@ def test_data_dir(tmp_path_factory):
     return data_dir
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def server(test_data_dir):
     env = os.environ.copy()
     env["BYPASS_AUTH_FOR_TESTING"] = "true"
