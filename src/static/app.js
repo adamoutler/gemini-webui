@@ -1435,23 +1435,10 @@ async function fetchSessions(
           conn.type
         }', '${conn.target || ""}', '${conn.dir || ""}', '${
           s.uuid
-        }', '${escapeHtml(s.name).replace(
-          /'/g,
-          "\\'",
-        )}', false)" style="cursor: pointer;">
-                            <div class="session-info">
-                                <div class="js-style-57a00a">
-                                    <div class="js-style-037e58">
-                                        ${dirContext}<span>${escapeHtml(
-                                          s.name,
-                                        )}</span>
-                                    </div>
-                                    <div class="js-style-dbe504">ID #${
-                                      s.id
-                                    } • ${s.meta}</div>
-                                </div>
-                            </div>
-                        </div>`;
+        }', '${escapeHtml(s.name).replace(/'/g, "\\'")}', false)">
+                    <div class="session-name">${escapeHtml(s.name)}</div>
+                    <div class="session-meta">ID #${s.id} • ${s.meta}</div>
+                 </div>`;
       });
       if (!forceAll && sorted.length > 3) {
         html += `<div class="session-item js-style-86c2b8" data-onclick="window.expandedSessionLists.add('${escapeHtml(
@@ -1462,9 +1449,9 @@ async function fetchSessions(
         )}'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(
           /"/g,
           "&quot;",
-        )}, '${targetId}', true, true, true)"><div class="js-style-d94350">... Show ${
+        )}, '${targetId}', true, true, true)">... Show ${
           sorted.length - 3
-        } more</div></div>`;
+        } more</div>`;
       } else if (forceAll && sorted.length > 3) {
         html += `<div class="session-item js-style-86c2b8" data-onclick="window.expandedSessionLists.delete('${escapeHtml(
           conn.label,
@@ -1474,7 +1461,7 @@ async function fetchSessions(
         )}'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(
           /"/g,
           "&quot;",
-        )}, '${targetId}', false, true, true)"><div class="js-style-d94350">... Show less</div></div>`;
+        )}, '${targetId}', false, true, true)">... Show less</div>`;
       }
       listEl.innerHTML = html + "</div>";
     }

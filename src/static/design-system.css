@@ -56,6 +56,7 @@ body {
   color: #ccc;
   cursor: pointer;
   border-right: 1px solid #222;
+  border-top: 2px solid transparent;
   font-size: 13px;
   white-space: nowrap;
   display: flex;
@@ -66,6 +67,9 @@ body {
   flex-shrink: 0;
   overflow: hidden;
   position: relative;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .tab span {
@@ -75,9 +79,9 @@ body {
 }
 
 .tab.active {
-  background-color: #1e1e1e;
+  background-color: #1e1e1e !important;
   color: white;
-  border-top: 2px solid #2472c8;
+  border-top: 2px solid #2472c8 !important;
   font-weight: bold;
   min-width: 132px;
   max-width: 220px;

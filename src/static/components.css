@@ -12,13 +12,18 @@
 }
 
 .session-item {
-  padding: 6px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-radius: 4px;
+  padding: 10px 15px;
   border-bottom: 1px solid #2d2d2d;
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-family: monospace;
   font-size: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .session-item:last-child {
@@ -26,7 +31,12 @@
 }
 
 .session-item:hover {
-  background: #2a2d2e;
+  background-color: #333 !important;
+}
+
+.session-item.js-style-86c2b8 {
+  justify-content: center;
+  color: #2472c8;
 }
 
 .session-info {

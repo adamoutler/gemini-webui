@@ -36,15 +36,14 @@
 }
 
 .quick-connect-bar {
-  background: #2d2d2d;
-  padding: 10px 15px;
-  border-radius: 6px;
   margin-bottom: 20px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  border: 1px solid #444;
   flex-wrap: nowrap;
+  gap: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
 }
 
 .quick-connect-label {
@@ -52,17 +51,38 @@
   font-weight: bold;
   font-size: 14px;
   white-space: nowrap;
+  padding: 8px 12px;
+  background: #2d2d2d;
+  border-radius: 4px 0 0 4px;
+  border: 1px solid #444;
+  border-right: none;
+  margin: 0;
 }
 
 .quick-connect-input {
   flex-grow: 1;
-  margin: 0 !important;
   min-width: 100px;
+  border-radius: 0;
+  margin: 0;
+  border-left: none;
+  border-right: none;
 }
 
 .quick-connect-bar button {
   white-space: nowrap;
   flex-shrink: 0;
+}
+
+.quick-connect-bar button.primary {
+  border-radius: 0;
+  margin: 0;
+  border-left: 1px solid #555;
+  border-right: 1px solid #555;
+}
+
+.quick-connect-bar button.success {
+  border-radius: 0 4px 4px 0;
+  margin: 0;
 }
 
 .modal {
@@ -152,6 +172,7 @@
   align-items: center;
   margin-bottom: 10px;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .connection-drag-handle {
@@ -246,13 +267,10 @@
 .connection-actions {
   display: flex;
   gap: 8px;
+  margin-left: auto;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  min-width: 180px;
 }
 
 .connection-actions button {
-  flex: 1 1 85px;
   white-space: nowrap;
-  text-align: center;
 }
