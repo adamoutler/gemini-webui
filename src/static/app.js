@@ -1582,9 +1582,10 @@ function startSession(
   tab.fitAddon = new FitAddon.FitAddon();
   tab.term.loadAddon(tab.fitAddon);
 
-  if (typeof WebLinksAddon !== "undefined") {
-    tab.term.loadAddon(new WebLinksAddon.WebLinksAddon());
-  }
+  // WebLinksAddon is disabled in favor of the custom LinkProvider for wrapped lines
+  // if (typeof WebLinksAddon !== "undefined") {
+  //   tab.term.loadAddon(new WebLinksAddon.WebLinksAddon());
+  // }
 
   tab.term.open(termDiv);
 
@@ -1906,6 +1907,7 @@ function startSession(
                 end: { x: endX, y: y },
               },
               activate: (e, text) => {
+                console.log("LINK CLICKED: " + uri);
                 window.open(uri, "_blank", "noopener,noreferrer");
               },
             });

@@ -265,9 +265,10 @@ def test_mobile_large_paste(mobile_page):
 
 
 @pytest.mark.timeout(30)
-def test_mobile_link_tapping(custom_mobile_page):
+def test_mobile_link_tapping(page, server):
     """Verify that tapping a link opens it instead of just focusing."""
-    page = custom_mobile_page
+    page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
+    page.goto(server)
 
     page.wait_for_selector(".launcher", state="attached", timeout=15000)
     page.click("text=Start New", timeout=10000)
@@ -284,28 +285,57 @@ def test_mobile_link_tapping(custom_mobile_page):
 
     time.sleep(1)
 
+    page.screenshot(path="docs/qa-images/test_mobile_link_tapping_before.png")
+
     page.evaluate(
         "window.openedUrl = null; window.open = (url) => { window.openedUrl = url; return null; };"
     )
 
-    page.evaluate("""() => {
-        const proxy = document.querySelector(".mobile-scroll-proxy");
-        if (proxy) {
-            const rect = proxy.getBoundingClientRect();
-            const startX = rect.left + rect.width / 2;
-            const startY = rect.top + rect.height / 2;
+    coords = page.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            const rect = tab.term.element.getBoundingClientRect();
+            const charWidth = tab.term._core._renderService.dimensions.actualCellWidth || 9;
+            const charHeight = tab.term._core._renderService.dimensions.actualCellHeight || 18;
 
-            const event = new Event("touchstart", { bubbles: true, cancelable: true });
-            event.touches = [{clientX: startX, clientY: startY}];
-            proxy.dispatchEvent(event);
+            let foundY = 0;
+            let foundX = 0;
+            for (let i = 0; i < tab.term.buffer.active.length; i++) {
+                const line = tab.term.buffer.active.getLine(i);
+                if (line) {
+                    const text = line.translateToString(true);
+                    const idx = text.indexOf("https://google.com");
+                    if (idx !== -1) {
+                        foundY = i;
+                        foundX = idx;
+                        break;
+                    }
+                }
+            }
 
-            const endEvent = new Event("touchend", { bubbles: true, cancelable: true });
-            endEvent.changedTouches = [{clientX: startX, clientY: startY}];
-            proxy.dispatchEvent(endEvent);
+            const viewportY = tab.term.buffer.active.viewportY;
+            const screenY = foundY - viewportY;
+
+            return {
+                x: rect.left + ((foundX + 2) * charWidth),
+                y: rect.top + ((screenY + 0.5) * charHeight)
+            };
         }
+        return null;
     }""")
 
+    if coords:
+        page.mouse.move(coords["x"], coords["y"])
+        time.sleep(0.5)
+        page.mouse.click(coords["x"], coords["y"])
+
     time.sleep(1)
+    page.screenshot(path="docs/qa-images/test_mobile_link_tapping_after.png")
+
+    opened_url = page.evaluate("window.openedUrl")
+    assert (
+        opened_url == "https://google.com"
+    ), f"Expected URL https://google.com but got {opened_url}"
 
 
 @pytest.mark.timeout(30)
