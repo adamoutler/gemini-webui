@@ -87,6 +87,39 @@ def list_active_sessions():
     return jsonify(session_manager.list_sessions(user_id))
 
 
+@terminal_bp.route("/api/management/sessions/<tab_id>", methods=["DELETE"])
+@authenticated_only
+def terminate_session(tab_id):
+    user_id = session.get("user_id") or (
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+    )
+
+    old_session = session_manager.remove_session(tab_id, user_id)
+
+    if not old_session:
+        logger.warning(f"Attempted to terminate non-existent session: {tab_id}")
+        return jsonify({"error": "Session not found or already terminated"}), 404
+
+    if old_session.pid is not None:
+        logger.info(f"Terminating process {old_session.pid} for tab {tab_id}")
+        kill_and_reap(old_session.pid)
+
+    if getattr(old_session, "fd", None) is not None:
+        try:
+            os.close(old_session.fd)
+        except OSError as e:
+            logger.warning(f"Failed to close fd {old_session.fd} for tab {tab_id}: {e}")
+
+    if tab_id in ephemeral_sessions:
+        ephemeral_sessions.pop(tab_id, None)
+
+    socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
+
+    return jsonify(
+        {"status": "success", "message": f"Session {tab_id} terminated successfully."}
+    ), 200
+
+
 @terminal_bp.route("/api/sessions/<session_id>/search_files", methods=["GET"])
 @authenticated_only
 def search_files(session_id):

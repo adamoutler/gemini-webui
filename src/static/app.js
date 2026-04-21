@@ -2410,6 +2410,13 @@ function closeTab(id, event, isLocalOnly = false) {
   if (tab.state === "launcher") return; // Cannot close the launcher (+ New) tab
 
   if (!isLocalOnly) {
+    // 1. Emit targeted WebSocket termination event
+    if (tab.socket && tab.socket.connected) {
+      debugLog("Emitting terminate_session via WebSocket for tab: " + id);
+      tab.socket.emit("terminate_session", { tab_id: id });
+    }
+
+    // 2. HTTP Fallback
     // Explicitly terminate backend session
     fetchWithCSRF(`/api/management/sessions/${id}`, {
       method: "DELETE",

@@ -73,6 +73,51 @@ def handle_connect(auth=None):
     return True
 
 
+@socketio.on("terminate_session")
+def on_terminate_session(data):
+    from flask import request as socket_request
+    import os
+
+    sid = getattr(socket_request, "sid", None)
+    user_id = session.get("user_id") or (
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+    )
+
+    tab_id = data.get("tab_id")
+    if not tab_id:
+        socketio.emit("error", {"message": "tab_id is required"}, room=sid)
+        return
+
+    old_session = session_manager.remove_session(tab_id, user_id)
+
+    if old_session:
+        logger.info(f"Socket request to terminate session {tab_id} by user {user_id}")
+
+        if old_session.pid is not None:
+            kill_and_reap(old_session.pid)
+
+        if getattr(old_session, "fd", None) is not None:
+            try:
+                os.close(old_session.fd)
+            except OSError:
+                pass
+
+        if tab_id in ephemeral_sessions:
+            ephemeral_sessions.pop(tab_id, None)
+
+        with active_fake_sockets_lock:
+            active_fake_sockets.pop(tab_id, None)
+
+        socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
+
+        if session_manager.persistence:
+            persisted = session_manager.persistence.load()
+            user_persisted = {
+                tid: s for tid, s in persisted.items() if s.get("user_id") == user_id
+            }
+            socketio.emit("sync-tabs", user_persisted, room=f"user_{user_id}")
+
+
 @socketio.on("disconnect")
 def handle_disconnect():
     sid = getattr(request, "sid", None)
