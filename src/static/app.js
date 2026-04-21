@@ -1582,6 +1582,10 @@ function startSession(
   tab.fitAddon = new FitAddon.FitAddon();
   tab.term.loadAddon(tab.fitAddon);
 
+  if (typeof WebLinksAddon !== "undefined") {
+    tab.term.loadAddon(new WebLinksAddon.WebLinksAddon());
+  }
+
   tab.term.open(termDiv);
 
   try {
