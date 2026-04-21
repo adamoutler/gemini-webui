@@ -7,6 +7,26 @@ function escapeHtml(str) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+function filterTerminalFluff(text) {
+  if (!text) return "";
+
+  // Replace box-drawing and block characters with spaces
+  let filtered = text.replace(/[\u2500-\u259F]/g, " ");
+
+  // Process line by line to remove specific terminal status bars and trailing spaces
+  let lines = filtered.split("\n");
+  lines = lines
+    .filter((line) => {
+      // Exclude the bottom status bar and prompt hints
+      if (line.includes("workspace (") && line.includes("branch:"))
+        return false;
+      if (line.includes("Shift+Tab to accept edits")) return false;
+      return true;
+    })
+    .map((line) => line.replace(/[ \t]+$/, "")); // Trim trailing spaces on every line
+
+  return lines.join("\n");
+}
 window.ENABLE_DEBUG = localStorage.getItem("GEMINI_DEBUG") === "true";
 window.setDebug = function (enabled) {
   window.ENABLE_DEBUG = !!enabled;
@@ -1589,6 +1609,14 @@ function startSession(
 
   tab.term.open(termDiv);
 
+  tab.term.element.addEventListener("copy", (e) => {
+    const selection = tab.term.getSelection();
+    if (selection) {
+      e.clipboardData.setData("text/plain", filterTerminalFluff(selection));
+      e.preventDefault();
+    }
+  });
+
   try {
     const webglDisabled =
       urlParams.get("webgl") === "false" || navigator.webdriver;
@@ -1747,16 +1775,12 @@ function startSession(
         for (let i = startRow; i < endRow; i++) {
           const line = buffer.getLine(i);
           if (line) {
-            // Use translateToString(true) to trim trailing spaces.
-            // Replace box-drawing characters with spaces to preserve layout alignment without polluting copy buffer.
-            textContent +=
-              line.translateToString(true).replace(/[\u2500-\u257F]/g, " ") +
-              "\n";
+            textContent += line.translateToString(true) + "\n";
           } else {
             textContent += "\n";
           }
         }
-        selectionOverlay.textContent = textContent;
+        selectionOverlay.textContent = filterTerminalFluff(textContent);
       },
       { passive: true },
     );
@@ -4012,7 +4036,8 @@ function initDesktopContextMenu() {
     e.preventDefault();
     const tab = tabs.find((t) => t.id === activeTabId);
     if (tab && tab.term && tab.term.hasSelection()) {
-      navigator.clipboard.writeText(tab.term.getSelection());
+      const selectedText = tab.term.getSelection();
+      navigator.clipboard.writeText(filterTerminalFluff(selectedText));
     } else {
       document.execCommand("copy");
     }
