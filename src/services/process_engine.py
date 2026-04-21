@@ -337,10 +337,26 @@ def build_terminal_command(
         )
 
         # Smart command construction: check for gemini, drop to shell if missing
-        remote_cmd = (
-            f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then "
-        )
-        remote_cmd += f"exec {gemini_base_cmd}; "
+        remote_cmd = f"{remote_prefix} "
+        remote_cmd += f"if command -v {quoted_gemini} >/dev/null 2>&1; then "
+
+        if "-r" in gemini_base_cmd:
+            remote_cmd += f"{gemini_base_cmd}; "
+            remote_cmd += "if [ $? -ne 0 ]; then "
+            remote_cmd += "printf '\\r\\n\\033[1;33mResume failed, starting new session...\\033[0m\\r\\n'; "
+            remote_cmd += f"{quoted_gemini}; "
+            remote_cmd += "if [ $? -ne 0 ]; then "
+            remote_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "
+            remote_cmd += "exec ${SHELL:-/bin/sh}; "
+            remote_cmd += "fi; "
+            remote_cmd += "fi; "
+        else:
+            remote_cmd += f"{gemini_base_cmd}; "
+            remote_cmd += "if [ $? -ne 0 ]; then "
+            remote_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "
+            remote_cmd += "exec ${SHELL:-/bin/sh}; "
+            remote_cmd += "fi; "
+
         remote_cmd += "else "
         remote_cmd += "printf '\\r\\n\\033[1;31mError: gemini CLI not found on remote host.\\033[0m\\r\\n'; "
         remote_cmd += "printf 'Please install it from: \\033[1;34mhttps://geminicli.com/\\033[0m\\r\\n\\r\\n'; "
@@ -421,7 +437,33 @@ def build_terminal_command(
             pass  # Start a fresh session with no -r flag; JS predicts the ID for future reconnects
         elif resume and str(resume).lower() != "false":
             gemini_cmd += f" -r {shlex.quote(str(resume))}"
-        cmd = ["/bin/sh", "-c", f"{setup_cmd} exec {gemini_cmd}"]
+
+        local_cmd = f"if command -v {gemini_executable} >/dev/null 2>&1; then "
+        if "-r" in gemini_cmd:
+            local_cmd += f"{gemini_cmd}; "
+            local_cmd += "if [ $? -ne 0 ]; then "
+            local_cmd += "printf '\\r\\n\\033[1;33mResume failed, starting new session...\\033[0m\\r\\n'; "
+            local_cmd += f"{gemini_executable} {gemini_args}; "
+            local_cmd += "if [ $? -ne 0 ]; then "
+            local_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "
+            local_cmd += "exec ${SHELL:-/bin/sh}; "
+            local_cmd += "fi; "
+            local_cmd += "fi; "
+        else:
+            local_cmd += f"{gemini_cmd}; "
+            local_cmd += "if [ $? -ne 0 ]; then "
+            local_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "
+            local_cmd += "exec ${SHELL:-/bin/sh}; "
+            local_cmd += "fi; "
+        local_cmd += "else "
+        local_cmd += (
+            "printf '\\r\\n\\033[1;31mError: gemini CLI not found.\\033[0m\\r\\n'; "
+        )
+        local_cmd += "printf 'Please install it from: \\033[1;34mhttps://geminicli.com/\\033[0m\\r\\n\\r\\n'; "
+        local_cmd += "exec ${SHELL:-/bin/sh}; "
+        local_cmd += "fi"
+
+        cmd = ["/bin/sh", "-c", f"{setup_cmd} {local_cmd}"]
         return _wrap_with_multiplexer(cmd)
 
 

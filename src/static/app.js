@@ -886,20 +886,6 @@ async function renderLauncher(id) {
   const hosts = await (await fetch("/api/hosts")).json();
 
   // Set up polling while this launcher is visible
-  if (launcherRefreshInterval) clearInterval(launcherRefreshInterval);
-  launcherRefreshInterval = setInterval(() => {
-    refreshBackendSessionsList(id);
-    hosts.forEach((conn, index) => {
-      const sessionListId = `${id}_sessions_${conn.label.replace(
-        /[^a-z0-9]/gi,
-        "",
-      )}`;
-      setTimeout(() => {
-        fetchSessions(id, conn, sessionListId, false, false, true);
-      }, index * 500);
-    });
-  }, 10000);
-
   const connContainer = document.getElementById(id + "_connections");
   let draggedCard = null;
   let placeholder = document.createElement("div");
@@ -936,6 +922,11 @@ async function renderLauncher(id) {
                             } ${conn.dir || ""}</div>
                         </div>
                         <div class="connection-actions">
+                            <button class="secondary" data-onclick="startSession('${id}', '${
+                              conn.type
+                            }', '${conn.target || ""}', '${
+                              conn.dir || ""
+                            }', true)">Resume Last</button>
                             <button class="primary" data-onclick="startSession('${id}', '${
                               conn.type
                             }', '${conn.target || ""}', '${
@@ -1226,6 +1217,23 @@ function getGlobalSocket() {
       debugLog("Session terminated via global socket:", data.tab_id);
       closeTab(data.tab_id, null, true);
     });
+
+    globalSocket.on("sessions_updated", (payload) => {
+      const activeTab = tabs.find((t) => t.id === activeTabId);
+      if (activeTab && activeTab.state === "launcher") {
+        const id = activeTab.id;
+        const refreshBtn = document.getElementById(`${id}_backend_sessions`);
+        if (refreshBtn && payload && payload.host) {
+          const conn = payload.host;
+          const sessionListId = `${id}_sessions_${conn.label.replace(
+            /[^a-z0-9]/gi,
+            "",
+          )}`;
+          fetchSessions(id, conn, sessionListId, false, true, true);
+          refreshBackendSessionsList(id);
+        }
+      }
+    });
   }
   return globalSocket;
 }
@@ -1357,6 +1365,31 @@ async function fetchSessions(
       return;
     }
     const sessions = parseSessions(data.output || "");
+
+    // UUID Reconciliation
+    const activeTerminalTab = tabs.find(
+      (t) =>
+        t.state === "terminal" &&
+        t.session &&
+        t.session.ssh_target === conn.target &&
+        t.session.ssh_dir === conn.dir,
+    );
+    if (
+      activeTerminalTab &&
+      activeTerminalTab.session.resume &&
+      /^\\d+$/.test(activeTerminalTab.session.resume)
+    ) {
+      const match = sessions.find(
+        (s) => s.id === activeTerminalTab.session.resume,
+      );
+      if (match && match.uuid) {
+        activeTerminalTab.session.resume = match.uuid;
+        saveTabsToStorage();
+        localStorage.setItem("geminiResume", match.uuid);
+        debugLog("Reconciled numeric ID to UUID: " + match.uuid);
+      }
+    }
+
     if (sessions.length === 0) {
       listEl.innerHTML = `<div class="js-style-e07506">No active sessions found.</div>`;
     } else {
@@ -1368,18 +1401,26 @@ async function fetchSessions(
         const dirContext = shortDir
           ? `<span class="js-style-b629a7">[${escapeHtml(shortDir)}]</span>`
           : "";
-        html += `<div>
-                            <div class="js-style-57a00a">
-                                <div class="js-style-037e58">
-                                    ${dirContext}<span>${escapeHtml(
-                                      s.name,
-                                    )}</span>
+        html += `<div class="session-item" data-onclick="startSession('${tabId}', '${
+          conn.type
+        }', '${conn.target || ""}', '${conn.dir || ""}', '${
+          s.uuid
+        }', '${escapeHtml(s.name).replace(
+          /'/g,
+          "\\'",
+        )}', false)" style="cursor: pointer;">
+                            <div class="session-info">
+                                <div class="js-style-57a00a">
+                                    <div class="js-style-037e58">
+                                        ${dirContext}<span>${escapeHtml(
+                                          s.name,
+                                        )}</span>
+                                    </div>
+                                    <div class="js-style-dbe504">ID #${
+                                      s.id
+                                    } • ${s.meta}</div>
                                 </div>
-                                <div class="js-style-dbe504">ID #${s.id} • ${
-                                  s.meta
-                                }</div>
                             </div>
-
                         </div>`;
       });
       if (!forceAll && sorted.length > 3) {

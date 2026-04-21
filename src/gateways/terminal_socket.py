@@ -165,7 +165,7 @@ def session_output_reader(tab_id):
 
 
 def background_session_preloader():
-    """Warms the session cache on startup."""
+    """Continuously polls session state and broadcasts to clients."""
     run_once = False
     while True:
         if app.config.get("TESTING") and run_once:
@@ -175,16 +175,17 @@ def background_session_preloader():
             hosts = get_config().get("HOSTS", [])
             for host in hosts:
                 key = f"{host.get('type')}:{host.get('target', 'local')}:{host.get('dir', '')}"
-                logger.info(f"Background preloading sessions for: {host.get('label')}")
                 _, _, ssh_dir_path = get_config_paths()
                 res = fetch_sessions_for_host(host, ssh_dir_path, GEMINI_BIN)
                 with session_results_cache_lock:
                     session_results_cache[key] = res
+
+                socketio.emit(
+                    "sessions_updated", {"host": host, "cache_key": key, "data": res}
+                )
         except Exception as e:
-            logger.error(f"Preloader error: {e}")
-        # Only run once at startup, then sleep for a long time or until manually triggered
-        # For simplicity, we just do it once then sleep for an hour.
-        socketio.sleep(3600)
+            logger.error(f"Background polling error: {e}")
+        socketio.sleep(10)
 
 
 @socketio.on("join_room")
@@ -404,6 +405,40 @@ def pty_restart(data):
             env_vars["GEMINI_WEBUI_HARNESS_ID"] = tab_id
 
     _, _, ssh_dir_path = get_config_paths()
+
+    if resume == "new":
+        from src.services.process_engine import fetch_sessions_for_host
+        import re
+
+        try:
+            res = fetch_sessions_for_host(
+                {
+                    "target": ssh_target,
+                    "dir": ssh_dir,
+                    "type": "ssh" if ssh_target else "local",
+                },
+                ssh_dir_path,
+                gemini_bin_override,
+            )
+            output = res.get("output", "")
+            max_id = 0
+            for line in output.split("\n"):
+                match = re.search(r"^\s*(\d+)\.\s+", line)
+                if match:
+                    max_id = max(max_id, int(match.group(1)))
+
+            resume = str(max_id + 1)
+            logger.info(
+                f"Calculated RESUME_CONNECTION_ID {resume} for new tab {tab_id}"
+            )
+            socketio.emit(
+                "session_assigned",
+                {"tab_id": tab_id, "session_id": resume},
+                to=sid,
+            )
+        except Exception as e:
+            logger.error(f"Failed to calculate new session ID: {e}")
+
     cmd = build_terminal_command(
         ssh_target,
         ssh_dir,
@@ -438,7 +473,14 @@ def pty_restart(data):
         if is_fake or env_config.BYPASS_AUTH_FOR_TESTING:
             env["GEMINI_WEBUI_HARNESS_ID"] = tab_id
 
-        os.execvpe(cmd[0], cmd, env)
+        try:
+            os.execvpe(cmd[0], cmd, env)
+        except OSError as e:
+            import sys
+
+            msg = f"\r\n\x1b[1;31mError: Failed to execute '{cmd[0]}' on the server.\x1b[0m\r\n\x1b[1;31mDetails: {e}\x1b[0m\r\n\x1b[1;33mPlease ensure '{cmd[0]}' is installed and accessible in the system PATH.\x1b[0m\r\n"
+            os.write(sys.stdout.fileno(), msg.encode())
+            os._exit(1)
         os._exit(0)
     else:
         import fcntl
@@ -492,72 +534,6 @@ def pty_restart(data):
             else "\x1b[2mLoading Context...\x1b[0m\r\n"
         )
         socketio.emit("pty-output", {"output": initial_msg}, room=tab_id)
-
-        if resume == "new":
-
-            def discover_session_id(t_id, s_target, s_dir, s_id):
-                import re
-                from src.services.process_engine import fetch_sessions_for_host
-
-                max_attempts = 10
-                for attempt in range(max_attempts):
-                    socketio.sleep(1.5)
-                    try:
-                        _, _, ssh_dir_path = get_config_paths()
-                        res = fetch_sessions_for_host(
-                            {
-                                "target": s_target,
-                                "dir": s_dir,
-                                "type": "ssh" if s_target else "local",
-                            },
-                            ssh_dir_path,
-                            GEMINI_BIN,
-                        )
-                        output = res.get("output", "")
-                        sessions = []
-                        for line in output.split("\n"):
-                            match = re.search(
-                                r"^\s*(\d+)\.\s+(.*?)\s+\((.*?)\)\s+\[(.*?)\]", line
-                            )
-                            if match:
-                                sessions.append(
-                                    {
-                                        "id": match.group(1),
-                                        "name": match.group(2),
-                                        "uuid": match.group(4),
-                                    }
-                                )
-
-                        found_id = None
-                        for s in sessions:
-                            if s.get("uuid") == t_id or s.get("name") == t_id:
-                                found_id = s["id"]
-                                break
-
-                        if not found_id and sessions:
-                            try:
-                                found_id = max(int(s["id"]) for s in sessions)
-                            except (ValueError, TypeError):
-                                pass
-
-                        if found_id:
-                            logger.info(
-                                f"Discovered session ID {found_id} for tab {t_id}"
-                            )
-                            socketio.emit(
-                                "session_assigned",
-                                {"tab_id": t_id, "session_id": found_id},
-                                to=sid,
-                            )
-                            return
-                    except Exception as e:
-                        logger.error(f"Error in session discovery: {e}")
-
-                logger.warning(f"Failed to discover session ID for tab {t_id}")
-
-            socketio.start_background_task(
-                discover_session_id, tab_id, ssh_target, ssh_dir, sid
-            )
 
 
 @socketio.on("get_management_sessions")
