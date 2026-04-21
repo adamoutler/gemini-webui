@@ -1209,6 +1209,16 @@ function getGlobalSocket() {
       }
     });
 
+    globalSocket.on("disconnect", () => {
+      debugLog("Global socket disconnected");
+      if (activeTabId && HostStateManager && HostStateManager.states) {
+        Object.keys(HostStateManager.states).forEach((label) => {
+          HostStateManager.states[label].failures = 2; // Force to Red
+          HostStateManager.updateHealth(activeTabId, label, false, false);
+        });
+      }
+    });
+
     globalSocket.on("sync-tabs", (serverTabs) => {
       syncTabs(serverTabs);
     });
