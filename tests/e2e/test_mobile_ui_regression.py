@@ -14,8 +14,8 @@ def page(server, playwright):
     page.set_default_timeout(60000)
     page.goto(server)
     yield page
-    # context.close()
-    # browser.close()
+    context.close()
+    browser.close()
 
 
 def test_mobile_layout_locked(page, server, playwright):
@@ -60,7 +60,7 @@ def test_mobile_layout_locked(page, server, playwright):
     assert "pan-y" in toolbar_touch
 
     mobile_page.screenshot(path="public/qa-screenshots/proof_270_mobile_locked.png")
-    # context.close()
+    context.close()
 
 
 def test_visual_viewport_listener_exists(page, server, playwright):

@@ -1213,7 +1213,7 @@ function getGlobalSocket() {
       debugLog("Global socket disconnected");
       if (activeTabId && HostStateManager && HostStateManager.states) {
         Object.keys(HostStateManager.states).forEach((label) => {
-          HostStateManager.states[label].failures = 2; // Force to Red
+          HostStateManager.states[label].failures = 1; // 1 will be incremented to 2 (Red) in updateState
           HostStateManager.updateHealth(activeTabId, label, false, false);
         });
       }

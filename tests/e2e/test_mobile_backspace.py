@@ -20,8 +20,8 @@ def mobile_page(server, playwright):
 
     yield page
 
-    # context.close()
-    # browser.close()
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(60)

@@ -15,8 +15,8 @@ def page(server, playwright):
     page.set_default_timeout(60000)
     page.goto(server, timeout=15000)
     yield page
-    # context.close()
-    # browser.close()
+    context.close()
+    browser.close()
 
 
 def test_input_overlay_colors(page, playwright):

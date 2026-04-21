@@ -13,8 +13,8 @@ def page(server, playwright):
     page = context.new_page()
     page.set_default_timeout(60000)
     yield page
-    # context.close()
-    # browser.close()
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(60)

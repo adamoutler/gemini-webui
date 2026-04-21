@@ -16,8 +16,8 @@ def mobile_page(server, playwright):
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )
     yield page
-    # context.close()
-    # browser.close()
+    context.close()
+    browser.close()
 
 
 def get_terminal_text(page):

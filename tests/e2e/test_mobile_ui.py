@@ -23,8 +23,8 @@ def mobile_page(server, playwright):
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )
     yield page
-    # context.close()
-    # browser.close()
+    context.close()
+    browser.close()
 
 
 @pytest.fixture(scope="function")
@@ -125,8 +125,8 @@ def custom_mobile_page(custom_server, playwright):
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )
     yield page
-    # context.close()
-    # browser.close()
+    context.close()
+    browser.close()
 
 
 @pytest.mark.timeout(20)

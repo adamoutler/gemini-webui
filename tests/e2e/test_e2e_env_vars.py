@@ -107,8 +107,8 @@ def page(server, playwright):
     page.goto(server)
     page.wait_for_selector(".launcher, .terminal-instance", state="attached")
     yield page
-    # context.close()
-    # browser.close()
+    context.close()
+    browser.close()
 
 
 @pytest.mark.prone_to_timeout

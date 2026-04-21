@@ -137,5 +137,5 @@ def test_auto_reconnect_after_server_restart(custom_server, playwright):
         body_html = page.evaluate("document.body.innerHTML")
         print(f"FAILED DOM DUMP:\n{body_html}\n\nException: {e}")
         raise
-    # context.close()
-    # browser.close()
+    context.close()
+    browser.close()

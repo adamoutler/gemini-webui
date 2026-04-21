@@ -156,5 +156,5 @@ def test_new_deployment_login(authenticated_server, playwright):
     # Ensure there is no JS error
     assert len(js_errors) == 0, f"JS Errors found: {js_errors}"
 
-    # context.close()
-    # browser.close()
+    context.close()
+    browser.close()
