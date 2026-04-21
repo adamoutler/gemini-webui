@@ -1899,7 +1899,7 @@ function startSession(
               text: uri, // Report the FULL uri even for this segment
               range: {
                 start: { x: startX + 1, y: y },
-                end: { x: endX + 1, y: y },
+                end: { x: endX, y: y },
               },
               activate: (e, text) => {
                 window.open(uri, "_blank", "noopener,noreferrer");
