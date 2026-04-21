@@ -85,8 +85,13 @@ def test_ui_terminal_initialization(page):
 @pytest.mark.timeout(60)
 def test_ui_tab_management(page):
     """Verify creating and closing tabs works correctly."""
-    # Ensure we have a launcher tab active (in case previous tests left a terminal session)
-    page.locator("#new-tab-btn").click()
+    # Close all existing tabs with close buttons to start clean
+    while page.locator(".tab-close").count() > 0:
+        page.locator(".tab-close").first.click()
+
+    # Ensure we have a launcher tab active
+    if page.locator(".tab").count() == 0:
+        page.locator("#new-tab-btn").click()
 
     # First, turn the initial tab into a terminal so we can create a second launcher tab
     btns = page.locator('.tab-instance.active button:has-text("Start New")')
