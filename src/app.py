@@ -37,27 +37,11 @@ if not env_config.SKIP_MONKEY_PATCH:
         with eventlet.green.subprocess.Popen(*popenargs, **kwargs) as process:
             try:
                 text_mode = kwargs.get("text", False)
-                if input_data and process.stdin:
-                    if text_mode and isinstance(input_data, str):
-                        process.stdin.write(input_data)
-                    elif not text_mode and isinstance(input_data, bytes):
-                        process.stdin.write(input_data)
-                    process.stdin.close()
+                if input_data is not None and text_mode and isinstance(input_data, str):
+                    input_data = input_data.encode("utf-8")
 
-                if timeout is not None:
-                    import time
+                stdout, stderr = process.communicate(input=input_data, timeout=timeout)
 
-                    start_time = time.time()
-                    while process.poll() is None:
-                        if time.time() - start_time > timeout:
-                            process.kill()
-                            raise eventlet.green.subprocess.TimeoutExpired(
-                                process.args, timeout
-                            )
-                        eventlet.sleep(0.01)
-
-                stdout = process.stdout.read() if process.stdout else None
-                stderr = process.stderr.read() if process.stderr else None
                 if text_mode:
                     if isinstance(stdout, bytes):
                         stdout = stdout.decode("utf-8", "replace")
@@ -72,6 +56,18 @@ if not env_config.SKIP_MONKEY_PATCH:
                 return eventlet.green.subprocess.CompletedProcess(
                     process.args, retcode, stdout, stderr
                 )
+            except eventlet.green.subprocess.TimeoutExpired:
+                # Let TimeoutExpired propagate normally without adding to abandoned_pids,
+                # but kill the process first to prevent zombies.
+                try:
+                    process.kill()
+                    process.wait(timeout=1)
+                except OSError:
+                    pass
+                except eventlet.green.subprocess.TimeoutExpired:
+                    with abandoned_pids_lock:
+                        abandoned_pids.add(process.pid)
+                raise
             except BaseException:
                 try:
                     process.kill()
@@ -227,10 +223,39 @@ def add_managed_pty(pid):
             managed_ptys.add(pid)
 
 
+sigchld_pipe_r, sigchld_pipe_w = os.pipe()
+os.set_blocking(sigchld_pipe_w, False)
+os.set_blocking(sigchld_pipe_r, False)
+
+import eventlet.patcher
+
+original_os = eventlet.patcher.original("os")
+
+
+def sigchld_handler(signum, frame):
+    try:
+        original_os.write(sigchld_pipe_w, b"\x00")
+    except OSError:
+        pass
+
+
+signal.signal(signal.SIGCHLD, sigchld_handler)
+
+
 def zombie_reaper_task():
-    """Periodically reaps any managed PTY processes that have exited to prevent zombies."""
+    """Reaps any managed PTY processes that have exited to prevent zombies."""
+    import select
+
     while True:
         try:
+            # Block until SIGCHLD arrives or timeout every 10s to ensure we don't miss any
+            r, _, _ = select.select([sigchld_pipe_r], [], [], 10.0)
+            if r:
+                try:
+                    os.read(sigchld_pipe_r, 4096)
+                except OSError:
+                    pass
+
             with managed_ptys_lock:
                 to_remove = set()
                 for pid in list(managed_ptys):
@@ -261,7 +286,6 @@ def zombie_reaper_task():
                 abandoned_pids.difference_update(to_remove)
         except Exception as e:
             logger.error(f"Error in zombie reaper: {e}")
-        socketio.sleep(2)
 
 
 def kill_and_reap(pid):
