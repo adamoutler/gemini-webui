@@ -223,47 +223,10 @@ def add_managed_pty(pid):
             managed_ptys.add(pid)
 
 
-sigchld_pipe_r, sigchld_pipe_w = os.pipe()
-os.set_blocking(sigchld_pipe_w, False)
-os.set_blocking(sigchld_pipe_r, False)
-
-import eventlet.patcher
-
-original_os = eventlet.patcher.original("os")
-
-old_sigchld_handler = signal.getsignal(signal.SIGCHLD)
-
-
-def sigchld_handler(signum, frame):
-    try:
-        original_os.write(sigchld_pipe_w, b"\x00")
-    except OSError:
-        pass
-
-    if callable(old_sigchld_handler):
-        try:
-            old_sigchld_handler(signum, frame)
-        except Exception:
-            pass
-
-
-signal.signal(signal.SIGCHLD, sigchld_handler)
-
-
 def zombie_reaper_task():
-    """Reaps any managed PTY processes that have exited to prevent zombies."""
-    import select
-
+    """Periodically reaps any managed PTY processes that have exited to prevent zombies."""
     while True:
         try:
-            # Block until SIGCHLD arrives or timeout every 10s to ensure we don't miss any
-            r, _, _ = select.select([sigchld_pipe_r], [], [], 10.0)
-            if r:
-                try:
-                    os.read(sigchld_pipe_r, 4096)
-                except OSError:
-                    pass
-
             with managed_ptys_lock:
                 to_remove = set()
                 for pid in list(managed_ptys):
@@ -294,6 +257,7 @@ def zombie_reaper_task():
                 abandoned_pids.difference_update(to_remove)
         except Exception as e:
             logger.error(f"Error in zombie reaper: {e}")
+        socketio.sleep(2)
 
 
 def kill_and_reap(pid):
