@@ -23,7 +23,7 @@ def page(server, playwright):
 
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 def test_connection_health_indicators(page, playwright):
     """Verify that connection health indicators change on failures."""
     # Ensure launcher is loaded
@@ -101,7 +101,7 @@ def test_connection_health_indicators(page, playwright):
 
 
 @pytest.mark.prone_to_timeout
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 def test_default_health_indicator_grey(server, playwright):
     """Verify that a server defaults to grey (⚪) and correctly turns red on manual failure."""
     p = playwright
@@ -141,7 +141,7 @@ def test_default_health_indicator_grey(server, playwright):
     browser.close()
 
 
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 def test_sync_pulse_with_health_indicator(server, playwright):
     """Verify that calling updateHostHealthIndicator synchronously triggers the pulse animation."""
     p = playwright

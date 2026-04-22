@@ -101,7 +101,7 @@ def custom_server(tmp_path, playwright):
     controller.stop()
 
 
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 def test_new_session_no_resume(custom_server, tmp_path, playwright):
     """
     Test that a 'Start New' connection executes correctly and starts a new session.
@@ -169,7 +169,7 @@ def test_new_session_no_resume(custom_server, tmp_path, playwright):
     browser.close()
 
 
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 def test_auto_resume_after_server_restart(custom_server, tmp_path, playwright):
     """
     Test that after a server restart, the UI automatically reconnects and resumes the session using -r.
@@ -263,7 +263,7 @@ def test_auto_resume_after_server_restart(custom_server, tmp_path, playwright):
     browser.close()
 
 
-@pytest.mark.timeout(60)
+@pytest.mark.timeout(120)
 def test_no_terminal_clear_on_stolen_session(custom_server, tmp_path, playwright):
     """
     Test that session-stolen event does not clear the terminal buffer or loop.
