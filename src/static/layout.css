@@ -38,7 +38,7 @@
 .quick-connect-bar {
   margin-bottom: 20px;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   flex-wrap: nowrap;
   gap: 0;
   padding: 0;
@@ -54,9 +54,11 @@
   padding: 8px 12px;
   background: #2d2d2d;
   border-radius: 4px 0 0 4px;
-  border: 1px solid #444;
+  border: 1px solid #666;
   border-right: none;
   margin: 0;
+  display: flex;
+  align-items: center;
 }
 
 .quick-connect-input {
@@ -71,18 +73,17 @@
 .quick-connect-bar button {
   white-space: nowrap;
   flex-shrink: 0;
+  margin: 0;
 }
 
 .quick-connect-bar button.primary {
   border-radius: 0;
-  margin: 0;
   border-left: 1px solid #555;
   border-right: 1px solid #555;
 }
 
 .quick-connect-bar button.success {
   border-radius: 0 4px 4px 0;
-  margin: 0;
 }
 
 .modal {
@@ -268,7 +269,8 @@
   display: flex;
   gap: 8px;
   margin-left: auto;
-  flex-wrap: wrap;
+  flex-flow: row nowrap;
+  justify-content: flex-end;
 }
 
 .connection-actions button {
