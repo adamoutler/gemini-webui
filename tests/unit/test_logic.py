@@ -1,9 +1,11 @@
+import pytest
 from src.gateways.terminal_socket import set_winsize
 import os
 from src.config import get_config_paths
 from src.app import validate_ssh_target
 
 
+@pytest.mark.timeout(60)
 def test_validate_ssh_target():
     assert validate_ssh_target("user@host") is True
     assert validate_ssh_target("host.example.com") is True
@@ -16,6 +18,7 @@ def test_validate_ssh_target():
 from unittest.mock import patch
 
 
+@pytest.mark.timeout(60)
 def test_get_config_paths_failover(tmp_path):
     with patch("src.config.env_config") as mock_env:
         # Simulate that the initially configured DATA_DIR is not writable
@@ -46,6 +49,7 @@ def test_get_config_paths_failover(tmp_path):
                     )
 
 
+@pytest.mark.timeout(60)
 def test_set_winsize_no_error():
     with patch("src.app.struct.pack") as mock_pack:
         mock_pack.return_value = b"mocked_winsize"

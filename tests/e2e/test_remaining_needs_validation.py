@@ -20,6 +20,7 @@ def page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_app_install_indicator_visibility(page, server, playwright):
     # Load page in standard browser mode (not standalone)
     page.goto(f"{server}/")
@@ -40,6 +41,7 @@ def test_app_install_indicator_visibility(page, server, playwright):
     expect(page.locator("#install-banner")).not_to_be_visible()
 
 
+@pytest.mark.timeout(60)
 def test_ssh_socket_hardening(playwright):
     # This check runs on the host
     # We need to trigger an SSH connection first to ensure the directory exists

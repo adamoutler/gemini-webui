@@ -4,6 +4,7 @@ import re
 from src.app import app
 
 
+@pytest.mark.timeout(60)
 def test_csrf_protection_missing_token(client, playwright):
     # Enable CSRF for this test
     app.config["WTF_CSRF_ENABLED"] = True
@@ -24,6 +25,7 @@ def test_csrf_protection_missing_token(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = False
 
 
+@pytest.mark.timeout(60)
 def test_csrf_protection_with_token(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = True
 
@@ -55,6 +57,7 @@ def test_csrf_protection_with_token(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = False
 
 
+@pytest.mark.timeout(60)
 def test_csrf_failure_returns_json_for_api(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = True
 
@@ -76,6 +79,7 @@ def test_csrf_failure_returns_json_for_api(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = False
 
 
+@pytest.mark.timeout(60)
 def test_csrf_failure_returns_expired_flag(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = True
 
@@ -94,6 +98,7 @@ def test_csrf_failure_returns_expired_flag(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = False
 
 
+@pytest.mark.timeout(60)
 def test_csrf_socketio_rejection(client, playwright):
     app.config["WTF_CSRF_ENABLED"] = True
 

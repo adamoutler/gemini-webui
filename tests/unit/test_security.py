@@ -1,6 +1,8 @@
+import pytest
 from src.app import validate_ssh_target, fetch_sessions_for_host
 
 
+@pytest.mark.timeout(60)
 def test_validate_ssh_target():
     assert validate_ssh_target("user@host") is True
     assert validate_ssh_target("host.example.com") is True
@@ -12,6 +14,7 @@ def test_validate_ssh_target():
     assert validate_ssh_target(None) is False
 
 
+@pytest.mark.timeout(60)
 def test_fetch_sessions_security():
     # Test with malicious host config
     malicious_host = {

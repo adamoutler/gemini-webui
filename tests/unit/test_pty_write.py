@@ -1,7 +1,9 @@
+import pytest
 import pty
 import os
 
 
+@pytest.mark.timeout(60)
 def test_pty_write_buffer_size():
     master, slave = pty.openpty()
     os.set_blocking(master, False)

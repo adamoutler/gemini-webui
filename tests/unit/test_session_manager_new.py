@@ -1,3 +1,4 @@
+import pytest
 from src.gateways.terminal_socket import update_title
 from unittest.mock import patch, MagicMock
 
@@ -9,6 +10,7 @@ except ImportError:
     from src.app import Session, SessionManager
 
 
+@pytest.mark.timeout(60)
 def test_add_and_get_session():
     manager = SessionManager()
     session = Session("tab-1", None, 1000, "user1", "Local")
@@ -26,6 +28,7 @@ def test_add_and_get_session():
     assert manager.get_session("tab-2", "user1") is None
 
 
+@pytest.mark.timeout(60)
 def test_remove_session():
     manager = SessionManager()
     session = Session("tab-1", None, 1000, "user1")
@@ -39,6 +42,7 @@ def test_remove_session():
     assert "tab-1" not in manager.tabid_to_sids
 
 
+@pytest.mark.timeout(60)
 def test_orphan_session():
     manager = SessionManager()
     session = Session("tab-1", None, 1000, "user1")
@@ -49,6 +53,7 @@ def test_orphan_session():
 
 
 @patch("src.app.socketio.emit")
+@pytest.mark.timeout(60)
 def test_reclaim_session(mock_emit):
     manager = SessionManager()
 
@@ -81,6 +86,7 @@ def test_reclaim_session(mock_emit):
     assert manager.sid_to_tabid["sid-2"] == "tab-1"
 
 
+@pytest.mark.timeout(60)
 def test_list_sessions():
     manager = SessionManager()
     s1 = Session("tab-1", None, 1000, "user1")
@@ -98,6 +104,7 @@ def test_list_sessions():
     assert user2_sessions[0]["tab_id"] == "tab-3"
 
 
+@pytest.mark.timeout(60)
 def test_update_title():
     manager = SessionManager()
     session = Session("tab-1", None, 1000, "user1", "Local")

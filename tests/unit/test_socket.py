@@ -30,6 +30,7 @@ def setup_teardown():
     session_manager.tabid_to_sids.clear()
 
 
+@pytest.mark.timeout(60)
 def test_pty_input_handling():
     with app.test_request_context("/"):
         with patch("src.gateways.terminal_socket.request") as mock_req, patch(
@@ -51,6 +52,7 @@ def test_pty_input_handling():
             pass
 
 
+@pytest.mark.timeout(60)
 def test_pty_resize_handling():
     with app.test_request_context("/"):
         with patch("src.gateways.terminal_socket.request") as mock_req, patch(
@@ -65,6 +67,7 @@ def test_pty_resize_handling():
             mock_resize.assert_called_with(None, 24, 80)
 
 
+@pytest.mark.timeout(60)
 def test_connect_disconnect_logic():
     with app.test_request_context("/"):
         with patch("src.gateways.terminal_socket.request") as mock_req:
@@ -87,6 +90,7 @@ def test_connect_disconnect_logic():
             )
 
 
+@pytest.mark.timeout(60)
 def test_update_title_handling():
     with app.test_request_context("/"):
         with patch("src.gateways.terminal_socket.request") as mock_req:

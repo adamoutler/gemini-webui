@@ -1,8 +1,10 @@
+import pytest
 import re
 from io import BytesIO
 from src.app import app
 
 
+@pytest.mark.timeout(60)
 def test_csrf_upload(client):
     app.config["WTF_CSRF_ENABLED"] = True
 

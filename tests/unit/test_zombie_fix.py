@@ -1,3 +1,4 @@
+import pytest
 import os
 import signal
 import sys
@@ -9,6 +10,7 @@ sys.path.append(os.getcwd())
 
 
 class TestZombieFix(unittest.TestCase):
+    @pytest.mark.timeout(60)
     def test_session_manager_replaces_and_kills_old_pid(self):
         from src.services.session_store import SessionManager
         from src.models.session import Session
@@ -37,6 +39,7 @@ class TestZombieFix(unittest.TestCase):
             self.assertEqual(sm.get_session("tab1").pid, 101)
 
     @patch("src.services.process_engine.subprocess.run")
+    @pytest.mark.timeout(60)
     def test_fetch_sessions_has_timeout_and_session_group(self, mock_run):
         from src.services.process_engine import fetch_sessions_for_host
 

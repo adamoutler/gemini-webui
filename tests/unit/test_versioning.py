@@ -1,7 +1,9 @@
+import pytest
 import os
 import json
 
 
+@pytest.mark.timeout(60)
 def test_version_files_consistency(client):
     # 1. Read VERSION file
     version_file_path = os.path.join(

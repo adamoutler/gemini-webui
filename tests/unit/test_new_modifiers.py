@@ -27,6 +27,7 @@ def mobile_page(server, browser_context):
     page.close()
 
 
+@pytest.mark.timeout(60)
 def test_new_modifier_toggles_existence(mobile_page):
     """Verify Shift and Super buttons exist and toggle active state."""
     shift_btn = mobile_page.locator("#shift-toggle")
@@ -56,6 +57,7 @@ def test_new_modifier_toggles_existence(mobile_page):
     expect(super_btn).to_have_class("control-btn active")
 
 
+@pytest.mark.timeout(60)
 def test_super_z_undo(mobile_page):
     """Verify that Super toggle + 'z' sends Alt+Z sequence for undo."""
     mobile_page.evaluate(
@@ -88,6 +90,7 @@ def test_super_z_undo(mobile_page):
     expect(super_btn).not_to_have_class("active")
 
 
+@pytest.mark.timeout(60)
 def test_shift_tab_toggle(mobile_page):
     """Verify that Shift toggle + Tab button sends Shift+Tab sequence."""
     mobile_page.evaluate(

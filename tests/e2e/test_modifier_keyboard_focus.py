@@ -32,6 +32,7 @@ def mobile_page(server, browser_context, playwright):
     page.close()
 
 
+@pytest.mark.timeout(60)
 def test_modifier_keyboard_focus(mobile_page, playwright):
     # Tap Ctrl button using mobile touch event
     ctrl_btn = mobile_page.locator("#ctrl-toggle")

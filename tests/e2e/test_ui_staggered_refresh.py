@@ -66,6 +66,7 @@ def staggered_page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_staggered_initial_load(staggered_page, playwright):
     # Wait for the stagger to complete (3 requests * 500ms = ~1500ms)
     staggered_page.wait_for_timeout(3000)

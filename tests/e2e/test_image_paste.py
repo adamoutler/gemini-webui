@@ -19,6 +19,7 @@ def page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_image_paste_logic(page, server, test_data_dir, playwright):
     page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
     page.on("pageerror", lambda err: print(f"BROWSER ERROR: {err.message}"))

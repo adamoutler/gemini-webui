@@ -65,6 +65,7 @@ def authenticated_server(tmp_path, playwright):
             pass
 
 
+@pytest.mark.timeout(60)
 def test_new_deployment_login(authenticated_server, playwright):
     p = playwright
     browser = p.chromium.launch(headless=True)

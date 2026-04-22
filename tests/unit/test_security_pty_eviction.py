@@ -1,3 +1,4 @@
+import pytest
 import time
 import os
 import signal
@@ -6,6 +7,7 @@ from src.services.session_store import SessionManager
 from src.models.session import Session
 
 
+@pytest.mark.timeout(60)
 def test_lru_pty_eviction():
     manager = SessionManager()
     user_id = "test_user_123"
@@ -41,6 +43,7 @@ def test_lru_pty_eviction():
             assert manager.get_session(f"tab_{i}", user_id) is not None
 
 
+@pytest.mark.timeout(60)
 def test_lru_eviction_multiple_users():
     manager = SessionManager()
 

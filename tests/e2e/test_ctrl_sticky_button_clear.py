@@ -30,6 +30,7 @@ def mobile_page(server, browser_context, playwright):
 import re
 
 
+@pytest.mark.timeout(60)
 def test_ctrl_clears_on_control_button(mobile_page, playwright):
     # Tap the software Ctrl button
     mobile_page.locator("#ctrl-toggle").click()
@@ -46,6 +47,7 @@ def test_ctrl_clears_on_control_button(mobile_page, playwright):
     )
 
 
+@pytest.mark.timeout(60)
 def test_ctrl_clears_on_paste(mobile_page, playwright):
     # Tap the software Ctrl button
     mobile_page.locator("#ctrl-toggle").click()

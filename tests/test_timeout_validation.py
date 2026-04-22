@@ -16,6 +16,7 @@ def test_network_timeout_standard(server):
     assert response.status_code == 200
 
 
+@pytest.mark.timeout(60)
 def test_global_timeout_fallback():
     """
     This test relies on the global --timeout=60 fallback defined in pytest.ini.

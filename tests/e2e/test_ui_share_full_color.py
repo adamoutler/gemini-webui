@@ -36,6 +36,7 @@ def page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_share_full_color(page, playwright):
     # 1. Start a local session to ensure we have an active terminal
     btns = page.locator('.tab-instance.active button:has-text("Start New")')

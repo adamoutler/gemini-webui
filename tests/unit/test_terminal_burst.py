@@ -15,6 +15,7 @@ def desktop_page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_terminal_burst_scroll(desktop_page, playwright):
     # Wait for the UI
     desktop_page.wait_for_selector(

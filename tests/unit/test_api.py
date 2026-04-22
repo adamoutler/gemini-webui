@@ -21,6 +21,7 @@ def client(test_data_dir, monkeypatch):
         yield client
 
 
+@pytest.mark.timeout(60)
 def test_api_health(client):
     response = client.get("/api/health")
     assert response.status_code == 200
@@ -28,6 +29,7 @@ def test_api_health(client):
     assert data == {"status": "ok"}
 
 
+@pytest.mark.timeout(60)
 def test_api_hosts_lifecycle(client):
     # 1. List initial hosts (may have more than 1 if other tests added hosts)
     response = client.get("/api/hosts")
@@ -92,6 +94,7 @@ def test_api_hosts_lifecycle(client):
     assert not any(h["label"] == "TestHost" for h in hosts)
 
 
+@pytest.mark.timeout(60)
 def test_api_config(client):
     response = client.get("/api/config")
     assert response.status_code == 200
@@ -103,6 +106,7 @@ def test_api_config(client):
     assert "ADMIN_PASS" not in conf
 
 
+@pytest.mark.timeout(60)
 def test_api_keys_list(client, test_data_dir):
     # Setup some keys in the ssh directory
     ssh_dir = os.path.join(str(test_data_dir), ".ssh")
@@ -126,6 +130,7 @@ def test_api_keys_list(client, test_data_dir):
     assert set(keys) == {"test_key", "test_key.pub"}
 
 
+@pytest.mark.timeout(60)
 def test_api_keys_public(client, test_data_dir):
     ssh_dir = os.path.join(str(test_data_dir), ".ssh")
     os.makedirs(ssh_dir, exist_ok=True)
@@ -150,6 +155,7 @@ def test_api_keys_public(client, test_data_dir):
     assert data == {"key": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI test@example.com"}
 
 
+@pytest.mark.timeout(60)
 def test_api_export_settings(client, test_data_dir):
     # Ensure there's something to zip
     test_file_path = os.path.join(test_data_dir, "test_file.txt")
@@ -164,6 +170,7 @@ def test_api_export_settings(client, test_data_dir):
     assert len(response.data) > 0
 
 
+@pytest.mark.timeout(60)
 def test_api_import_settings(client, test_data_dir):
     import zipfile
     import io

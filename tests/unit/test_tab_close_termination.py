@@ -24,6 +24,7 @@ def client():
 @patch("src.models.session.fcntl.fcntl")
 @patch("src.routes.terminal.kill_and_reap")
 @patch("src.routes.terminal.os.close")
+@pytest.mark.timeout(60)
 def test_rest_api_terminate_session(mock_os_close, mock_kill_reap, mock_fcntl, client):
     # Authenticate
     with client.session_transaction() as sess:
@@ -53,6 +54,7 @@ def test_rest_api_terminate_session(mock_os_close, mock_kill_reap, mock_fcntl, c
 @patch("src.gateways.terminal_socket.kill_and_reap")
 @patch("src.gateways.terminal_socket.os.close")
 @patch("src.gateways.terminal_socket.socketio.emit")
+@pytest.mark.timeout(60)
 def test_socket_terminate_session(
     mock_emit, mock_os_close, mock_kill_reap, mock_fcntl, client
 ):

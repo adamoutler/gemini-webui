@@ -1,8 +1,10 @@
+import pytest
 import pty
 import os
 import time
 
 
+@pytest.mark.timeout(60)
 def test_pty_overflow():
     pid, fd = pty.fork()
 

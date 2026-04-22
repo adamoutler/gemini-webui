@@ -66,7 +66,7 @@ global.document = {
 const {
   MobileInputBuffer,
   MobileInputUI,
-} = require("../src/static/mobile_input.js");
+} = require("../../src/static/mobile_input.js");
 
 let emitted = [];
 let buffer = new MobileInputBuffer((data) => emitted.push(data), true, null);

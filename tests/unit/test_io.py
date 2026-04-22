@@ -1,3 +1,4 @@
+import pytest
 from src.gateways.terminal_socket import session_output_reader
 import logging
 from unittest.mock import MagicMock, patch
@@ -9,6 +10,7 @@ def read_and_forward_pty_output():
         session_output_reader(tab_id)
 
 
+@pytest.mark.timeout(60)
 def test_read_and_forward_pty_output_basic(test_data_dir):
     session_manager.sessions.clear()
     session_manager.tabid_to_sids.clear()
@@ -45,6 +47,7 @@ def test_read_and_forward_pty_output_basic(test_data_dir):
         assert "hello world" in session.buffer
 
 
+@pytest.mark.timeout(60)
 def test_read_and_forward_pty_output_error():
     session_manager.sessions.clear()
     session_manager.tabid_to_sids.clear()
@@ -68,6 +71,7 @@ def test_read_and_forward_pty_output_error():
         assert "tab_err" not in session_manager.sessions
 
 
+@pytest.mark.timeout(60)
 def test_extreme_data_injection_and_delta_updates():
     logging.getLogger().setLevel(logging.INFO)
     """

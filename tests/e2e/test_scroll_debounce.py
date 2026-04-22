@@ -15,6 +15,7 @@ def mobile_page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_scroll_debounce(mobile_page, playwright):
     mobile_page.wait_for_selector(
         ".launcher, .terminal-instance", state="attached", timeout=15000
@@ -72,6 +73,7 @@ def test_scroll_debounce(mobile_page, playwright):
     assert result.get("final") == 50000, f"Expected 50000, got {result.get('final')}"
 
 
+@pytest.mark.timeout(60)
 def test_resize_observer_debounce(mobile_page, playwright):
     mobile_page.wait_for_selector(
         ".launcher, .terminal-instance", state="attached", timeout=15000

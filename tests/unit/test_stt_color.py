@@ -17,6 +17,7 @@ def page(server, playwright):
     # browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_stt_color(page, playwright):
     page.locator('.tab-instance.active button:has-text("Start New")').first.click()
     page.wait_for_selector(".mobile-text-area", state="attached", timeout=15000)

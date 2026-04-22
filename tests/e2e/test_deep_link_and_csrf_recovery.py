@@ -18,6 +18,7 @@ def page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_deep_link_adhoc(page, server, playwright):
     target = "test@localhost:2222"
     url = f"{server}/?target={target}"
@@ -33,6 +34,7 @@ def test_deep_link_adhoc(page, server, playwright):
     page.screenshot(path="public/qa-screenshots/proof_311_adhoc.png")
 
 
+@pytest.mark.timeout(60)
 def test_deep_link_host(page, server, playwright):
     host_label = "local"
     url = f"{server}/?host={host_label}"
@@ -44,6 +46,7 @@ def test_deep_link_host(page, server, playwright):
     page.screenshot(path="public/qa-screenshots/proof_311_host.png")
 
 
+@pytest.mark.timeout(60)
 def test_csrf_recovery_loop(page, server, playwright):
     # This test might be tricky to trigger naturally.
     # We can try to simulate it by intercepting /api/csrf-token and returning 403 or 400

@@ -1,8 +1,10 @@
+import pytest
 import threading
 from src.services.session_store import SessionManager
 from src.models.session import Session
 
 
+@pytest.mark.timeout(60)
 def test_session_manager_concurrency():
     """
     Test adding, retrieving, and deleting sessions concurrently
@@ -43,6 +45,7 @@ def test_session_manager_concurrency():
     assert len(manager.tabid_to_sids) == 0
 
 
+@pytest.mark.timeout(60)
 def test_session_manager_mapping_integrity():
     manager = SessionManager()
     s1 = Session("tab1", None, 1000, "user1")

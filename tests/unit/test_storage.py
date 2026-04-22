@@ -1,8 +1,10 @@
+import pytest
 import os
 from unittest.mock import patch, MagicMock
 from src.config import get_config_paths
 
 
+@pytest.mark.timeout(60)
 def test_get_config_paths_env_override():
     with patch.dict(os.environ, {"DATA_DIR": "/custom/data"}):
         d, c, s = get_config_paths()
@@ -11,6 +13,7 @@ def test_get_config_paths_env_override():
         assert isinstance(d, str)
 
 
+@pytest.mark.timeout(60)
 def test_init_app_full(test_data_dir):
     from src.app import app
     import src.config
@@ -34,6 +37,7 @@ def test_init_app_full(test_data_dir):
         pass
 
 
+@pytest.mark.timeout(60)
 def test_ssh_key_rotation_logic(test_data_dir):
     from src.app import app
 

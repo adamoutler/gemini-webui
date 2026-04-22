@@ -1,8 +1,10 @@
+import pytest
 import os
 import io
 import json
 
 
+@pytest.mark.timeout(60)
 def test_upload_file_subdirectory(client, test_data_dir):
     data = {"file": (io.BytesIO(b"test content"), "subfolder/testfile.txt")}
     response = client.post("/api/upload", data=data, content_type="multipart/form-data")
@@ -14,6 +16,7 @@ def test_upload_file_subdirectory(client, test_data_dir):
     assert os.path.exists(save_path), "File should be saved in subfolder"
 
 
+@pytest.mark.timeout(60)
 def test_download_file_subdirectory(client, test_data_dir):
     save_dir = os.path.join(test_data_dir, "workspace/subfolder")
     os.makedirs(save_dir, exist_ok=True)

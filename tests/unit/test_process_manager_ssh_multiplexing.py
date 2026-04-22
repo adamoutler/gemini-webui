@@ -9,12 +9,14 @@ from src.services.process_engine import (
 )
 
 
+@pytest.mark.timeout(60)
 def test_get_socket_path():
     path = SSHConnectionManager.get_socket_path("user", "host", 22)
     assert str(SSH_SOCKET_DIR) in path
     assert "user@host_22.sock" in path
 
 
+@pytest.mark.timeout(60)
 def test_get_base_ssh_args():
     args = SSHConnectionManager.get_base_ssh_args("user", "host", 22)
     assert "-o" in args
@@ -25,6 +27,7 @@ def test_get_base_ssh_args():
 
 @patch("src.services.process_engine.subprocess.run")
 @patch("src.services.process_engine.os.path.exists")
+@pytest.mark.timeout(60)
 def test_check_and_recover_connection_dead(mock_exists, mock_run):
     mock_exists.return_value = True
     # First run is check, which raises TimeoutExpired
@@ -46,6 +49,7 @@ def test_check_and_recover_connection_dead(mock_exists, mock_run):
 
 @patch("src.services.process_engine.subprocess.run")
 @patch("src.services.process_engine.os.path.exists")
+@pytest.mark.timeout(60)
 def test_check_and_recover_connection_healthy(mock_exists, mock_run):
     mock_exists.return_value = True
     mock_run.return_value = MagicMock(returncode=0)

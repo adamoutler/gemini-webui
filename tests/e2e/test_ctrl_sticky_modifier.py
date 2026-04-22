@@ -26,6 +26,7 @@ def mobile_page(server, browser_context, playwright):
     page.close()
 
 
+@pytest.mark.timeout(60)
 def test_ctrl_sticky_modifier(mobile_page, playwright):
     ctrl_btn = mobile_page.locator("#ctrl-toggle")
 

@@ -24,6 +24,7 @@ def page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_mock_gemini_cli_ephemeral(page, server, playwright):
     # 1. Navigate to /test-launcher
     page.goto(f"{server}/test-launcher", timeout=15000)

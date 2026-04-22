@@ -16,6 +16,7 @@ def client(test_data_dir, monkeypatch):
         yield client
 
 
+@pytest.mark.timeout(60)
 def test_add_ssh_key_text_valid(client):
     payload = {
         "name": "valid_key",
@@ -25,6 +26,7 @@ def test_add_ssh_key_text_valid(client):
     assert response.status_code == 200
 
 
+@pytest.mark.timeout(60)
 def test_add_ssh_key_text_invalid_format(client):
     payload = {"name": "invalid_key", "key": "some random text that is not a key"}
     response = client.post("/api/keys/text", json=payload)
@@ -32,6 +34,7 @@ def test_add_ssh_key_text_invalid_format(client):
     assert b"Invalid SSH key format" in response.data
 
 
+@pytest.mark.timeout(60)
 def test_add_ssh_key_text_too_large(client):
     payload = {
         "name": "large_key",
@@ -42,6 +45,7 @@ def test_add_ssh_key_text_too_large(client):
     assert b"Payload too large" in response.data
 
 
+@pytest.mark.timeout(60)
 def test_add_ssh_key_text_invalid_json(client):
     response = client.post(
         "/api/keys/text", data="not json", content_type="application/json"
@@ -49,6 +53,7 @@ def test_add_ssh_key_text_invalid_json(client):
     assert response.status_code == 400
 
 
+@pytest.mark.timeout(60)
 def test_upload_ssh_key_valid(client):
     data = {
         "file": (
@@ -62,6 +67,7 @@ def test_upload_ssh_key_valid(client):
     assert response.status_code == 200
 
 
+@pytest.mark.timeout(60)
 def test_upload_ssh_key_invalid_format(client):
     data = {"file": (io.BytesIO(b"some random text"), "invalid_file.pem")}
     response = client.post(
@@ -71,6 +77,7 @@ def test_upload_ssh_key_invalid_format(client):
     assert b"Invalid SSH key format" in response.data
 
 
+@pytest.mark.timeout(60)
 def test_upload_ssh_key_too_large(client):
     large_content = b"-----BEGIN OPENSSH PRIVATE KEY-----\n" + (b"A" * 11000)
     data = {"file": (io.BytesIO(large_content), "large_file.pem")}

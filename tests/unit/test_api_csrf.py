@@ -12,6 +12,7 @@ def client():
         yield client
 
 
+@pytest.mark.timeout(60)
 def test_csrf_token_endpoint(client):
     response = client.get("/api/csrf-token")
     assert response.status_code == 200

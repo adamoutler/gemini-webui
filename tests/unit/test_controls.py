@@ -28,6 +28,7 @@ def mobile_page(server, browser_context, playwright):
     page.close()
 
 
+@pytest.mark.timeout(60)
 def test_font_size_controls(mobile_page, playwright):
     """Verify A+ and A- buttons adjust terminal font size."""
     # Since we enabled WebGL addon, the terminal is rendered on a canvas.
@@ -68,6 +69,7 @@ def test_font_size_controls(mobile_page, playwright):
     assert minus_font_size < plus_font_size, "A- should decrease font size"
 
 
+@pytest.mark.timeout(60)
 def test_ctrl_alt_toggles(mobile_page, playwright):
     """Verify Ctrl and Alt buttons toggle active state."""
     ctrl_btn = mobile_page.locator("#ctrl-toggle")
@@ -92,6 +94,7 @@ def test_ctrl_alt_toggles(mobile_page, playwright):
     expect(alt_btn).to_have_class("control-btn active")
 
 
+@pytest.mark.timeout(60)
 def test_holdable_buttons_emit_commands(mobile_page, playwright):
     """Verify that buttons with data-cmd emit commands to the terminal."""
     # This is harder to test directly without checking socket output,
@@ -143,6 +146,7 @@ def test_holdable_buttons_emit_commands(mobile_page, playwright):
     assert last_data == "\x1b", "Esc button should send Esc"
 
 
+@pytest.mark.timeout(60)
 def test_haptic_feedback(mobile_page, playwright):
     """Verify that tapping extended keyboard controls triggers haptic feedback via navigator.vibrate."""
     # Mock navigator.vibrate
@@ -197,6 +201,7 @@ def test_haptic_feedback(mobile_page, playwright):
     assert mobile_page.evaluate("window.vibratedParams.length") == 0
 
 
+@pytest.mark.timeout(60)
 def test_haptic_feedback_hold_to_repeat(mobile_page, playwright):
     """Verify that holding a button triggers multiple haptic feedbacks at 5ms."""
     # Mock navigator.vibrate

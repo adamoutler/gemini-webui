@@ -1,8 +1,10 @@
+import pytest
 from playwright.sync_api import sync_playwright
 import os
 import json
 
 
+@pytest.mark.timeout(60)
 def test_mobile_modifier_ctrl(server, playwright):
     p = playwright
     device = p.devices["Pixel 5"]

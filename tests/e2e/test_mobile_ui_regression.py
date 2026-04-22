@@ -18,6 +18,7 @@ def page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_mobile_layout_locked(page, server, playwright):
     # Emulate Pixel 5
     from playwright.sync_api import sync_playwright
@@ -63,6 +64,7 @@ def test_mobile_layout_locked(page, server, playwright):
     context.close()
 
 
+@pytest.mark.timeout(60)
 def test_visual_viewport_listener_exists(page, server, playwright):
     page.goto(f"{server}/")
     # Check if appVisualViewport is defined (it should be window.visualViewport or a mock)

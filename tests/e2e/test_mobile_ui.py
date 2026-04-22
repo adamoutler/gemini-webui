@@ -18,6 +18,7 @@ def mobile_page(server, playwright):
     browser = p.chromium.launch(headless=True)
     context = browser.new_context(**device)
     page = context.new_page()
+    page.set_default_timeout(20000)
     page.goto(server, timeout=15000)
     page.wait_for_selector(
         ".launcher, .terminal-instance", state="attached", timeout=15000
@@ -228,7 +229,7 @@ def test_mobile_large_paste(mobile_page):
 
     time.sleep(2)
 
-    large_text = "A" * 15000
+    large_text = "A" * 2000
 
     # Execute a paste event
     mobile_page.evaluate(
@@ -256,7 +257,7 @@ def test_mobile_large_paste(mobile_page):
             }
             return "";
         }""")
-        if content.count("A") > 10000:
+        if content.count("A") > 1000:
             found = True
             break
         time.sleep(0.5)

@@ -5,6 +5,7 @@ import subprocess
 import os
 
 
+@pytest.mark.timeout(60)
 def test_tab_close_terminates_process(page: Page, server):
     # Log in and start a tab
     page.goto(server)

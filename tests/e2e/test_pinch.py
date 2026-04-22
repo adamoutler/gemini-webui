@@ -15,6 +15,7 @@ def mobile_page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_pinch(mobile_page, playwright):
     mobile_page.wait_for_selector(
         ".launcher, .terminal-instance", state="attached", timeout=15000

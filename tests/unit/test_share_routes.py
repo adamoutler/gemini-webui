@@ -19,6 +19,7 @@ def client():
         yield client
 
 
+@pytest.mark.timeout(60)
 def test_create_share_unauthenticated(client):
     with patch.object(
         type(env_config),
@@ -33,6 +34,7 @@ def test_create_share_unauthenticated(client):
         assert response.status_code == 401
 
 
+@pytest.mark.timeout(60)
 def test_list_shares_unauthenticated(client):
     with patch.object(
         type(env_config),
@@ -44,6 +46,7 @@ def test_list_shares_unauthenticated(client):
         assert response.status_code == 401
 
 
+@pytest.mark.timeout(60)
 def test_delete_share_unauthenticated(client):
     with patch.object(
         type(env_config),
@@ -55,6 +58,7 @@ def test_delete_share_unauthenticated(client):
         assert response.status_code == 401
 
 
+@pytest.mark.timeout(60)
 def test_share_lifecycle(client):
     # Authenticate for testing
     with patch.object(
@@ -99,6 +103,7 @@ def test_share_lifecycle(client):
         assert view_resp_after.status_code == 404
 
 
+@pytest.mark.timeout(60)
 def test_path_traversal(client):
     # Try with an invalid character to trigger the 400
     response = client.get("/s/invalid_id_!@#$")

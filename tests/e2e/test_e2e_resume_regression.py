@@ -104,11 +104,12 @@ def custom_server(tmp_path, playwright):
 @pytest.mark.timeout(60)
 def test_new_session_no_resume(custom_server, tmp_path, playwright):
     """
-    Test that a 'Start New' connection executes without the -r flag.
-    We verify this by pre-creating the mock state file. If -r is NOT passed,
-    the mock script clears the state file. If -r IS passed (regression), it keeps it.
+    Test that a 'Start New' connection executes correctly and starts a new session.
+    Since we now use -r <new_id> for SSH multiplexing predictably, we ensure
+    that the backend generates a new ID (e.g. 2) and that the mock script
+    correctly initializes it as a fresh session without loading previous state.
     """
-    state_file = tmp_path / "gemini_mock_state.json"
+    state_file = tmp_path / "gemini_mock_state_2.json"
     with open(state_file, "w") as f:
         json.dump({"TEST_VALUE": "REGRESSION_FAIL"}, f)
 

@@ -18,6 +18,7 @@ def client(test_data_dir, monkeypatch):
         yield client
 
 
+@pytest.mark.timeout(60)
 def test_upload_file_success(client, test_data_dir):
     data = {"file": (io.BytesIO(b"test content"), "testfile.txt")}
     response = client.post("/api/upload", data=data, content_type="multipart/form-data")
@@ -33,6 +34,7 @@ def test_upload_file_success(client, test_data_dir):
         assert f.read() == b"test content"
 
 
+@pytest.mark.timeout(60)
 def test_upload_file_no_file(client):
     response = client.post("/api/upload", data={}, content_type="multipart/form-data")
     assert response.status_code == 400
@@ -43,6 +45,7 @@ def test_upload_file_no_file(client):
 from unittest.mock import patch, MagicMock
 
 
+@pytest.mark.timeout(60)
 def test_upload_file_ssh_proxy(client, test_data_dir):
     data = {
         "file": (io.BytesIO(b"test content"), "testfile.txt"),
@@ -114,6 +117,7 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
         assert any("realpath" in arg for arg in path_call)
 
 
+@pytest.mark.timeout(60)
 def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
     data = {
         "file": (io.BytesIO(b"test content"), "testfile.txt"),
@@ -173,6 +177,7 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
         assert any("realpath" in arg for arg in path_call)
 
 
+@pytest.mark.timeout(60)
 def test_download_file_success(client, test_data_dir):
     # Setup file in workspace
     workspace_dir = os.path.join(test_data_dir, "workspace")
@@ -187,6 +192,7 @@ def test_download_file_success(client, test_data_dir):
     assert response.headers["Content-Disposition"].startswith("attachment;")
 
 
+@pytest.mark.timeout(60)
 def test_upload_file_ssh_proxy_mkdir_failure(client, test_data_dir):
     data = {
         "file": (io.BytesIO(b"test content"), "testfile.txt"),
@@ -210,6 +216,7 @@ def test_upload_file_ssh_proxy_mkdir_failure(client, test_data_dir):
         assert "Failed to create remote directory" in resp_data["message"]
 
 
+@pytest.mark.timeout(60)
 def test_upload_file_ssh_proxy_scp_failure(client, test_data_dir):
     data = {
         "file": (io.BytesIO(b"test content"), "testfile.txt"),
@@ -240,6 +247,7 @@ def test_upload_file_ssh_proxy_scp_failure(client, test_data_dir):
         assert "SCP failed" in resp_data["message"]
 
 
+@pytest.mark.timeout(60)
 def test_upload_file_ssh_proxy_verify_failure(client, test_data_dir):
     data = {
         "file": (io.BytesIO(b"test content"), "testfile.txt"),

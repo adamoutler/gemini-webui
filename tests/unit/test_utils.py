@@ -9,17 +9,20 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../s
 from src.utils import smart_file_search
 
 
+@pytest.mark.timeout(60)
 def test_smart_file_search_empty_cache():
     cache = []
     assert smart_file_search(cache, "query") == []
 
 
+@pytest.mark.timeout(60)
 def test_smart_file_search_empty_query():
     cache = ["file1.txt", "file2.txt"]
     assert smart_file_search(cache, "") == cache
     assert smart_file_search(cache, None) == cache
 
 
+@pytest.mark.timeout(60)
 def test_smart_file_search_exact_basename():
     cache = ["src/app.py", "tests/test_app.py", "app.py"]
     results = smart_file_search(cache, "app.py")
@@ -29,6 +32,7 @@ def test_smart_file_search_exact_basename():
     assert results == ["app.py", "src/app.py", "tests/test_app.py"]
 
 
+@pytest.mark.timeout(60)
 def test_smart_file_search_exact_path():
     cache = ["src/app.py", "app.py", "src/other.py"]
     results = smart_file_search(cache, "src/app.py")
@@ -36,6 +40,7 @@ def test_smart_file_search_exact_path():
     assert results == ["src/app.py"]
 
 
+@pytest.mark.timeout(60)
 def test_smart_file_search_basename_prefix():
     cache = ["src/app_config.py", "src/app.py", "app_test.py"]
     results = smart_file_search(cache, "app")
@@ -51,24 +56,28 @@ def test_smart_file_search_basename_prefix():
     assert results[2] == "src/app_config.py"
 
 
+@pytest.mark.timeout(60)
 def test_smart_file_search_basename_substring():
     cache = ["src/my_app.py", "my_app.py", "other.py"]
     results = smart_file_search(cache, "app")
     assert results == ["my_app.py", "src/my_app.py"]
 
 
+@pytest.mark.timeout(60)
 def test_smart_file_search_path_prefix():
     cache = ["src/main.py", "tests/src_test.py"]
     results = smart_file_search(cache, "src/")
     assert results == ["src/main.py"]
 
 
+@pytest.mark.timeout(60)
 def test_smart_file_search_path_substring():
     cache = ["lib/src/main.py", "main.py"]
     results = smart_file_search(cache, "src")
     assert results == ["lib/src/main.py"]
 
 
+@pytest.mark.timeout(60)
 def test_smart_file_search_fuzzy():
     cache = ["src/my_awesome_app.py", "src/other.py"]
     results = smart_file_search(cache, "smapp")
@@ -76,12 +85,14 @@ def test_smart_file_search_fuzzy():
     assert results == ["src/my_awesome_app.py"]
 
 
+@pytest.mark.timeout(60)
 def test_smart_file_search_case_insensitive():
     cache = ["SRC/App.Py", "tests/TEST_APP.PY"]
     results = smart_file_search(cache, "app.py")
     assert results == ["SRC/App.Py", "tests/TEST_APP.PY"]
 
 
+@pytest.mark.timeout(60)
 def test_smart_file_search_sorting():
     cache = [
         "a/b/c/d/e/app.py",  # exact basename, very long (100)

@@ -1,6 +1,8 @@
+import pytest
 import os
 
 
+@pytest.mark.timeout(60)
 def test_sw_bypass_logic():
     """
     Unit test to verify that the Service Worker bypasses the cache entirely

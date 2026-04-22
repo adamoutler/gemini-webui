@@ -35,6 +35,7 @@ def client(test_data_dir, monkeypatch):
         yield client
 
 
+@pytest.mark.timeout(60)
 def test_list_management_sessions(client):
     # Add a mock session
     tab_id = "test-tab-id"
@@ -52,11 +53,13 @@ def test_list_management_sessions(client):
     session_manager.remove_session(tab_id)
 
 
+@pytest.mark.timeout(60)
 def test_terminate_managed_session_not_found(client):
     response = client.delete("/api/management/sessions/non-existent")
     assert response.status_code == 404
 
 
+@pytest.mark.timeout(60)
 def test_resume_new_local():
     from src.services.process_engine import build_terminal_command
     from unittest.mock import patch

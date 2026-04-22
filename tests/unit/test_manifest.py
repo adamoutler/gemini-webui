@@ -1,7 +1,9 @@
+import pytest
 import json
 import os
 
 
+@pytest.mark.timeout(60)
 def test_manifest_short_name_and_comment():
     """
     Test that manifest.json has the correct short_name.

@@ -1,6 +1,8 @@
+import pytest
 from src.models.session import Session
 
 
+@pytest.mark.timeout(60)
 def test_bola_get_sessions(client):
     # Important: import services.session_store here because conftest reloads src.app
     from src.app import session_manager
@@ -38,6 +40,7 @@ def test_bola_get_sessions(client):
     assert "tab_A1" in session_manager.sessions
 
 
+@pytest.mark.timeout(60)
 def test_bola_websocket_events(client):
     from src.app import session_manager
 

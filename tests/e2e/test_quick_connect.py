@@ -19,6 +19,7 @@ def page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_quick_connect_default_port(page, server, playwright):
     """Verify that user@host without port creates a target without port."""
     # Wait for the quick connect bar to appear
@@ -49,6 +50,7 @@ def test_quick_connect_default_port(page, server, playwright):
     assert host_payload["target"] == "user@testhost"
 
 
+@pytest.mark.timeout(60)
 def test_quick_connect_custom_port(page, server, playwright):
     """Verify that user@host:port creates a target with the custom port."""
     expect(page.locator(".quick-connect-bar").first).to_be_visible(timeout=15000)

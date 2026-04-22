@@ -92,7 +92,7 @@ const {
   MobileInputUI,
   MobileTerminalController,
   MobileModifierState,
-} = require("../src/static/mobile_input.js");
+} = require("../../src/static/mobile_input.js");
 
 let emitted = [];
 let modifierState = new MobileModifierState();

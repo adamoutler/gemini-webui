@@ -3,6 +3,7 @@ import pytest
 from src.app import app
 
 
+@pytest.mark.timeout(60)
 def test_concurrent_list_sessions(client, monkeypatch):
     # Mock fetch_sessions_for_host to simulate work and prevent actual network/fs calls
     monkeypatch.setattr(

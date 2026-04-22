@@ -1,8 +1,10 @@
+import pytest
 import json
 from unittest.mock import MagicMock
 from src.app import session_manager
 
 
+@pytest.mark.timeout(60)
 def test_api_search_files_no_session(client):
     response = client.get("/api/sessions/nonexistent_session/search_files?q=app")
     assert response.status_code == 404
@@ -10,6 +12,7 @@ def test_api_search_files_no_session(client):
     assert data == {"error": "Session not found"}
 
 
+@pytest.mark.timeout(60)
 def test_api_search_files_success(client):
     # Mock a session
     mock_session = MagicMock()
@@ -31,6 +34,7 @@ def test_api_search_files_success(client):
     del session_manager.sessions["test_session_123"]
 
 
+@pytest.mark.timeout(60)
 def test_api_search_files_empty_query(client):
     mock_session = MagicMock()
     mock_session.tab_id = "test_session_123"

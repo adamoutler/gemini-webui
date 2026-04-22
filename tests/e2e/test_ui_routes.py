@@ -18,12 +18,14 @@ def client(test_data_dir):
             yield client
 
 
+@pytest.mark.timeout(60)
 def test_index_route_no_auth(client):
     with patch.dict("os.environ", {"BYPASS_AUTH_FOR_TESTING": "false"}):
         response = client.get("/")
         assert response.status_code == 401
 
 
+@pytest.mark.timeout(60)
 def test_index_route_with_auth(client):
     # Mocking admin user
     with patch("src.app.ADMIN_USER", "admin"), patch(
@@ -38,6 +40,7 @@ def test_index_route_with_auth(client):
         assert response.status_code == 200
 
 
+@pytest.mark.timeout(60)
 def test_instance_key_generation_logic(client, test_data_dir):
     # Force a run where keys are missing
     ssh_dir = os.path.join(str(test_data_dir), ".ssh")
@@ -55,11 +58,13 @@ def test_instance_key_generation_logic(client, test_data_dir):
         assert mock_run.called
 
 
+@pytest.mark.timeout(60)
 def test_health_check_unauthenticated(client):
     response = client.get("/api/health")
     assert response.status_code == 200
 
 
+@pytest.mark.timeout(60)
 def test_root_health_check_unauthenticated(client):
     response = client.get("/health")
     assert response.status_code == 200

@@ -21,6 +21,7 @@ def page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_renderLauncher_e2e(page, playwright):
     """Test that renderLauncher successfully creates the DOM elements."""
     # Ensure launcher is present

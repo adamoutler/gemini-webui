@@ -12,6 +12,7 @@ def temp_share_manager(tmp_path):
     return manager
 
 
+@pytest.mark.timeout(60)
 def test_create_and_get_share(temp_share_manager):
     html = "<html><body><h1>Session Snapshot</h1></body></html>"
     name = "My Session"
@@ -31,11 +32,13 @@ def test_create_and_get_share(temp_share_manager):
     assert file_path.read_text(encoding="utf-8") == html
 
 
+@pytest.mark.timeout(60)
 def test_get_nonexistent_share(temp_share_manager):
     metadata = temp_share_manager.get_share_metadata("nonexistent-id")
     assert metadata is None
 
 
+@pytest.mark.timeout(60)
 def test_list_shares(temp_share_manager):
     shares = temp_share_manager.list_shares()
     assert len(shares) == 0
@@ -51,6 +54,7 @@ def test_list_shares(temp_share_manager):
     assert shares[1]["id"] == id1
 
 
+@pytest.mark.timeout(60)
 def test_delete_share(temp_share_manager):
     share_id = temp_share_manager.create_share("html", "session")
 
@@ -73,6 +77,7 @@ def test_delete_share(temp_share_manager):
     assert success_again is False
 
 
+@pytest.mark.timeout(60)
 def test_concurrent_creation(temp_share_manager):
     def create_share_worker(i):
         return temp_share_manager.create_share(f"html{i}", f"session{i}")

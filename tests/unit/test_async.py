@@ -25,6 +25,7 @@ def mock_pty():
         yield mock_fork
 
 
+@pytest.mark.timeout(60)
 def test_cleanup_orphaned_ptys(mock_socketio):
     # Ensure it breaks loop
     os.environ["BYPASS_AUTH_FOR_TESTING"] = "true"
@@ -69,6 +70,7 @@ def test_cleanup_orphaned_ptys(mock_socketio):
 
 
 @patch("src.config.get_config")
+@pytest.mark.timeout(60)
 def test_background_session_preloader(mock_get_config):
     mock_get_config.return_value = {"HOSTS": [{"label": "local", "type": "local"}]}
 
@@ -88,6 +90,7 @@ def test_background_session_preloader(mock_get_config):
         assert session_results_cache["local:local:"]["output"] == "some sessions"
 
 
+@pytest.mark.timeout(60)
 def test_pty_restart_basic(mock_socketio, mock_pty):
     from src.app import app
     from unittest.mock import MagicMock
@@ -133,6 +136,7 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
             assert session.pid == 1234
 
 
+@pytest.mark.timeout(60)
 def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
     from src.app import app, session_manager, Session
     import time

@@ -14,6 +14,7 @@ def css_page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_css_classes_exist_in_dom(css_page, playwright):
     """
     Ensure the classes targeted for extraction (.is-mobile, #mobile-controls, .mobile-scroll-proxy)

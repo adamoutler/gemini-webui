@@ -26,6 +26,7 @@ def page(server, browser_context, playwright):
     page.close()
 
 
+@pytest.mark.timeout(60)
 def test_physical_keyboard_combinations(page, playwright):
     # Override emitPtyInput to catch what is being sent
     page.evaluate("""() => {

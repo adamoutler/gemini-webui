@@ -30,6 +30,7 @@ BAD_PAYLOADS = [
 
 
 @pytest.mark.parametrize("payload", BAD_PAYLOADS, ids=lambda p: f"payload_len_{len(p)}")
+@pytest.mark.timeout(60)
 def test_ansi_injection(payload):
     # Setup state
     session_manager.sessions.clear()
@@ -59,6 +60,7 @@ def test_ansi_injection(payload):
         session_manager.remove_session("tab_ansi", "admin")
 
 
+@pytest.mark.timeout(60)
 def test_ansi_injection_mixed_chunks():
     session_manager.sessions.clear()
     session_manager.sid_to_tabid.clear()

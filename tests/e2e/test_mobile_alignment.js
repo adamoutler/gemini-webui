@@ -110,7 +110,7 @@ const {
   MobileInputUI,
   MobileTerminalController,
   MobileModifierState,
-} = require("../src/static/mobile_input.js");
+} = require("../../src/static/mobile_input.js");
 
 let ui = new MobileInputUI(
   "testTab",

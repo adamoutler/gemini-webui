@@ -12,6 +12,7 @@ def page(server, playwright):
     browser.close()
 
 
+@pytest.mark.timeout(60)
 def test_debug_logging(page, server, playwright):
     logs = []
     page.on("console", lambda msg: logs.append(msg.text))

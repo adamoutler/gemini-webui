@@ -1,8 +1,10 @@
+import pytest
 from src.gateways.terminal_socket import pty_restart
 from unittest.mock import patch, MagicMock
 from src.services.process_engine import fetch_sessions_for_host, validate_ssh_target
 
 
+@pytest.mark.timeout(60)
 def test_fetch_sessions_for_host_local():
     host = {"type": "local", "target": None, "dir": None}
     with patch("src.services.process_engine.subprocess.run") as mock_run:
@@ -15,6 +17,7 @@ def test_fetch_sessions_for_host_local():
         assert mock_run.called
 
 
+@pytest.mark.timeout(60)
 def test_fetch_sessions_for_host_ssh():
     host = {"type": "ssh", "target": "user@remote", "dir": "~/myproject"}
     with patch("src.services.process_engine.subprocess.run") as mock_run:
@@ -37,6 +40,7 @@ def test_fetch_sessions_for_host_ssh():
         assert "gemini --list-sessions" in remote_bash_cmd
 
 
+@pytest.mark.timeout(60)
 def test_validate_ssh_target_invalid():
     assert not validate_ssh_target("user@host; rm -rf /")
     assert validate_ssh_target("user@192.168.1.100")
@@ -48,6 +52,7 @@ def test_validate_ssh_target_invalid():
 @patch("os.execvpe")
 @patch("os._exit")
 @patch("shutil.which", return_value=None)
+@pytest.mark.timeout(60)
 def test_pty_restart_local_cmd(
     mock_which, mock_exit, mock_execvpe, mock_closerange, mock_fork
 ):
@@ -74,6 +79,7 @@ def test_pty_restart_local_cmd(
 @patch("os.execvpe")
 @patch("os._exit")
 @patch("shutil.which", return_value=None)
+@pytest.mark.timeout(60)
 def test_pty_restart_ssh_cmd(
     mock_which, mock_exit, mock_execvpe, mock_closerange, mock_fork
 ):
@@ -104,6 +110,7 @@ def test_pty_restart_ssh_cmd(
     assert "dev/project" in remote_cmd
 
 
+@pytest.mark.timeout(60)
 def test_build_terminal_command_resume_new():
     from src.services.process_engine import build_terminal_command
 
@@ -118,6 +125,7 @@ def test_build_terminal_command_resume_new():
     assert "gemini -r" not in remote_cmd
 
 
+@pytest.mark.timeout(60)
 def test_build_terminal_command_resume_id():
     from src.services.process_engine import build_terminal_command
 
@@ -132,6 +140,7 @@ def test_build_terminal_command_resume_id():
     assert "gemini -r 123" in remote_cmd
 
 
+@pytest.mark.timeout(60)
 def test_build_terminal_command_resume_true():
     from src.services.process_engine import build_terminal_command
 

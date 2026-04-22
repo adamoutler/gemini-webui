@@ -1,9 +1,11 @@
+import pytest
 from src.gateways.terminal_socket import pty_restart
 import os
 from unittest.mock import patch, MagicMock
 from src.app import app
 
 
+@pytest.mark.timeout(60)
 def test_remote_gemini_detection_missing(test_data_dir):
     app.config["DATA_DIR"] = str(test_data_dir)
     app.config["TESTING"] = True
@@ -29,6 +31,7 @@ def test_remote_gemini_detection_missing(test_data_dir):
             # This exercises the large block of construction logic in app.py
 
 
+@pytest.mark.timeout(60)
 def test_local_project_session_fetching(test_data_dir):
     # Test the branch where /data/workspace exists
     os.makedirs(os.path.join(str(test_data_dir), "workspace"), exist_ok=True)

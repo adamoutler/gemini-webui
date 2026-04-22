@@ -1,6 +1,7 @@
 import os
 
 os.environ["SKIP_MONKEY_PATCH"] = "true"
+os.environ["SKIP_MULTIPLEXER"] = "true"
 
 import time
 import subprocess

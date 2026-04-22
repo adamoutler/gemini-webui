@@ -1,9 +1,11 @@
+import pytest
 import os
 from unittest.mock import patch
 from src.services.process_engine import build_terminal_command, fetch_sessions_for_host
 
 
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
+@pytest.mark.timeout(60)
 def test_build_terminal_command_resume_injection_local():
     import shlex
 
@@ -19,6 +21,7 @@ def test_build_terminal_command_resume_injection_local():
 
 
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
+@pytest.mark.timeout(60)
 def test_build_terminal_command_resume_injection_ssh():
     import shlex
 
@@ -39,6 +42,7 @@ def test_build_terminal_command_resume_injection_ssh():
 
 
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
+@pytest.mark.timeout(60)
 def test_build_terminal_command_ssh_dir_injection_ssh():
     import shlex
 
@@ -54,6 +58,7 @@ def test_build_terminal_command_ssh_dir_injection_ssh():
 
 
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
+@pytest.mark.timeout(60)
 def test_build_terminal_command_local_workdir_injection():
     import shlex
 
@@ -68,6 +73,7 @@ def test_build_terminal_command_local_workdir_injection():
 
 
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
+@pytest.mark.timeout(60)
 def test_build_terminal_command_gemini_bin_injection_ssh():
     import shlex
 
@@ -79,6 +85,7 @@ def test_build_terminal_command_gemini_bin_injection_ssh():
 
 
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
+@pytest.mark.timeout(60)
 def test_build_terminal_command_gemini_bin_injection_local():
     import shlex
 
@@ -88,6 +95,7 @@ def test_build_terminal_command_gemini_bin_injection_local():
 
 
 @patch("src.services.process_engine.subprocess.run")
+@pytest.mark.timeout(60)
 def test_fetch_sessions_for_host_gemini_bin_injection_ssh(mock_run):
     import shlex
 
@@ -99,6 +107,7 @@ def test_fetch_sessions_for_host_gemini_bin_injection_ssh(mock_run):
 
 
 @patch("src.services.process_engine.subprocess.run")
+@pytest.mark.timeout(60)
 def test_fetch_sessions_for_host_gemini_bin_injection_local(mock_run):
     import shlex
 

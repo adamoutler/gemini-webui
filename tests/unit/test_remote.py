@@ -4,6 +4,7 @@ from unittest.mock import patch, MagicMock
 from src.app import app
 
 
+@pytest.mark.timeout(60)
 def test_remote_sessions_list(client):
     with patch("src.services.process_engine.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(
@@ -21,6 +22,7 @@ def test_remote_sessions_list(client):
         assert "SessionTwo" in data["output"]
 
 
+@pytest.mark.timeout(60)
 def test_remote_sessions_timeout(client):
     import subprocess
 

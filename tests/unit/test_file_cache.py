@@ -1,14 +1,17 @@
+import pytest
 from unittest.mock import patch, MagicMock
 from src.services.session_store import SessionManager
 from src.models.session import Session
 
 
+@pytest.mark.timeout(60)
 def test_session_init_file_cache():
     session = Session("tab1", None, 1234, "user1")
     assert hasattr(session, "file_cache")
     assert session.file_cache == []
 
 
+@pytest.mark.timeout(60)
 def test_session_to_dict_file_cache():
     session = Session("tab1", None, 1234, "user1")
     session.file_cache = ["file1.txt", "dir1/"]
@@ -18,6 +21,7 @@ def test_session_to_dict_file_cache():
 
 
 @patch("src.services.session_store.subprocess.run")
+@pytest.mark.timeout(60)
 def test_update_file_cache_local(mock_run):
     manager = SessionManager()
     session = Session("tab1", None, 1234, "user1")
@@ -39,6 +43,7 @@ def test_update_file_cache_local(mock_run):
 
 
 @patch("src.services.session_store.subprocess.run")
+@pytest.mark.timeout(60)
 def test_update_file_cache_ssh(mock_run):
     manager = SessionManager()
     session = Session(

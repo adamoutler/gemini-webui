@@ -4,6 +4,7 @@ import os
 import time
 
 
+@pytest.mark.timeout(60)
 def test_terminal_clickable_links(page: Page, server):
     # Navigate to the app
     page.goto(server)

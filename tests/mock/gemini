@@ -11,7 +11,6 @@ if not os.path.exists(work_dir) and work_dir != ".":
     except Exception:
         work_dir = "."
 
-STATE_FILE = os.path.join(work_dir, "gemini_mock_state.json")
 SESSIONS_FILE = os.path.join(work_dir, "gemini_mock_sessions.json")
 
 
@@ -29,7 +28,6 @@ if "--list-sessions" in sys.argv:
     sessions = get_sessions()
     print(f"Available sessions for this project ({len(sessions)}):")
     for sid in sessions:
-        # Check for a saved UUID for this session ID
         uuid_file = os.path.join(work_dir, f"gemini_mock_uuid_{sid}.json")
         if os.path.exists(uuid_file):
             with open(uuid_file, "r") as f:
@@ -39,26 +37,45 @@ if "--list-sessions" in sys.argv:
         print(f"  {sid}. Mock Session (Just now) [{saved_uuid}]")
     sys.exit(0)
 
-# Simulate session creation if not resuming or if resuming a 'new' session
-is_new_session = "-r" not in sys.argv or ("-r" in sys.argv and "new" in sys.argv)
+session_id = "1"
+is_new_session = True
+if "-r" in sys.argv:
+    is_new_session = False
+    try:
+        r_idx = sys.argv.index("-r")
+        if r_idx + 1 < len(sys.argv):
+            session_id = sys.argv[r_idx + 1]
+    except ValueError:
+        pass
+
+    if "new" in sys.argv:
+        is_new_session = True
+    elif session_id not in [str(s) for s in get_sessions()]:
+        is_new_session = True
+
+STATE_FILE = os.path.join(work_dir, f"gemini_mock_state_{session_id}.json")
+
 print(f"DEBUG MOCK ARGV: {sys.argv}, is_new={is_new_session}", file=sys.stderr)
 if is_new_session and "--list-sessions" not in sys.argv:
     sessions = get_sessions()
-    new_id = max(sessions) + 1 if sessions else 1
-    sessions.append(new_id)
+    if "-r" in sys.argv and session_id != "1":
+        new_id = int(session_id)
+    else:
+        new_id = max(sessions) + 1 if sessions else 1
+        session_id = str(new_id)
+        STATE_FILE = os.path.join(work_dir, f"gemini_mock_state_{session_id}.json")
+
+    if new_id not in sessions:
+        sessions.append(new_id)
     with open(SESSIONS_FILE, "w") as f:
         json.dump(sessions, f)
-    # Save the UUID if provided
+
     harness_id = os.environ.get("GEMINI_WEBUI_HARNESS_ID")
     print(f"DEBUG MOCK HARNESS: harness_id={harness_id!r}", file=sys.stderr)
-    if not harness_id:
-        # Fallback to looking in args if passed differently
-        pass
     if harness_id:
         uuid_file = os.path.join(work_dir, f"gemini_mock_uuid_{new_id}.json")
         with open(uuid_file, "w") as f:
             f.write(harness_id)
-
 
 print(
     "Welcome to Fake \x1b[38;5;33mG\x1b[38;5;39me\x1b[38;5;45mm\x1b[38;5;51mi\x1b[38;5;87mn\x1b[38;5;123mi\x1b[0m"
@@ -67,7 +84,7 @@ sys.stdout.flush()
 
 memory = {}
 
-if "-r" in sys.argv:
+if "-r" in sys.argv and not is_new_session:
     if os.path.exists(STATE_FILE):
         try:
             with open(STATE_FILE, "r") as f:
@@ -75,7 +92,6 @@ if "-r" in sys.argv:
         except (json.JSONDecodeError, OSError) as e:
             print(f"Mock error loading state: {e}", file=sys.stderr)
 else:
-    # Fresh start, clear state
     if os.path.exists(STATE_FILE):
         os.remove(STATE_FILE)
 

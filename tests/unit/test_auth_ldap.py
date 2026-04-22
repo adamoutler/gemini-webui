@@ -1,7 +1,9 @@
+import pytest
 from unittest.mock import MagicMock, patch
 from src.auth_ldap import sanitize_ldap_input, check_auth
 
 
+@pytest.mark.timeout(60)
 def test_sanitize_ldap_input():
     assert sanitize_ldap_input("user") == "user"
     assert sanitize_ldap_input("user(name)") == r"user\28name\29"
@@ -12,6 +14,7 @@ def test_sanitize_ldap_input():
 
 @patch("ldap3.Server")
 @patch("ldap3.Connection")
+@pytest.mark.timeout(60)
 def test_check_auth_simple_success(mock_connection, mock_server):
     # Setup mock
     mock_conn_instance = MagicMock()
@@ -28,6 +31,7 @@ def test_check_auth_simple_success(mock_connection, mock_server):
 
 @patch("ldap3.Server")
 @patch("ldap3.Connection")
+@pytest.mark.timeout(60)
 def test_check_auth_ad_success(mock_connection, mock_server):
     mock_conn_instance = MagicMock()
     mock_connection.return_value = mock_conn_instance
@@ -58,6 +62,7 @@ def test_check_auth_ad_success(mock_connection, mock_server):
 
 @patch("ldap3.Server")
 @patch("ldap3.Connection")
+@pytest.mark.timeout(60)
 def test_check_auth_ad_user_not_found(mock_connection, mock_server):
     mock_conn_instance = MagicMock()
     mock_connection.return_value = mock_conn_instance
@@ -77,6 +82,7 @@ def test_check_auth_ad_user_not_found(mock_connection, mock_server):
 
 @patch("ldap3.Server")
 @patch("ldap3.Connection")
+@pytest.mark.timeout(60)
 def test_check_auth_ad_group_mismatch(mock_connection, mock_server):
     mock_conn_instance = MagicMock()
     mock_connection.return_value = mock_conn_instance
@@ -104,6 +110,7 @@ def test_check_auth_ad_group_mismatch(mock_connection, mock_server):
 
 @patch("ldap3.Server")
 @patch("ldap3.Connection")
+@pytest.mark.timeout(60)
 def test_check_auth_exception(mock_connection, mock_server):
     # Setup mock to fail during the first connection call
     mock_connection.side_effect = Exception("LDAP Down")
