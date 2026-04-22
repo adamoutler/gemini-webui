@@ -231,12 +231,20 @@ import eventlet.patcher
 
 original_os = eventlet.patcher.original("os")
 
+old_sigchld_handler = signal.getsignal(signal.SIGCHLD)
+
 
 def sigchld_handler(signum, frame):
     try:
         original_os.write(sigchld_pipe_w, b"\x00")
     except OSError:
         pass
+
+    if callable(old_sigchld_handler):
+        try:
+            old_sigchld_handler(signum, frame)
+        except Exception:
+            pass
 
 
 signal.signal(signal.SIGCHLD, sigchld_handler)
