@@ -30,6 +30,7 @@ if not env_config.SKIP_MONKEY_PATCH:
         timeout = kwargs.pop("timeout", None)
         input_data = kwargs.pop("input", None)
         check = kwargs.pop("check", False)
+        is_new_session = kwargs.get("start_new_session", False)
         if kwargs.pop("capture_output", False):
             kwargs["stdout"] = subprocess.PIPE
             kwargs["stderr"] = subprocess.PIPE
@@ -60,7 +61,15 @@ if not env_config.SKIP_MONKEY_PATCH:
                 # Let TimeoutExpired propagate normally without adding to abandoned_pids,
                 # but kill the process first to prevent zombies.
                 try:
-                    process.kill()
+                    if is_new_session:
+                        import os, signal
+
+                        try:
+                            os.killpg(process.pid, signal.SIGKILL)
+                        except OSError:
+                            process.kill()
+                    else:
+                        process.kill()
                     process.wait(timeout=1)
                 except OSError:
                     pass
@@ -70,7 +79,15 @@ if not env_config.SKIP_MONKEY_PATCH:
                 raise
             except BaseException:
                 try:
-                    process.kill()
+                    if is_new_session:
+                        import os, signal
+
+                        try:
+                            os.killpg(process.pid, signal.SIGKILL)
+                        except OSError:
+                            process.kill()
+                    else:
+                        process.kill()
                 except OSError:
                     pass
                 with abandoned_pids_lock:
@@ -227,34 +244,22 @@ def zombie_reaper_task():
     """Periodically reaps any managed PTY processes that have exited to prevent zombies."""
     while True:
         try:
-            with managed_ptys_lock:
-                to_remove = set()
-                for pid in list(managed_ptys):
-                    try:
-                        # Reap ONLY this specific PID to avoid stealing reaps from other subprocess calls
-                        res = os.waitpid(pid, os.WNOHANG)
-                        wpid = res[0] if isinstance(res, tuple) else res
-                        if wpid == pid:
-                            to_remove.add(pid)
-                    except ChildProcessError:
-                        to_remove.add(pid)
-                    except OSError:
-                        pass
-                managed_ptys.difference_update(to_remove)
+            while True:
+                try:
+                    # Reap any exited child process globally
+                    pid, status = os.waitpid(-1, os.WNOHANG)
+                    if pid == 0:
+                        break  # No more exited children
 
-            with abandoned_pids_lock:
-                to_remove = set()
-                for pid in list(abandoned_pids):
-                    try:
-                        res = os.waitpid(pid, os.WNOHANG)
-                        wpid = res[0] if isinstance(res, tuple) else res
-                        if wpid == pid:
-                            to_remove.add(pid)
-                    except ChildProcessError:
-                        to_remove.add(pid)
-                    except OSError:
-                        pass
-                abandoned_pids.difference_update(to_remove)
+                    # Clean up tracked sets if the reaped pid was in them
+                    with managed_ptys_lock:
+                        managed_ptys.discard(pid)
+                    with abandoned_pids_lock:
+                        abandoned_pids.discard(pid)
+                except ChildProcessError:
+                    break  # No child processes exist
+                except OSError:
+                    break
         except Exception as e:
             logger.error(f"Error in zombie reaper: {e}")
         socketio.sleep(2)

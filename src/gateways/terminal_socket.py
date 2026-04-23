@@ -451,39 +451,6 @@ def pty_restart(data):
 
     _, _, ssh_dir_path = get_config_paths()
 
-    if resume == "new":
-        from src.services.process_engine import fetch_sessions_for_host
-        import re
-
-        try:
-            res = fetch_sessions_for_host(
-                {
-                    "target": ssh_target,
-                    "dir": ssh_dir,
-                    "type": "ssh" if ssh_target else "local",
-                },
-                ssh_dir_path,
-                gemini_bin_override,
-            )
-            output = res.get("output", "")
-            max_id = 0
-            for line in output.split("\n"):
-                match = re.search(r"^\s*(\d+)\.\s+", line)
-                if match:
-                    max_id = max(max_id, int(match.group(1)))
-
-            resume = str(max_id + 1)
-            logger.info(
-                f"Calculated RESUME_CONNECTION_ID {resume} for new tab {tab_id}"
-            )
-            socketio.emit(
-                "session_assigned",
-                {"tab_id": tab_id, "session_id": resume},
-                to=sid,
-            )
-        except Exception as e:
-            logger.error(f"Failed to calculate new session ID: {e}")
-
     cmd = build_terminal_command(
         ssh_target,
         ssh_dir,

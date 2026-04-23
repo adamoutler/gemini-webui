@@ -1500,6 +1500,22 @@ function startSession(
   sessionName = null,
   shouldReclaim = false,
 ) {
+  if (resumeParam === "new") {
+    let maxId = 0;
+    document.querySelectorAll(".session-meta").forEach((el) => {
+      const match = el.innerText.match(/ID #(\d+)/);
+      if (match) {
+        const id = parseInt(match[1], 10);
+        if (id > maxId) maxId = id;
+      }
+    });
+    if (maxId === 0) {
+      maxId = Math.floor(Math.random() * 90000) + 10000;
+    }
+    resumeParam = (maxId + 1).toString();
+    localStorage.setItem("geminiResume", resumeParam);
+  }
+
   const tab = tabs.find((t) => t.id === tabId);
   if (!tab) {
     return;

@@ -217,7 +217,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
         )
 
         # Check for gemini before running list-sessions to avoid ugly bash errors
-        remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then timeout 15 {gemini_list_cmd}; else {gemini_list_cmd}; fi; else exit 0; fi"
+        remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then exec timeout 15 {gemini_list_cmd}; else exec {gemini_list_cmd}; fi; else exit 0; fi"
 
         # Use bash -ilc (interactive login shell) so gemini's PATH is fully loaded
         # (handles NVM, npm globals, etc.) and gemini outputs session text instead
@@ -417,8 +417,6 @@ def build_terminal_command(
         setup_cmd += "printf 'To enable persistence and prevent data loss, mount a volume:\\r\\n\\r\\n'; "
         setup_cmd += "printf '\\033[1;34mDocker Compose:\\033[0m\\r\\n  volumes:\\r\\n    - data:/data\\r\\n\\r\\n'; "
         setup_cmd += "printf '\\033[1;34mDocker CLI:\\033[0m\\r\\n  docker run -v gemini_data:/data ...\\r\\n\\r\\n'; "
-        if not os.environ.get("GEMINI_WEBUI_HARNESS_ID"):
-            setup_cmd += "sleep 10; "
         setup_cmd += "}; "
         setup_cmd += f"cd {quoted_work_dir} 2>/dev/null || cd /tmp; "
 
