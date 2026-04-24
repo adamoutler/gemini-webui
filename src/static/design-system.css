@@ -79,7 +79,7 @@ body {
 }
 
 .tab.active {
-  background-color: #111111 !important;
+  background-color: #111 !important;
   color: white;
   border-top: 4px solid #3b8eea !important;
   font-weight: bold;
