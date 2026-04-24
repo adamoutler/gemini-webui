@@ -79,9 +79,9 @@ body {
 }
 
 .tab.active {
-  background-color: #1e1e1e !important;
+  background-color: #111111 !important;
   color: white;
-  border-top: 2px solid #2472c8 !important;
+  border-top: 4px solid #3b8eea !important;
   font-weight: bold;
   min-width: 132px;
   max-width: 220px;

@@ -4275,7 +4275,7 @@ function executeDataAction(code, event) {
       else window.expandedSessionLists.delete(m1[2]);
     }
     let m2 = code.match(
-      /fetchSessions\('([^']+)',\s*(\{.*\}),\s*'([^']+)',\s*(true|false),\s*true,\s*true\)/,
+      /fetchSessions\('([^']*)',\s*(\{.*\}),\s*'([^']*)',\s*(true|false),\s*true,\s*true\)/,
     );
     if (m2) {
       let b1 = m2[4] === "true";

@@ -173,7 +173,7 @@
   align-items: center;
   margin-bottom: 10px;
   gap: 10px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .connection-drag-handle {
@@ -199,6 +199,9 @@
   font-weight: bold;
   color: #fff;
   flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @keyframes pulseFade {
