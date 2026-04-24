@@ -216,7 +216,7 @@ def build_ticket_context(workspace, project_id, work_item_id, commit, ci_job):
 
 def run_reality_checker(ticket_md):
     """8. Checks with reality-checker AI to verify it's done."""
-    prompt = "You are invoked as clean-room ticket-completeness evaluation agent. Please relay the provided context to subagent @reality-checker and provde the complete response. The expectation is reality-checker will provide NEEDS WORK if not ready or READY if ready. The system is monitoring for keyword 'NEEDS WORK'. The full response will be recorded on the kanban ticket and relayed to the agent as feedback."
+    prompt = "You are invoked as clean-room ticket-completeness evaluation agent. Please relay the provided context to subagent reality-checker and provde the complete response. The expectation is reality-checker will provide NEEDS WORK if not ready or READY if ready. The system is monitoring for keyword 'NEEDS WORK'. The full response will be recorded on the kanban ticket and relayed to the agent as feedback."
 
     time.sleep(20)
 
