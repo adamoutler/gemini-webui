@@ -62,8 +62,10 @@ def test_ui_autocomplete_dropdown(page, server, playwright):
     expect(download_input).to_be_visible()
 
     download_input.fill("src")
-    # Using type to trigger input events, or dispatch input explicitly since fill does input event too
-    # fill does dispatch input event. Let's wait for debounce.
+    page.evaluate(
+        "document.getElementById('workspace-download-filename').dispatchEvent(new Event('input', { bubbles: true }));"
+    )
+    page.wait_for_timeout(1000)
 
     # 5. Assert the dropdown appears with items
     dropdown = page.locator("#autocomplete-results")

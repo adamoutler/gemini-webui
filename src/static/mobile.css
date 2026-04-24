@@ -3,7 +3,7 @@
   display: none;
   background: #333;
   padding: 5px;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 5px;
   border-top: 1px solid #444;
   flex-shrink: 0;
@@ -216,6 +216,11 @@
   overflow-wrap: break-word;
   resize: none;
   opacity: 1;
+}
+
+/* Move version up to about the same Y as the pre-move text area location */
+.is-mobile .auto-style-a9000a {
+  bottom: 85px;
 }
 
 /* Hide mobile controls on desktop viewports to prevent layout issues */

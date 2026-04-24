@@ -147,14 +147,15 @@ def test_mobile_controls_buttons(mobile_page):
         "Tab",
         "Ctrl",
         "Alt",
+        "Super",
         "▲",
         "▼",
         "◀",
         "▶",
         "A+",
         "A-",
-        "Home",
-        "End",
+        "PgUp",
+        "PgDn",
     ]
     for btn_text in expected_buttons:
         btn = mobile_page.locator("#mobile-controls .control-btn").get_by_text(

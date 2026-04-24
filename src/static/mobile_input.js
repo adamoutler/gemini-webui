@@ -768,6 +768,7 @@ class MobileInputUI {
 
       // Fallback for WebGL/Canvas renderer where .xterm-cursor is hidden or non-existent
       let cellW = 9;
+      let cellH = 17;
       try {
         if (
           !foundCursor &&
@@ -777,7 +778,7 @@ class MobileInputUI {
         ) {
           const dims = term._core._renderService.dimensions;
           cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
-          const cellH = dims.css?.cell?.height || dims.actualCellHeight || 17;
+          cellH = dims.css?.cell?.height || dims.actualCellHeight || 17;
 
           const screenEl =
             term.element.querySelector(".xterm-screen") || term.element;
@@ -803,6 +804,7 @@ class MobileInputUI {
         ) {
           const dims = term._core._renderService.dimensions;
           cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
+          cellH = dims.css?.cell?.height || dims.actualCellHeight || 17;
         }
       } catch (e) {}
 
@@ -814,7 +816,7 @@ class MobileInputUI {
         const remainingWidth = Math.max(window.innerWidth - proxyLeft, 10);
 
         this.proxyInput.style.left = `${proxyLeft}px`;
-        this.proxyInput.style.top = `${top}px`;
+        this.proxyInput.style.top = `${top - cellH / 3}px`;
         this.proxyInput.style.width = `${remainingWidth}px`;
 
         // Match terminal font metrics if possible
@@ -1036,4 +1038,49 @@ if (typeof module !== "undefined" && module.exports) {
     ModifierRule,
     WordBoundaryRule,
   };
+}
+
+// Manual pull-to-refresh on toolbar
+if (
+  typeof document !== "undefined" &&
+  typeof document.addEventListener === "function"
+) {
+  document.addEventListener("DOMContentLoaded", () => {
+    const toolbar = document.getElementById("toolbar");
+    if (!toolbar) return;
+
+    let startY = 0;
+    let isPulling = false;
+
+    toolbar.addEventListener(
+      "touchstart",
+      (e) => {
+        if (
+          e.touches.length === 1 &&
+          document.documentElement.scrollTop === 0
+        ) {
+          startY = e.touches[0].clientY;
+          isPulling = true;
+        }
+      },
+      { passive: true },
+    );
+
+    toolbar.addEventListener(
+      "touchmove",
+      (e) => {
+        if (!isPulling) return;
+        const y = e.touches[0].clientY;
+        if (y - startY > 150) {
+          window.location.reload();
+          isPulling = false;
+        }
+      },
+      { passive: true },
+    );
+
+    toolbar.addEventListener("touchend", () => {
+      isPulling = false;
+    });
+  });
 }

@@ -29,21 +29,13 @@ def mobile_page(server, browser_context):
 
 @pytest.mark.timeout(60)
 def test_new_modifier_toggles_existence(mobile_page):
-    """Verify Shift and Super buttons exist and toggle active state."""
-    shift_btn = mobile_page.locator("#shift-toggle")
+    """Verify Super button exists and toggles active state."""
     super_btn = mobile_page.locator("#super-toggle")
 
-    expect(shift_btn).to_be_visible()
     expect(super_btn).to_be_visible()
 
     # Capture screenshot for visual proof
     mobile_page.screenshot(path="docs/qa-images/mobile_new_modifiers_layout.png")
-
-    # Toggle Shift
-    shift_btn.click()
-    expect(shift_btn).to_have_class("control-btn active")
-
-    mobile_page.screenshot(path="docs/qa-images/mobile_shift_active.png")
 
     # Toggle Super
     super_btn.click()
@@ -51,10 +43,9 @@ def test_new_modifier_toggles_existence(mobile_page):
 
     mobile_page.screenshot(path="docs/qa-images/mobile_super_active.png")
 
-    # Toggle Shift off
-    shift_btn.click()
-    expect(shift_btn).not_to_have_class("active")
-    expect(super_btn).to_have_class("control-btn active")
+    # Toggle Super off
+    super_btn.click()
+    expect(super_btn).not_to_have_class("active")
 
 
 @pytest.mark.timeout(60)
@@ -92,7 +83,9 @@ def test_super_z_undo(mobile_page):
 
 @pytest.mark.timeout(60)
 def test_shift_tab_toggle(mobile_page):
-    """Verify that Shift toggle + Tab button sends Shift+Tab sequence."""
+    """Verify that holding a physical Shift key + tapping the on-screen Tab button sends Shift+Tab sequence.
+    This also serves as a regression check to ensure the on-screen Shift button does not reappear.
+    """
     mobile_page.evaluate(
         "window.lastSentData = null; window.emitPtyInput = (tab, data) => { window.lastSentData = data; };"
     )
@@ -100,14 +93,16 @@ def test_shift_tab_toggle(mobile_page):
     shift_btn = mobile_page.locator("#shift-toggle")
     tab_btn = mobile_page.locator(".holdable:has-text('Tab')").first
 
-    # 1. Tap Shift toggle
-    shift_btn.click()
-    expect(shift_btn).to_have_class("control-btn active")
+    # 0. Anti-regression check: The on-screen Shift button was removed by user request.
+    expect(shift_btn).to_have_count(0)
 
-    # 2. Tap Tab button
-    tab_btn.dispatch_event("touchstart")
+    # 1. Simulate holding the physical keyboard Shift key.
+    mobile_page.keyboard.down("Shift")
+
+    # 2. Tap Tab button, passing the shiftKey modifier into the touch events.
+    tab_btn.dispatch_event("touchstart", {"shiftKey": True})
     time.sleep(0.1)
-    tab_btn.dispatch_event("touchend")
+    tab_btn.dispatch_event("touchend", {"shiftKey": True})
 
     # 3. Verify sequence
     last_data = mobile_page.evaluate("window.lastSentData")
@@ -115,5 +110,5 @@ def test_shift_tab_toggle(mobile_page):
         last_data == "\x1b[Z"
     ), f"Expected Shift+Tab sequence (\\x1b[Z), got {repr(last_data)}"
 
-    # 4. Verify Shift toggle is cleared
-    expect(shift_btn).not_to_have_class("active")
+    # 4. Release Shift key
+    mobile_page.keyboard.up("Shift")
