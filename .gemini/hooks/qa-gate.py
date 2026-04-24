@@ -220,7 +220,19 @@ def run_reality_checker(ticket_md):
 
     time.sleep(20)
 
-    proc = subprocess.run(["gemini", "-y", "-p", prompt, "--output-format=json"], input=ticket_md, text=True, capture_output=True)
+    try:
+        proc = subprocess.run(
+            ["gemini", "-y", "-p", prompt, "--output-format=json"],
+            input=ticket_md,
+            text=True,
+            capture_output=True,
+            timeout=1080
+        )
+    except subprocess.TimeoutExpired:
+        deny_transition("GATE DENIED: The Reality Checker AI took too long to respond (timeout exceeded).")
+    except Exception as e:
+        deny_transition(f"GATE DENIED: Failed to execute Reality Checker: {str(e)}")
+
     if proc.returncode != 0:
         deny_transition(f"No quality control available. Gemini command exited with {proc.returncode}. Stderr: {proc.stderr}")
 
