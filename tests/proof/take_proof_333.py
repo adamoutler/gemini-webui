@@ -2,6 +2,7 @@ import pytest
 from playwright.sync_api import expect
 import os
 
+
 @pytest.mark.timeout(120)
 def test_take_proof_333(page, server):
     # Navigate to the connection page
@@ -10,7 +11,7 @@ def test_take_proof_333(page, server):
 
     # Hover over the quick connect button
     page.hover(".quick-connect-bar button.primary")
-    
+
     # Take a screenshot of the quick connect bar
     os.makedirs("docs/qa-images", exist_ok=True)
     page.screenshot(path="docs/qa-images/epic_333_quick_connect.png")
@@ -22,6 +23,8 @@ def test_take_proof_333(page, server):
         page.screenshot(path="docs/qa-images/epic_333_session_hover.png")
 
     # Take a screenshot of the full launcher
-    page.locator(".launcher").first.screenshot(path="docs/qa-images/epic_333_launcher.png")
+    page.locator(".launcher").first.screenshot(
+        path="docs/qa-images/epic_333_launcher.png"
+    )
 
     print("Screenshots taken successfully!")
