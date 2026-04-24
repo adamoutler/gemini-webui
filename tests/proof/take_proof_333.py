@@ -17,9 +17,9 @@ def test_take_proof_333(page, server):
     page.screenshot(path="docs/qa-images/epic_333_quick_connect.png")
 
     # Expand the local session
-    expand_btn = page.locator(".session-item.js-style-86c2b8").first
-    if expand_btn.is_visible():
-        expand_btn.hover()
+    session_item = page.locator(".session-item").first
+    if session_item.is_visible():
+        session_item.hover()
         page.screenshot(path="docs/qa-images/epic_333_session_hover.png")
 
     # Take a screenshot of the full launcher
