@@ -50,7 +50,9 @@ class TestZombieFix(unittest.TestCase):
         fetch_sessions_for_host({"type": "local"}, "/tmp")
 
         args, kwargs = mock_run.call_args
-        self.assertEqual(kwargs.get("timeout"), 15)
+        # Popen does not take timeout
+        comm_args, comm_kwargs = mock_run.return_value.communicate.call_args
+        self.assertEqual(comm_kwargs.get("timeout"), 15)
         self.assertTrue(kwargs.get("start_new_session"))
 
 

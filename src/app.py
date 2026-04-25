@@ -65,7 +65,18 @@ if not env_config.SKIP_MONKEY_PATCH:
                         import os, signal
 
                         try:
-                            os.killpg(process.pid, signal.SIGKILL)
+                            if os.getpgid(process.pid) != os.getpgrp():
+                                try:
+                                    if os.getpgid(process.pid) != os.getpgrp():
+                                        os.killpg(
+                                            os.getpgid(process.pid), signal.SIGKILL
+                                        )
+                                    else:
+                                        os.kill(process.pid, signal.SIGKILL)
+                                except OSError:
+                                    pass
+                            else:
+                                os.kill(process.pid, signal.SIGKILL)
                         except OSError:
                             process.kill()
                     else:
@@ -83,7 +94,18 @@ if not env_config.SKIP_MONKEY_PATCH:
                         import os, signal
 
                         try:
-                            os.killpg(process.pid, signal.SIGKILL)
+                            if os.getpgid(process.pid) != os.getpgrp():
+                                try:
+                                    if os.getpgid(process.pid) != os.getpgrp():
+                                        os.killpg(
+                                            os.getpgid(process.pid), signal.SIGKILL
+                                        )
+                                    else:
+                                        os.kill(process.pid, signal.SIGKILL)
+                                except OSError:
+                                    pass
+                            else:
+                                os.kill(process.pid, signal.SIGKILL)
                         except OSError:
                             process.kill()
                     else:
@@ -271,7 +293,13 @@ def kill_and_reap(pid):
         return
     try:
         # Kill the entire process group started by setsid() in child
-        os.killpg(os.getpgid(pid), signal.SIGKILL)
+        try:
+            if os.getpgid(pid) != os.getpgrp():
+                os.killpg(os.getpgid(pid), signal.SIGKILL)
+            else:
+                os.kill(pid, signal.SIGKILL)
+        except OSError:
+            pass
     except OSError:
         try:
             os.kill(pid, signal.SIGKILL)

@@ -25,7 +25,7 @@ def test_get_base_ssh_args():
     assert any("ControlPath=" in arg for arg in args)
 
 
-@patch("src.services.process_engine.subprocess.Popen")
+@patch("src.services.process_engine.subprocess.run")
 @patch("src.services.process_engine.os.path.exists")
 @pytest.mark.timeout(60)
 def test_check_and_recover_connection_dead(mock_exists, mock_run):
@@ -47,7 +47,7 @@ def test_check_and_recover_connection_dead(mock_exists, mock_run):
     assert "exit" in exit_call_args
 
 
-@patch("src.services.process_engine.subprocess.Popen")
+@patch("src.services.process_engine.subprocess.run")
 @patch("src.services.process_engine.os.path.exists")
 @pytest.mark.timeout(60)
 def test_check_and_recover_connection_healthy(mock_exists, mock_run):

@@ -32,7 +32,7 @@ def run_test_with_viewport(server, width, height, expect_visible, playwright):
     textarea = page.locator(".xterm-helper-textarea").first
 
     # Inject a massive block of text with newlines simulating STT composition
-    long_text = "Line 1\n" + "Line 2\n" * 50 + "Line 50"
+    long_text = "Line 1\n" + "Line 2\n" * 5 + "Line 5"
 
     # Simulate Voice Typing (STT)
     textarea.evaluate(

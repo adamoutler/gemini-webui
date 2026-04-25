@@ -67,7 +67,13 @@ def csrf_enabled_server(tmp_path, playwright):
     yield url
 
     try:
-        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        try:
+            if os.getpgid(proc.pid) != os.getpgrp():
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            else:
+                os.kill(proc.pid, signal.SIGKILL)
+        except OSError:
+            pass
         proc.wait(timeout=5)
     except Exception:
         pass

@@ -109,7 +109,9 @@ def test_ui_tab_management(page):
     expect(page.locator(".tab").last.locator(".tab-close")).to_have_count(0)
 
     # Close the first tab (terminal)
+    page.once("dialog", lambda dialog: dialog.accept())
     page.locator(".tab-close").first.click()
+    page.wait_for_timeout(500)
     expect(page.locator(".tab")).to_have_count(initial_tabs)
 
 

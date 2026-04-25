@@ -108,7 +108,13 @@ done
     yield f"http://127.0.0.1:{port}"
 
     try:
-        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+        try:
+            if os.getpgid(process.pid) != os.getpgrp():
+                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            else:
+                os.kill(process.pid, signal.SIGKILL)
+        except OSError:
+            pass
     except OSError:
         pass
     process.wait()

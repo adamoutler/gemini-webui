@@ -7,12 +7,13 @@ from src.app import app
 @pytest.mark.timeout(60)
 def test_remote_sessions_list(client):
     with patch("src.services.process_engine.subprocess.Popen") as mock_run:
-        mock_run.return_value = MagicMock(
-            returncode=0,
-            stdout="""  1. SessionOne (active) [uuid1]
+        mock_proc = MagicMock(returncode=0)
+        mock_proc.communicate.return_value = (
+            """  1. SessionOne (active) [uuid1]
   2. SessionTwo (paused) [uuid2]""",
-            stderr="",
+            "",
         )
+        mock_run.return_value = mock_proc
 
         response = client.get("/api/sessions?ssh_target=user@host&ssh_dir=/tmp")
         assert response.status_code == 200

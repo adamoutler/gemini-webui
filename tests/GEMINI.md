@@ -4,6 +4,8 @@
 
 The root of the `tests` directory acts as the foundational orchestration layer for the project's testing suite. It primarily provides shared fixtures (via `conftest.py`) for server and session management, baseline health/timeout tests (`test_timeout_validation.py`), and standalone reproduction scripts for debugging complex process-management and zombie issues (e.g., `reproduce_zombie_v2.py`). It establishes the testing context for all sub-directories.
 
+**CRITICAL WARNING:** This project has a history of unit tests accidentally killing the host machine's SSH connection by targeting process groups with `os.killpg`. **You MUST read `tests/PROCESS_ISOLATION_AND_KILLING.md` before making any changes to process lifecycle management, process mocking, or test teardown logic.**
+
 ## Internal Dependencies
 
 - **`src.app`**: Depends heavily on the main application factory for initialization.

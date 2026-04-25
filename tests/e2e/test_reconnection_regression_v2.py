@@ -58,7 +58,13 @@ def custom_server(tmp_path, playwright):
 
         def stop(self):
             try:
-                os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
+                try:
+                    if os.getpgid(self.process.pid) != os.getpgrp():
+                        os.killpg(os.getpgid(self.process.pid), signal.SIGKILL)
+                    else:
+                        os.kill(self.process.pid, signal.SIGKILL)
+                except OSError:
+                    pass
                 self.process.wait()
             except OSError:
                 pass

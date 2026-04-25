@@ -8,9 +8,9 @@ from src.services.process_engine import fetch_sessions_for_host, validate_ssh_ta
 def test_fetch_sessions_for_host_local():
     host = {"type": "local", "target": None, "dir": None}
     with patch("src.services.process_engine.subprocess.Popen") as mock_run:
-        mock_run.return_value = MagicMock(
-            returncode=0, stdout="  1. Local (test) [uuid]", stderr=""
-        )
+        mock_proc = MagicMock(returncode=0)
+        mock_proc.communicate.return_value = ("  1. Local (test) [uuid]", "")
+        mock_run.return_value = mock_proc
 
         result = fetch_sessions_for_host(host, "/tmp/.ssh")
         assert result["output"] == "  1. Local (test) [uuid]"
@@ -21,9 +21,9 @@ def test_fetch_sessions_for_host_local():
 def test_fetch_sessions_for_host_ssh():
     host = {"type": "ssh", "target": "user@remote", "dir": "~/myproject"}
     with patch("src.services.process_engine.subprocess.Popen") as mock_run:
-        mock_run.return_value = MagicMock(
-            returncode=0, stdout="  1. Remote (test) [uuid]", stderr=""
-        )
+        mock_proc = MagicMock(returncode=0)
+        mock_proc.communicate.return_value = ("  1. Remote (test) [uuid]", "")
+        mock_run.return_value = mock_proc
 
         result = fetch_sessions_for_host(host, "/tmp/.ssh")
         assert result["output"] == "  1. Remote (test) [uuid]"

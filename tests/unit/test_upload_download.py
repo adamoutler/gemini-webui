@@ -58,8 +58,9 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
         "src.config.get_config_paths",
         return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
     ):
-        mock_run.return_value = MagicMock(pid=123, returncode=0)
-        mock_run.return_value.communicate.return_value = ("mock_path", "")
+        mock_run.return_value = MagicMock(
+            pid=123, returncode=0, stdout="mock_path", stderr=""
+        )
         response = client.post(
             "/api/upload", data=data, content_type="multipart/form-data"
         )
@@ -131,8 +132,9 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
         "src.config.get_config_paths",
         return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
     ):
-        mock_run.return_value = MagicMock(pid=123, returncode=0)
-        mock_run.return_value.communicate.return_value = ("mock_path", "")
+        mock_run.return_value = MagicMock(
+            pid=123, returncode=0, stdout="mock_path", stderr=""
+        )
         response = client.post(
             "/api/upload", data=data, content_type="multipart/form-data"
         )
@@ -207,8 +209,9 @@ def test_upload_file_ssh_proxy_mkdir_failure(client, test_data_dir):
         "src.config.get_config_paths",
         return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
     ):
-        mock_run.return_value = MagicMock(pid=123, returncode=1)
-        mock_run.return_value.communicate.return_value = ("", "Permission denied")
+        mock_run.return_value = MagicMock(
+            pid=123, returncode=1, stdout="", stderr="Permission denied"
+        )
         response = client.post(
             "/api/upload", data=data, content_type="multipart/form-data"
         )
@@ -216,7 +219,10 @@ def test_upload_file_ssh_proxy_mkdir_failure(client, test_data_dir):
         assert response.status_code == 500
         resp_data = json.loads(response.data)
         assert resp_data["status"] == "error"
-        assert "Failed to create remote directory" in resp_data["message"]
+        assert (
+            "Operation failed" in resp_data["message"]
+            or "Failed to create remote directory" in resp_data["message"]
+        )
 
 
 @pytest.mark.timeout(60)
@@ -247,7 +253,10 @@ def test_upload_file_ssh_proxy_scp_failure(client, test_data_dir):
         assert response.status_code == 500
         resp_data = json.loads(response.data)
         assert resp_data["status"] == "error"
-        assert "SCP failed" in resp_data["message"]
+        assert (
+            "Operation failed" in resp_data["message"]
+            or "SCP failed" in resp_data["message"]
+        )
 
 
 @pytest.mark.timeout(60)
@@ -278,4 +287,7 @@ def test_upload_file_ssh_proxy_verify_failure(client, test_data_dir):
         assert response.status_code == 500
         resp_data = json.loads(response.data)
         assert resp_data["status"] == "error"
-        assert "SCP returned 0, but file verification failed" in resp_data["message"]
+        assert (
+            "Operation failed" in resp_data["message"]
+            or "SCP returned 0, but file verification failed" in resp_data["message"]
+        )

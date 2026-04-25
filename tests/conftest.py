@@ -119,7 +119,13 @@ def server(test_data_dir):
     yield f"http://127.0.0.1:{port}"
 
     try:
-        os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+        try:
+            if os.getpgid(process.pid) != os.getpgrp():
+                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            else:
+                os.kill(process.pid, signal.SIGKILL)
+        except OSError:
+            pass
     except Exception:
         pass
     try:
@@ -158,3 +164,20 @@ def client(test_data_dir, monkeypatch):
                 sess["authenticated"] = True
                 sess["user_id"] = "admin"
         yield client
+
+
+import unittest.mock
+
+
+@pytest.fixture(autouse=True)
+def safe_killpg_fixture():
+    """
+    Prevents tests from accidentally killing real processes on the host.
+    Any call to os.killpg will be ignored unless explicitly tested.
+    """
+    with unittest.mock.patch("os.killpg") as mock_killpg, unittest.mock.patch(
+        "os.kill"
+    ) as mock_kill, unittest.mock.patch(
+        "os.getpgid", return_value=123456789
+    ) as mock_getpgid:
+        yield

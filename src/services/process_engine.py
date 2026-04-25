@@ -500,7 +500,13 @@ def kill_and_reap(pid):
     if pid is None:
         return
     try:
-        os.killpg(os.getpgid(pid), signal.SIGKILL)
+        try:
+            if os.getpgid(pid) != os.getpgrp():
+                os.killpg(os.getpgid(pid), signal.SIGKILL)
+            else:
+                os.kill(pid, signal.SIGKILL)
+        except OSError:
+            pass
     except OSError:
         try:
             os.kill(pid, signal.SIGKILL)

@@ -58,7 +58,13 @@ def ssh_test_server(tmp_path, playwright):
     yield {"url": f"http://127.0.0.1:{port}", "proc": proc}
 
     try:
-        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        try:
+            if os.getpgid(proc.pid) != os.getpgrp():
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            else:
+                os.kill(proc.pid, signal.SIGKILL)
+        except OSError:
+            pass
         proc.wait(timeout=5)
     except Exception:
         pass
@@ -149,7 +155,13 @@ def test_ssh_connection_error_bubbling(ssh_test_server, playwright):
     )
 
     try:
-        os.killpg(os.getpgid(server_proc.pid), signal.SIGKILL)
+        try:
+            if os.getpgid(server_proc.pid) != os.getpgrp():
+                os.killpg(os.getpgid(server_proc.pid), signal.SIGKILL)
+            else:
+                os.kill(server_proc.pid, signal.SIGKILL)
+        except OSError:
+            pass
     except Exception:
         pass
 

@@ -50,17 +50,35 @@ def authenticated_server(tmp_path, playwright):
         except (ConnectionRefusedError, socket.timeout, OSError):
             time.sleep(0.1)
     else:
-        os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+        try:
+            if os.getpgid(process.pid) != os.getpgrp():
+                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+            else:
+                os.kill(process.pid, signal.SIGTERM)
+        except OSError:
+            pass
         pytest.fail("Server did not start in time")
 
     yield {"port": port, "process": process, "url": f"http://localhost:{port}"}
 
     try:
-        os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+        try:
+            if os.getpgid(process.pid) != os.getpgrp():
+                os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+            else:
+                os.kill(process.pid, signal.SIGTERM)
+        except OSError:
+            pass
         process.wait(timeout=5)
     except Exception:
         try:
-            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            try:
+                if os.getpgid(process.pid) != os.getpgrp():
+                    os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+                else:
+                    os.kill(process.pid, signal.SIGKILL)
+            except OSError:
+                pass
         except OSError:
             pass
 

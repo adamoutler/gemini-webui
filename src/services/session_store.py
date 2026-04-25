@@ -100,7 +100,15 @@ class SessionManager:
                 else:
                     try:
                         if old_same_tab.pid is not None:
-                            os.killpg(os.getpgid(old_same_tab.pid), signal.SIGKILL)
+                            try:
+                                if os.getpgid(old_same_tab.pid) != os.getpgrp():
+                                    os.killpg(
+                                        os.getpgid(old_same_tab.pid), signal.SIGKILL
+                                    )
+                                else:
+                                    os.kill(old_same_tab.pid, signal.SIGKILL)
+                            except OSError:
+                                pass
                     except OSError:
                         try:
                             if old_same_tab.pid is not None:
@@ -134,7 +142,15 @@ class SessionManager:
                     else:
                         try:
                             if oldest.pid is not None:
-                                os.killpg(os.getpgid(oldest.pid), signal.SIGKILL)
+                                try:
+                                    if os.getpgid(oldest.pid) != os.getpgrp():
+                                        os.killpg(
+                                            os.getpgid(oldest.pid), signal.SIGKILL
+                                        )
+                                    else:
+                                        os.kill(oldest.pid, signal.SIGKILL)
+                                except OSError:
+                                    pass
                         except OSError:
                             try:
                                 if oldest.pid is not None:
