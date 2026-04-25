@@ -75,6 +75,16 @@ class EnvConfig:
         return os.environ.get("FLASK_USE_RELOADER", "true").lower() == "true"
 
     @property
+    def ORPHANED_SESSION_TTL(self):
+        val = os.environ.get("ORPHANED_SESSION_TTL")
+        if val is not None:
+            try:
+                return int(val)
+            except ValueError:
+                return None
+        return None
+
+    @property
     def PORT(self):
         return int(os.environ.get("PORT", 5000))
 
