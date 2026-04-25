@@ -506,13 +506,25 @@ def kill_task():
 
             # Verify if process is dead
             is_dead = False
-            for _ in range(10):
+            for _ in range(20):
+                try:
+                    # Check if already reaped or can be reaped
+                    res = os.waitpid(pid, os.WNOHANG)
+                    if res != (0, 0):
+                        is_dead = True
+                        break
+                except ChildProcessError:
+                    is_dead = True
+                    break
+                except OSError:
+                    pass
+
                 try:
                     os.kill(pid, 0)
-                    time.sleep(0.1)
                 except OSError:
                     is_dead = True
                     break
+                time.sleep(0.1)
 
             if not is_dead:
                 logger.error(
