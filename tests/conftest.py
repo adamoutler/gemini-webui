@@ -170,7 +170,10 @@ import unittest.mock
 
 
 @pytest.fixture(autouse=True)
-def safe_killpg_fixture():
+def safe_killpg_fixture(request):
+    if "e2e" in request.node.nodeid:
+        yield
+        return
     """
     Prevents tests from accidentally killing real processes on the host.
     Any call to os.killpg will be ignored unless explicitly tested.
