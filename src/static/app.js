@@ -2154,6 +2154,32 @@ function startSession(
     closeTab(tabId, null, true);
   });
 
+  tab.socket.on("session-dropped", () => {
+    debugLog("Session dropped organically via tab socket:", tabId);
+    if (tab.term) {
+      tab.term.write(
+        "\r\n\x1b[1;31m[Connection dropped unexpectedly. Reconnecting...]\x1b[0m\r\n",
+      );
+    }
+    // Set a slight delay before reconnecting to avoid spam loops
+    setTimeout(() => {
+      if (tab.socket && tab.socket.connected) {
+        tab.shouldReclaim = false; // We know it's dead, force fresh restart
+        tab.socket.emit("restart", {
+          tab_id: tabId,
+          reclaim: false,
+          sid: tab.socket.id,
+          resume: tab.session.resume,
+          cols: tab.term ? tab.term.cols : 80,
+          rows: tab.term ? tab.term.rows : 24,
+          ssh_target: tab.session.ssh_target,
+          ssh_dir: tab.session.ssh_dir,
+          mode: tab.session.type,
+        });
+      }
+    }, 1500);
+  });
+
   tab.socket.on("pty-output", (data) => {
     if (tab.term) {
       const buffer = tab.term.buffer.active;

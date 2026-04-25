@@ -206,7 +206,7 @@ def session_output_reader(tab_id):
                 ephemeral_sessions.pop(tab_id)
             if session_obj and session_obj.pid is not None:
                 kill_and_reap(session_obj.pid)
-            socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
+            socketio.emit("session-dropped", {"tab_id": tab_id}, room=tab_id)
 
 
 def background_session_preloader():
