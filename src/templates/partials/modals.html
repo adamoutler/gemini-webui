@@ -271,8 +271,25 @@
         >
           Import Settings
         </button>
+        <button
+          class="danger auto-style-150ce9"
+          data-onclick="openTaskMonitor()"
+          title="View and manage active terminal sessions across all users."
+        >
+          Task Monitor
+        </button>
       </div>
     </div>
+  </div>
+</div>
+
+<div id="task-monitor-modal" class="modal">
+  <div class="modal-content">
+    <span data-onclick="closeTaskMonitor()" class="auto-style-6c8878"
+      >&times;</span
+    >
+    <h2 class="auto-style-b8f7c9">Task Monitor</h2>
+    <div id="task-monitor-list" class="auto-style-0de1f9">Loading tasks...</div>
   </div>
 </div>
 

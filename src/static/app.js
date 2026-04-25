@@ -1249,6 +1249,38 @@ function getGlobalSocket() {
     });
 
     globalSocket.on("sessions_updated", (payload) => {
+      if (payload && payload.data && payload.data.output) {
+        const sessions = [];
+        const regex =
+          /^\s*(\d+)\.\s+(.+?)\s+\(([^)]+)\)(?:\s+\[(.*?)\])?\s*$/gm;
+        let matchArr;
+        while ((matchArr = regex.exec(payload.data.output)) !== null) {
+          sessions.push({
+            id: matchArr[1],
+            name: matchArr[2],
+            meta: matchArr[3],
+            uuid: matchArr[4],
+          });
+        }
+
+        tabs.forEach((t) => {
+          if (
+            t.state === "terminal" &&
+            t.session &&
+            (t.session.resume === "new" || /^\\d+$/.test(t.session.resume))
+          ) {
+            const match = sessions.find(
+              (s) => s.uuid === t.id || s.id === t.session.resume,
+            );
+            if (match && match.id) {
+              t.session.resume = match.id.toString();
+              saveTabsToStorage();
+              localStorage.setItem("geminiResume", match.id.toString());
+            }
+          }
+        });
+      }
+
       const activeTab = tabs.find((t) => t.id === activeTabId);
       if (activeTab && activeTab.state === "launcher") {
         const id = activeTab.id;
@@ -1407,16 +1439,19 @@ async function fetchSessions(
     if (
       activeTerminalTab &&
       activeTerminalTab.session.resume &&
-      /^\\d+$/.test(activeTerminalTab.session.resume)
+      (activeTerminalTab.session.resume === "new" ||
+        /^\\d+$/.test(activeTerminalTab.session.resume))
     ) {
       const match = sessions.find(
-        (s) => s.id === activeTerminalTab.session.resume,
+        (s) =>
+          s.id === activeTerminalTab.session.resume ||
+          s.uuid === activeTerminalTab.id,
       );
       if (match && match.uuid) {
         activeTerminalTab.session.resume = match.uuid;
         saveTabsToStorage();
         localStorage.setItem("geminiResume", match.uuid);
-        debugLog("Reconciled numeric ID to UUID: " + match.uuid);
+        debugLog("Reconciled ID/new to UUID: " + match.uuid);
       }
     }
 
@@ -1500,22 +1535,6 @@ function startSession(
   sessionName = null,
   shouldReclaim = false,
 ) {
-  if (resumeParam === "new") {
-    let maxId = 0;
-    document.querySelectorAll(".session-meta").forEach((el) => {
-      const match = el.innerText.match(/ID #(\d+)/);
-      if (match) {
-        const id = parseInt(match[1], 10);
-        if (id > maxId) maxId = id;
-      }
-    });
-    if (maxId === 0) {
-      maxId = Math.floor(Math.random() * 90000) + 10000;
-    }
-    resumeParam = (maxId + 1).toString();
-    localStorage.setItem("geminiResume", resumeParam);
-  }
-
   const tab = tabs.find((t) => t.id === tabId);
   if (!tab) {
     return;
@@ -4380,3 +4399,90 @@ document.addEventListener("change", function (e) {
     executeDataAction(target.getAttribute("data-onchange"), e);
   }
 });
+
+// Task Monitor
+async function openTaskMonitor() {
+  document.getElementById("task-monitor-modal").style.display = "block";
+  await refreshTaskMonitor();
+}
+
+function closeTaskMonitor() {
+  document.getElementById("task-monitor-modal").style.display = "none";
+}
+
+async function refreshTaskMonitor() {
+  const list = document.getElementById("task-monitor-list");
+  list.innerHTML = "Loading tasks...";
+  try {
+    const res = await fetch("/api/tasks", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("api_key")}` },
+    });
+    if (!res.ok) throw new Error("Failed to fetch tasks");
+    const data = await res.json();
+
+    let html = "";
+    for (const [user, tasks] of Object.entries(data)) {
+      html += `<h4>User: ${escapeHtml(user)}</h4>`;
+      if (tasks.length === 0) {
+        html += `<p>No active tasks</p>`;
+      } else {
+        html += `<table style="width:100%; text-align:left; border-collapse: collapse;">
+          <tr>
+            <th style="border-bottom: 1px solid #444; padding: 5px;">Name</th>
+            <th style="border-bottom: 1px solid #444; padding: 5px;">Target</th>
+            <th style="border-bottom: 1px solid #444; padding: 5px;">PID</th>
+            <th style="border-bottom: 1px solid #444; padding: 5px;">Started/Last Seen</th>
+            <th style="border-bottom: 1px solid #444; padding: 5px;">Status</th>
+            <th style="border-bottom: 1px solid #444; padding: 5px;">Action</th>
+          </tr>`;
+        for (const t of tasks) {
+          const dateStr = new Date(t.last_seen * 1000).toLocaleString();
+          html += `<tr>
+            <td style="padding: 5px;">${escapeHtml(t.title || "Unknown")}</td>
+            <td style="padding: 5px;">${escapeHtml(
+              t.ssh_target || "Local",
+            )}</td>
+            <td style="padding: 5px;">${escapeHtml(String(t.pid))}</td>
+            <td style="padding: 5px;">${escapeHtml(dateStr)}</td>
+            <td style="padding: 5px;">${t.active ? "Active" : "Dead"}</td>
+            <td style="padding: 5px;">
+              <button class="small danger" data-onclick="killTask('${
+                t.tab_id
+              }', ${t.pid})">Kill</button>
+            </td>
+          </tr>`;
+        }
+        html += `</table>`;
+      }
+    }
+    list.innerHTML = html || "<p>No active connections found.</p>";
+  } catch (err) {
+    list.innerHTML = `<p style="color:red">Error: ${err.message}</p>`;
+  }
+}
+
+async function killTask(tabId, pid) {
+  if (!confirm(`Are you sure you want to kill process ${pid}?`)) return;
+  console.log(
+    `[Task Monitor] Attempting to kill task with PID ${pid} (Tab ID: ${tabId})...`,
+  );
+  try {
+    const res = await fetch("/api/tasks/kill", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("api_key")}`,
+      },
+      body: JSON.stringify({ tab_id: tabId }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to kill task");
+
+    console.log(`[Task Monitor] Successfully killed PID ${pid}.`);
+    // Refresh the list
+    await refreshTaskMonitor();
+  } catch (err) {
+    console.error(`[Task Monitor] Error killing task ${pid}:`, err);
+    alert(`Failed to kill task: ${err.message}`);
+  }
+}

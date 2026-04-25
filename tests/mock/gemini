@@ -51,11 +51,26 @@ if "-r" in sys.argv:
     if "new" in sys.argv:
         is_new_session = True
     elif session_id not in [str(s) for s in get_sessions()]:
+        # Also check if it's a UUID
         is_new_session = True
+        for sid in get_sessions():
+            uuid_file = os.path.join(work_dir, f"gemini_mock_uuid_{sid}.json")
+            if os.path.exists(uuid_file):
+                with open(uuid_file, "r") as f:
+                    if f.read().strip() == session_id:
+                        session_id = str(sid)
+                        is_new_session = False
+                        break
 
 STATE_FILE = os.path.join(work_dir, f"gemini_mock_state_{session_id}.json")
 
-print(f"DEBUG MOCK ARGV: {sys.argv}, is_new={is_new_session}", file=sys.stderr)
+print(
+    f"DEBUG MOCK ARGV: {sys.argv}, is_new={is_new_session}, SESSIONS={get_sessions()}",
+    file=sys.stderr,
+)
+print(
+    f"DEBUG MOCK ARGV: {sys.argv}, is_new={is_new_session}, SESSIONS={get_sessions()}"
+)
 if is_new_session and "--list-sessions" not in sys.argv:
     sessions = get_sessions()
     if "-r" in sys.argv and session_id != "1":

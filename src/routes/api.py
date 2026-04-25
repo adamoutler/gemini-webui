@@ -456,3 +456,83 @@ def save_prompt():
 def delete_prompt(prompt_id):
     success = prompt_manager.delete_prompt(prompt_id)
     return jsonify({"status": "success" if success else "error"})
+
+
+@api_bp.route("/api/tasks", methods=["GET"])
+@authenticated_only
+def list_tasks():
+    res = {}
+    with session_manager._lock:
+        for tid, s in session_manager.sessions.items():
+            uid = str(s.user_id) if s.user_id else "unknown"
+            if uid not in res:
+                res[uid] = []
+            res[uid].append(
+                {
+                    "tab_id": s.tab_id,
+                    "title": s.title,
+                    "ssh_target": s.ssh_target,
+                    "pid": s.pid,
+                    "active": s.active,
+                    "last_seen": s.last_seen,
+                }
+            )
+    return jsonify(res)
+
+
+@api_bp.route("/api/tasks/kill", methods=["POST"])
+@authenticated_only
+def kill_task():
+    from flask import request
+    import os, time
+
+    data = request.json or {}
+    tab_id = data.get("tab_id")
+    if not tab_id:
+        return jsonify({"error": "tab_id required"}), 400
+
+    with session_manager._lock:
+        sess = session_manager.sessions.get(tab_id)
+        if sess:
+            from src.services.process_engine import kill_and_reap
+
+            pid = sess.pid
+            logger.info(
+                f"[Task Monitor] Attempting to kill task {tab_id} with PID {pid}"
+            )
+            sess.active = False
+
+            kill_and_reap(pid)
+
+            # Verify if process is dead
+            is_dead = False
+            for _ in range(10):
+                try:
+                    os.kill(pid, 0)
+                    time.sleep(0.1)
+                except OSError:
+                    is_dead = True
+                    break
+
+            if not is_dead:
+                logger.error(
+                    f"[Task Monitor] PID {pid} is still alive (possible zombie) after kill attempt."
+                )
+                # We do not remove it if it's not confirmed dead, as per user requirement:
+                # "each active connection should be added and removed only once confirmed dead"
+                return jsonify(
+                    {"error": f"Process {pid} failed to terminate. Possible zombie."}
+                ), 500
+
+            logger.info(f"[Task Monitor] PID {pid} confirmed dead. Removing session.")
+            try:
+                if sess.fd is not None:
+                    os.close(sess.fd)
+            except OSError:
+                pass
+            session_manager.sessions.pop(tab_id, None)
+            session_manager.tabid_to_sids.pop(tab_id, None)
+            if session_manager.persistence:
+                session_manager.persistence.remove(tab_id)
+            return jsonify({"status": "success"})
+        return jsonify({"error": "Session not found"}), 404

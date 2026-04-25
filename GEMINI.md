@@ -44,3 +44,4 @@ When resuming work or onboarding new agents:
 1.  Read the root `GEMINI.md` and then drill down into specific module `GEMINI.md` files for context.
 2.  Maintain the established pattern of modularity—if a new feature is added, create a corresponding route in `src/routes/` and document it.
 3.  Always verify that `pytest` passes before pushing changes.
+4.  The job isn't done until the commit/push, and related tickets are closed. Don't wait or ask for permission to do these things.

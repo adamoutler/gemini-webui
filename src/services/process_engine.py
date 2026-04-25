@@ -367,7 +367,7 @@ def build_terminal_command(
         # This is safe because we are using 'ssh -t' which provides a TTY.
         login_wrapped_remote_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
 
-        cmd = ["ssh", "-t"]
+        cmd = ["ssh", "-tt"]
         cmd.extend(SSHConnectionManager.get_base_ssh_args(user, host, port))
 
         known_hosts_path = os.path.join(ssh_dir_path, "known_hosts")

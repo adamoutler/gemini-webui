@@ -201,6 +201,11 @@ class WordBoundaryRule extends InputRule {
 
       if (this.boundaryRegex.test(input.value)) {
         if (input.value === " ") {
+          if (!context.canDoubleSpacePeriod) {
+            context.emitToTerminal(" ");
+            input.value = "";
+            return true;
+          }
           return true;
         }
 
