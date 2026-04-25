@@ -174,10 +174,18 @@ class SessionManager:
                 session.title = new_title
 
     def remove_session(self, tab_id, user_id=None):
+        import os
+
         with self._lock:
             session = self.get_session(tab_id, user_id)
             if session:
                 session.active = False
+                try:
+                    if session.fd is not None:
+                        os.close(session.fd)
+                        session.fd = None
+                except OSError:
+                    pass
                 self.sessions.pop(tab_id, None)
                 sids = self.tabid_to_sids.pop(tab_id, set())
                 for sid in sids:

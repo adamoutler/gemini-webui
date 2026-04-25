@@ -540,9 +540,10 @@ def kill_task():
             try:
                 if sess.fd is not None:
                     os.close(sess.fd)
+                    sess.fd = None
             except OSError:
                 pass
-            session_manager.sessions.pop(tab_id, None)
+            session_manager.remove_session(tab_id)
             session_manager.tabid_to_sids.pop(tab_id, None)
             if session_manager.persistence:
                 session_manager.persistence.remove(tab_id)
