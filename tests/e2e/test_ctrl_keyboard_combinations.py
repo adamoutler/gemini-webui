@@ -48,8 +48,8 @@ def test_physical_keyboard_combinations(page, playwright):
     # Press Ctrl+C
     page.keyboard.press("Control+c")
 
-    # Press Ctrl+D
-    page.keyboard.press("Control+d")
+    # Press Ctrl+A
+    page.keyboard.press("Control+a")
 
     # Press Ctrl+L
     page.keyboard.press("Control+l")
@@ -61,9 +61,9 @@ def test_physical_keyboard_combinations(page, playwright):
     sent = page.evaluate("window.sentInputs")
     print("Sent inputs:", sent)
 
-    # Ctrl+C is \x03, Ctrl+D is \x04, Ctrl+L is \x0c
+    # Ctrl+C is \x03, Ctrl+A is \x01, Ctrl+L is \x0c
     assert "\x03" in sent, "Ctrl+C was not sent"
-    assert "\x04" in sent, "Ctrl+D was not sent"
+    assert "\x01" in sent, "Ctrl+A was not sent"
     assert "\x0c" in sent, "Ctrl+L was not sent"
 
     # Assert that no local auto-correct textbox is focused or actively composing text.
