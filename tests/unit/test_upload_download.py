@@ -58,7 +58,8 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
         "src.config.get_config_paths",
         return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
     ):
-        mock_run.return_value = MagicMock(returncode=0, stdout="mock_path")
+        mock_run.return_value = MagicMock(pid=123, returncode=0)
+        mock_run.return_value.communicate.return_value = ("mock_path", "")
         response = client.post(
             "/api/upload", data=data, content_type="multipart/form-data"
         )
@@ -130,7 +131,8 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
         "src.config.get_config_paths",
         return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
     ):
-        mock_run.return_value = MagicMock(returncode=0, stdout="mock_path")
+        mock_run.return_value = MagicMock(pid=123, returncode=0)
+        mock_run.return_value.communicate.return_value = ("mock_path", "")
         response = client.post(
             "/api/upload", data=data, content_type="multipart/form-data"
         )
@@ -205,7 +207,8 @@ def test_upload_file_ssh_proxy_mkdir_failure(client, test_data_dir):
         "src.config.get_config_paths",
         return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
     ):
-        mock_run.return_value = MagicMock(returncode=1, stderr="Permission denied")
+        mock_run.return_value = MagicMock(pid=123, returncode=1)
+        mock_run.return_value.communicate.return_value = ("", "Permission denied")
         response = client.post(
             "/api/upload", data=data, content_type="multipart/form-data"
         )

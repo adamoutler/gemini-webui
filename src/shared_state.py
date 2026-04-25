@@ -11,3 +11,6 @@ session_results_cache_lock = threading.Lock()
 
 active_fake_sockets = {}
 active_fake_sockets_lock = threading.Lock()
+
+active_monitors = {}
+active_monitors_lock = threading.Lock()

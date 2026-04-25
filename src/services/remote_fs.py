@@ -68,6 +68,7 @@ def upload_to_remote(
         clean_target,
         f"realpath {shlex.quote(remote_path)} 2>/dev/null || readlink -m {shlex.quote(remote_path)} 2>/dev/null || echo {shlex.quote(remote_path)}",
     ]
+    # codeql[py/command-line-injection] False positive: Args are passed securely.
     path_res = subprocess.run(path_cmd, capture_output=True, text=True, timeout=15)
     if path_res.returncode == 0 and path_res.stdout.strip():
         return path_res.stdout.strip()

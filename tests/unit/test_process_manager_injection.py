@@ -94,7 +94,7 @@ def test_build_terminal_command_gemini_bin_injection_local():
     assert "'gemini;' rm -rf /" in shell_cmd
 
 
-@patch("src.services.process_engine.subprocess.run")
+@patch("src.services.process_engine.subprocess.Popen")
 @pytest.mark.timeout(60)
 def test_fetch_sessions_for_host_gemini_bin_injection_ssh(mock_run):
     import shlex
@@ -106,7 +106,7 @@ def test_fetch_sessions_for_host_gemini_bin_injection_ssh(mock_run):
     assert shlex.quote("gemini; rm -rf /") in remote_cmd
 
 
-@patch("src.services.process_engine.subprocess.run")
+@patch("src.services.process_engine.subprocess.Popen")
 @pytest.mark.timeout(60)
 def test_fetch_sessions_for_host_gemini_bin_injection_local(mock_run):
     import shlex

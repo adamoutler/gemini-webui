@@ -1472,7 +1472,9 @@ async function fetchSessions(
           s.uuid
         }', '${escapeHtml(s.name).replace(/'/g, "\\'")}', false)">
                     <div class="session-name">${escapeHtml(s.name)}</div>
-                    <div class="session-meta">ID #${s.id} • ${s.meta}</div>
+                    <div class="session-meta">ID #${escapeHtml(
+                      String(s.id),
+                    )} • ${escapeHtml(String(s.meta))}</div>
                  </div>`;
       });
       if (!forceAll && sorted.length > 3) {
@@ -2488,6 +2490,9 @@ function closeTab(id, event, isLocalOnly = false) {
   if (tab.state === "launcher") return; // Cannot close the launcher (+ New) tab
 
   if (!isLocalOnly) {
+    if (!confirm("Are you sure you want to terminate this session?")) {
+      return;
+    }
     // 1. Emit targeted WebSocket termination event
     if (tab.socket && tab.socket.connected) {
       debugLog("Emitting terminate_session via WebSocket for tab: " + id);

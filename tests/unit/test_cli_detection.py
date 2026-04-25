@@ -36,8 +36,9 @@ def test_local_project_session_fetching(test_data_dir):
     # Test the branch where /data/workspace exists
     os.makedirs(os.path.join(str(test_data_dir), "workspace"), exist_ok=True)
 
-    with patch("src.services.process_engine.subprocess.run") as mock_run:
-        mock_run.return_value = MagicMock(returncode=0, stdout="sessions", stderr="")
+    with patch("src.services.process_engine.subprocess.Popen") as mock_run:
+        mock_run.return_value = MagicMock(pid=123, returncode=0)
+        mock_run.return_value.communicate.return_value = ("sessions", "")
         from src.services.process_engine import fetch_sessions_for_host
 
         # Force the branch that checks for workspace

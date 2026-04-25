@@ -379,10 +379,10 @@ def upload_file():
             filename = upload_to_remote(
                 save_path, filename, ssh_target, ssh_dir, ssh_dir_path
             )
-        except ValueError as e:
-            return jsonify({"status": "error", "message": str(e)}), 400
-        except RuntimeError as e:
-            return jsonify({"status": "error", "message": str(e)}), 500
+        except ValueError:
+            return jsonify({"status": "error", "message": "Invalid parameters"}), 400
+        except RuntimeError:
+            return jsonify({"status": "error", "message": "Operation failed"}), 500
         except Exception as e:
             return jsonify(
                 {"status": "error", "message": "An internal error occurred during SCP"}
@@ -477,6 +477,30 @@ def list_tasks():
                     "last_seen": s.last_seen,
                 }
             )
+
+    from src.shared_state import active_monitors, active_monitors_lock
+    from flask import session
+
+    uid = str(session.get("user_id")) if session.get("user_id") else "unknown"
+    if env_config.BYPASS_AUTH_FOR_TESTING:
+        uid = "admin"
+
+    with active_monitors_lock:
+        if active_monitors:
+            if uid not in res:
+                res[uid] = []
+            for mid, m in active_monitors.items():
+                res[uid].append(
+                    {
+                        "tab_id": f"monitor_{mid}",
+                        "title": f"Connection Monitor ({m.get('target')})",
+                        "ssh_target": m.get("target"),
+                        "pid": m.get("pid"),
+                        "active": True,
+                        "last_seen": m.get("timestamp", 0),
+                    }
+                )
+
     return jsonify(res)
 
 
@@ -490,6 +514,26 @@ def kill_task():
     tab_id = data.get("tab_id")
     if not tab_id:
         return jsonify({"error": "tab_id required"}), 400
+
+    from src.services.process_engine import kill_and_reap
+
+    if tab_id.startswith("monitor_"):
+        mid = tab_id.replace("monitor_", "", 1)
+        from src.shared_state import active_monitors, active_monitors_lock
+
+        with active_monitors_lock:
+            m = active_monitors.get(mid)
+            if not m:
+                return jsonify({"error": "Monitor not found"}), 404
+            pid = m.get("pid")
+
+        logger.info(
+            f"[Task Monitor] Attempting to kill monitor task {mid} with PID {pid}"
+        )
+        kill_and_reap(pid)
+        with active_monitors_lock:
+            active_monitors.pop(mid, None)
+        return jsonify({"status": "success"})
 
     with session_manager._lock:
         sess = session_manager.sessions.get(tab_id)

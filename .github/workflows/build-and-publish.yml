@@ -9,6 +9,9 @@ on:
       - "**"
   workflow_dispatch: # On-demand trigger
 
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build Image

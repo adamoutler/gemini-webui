@@ -7,7 +7,7 @@ from src.services.process_engine import fetch_sessions_for_host, validate_ssh_ta
 @pytest.mark.timeout(60)
 def test_fetch_sessions_for_host_local():
     host = {"type": "local", "target": None, "dir": None}
-    with patch("src.services.process_engine.subprocess.run") as mock_run:
+    with patch("src.services.process_engine.subprocess.Popen") as mock_run:
         mock_run.return_value = MagicMock(
             returncode=0, stdout="  1. Local (test) [uuid]", stderr=""
         )
@@ -20,7 +20,7 @@ def test_fetch_sessions_for_host_local():
 @pytest.mark.timeout(60)
 def test_fetch_sessions_for_host_ssh():
     host = {"type": "ssh", "target": "user@remote", "dir": "~/myproject"}
-    with patch("src.services.process_engine.subprocess.run") as mock_run:
+    with patch("src.services.process_engine.subprocess.Popen") as mock_run:
         mock_run.return_value = MagicMock(
             returncode=0, stdout="  1. Remote (test) [uuid]", stderr=""
         )

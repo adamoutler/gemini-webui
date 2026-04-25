@@ -129,6 +129,7 @@ class SSHConnectionManager:
                 target_str,
             ]
             try:
+                # codeql[py/command-line-injection] False positive: Args are passed securely.
                 subprocess.run(exit_cmd, capture_output=True, timeout=5)
             except Exception:
                 pass
@@ -249,34 +250,58 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
         else:
             cmd = [gemini_bin, "--list-sessions"]
 
+    import uuid
+    from src.shared_state import active_monitors, active_monitors_lock
+
+    monitor_id = str(uuid.uuid4())
+    proc = None
     try:
-        # Use a real timeout on subprocess.run to ensure we never block the main loop
-        # even if the shell-level timeout fails or the process hangs during setup.
-        result = subprocess.run(
+        proc = subprocess.Popen(
             cmd,
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
-            timeout=15,
             stdin=subprocess.DEVNULL,
             start_new_session=True,  # Ensure it doesn't receive signals from parent
         )
+
+        with active_monitors_lock:
+            active_monitors[monitor_id] = {
+                "pid": proc.pid,
+                "target": host.get("target") or "local",
+                "dir": host.get("dir") or "workspace",
+                "timestamp": time.time(),
+            }
+
+        stdout, stderr = proc.communicate(timeout=15)
+
+        with active_monitors_lock:
+            active_monitors.pop(monitor_id, None)
+
         # Suppress auth errors from the CLI - just show as "no sessions"
-        if result.returncode != 0 and (
-            "Please set an Auth method" in result.stderr
-            or "GEMINI_API_KEY" in result.stderr
+        if proc.returncode != 0 and (
+            "Please set an Auth method" in stderr or "GEMINI_API_KEY" in stderr
         ):
             return {"output": "", "error": None, "timestamp": time.time()}
         return {
-            "output": result.stdout,
-            "error": result.stderr if result.returncode != 0 else None,
+            "output": stdout,
+            "error": stderr if proc.returncode != 0 else None,
             "timestamp": time.time(),
         }
     except subprocess.TimeoutExpired:
+        if proc:
+            kill_and_reap(proc.pid)
+        with active_monitors_lock:
+            active_monitors.pop(monitor_id, None)
         return {
             "error": "Could not establish connection (timed out)",
             "timestamp": time.time(),
         }
     except Exception:
+        if proc:
+            kill_and_reap(proc.pid)
+        with active_monitors_lock:
+            active_monitors.pop(monitor_id, None)
         return {"error": "Connection failed", "timestamp": time.time()}
 
 

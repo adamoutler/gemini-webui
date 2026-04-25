@@ -38,12 +38,14 @@ class TestZombieFix(unittest.TestCase):
             mock_close.assert_called_with(10)
             self.assertEqual(sm.get_session("tab1").pid, 101)
 
-    @patch("src.services.process_engine.subprocess.run")
+    @patch("src.services.process_engine.subprocess.Popen")
     @pytest.mark.timeout(60)
     def test_fetch_sessions_has_timeout_and_session_group(self, mock_run):
         from src.services.process_engine import fetch_sessions_for_host
 
-        mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
+        mock_run.return_value = MagicMock(pid=123, returncode=0)
+
+        mock_run.return_value.communicate.return_value = ("", "")
 
         fetch_sessions_for_host({"type": "local"}, "/tmp")
 
