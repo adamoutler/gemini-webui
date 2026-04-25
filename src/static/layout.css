@@ -3,6 +3,8 @@
   padding: 0;
   position: relative;
   overflow: hidden;
+  min-height: 0;
+  min-width: 0;
 }
 
 .tab-instance {

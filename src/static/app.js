@@ -2059,6 +2059,10 @@ function startSession(
     } catch (e) {
       console.error("Failed to refresh CSRF token:", e);
     }
+
+    // Fit terminal to window immediately before telling backend the size
+    fitTerminal(tab);
+
     tab.socket.emit("join_room", { tab_id: tabId });
     tab.socket.emit("restart", {
       tab_id: tabId,
@@ -2167,6 +2171,7 @@ function startSession(
     setTimeout(() => {
       if (tab.socket && tab.socket.connected) {
         tab.shouldReclaim = false; // We know it's dead, force fresh restart
+        fitTerminal(tab);
         tab.socket.emit("restart", {
           tab_id: tabId,
           reclaim: false,
@@ -2469,6 +2474,7 @@ function restartActiveTab() {
   if (tab && tab.state === "terminal") {
     const { ssh_target, ssh_dir, resume } = tab.session;
     tab.term.clear();
+    fitTerminal(tab);
     tab.socket.emit("restart", {
       tab_id: tab.id,
       resume: resume,
