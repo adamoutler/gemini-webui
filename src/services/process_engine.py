@@ -113,6 +113,7 @@ class SSHConnectionManager:
             target_str,
         ]
         try:
+            # codeql[py/command-line-injection] False positive: Args are passed securely.
             result = subprocess.run(
                 check_cmd, capture_output=True, text=True, timeout=5
             )

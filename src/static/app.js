@@ -1470,7 +1470,9 @@ async function fetchSessions(
           conn.type
         }', '${conn.target || ""}', '${conn.dir || ""}', '${
           s.uuid
-        }', '${escapeHtml(s.name).replace(/'/g, "\\'")}', false)">
+        }', '${escapeHtml(
+          String(s.name).replace(/\\/g, "\\\\").replace(/'/g, "\\'")
+        )}', false)">
                     <div class="session-name">${escapeHtml(s.name)}</div>
                     <div class="session-meta">ID #${escapeHtml(
                       String(s.id),
