@@ -191,7 +191,7 @@ class SessionManager:
                 if user_named:
                     session.user_named = True
                 if self.persistence:
-                    self.persistence.update(session)
+                    self.persistence.add(session)
 
     def remove_session(self, tab_id, user_id=None):
         import os

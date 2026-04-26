@@ -10,6 +10,8 @@ def test_ui_tab_management(server, playwright):
     browser = p.chromium.launch(headless=True)
     context = browser.new_context()
     page = context.new_page()
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"ERROR: {err}"))
 
     page.goto(server)
 
