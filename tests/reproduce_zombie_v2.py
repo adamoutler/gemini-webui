@@ -55,6 +55,7 @@ def main(playwright):
     app_process = subprocess.Popen([sys.executable, "src/app.py"], env=env)
     time.sleep(5)
 
+    test_failed = False
     try:
         p = playwright
         browser = p.chromium.launch(headless=True)
@@ -75,14 +76,31 @@ def main(playwright):
         ).first.click()
         page.wait_for_selector(".terminal-instance")
 
-        # Wait for terminal to be ready and show welcome message
-        page.wait_for_function(
-            """() => {
-            const term = document.querySelector('.xterm-rows');
-            return term && term.innerText.includes('Welcome');
-        }""",
-            timeout=15000,
-        )
+        # Wait for terminal to be ready
+        def check_welcome():
+            out = page.evaluate("""() => {
+                if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return '';
+                const tab = tabs.find(t => t.id === activeTabId);
+                if (tab && tab.term && tab.term.buffer.active.length > 0) {
+                    let text = "";
+                    for (let i = 0; i < tab.term.buffer.active.length; i++) {
+                        const line = tab.term.buffer.active.getLine(i);
+                        if (line) text += line.translateToString();
+                    }
+                    return text;
+                }
+                return '';
+            }""")
+            log(f"Terminal Output: {repr(out)}")
+            return "Welcome" in out
+
+        start_time = time.time()
+        while time.time() - start_time < 15:
+            if check_welcome():
+                break
+            time.sleep(1)
+        else:
+            raise Exception("Timeout waiting for 'Welcome'")
         log("Terminal is ready.")
 
         # Send Ctrl-Z twice
@@ -114,8 +132,8 @@ def main(playwright):
         log("Path 3: Testing Rapid-fire '+ New' -> 'Start New'")
         for i in range(5):
             log(f"Rapid-fire attempt {i+1}")
-            # Click "+ New" (it's the last tab usually, or has specific content)
-            page.click(".tab:not(:has(.tab-close))")
+            # Click "+ New"
+            page.click("#new-tab-btn")
             page.wait_for_selector("button:has-text('Start New')")
             # Click "Start New" for Local (usually first)
             page.locator("button:has-text('Start New')").first.click()
@@ -132,13 +150,18 @@ def main(playwright):
 
         log("Reloads finished. Checking if UI is still responsive...")
         page.goto(url)
-        page.wait_for_selector(".connection-card[data-label='local']", timeout=10000)
+        # UI is responsive if either a terminal is visible or the launcher is visible
+        page.wait_for_function(
+            "document.querySelector('.terminal-instance') !== null || document.querySelector('.connection-card') !== null",
+            timeout=10000,
+        )
         log("UI is still responsive: PASS")
 
         browser.close()
 
     except Exception as e:
         log(f"Error during test: {e}")
+        test_failed = True
     finally:
         app_process.terminate()
         app_process.wait()
@@ -150,6 +173,9 @@ def main(playwright):
     final_zombies = get_zombie_count()
     log(f"Final zombie count: {final_zombies}")
 
+    if test_failed:
+        log("FAILURE: Test encountered an exception.")
+        exit(1)
     if final_zombies > initial_zombies:
         log(
             f"FAILURE: Zombie count increased from {initial_zombies} to {final_zombies}"
