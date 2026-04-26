@@ -435,6 +435,15 @@ def build_terminal_command(
         return _wrap_with_multiplexer(cmd)
     else:
         # Workspace initialization with failover guidance
+        env_exports = ""
+        if env_vars:
+            for k, v in env_vars.items():
+                if k == "PATH":
+                    # Augment PATH
+                    env_exports += f"export PATH={shlex.quote(v)}:$PATH; "
+                else:
+                    env_exports += f"export {k}={shlex.quote(str(v))}; "
+
         data_dir = env_config.DATA_DIR
         work_dir = os.path.join(data_dir, "workspace")
         quoted_work_dir = shlex.quote(work_dir)
@@ -487,7 +496,7 @@ def build_terminal_command(
         local_cmd += "exec ${SHELL:-/bin/sh}; "
         local_cmd += "fi"
 
-        cmd = ["/bin/sh", "-c", f"{setup_cmd} {local_cmd}"]
+        cmd = ["/bin/sh", "-c", f"{env_exports}{setup_cmd} {local_cmd}"]
         return _wrap_with_multiplexer(cmd)
 
 

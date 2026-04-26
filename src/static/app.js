@@ -1471,7 +1471,7 @@ async function fetchSessions(
         }', '${conn.target || ""}', '${conn.dir || ""}', '${
           s.uuid
         }', '${escapeHtml(
-          String(s.name).replace(/\\/g, "\\\\").replace(/'/g, "\\'")
+          String(s.name).replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
         )}', false)">
                     <div class="session-name">${escapeHtml(s.name)}</div>
                     <div class="session-meta">ID #${escapeHtml(
@@ -2066,6 +2066,9 @@ function startSession(
     fitTerminal(tab);
 
     tab.socket.emit("join_room", { tab_id: tabId });
+    if (tab.shouldReclaim) {
+      tab.term.clear();
+    }
     tab.socket.emit("restart", {
       tab_id: tabId,
       reclaim: tab.shouldReclaim,

@@ -185,3 +185,74 @@ def test_e2e_session_env_vars_injected(
     }""",
         timeout=15000,
     )
+
+
+@pytest.mark.prone_to_timeout
+@pytest.mark.timeout(120)
+def test_e2e_local_session_env_vars_injected(page, tmp_path, playwright):
+    page.locator("#new-tab-btn").click()
+    expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
+
+    page.locator('button[data-onclick="openSettings()"]').click()
+    expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
+
+    # Edit Local host
+    page.locator("#hosts-list .session-item").filter(has_text="Local").click()
+
+    page.locator("#add-env-var-btn").click()
+    env_keys = page.locator("#env-vars-list input[placeholder*='Key']")
+    env_vals = page.locator("#env-vars-list input[placeholder='Value']")
+    env_keys.last.fill("LOCAL_TEST_VAR")
+    env_vals.last.fill("LOCAL_VAL_999")
+
+    with page.expect_response("**/api/hosts") as response_info:
+        page.locator("#add-host-btn").click()
+    assert response_info.value.status == 200
+
+    page.evaluate("closeSettings()")
+
+    card = page.locator(".connection-card").filter(has_text="Local").first
+    card.locator("button", has_text="Start New").click()
+
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
+    page.wait_for_timeout(3000)
+
+    # We should wait for bash prompt.
+    page.wait_for_timeout(8000)
+    page.locator(".tab-instance.active .xterm").first.click()
+
+    # Print terminal output to help debug
+    term_output = page.evaluate(
+        """() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            let out = "";
+            for (let i = 0; i < tab.term.buffer.active.length; i++) {
+                const line = tab.term.buffer.active.getLine(i);
+                if (line) out += line.translateToString() + "\\n";
+            }
+            return out;
+        }
+        return "No terminal";
+    }"""
+    )
+    print("TERMINAL OUTPUT:")
+    print(term_output)
+
+    # Check the terminal output via xterm.js API
+    page.wait_for_function(
+        """() => {
+        if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return false;
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            let out = "";
+            for (let i = 0; i < Math.min(50, tab.term.buffer.active.length); i++) {
+                const line = tab.term.buffer.active.getLine(i);
+                if (line) out += line.translateToString();
+            }
+            return out.includes("EXPECTED_LOCAL_VAL_999_END");
+        }
+        return false;
+    }""",
+        timeout=15000,
+    )
