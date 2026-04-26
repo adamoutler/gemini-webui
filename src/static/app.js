@@ -2237,12 +2237,14 @@ function startSession(
     }
   });
   tab.term.onTitleChange((title) => {
-    tab.title = title;
-    if (tab.socket) {
-      tab.socket.emit("update_title", { tab_id: tab.id, title: title });
+    if (!tab.userNamed) {
+      tab.title = title;
+      if (tab.socket) {
+        tab.socket.emit("update_title", { tab_id: tab.id, title: title });
+      }
+      renderTabs();
+      updatePageTitle();
     }
-    renderTabs();
-    updatePageTitle();
 
     // Trigger notification if action required (✋)
     if (title.includes("✋") && document.visibilityState !== "visible") {
