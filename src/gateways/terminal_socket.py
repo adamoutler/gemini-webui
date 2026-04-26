@@ -270,8 +270,9 @@ def update_title(data):
     )
     tab_id = data.get("tab_id") or session_manager.sid_to_tabid.get(sid)
     title = data.get("title")
+    user_named = data.get("user_named", False)
     if tab_id and title:
-        session_manager.update_title(tab_id, title, user_id)
+        session_manager.update_title(tab_id, title, user_id, user_named)
 
 
 @socketio.on("pty-input")
@@ -548,6 +549,7 @@ def pty_restart(data):
             fd,
             child_pid,
             user_id,
+            title=data.get("title") or "",
             ssh_target=ssh_target,
             ssh_dir=ssh_dir,
             resume=resume,

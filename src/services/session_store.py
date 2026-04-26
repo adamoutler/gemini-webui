@@ -183,11 +183,13 @@ class SessionManager:
         with self._lock:
             return list(self.sessions.values())
 
-    def update_title(self, tab_id, new_title, user_id=None):
+    def update_title(self, tab_id, new_title, user_id=None, user_named=False):
         with self._lock:
             session = self.get_session(tab_id, user_id)
             if session:
                 session.title = new_title
+                if user_named:
+                    session.user_named = True
 
     def remove_session(self, tab_id, user_id=None):
         import os

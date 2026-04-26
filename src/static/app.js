@@ -410,6 +410,7 @@ async function loadTabsFromServer() {
         socket: null,
         session: s,
         title: s.title,
+        userNamed: s.user_named || false,
         state: "terminal",
       };
       tabs.push(tab);
@@ -426,7 +427,8 @@ async function loadTabsFromServer() {
         fitAddon: null,
         socket: null,
         session: null,
-        title: "New Tab",
+        title: "",
+        userNamed: false,
         state: "launcher",
       });
       createTerminalContainer(id);
@@ -736,7 +738,8 @@ async function addNewTab(autoResume = false) {
     fitAddon: null,
     socket: null,
     session: null,
-    title: "New Tab",
+    title: "",
+    userNamed: false,
     state: "launcher",
   };
   const container = document.createElement("div");
@@ -1545,8 +1548,8 @@ function startSession(
   }
   tab.state = "terminal";
   tab.session = { type, ssh_target: target, ssh_dir: dir, resume: resumeParam };
-  if (!tab.title || tab.title === "New Tab" || tab.title.trim() === "") {
-    tab.title = sessionName || (target ? target.split("@").pop() : "Local");
+  if (!tab.userNamed && sessionName) {
+    tab.title = sessionName;
   }
   tab.shouldReclaim = shouldReclaim;
 
@@ -2569,7 +2572,7 @@ function renderTabs() {
     el.ontouchmove = () => clearTimeout(longPressTimer);
 
     el.innerHTML =
-      `<span>${tab.title}</span>` +
+      `<span>${tab.title || "\u00A0"}</span>` +
       (tab.state === "launcher"
         ? ""
         : `<span class="tab-close" data-onclick="closeTab('${tab.id}', event, false)">&times;</span>`);
@@ -2604,6 +2607,14 @@ function showTabContextMenu(id, x, y) {
             const newTitle = prompt("Enter new tab title:", tab.title);
             if (newTitle) {
               tab.title = newTitle;
+              tab.userNamed = true;
+              if (tab.socket) {
+                tab.socket.emit("update_title", {
+                  tab_id: tab.id,
+                  title: newTitle,
+                  user_named: true,
+                });
+              }
               renderTabs();
               saveTabsToStorage();
             }
