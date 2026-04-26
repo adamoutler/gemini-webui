@@ -83,6 +83,7 @@ class SSHConnectionManager:
 
     @staticmethod
     def get_base_ssh_args(user, host, port, control_master="auto"):
+        """Returns the base arguments required to establish an SSH connection with multiplexing."""
         socket_path = SSHConnectionManager.get_socket_path(user, host, port)
         return [
             "-o",
@@ -292,6 +293,10 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
     except subprocess.TimeoutExpired:
         if proc:
             kill_and_reap(proc.pid)
+            if proc.stdout:
+                proc.stdout.close()
+            if proc.stderr:
+                proc.stderr.close()
         with active_monitors_lock:
             active_monitors.pop(monitor_id, None)
         return {
@@ -301,6 +306,10 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
     except Exception:
         if proc:
             kill_and_reap(proc.pid)
+            if proc.stdout:
+                proc.stdout.close()
+            if proc.stderr:
+                proc.stderr.close()
         with active_monitors_lock:
             active_monitors.pop(monitor_id, None)
         return {"error": "Connection failed", "timestamp": time.time()}
@@ -510,13 +519,7 @@ def kill_and_reap(pid):
     if pid is None:
         return
     try:
-        try:
-            if os.getpgid(pid) != os.getpgrp():
-                os.killpg(os.getpgid(pid), signal.SIGKILL)
-            else:
-                os.kill(pid, signal.SIGKILL)
-        except OSError:
-            pass
+        os.killpg(pid, signal.SIGKILL)
     except OSError:
         try:
             os.kill(pid, signal.SIGKILL)
