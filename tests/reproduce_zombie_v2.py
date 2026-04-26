@@ -5,13 +5,13 @@ import signal
 from playwright.sync_api import sync_playwright
 
 
-def log(msg, playwright):
+def log(msg):
     print(msg)
     with open("zombie_test_v2.log", "a") as f:
         f.write(msg + "\n")
 
 
-def get_zombie_count(playwright):
+def get_zombie_count():
     # Using the user's preferred command for monitoring
     result = subprocess.run(
         "ps -aux | grep defunct | grep -v grep | wc -l",
@@ -161,4 +161,5 @@ def main(playwright):
 
 
 if __name__ == "__main__":
-    main()
+    with sync_playwright() as playwright:
+        main(playwright)

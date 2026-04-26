@@ -83,6 +83,7 @@ class SSHConnectionManager:
 
     @staticmethod
     def get_base_ssh_args(user, host, port, control_master="auto"):
+        """Returns the base arguments required to establish an SSH connection with multiplexing."""
         socket_path = SSHConnectionManager.get_socket_path(user, host, port)
         return [
             "-o",
