@@ -91,7 +91,7 @@ def main(playwright):
                 }
                 return '';
             }""")
-            log(f"Terminal Output: {repr(out)}")
+            log(f"Terminal Output Snapshot: {repr(out.strip())}")
             return "Welcome" in out
 
         start_time = time.time()

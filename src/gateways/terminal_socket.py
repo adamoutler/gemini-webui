@@ -29,7 +29,7 @@ from src.app import kill_and_reap, add_managed_pty, IDENTIFICATION_REGEX, app
 from src.models.session import Session
 
 logger = logging.getLogger(__name__)
-GEMINI_BIN = "gemini"
+GEMINI_BIN = env_config.GEMINI_BIN
 
 
 @socketio.on("connect")
