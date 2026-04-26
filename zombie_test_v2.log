@@ -2,6 +2,32 @@
 Initial zombie count: 0
 Starting Gemini WebUI...
 Path 1: Testing Ctrl-Z + Restart
-Error during test: Page.wait_for_function: Timeout 15000ms exceeded.
+Terminal Output Snapshot: '[Connected to server]'
+Terminal Output Snapshot: "[Connected to server]                                                                                                                                 Loading Context...                                                                                                                                    DEBUG MOCK ARGV: ['/home/adamoutler/gemini-webui/tests/mock/gemini'], is_new=True, SESSIONS=[1]                                                       DEBUG MOCK ARGV: ['/home/adamoutler/gemini-webui/tests/mock/gemini'], is_new=True, SESSIONS=[1]                                                       DEBUG MOCK HARNESS: harness_id='tab_1777247053338'                                                                                                    Welcome to Fake Gemini"
+Terminal is ready.
+Clicked Restart button.
+Zombies after Path 1: 0
+Path 2: Testing Ctrl-C
+Zombies after Path 2: 0
+Path 3: Testing Rapid-fire '+ New' -> 'Start New'
+Rapid-fire attempt 1
+Rapid-fire attempt 2
+Rapid-fire attempt 3
+BROWSER ERROR: Cannot read properties of undefined (reading 'dimensions')
+Rapid-fire attempt 4
+BROWSER ERROR: Cannot read properties of undefined (reading 'dimensions')
+Rapid-fire attempt 5
+BROWSER ERROR: Cannot read properties of undefined (reading 'dimensions')
+Zombies after Path 3: 0
+Path 4: Testing Rapid Page Reload (Lockup test)
+BROWSER ERROR: Cannot read properties of undefined (reading 'dimensions')
+BROWSER CONSOLE: Failed to initialize CSRF token: TypeError: Failed to fetch
+    at refreshCsrfToken (http://127.0.0.1:5009/static/app.js?v=0.1:73:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/app.js?v=0.1:3275:11)
+BROWSER CONSOLE: Failed to initialize CSRF token: TypeError: Failed to fetch
+    at refreshCsrfToken (http://127.0.0.1:5009/static/app.js?v=0.1:73:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/app.js?v=0.1:3275:11)
+Reloads finished. Checking if UI is still responsive...
+UI is still responsive: PASS
 Final zombie count: 0
 SUCCESS: No new zombies detected.
