@@ -158,30 +158,33 @@
 
 /* Adjust connection action buttons size on mobile */
 .is-mobile .connection-header {
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .is-mobile .connection-title {
   min-width: 0;
-  max-width: calc(100% - 40px);
+  max-width: calc(100% - 140px);
+  flex: 1 1 auto;
 }
 
 .is-mobile .connection-title > div:last-child {
   word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .is-mobile .connection-actions {
   min-width: unset;
-  width: 100%;
-  margin-top: 5px;
-  justify-content: flex-start;
+  margin-top: 0;
+  justify-content: flex-end;
+  flex-direction: row;
 }
 
 .is-mobile .connection-actions button {
-  flex: 1 1 auto;
-  max-width: unset;
+  padding: 4px 8px;
+  font-size: 0.9em;
   white-space: nowrap;
-  overflow-wrap: normal;
 }
 
 /* --- New Mobile UI Architecture Fixes --- */
