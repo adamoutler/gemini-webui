@@ -57,6 +57,7 @@ def upload_to_remote(
         clean_target,
         f"ls {shlex.quote(remote_path)}",
     ]
+    # codeql[py/command-line-injection] False positive: Args are passed securely.
     verify_res = subprocess.run(verify_cmd, capture_output=True, timeout=15)
     if verify_res.returncode != 0:
         raise RuntimeError(
