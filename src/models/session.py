@@ -16,12 +16,14 @@ class Session:
         ssh_target=None,
         ssh_dir=None,
         resume=True,
+        user_named=False,
     ):
         self.tab_id = tab_id
         self.fd = fd
         self.pid = pid
         self.user_id = user_id
-        self.title = title or ("Local" if not ssh_target else f"SSH: {ssh_target}")
+        self.title = title or ""
+        self.user_named = user_named
         self.ssh_target = ssh_target
         self.ssh_dir = ssh_dir
         self.resume = resume
@@ -52,6 +54,7 @@ class Session:
         return {
             "tab_id": self.tab_id,
             "title": self.title,
+            "user_named": self.user_named,
             "ssh_target": self.ssh_target,
             "ssh_dir": self.ssh_dir,
             "resume": self.resume,
