@@ -1548,9 +1548,6 @@ function startSession(
   }
   tab.state = "terminal";
   tab.session = { type, ssh_target: target, ssh_dir: dir, resume: resumeParam };
-  if (!tab.userNamed && sessionName) {
-    tab.title = sessionName;
-  }
   tab.shouldReclaim = shouldReclaim;
 
   // Back button hijacking: push state so "back" has something to pop
