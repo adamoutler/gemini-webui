@@ -337,3 +337,80 @@ def test_no_terminal_clear_on_stolen_session(custom_server, tmp_path, playwright
 
     context1.close()
     browser.close()
+
+
+@pytest.mark.timeout(120)
+def test_clear_command_preservation_on_reconnect(custom_server, tmp_path, playwright):
+    """
+    Verify that clear commands within the buffer do not erase the scrollback history upon reconnection.
+    """
+    p = playwright
+    browser = p.chromium.launch(headless=True)
+    context = browser.new_context()
+    page = context.new_page()
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.set_default_timeout(60000)
+
+    page.goto(custom_server.url)
+    expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
+
+    # 1. Start New Session
+    page.locator('.tab-instance.active button:has-text("Start New")').first.click()
+    expect(page.locator("#active-connection-info")).to_be_visible(timeout=15000)
+
+    page.wait_for_timeout(3000)
+    page.locator(".tab-instance.active .xterm").first.click()
+
+    # 2. Type some initial history
+    page.keyboard.type("Initial History Line", delay=50)
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(1000)
+
+    # 3. Issue a clear screen ANSI sequence via mock
+    page.keyboard.type("CLEAR_SCREEN", delay=50)
+    page.keyboard.press("Enter")
+    page.wait_for_timeout(1000)
+
+    def check_text(page):
+        return page.evaluate("""() => {
+            if (typeof tabs === 'undefined' || typeof activeTabId === 'undefined') return '';
+            const tab = tabs.find(t => t.id === activeTabId);
+            if (!tab || !tab.term) return '';
+            let text = '';
+            for (let i = 0; i < tab.term.buffer.active.length; i++) {
+                text += tab.term.buffer.active.getLine(i)?.translateToString(true) || '';
+                text += '\\n';
+            }
+            return text;
+        }""")
+
+    # Verify screen cleared but history is retained? Wait, if \x1b[2J \x1b[3J is printed, the frontend clears it.
+    # We want to verify that when we reconnect, the history is NOT cleared by the replay buffer.
+    # Trigger a socket disconnect to force a reconnect without losing server state
+    page.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.socket) {
+            tab.socket.disconnect();
+            setTimeout(() => tab.socket.connect(), 1000);
+        }
+    }""")
+
+    status_el = page.locator("#connection-status")
+    expect(status_el).to_have_text("local", timeout=30000)
+    time.sleep(2)
+
+    # Verify history is still present after reconnect
+    term_text = ""
+    for _ in range(10):
+        term_text = check_text(page)
+        if "Initial History Line" in term_text:
+            break
+        time.sleep(0.5)
+
+    assert (
+        "Initial History Line" in term_text
+    ), "History was erased by replayed clear sequences"
+
+    context.close()
+    browser.close()

@@ -28,7 +28,7 @@ class Session:
         self.decoder = codecs.getincrementaldecoder("utf-8")(errors="replace")
         self.buffer = collections.deque()  # Store chunks
         self.buffer_len = 0  # Track total string length
-        self.max_buffer_len = 1024 * 256  # 256KB max scrollback
+        self.max_buffer_len = 1024 * 1024  # 1MB max scrollback
         self.last_seen = time.time()
         self.orphaned_at = None
         self.file_cache = []

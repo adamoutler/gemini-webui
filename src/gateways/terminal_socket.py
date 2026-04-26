@@ -390,11 +390,34 @@ def pty_restart(data):
             # Send current scrollback buffer to the new client
             if session_obj.buffer:
                 full_buffer = "".join(session_obj.buffer)
+                full_buffer = full_buffer.replace("\x1b[3J", "").replace("\x1b[2J", "")
                 chunk_size = 1024 * 64
-                for i in range(0, len(full_buffer), chunk_size):
+                lines = full_buffer.split("\n")
+                current_chunk = []
+                current_size = 0
+
+                for i, line in enumerate(lines):
+                    suffix = "\n" if i < len(lines) - 1 else ""
+                    line_with_suffix = line + suffix
+                    line_len = len(line_with_suffix)
+
+                    if current_size + line_len > chunk_size and current_chunk:
+                        socketio.emit(
+                            "pty-output",
+                            {"output": "".join(current_chunk)},
+                            room=sid,
+                        )
+                        socketio.sleep(0.01)
+                        current_chunk = []
+                        current_size = 0
+
+                    current_chunk.append(line_with_suffix)
+                    current_size += line_len
+
+                if current_chunk:
                     socketio.emit(
                         "pty-output",
-                        {"output": full_buffer[i : i + chunk_size]},
+                        {"output": "".join(current_chunk)},
                         room=sid,
                     )
                     socketio.sleep(0.01)
@@ -433,12 +456,24 @@ def pty_restart(data):
     ssh_target = data.get("ssh_target")
     ssh_dir = data.get("ssh_dir")
 
+    import sys
+
+    sys.stderr.write(f"HOSTS: {get_config().get('HOSTS', [])}\n")
+    sys.stderr.flush()
     env_vars = {}
-    if ssh_target:
-        for host in get_config().get("HOSTS", []):
-            if host.get("target") == ssh_target:
-                env_vars = host.get("env_vars") or {}
-                break
+    for host in get_config().get("HOSTS", []):
+        if ssh_target and host.get("target") == ssh_target:
+            env_vars = host.get("env_vars") or {}
+            break
+        elif not ssh_target and (
+            host.get("target") == "local"
+            or host.get("label", "").lower() == "local"
+            or not host.get("target")
+        ):
+            env_vars = host.get("env_vars") or {}
+            break
+
+    logger.info(f"ENV_VARS resolved to: {env_vars}")
 
     if is_fake:
         env_vars["GEMINI_WEBUI_HARNESS_ID"] = tab_id
@@ -481,6 +516,13 @@ def pty_restart(data):
         env["TERM"] = "xterm-256color"
         env["COLORTERM"] = "truecolor"
         env["FORCE_COLOR"] = "3"
+
+        if env_vars:
+            for k, v in env_vars.items():
+                if k == "PATH":
+                    env["PATH"] = f"{v}:{env.get('PATH', '')}"
+                else:
+                    env[k] = str(v)
 
         if is_fake or env_config.BYPASS_AUTH_FOR_TESTING:
             env["GEMINI_WEBUI_HARNESS_ID"] = tab_id

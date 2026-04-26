@@ -2066,6 +2066,9 @@ function startSession(
     fitTerminal(tab);
 
     tab.socket.emit("join_room", { tab_id: tabId });
+    if (tab.shouldReclaim) {
+      tab.term.clear();
+    }
     tab.socket.emit("restart", {
       tab_id: tabId,
       reclaim: tab.shouldReclaim,

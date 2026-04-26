@@ -55,16 +55,34 @@ def test_ui_autocomplete_dropdown(page, server, playwright):
         else:
             route.fulfill(json={"matches": []})
 
+    page.on("request", lambda req: print(f"REQUEST: {req.url}"))
     page.route(re.compile(r"/api/sessions/.*/search_files"), handle_route)
 
     # 4. Type in the download input
     download_input = page.locator("#workspace-download-filename")
     expect(download_input).to_be_visible()
 
+    # Ensure tabs are available and terminal is active
+    page.wait_for_function(
+        "typeof tabs !== 'undefined' && tabs.length > 0 && activeTabId"
+    )
+
+    page.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        console.log("Autocomplete input check", wsDownloadInput.value, tab ? tab.session.type : "no tab");
+    }""")
+
+    download_input.click()
     download_input.fill("src")
     page.evaluate(
         "document.getElementById('workspace-download-filename').dispatchEvent(new Event('input', { bubbles: true }));"
     )
+
+    with page.expect_response(
+        re.compile(r"/api/sessions/.*/search_files")
+    ) as response_info:
+        pass
+    print("Response received:", response_info.value.url, response_info.value.status)
     page.wait_for_timeout(1000)
 
     # 5. Assert the dropdown appears with items

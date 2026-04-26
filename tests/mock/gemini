@@ -95,6 +95,10 @@ if is_new_session and "--list-sessions" not in sys.argv:
 print(
     "Welcome to Fake \x1b[38;5;33mG\x1b[38;5;39me\x1b[38;5;45mm\x1b[38;5;51mi\x1b[38;5;87mn\x1b[38;5;123mi\x1b[0m"
 )
+
+if "LOCAL_TEST_VAR" in os.environ:
+    print(f"EXPECTED_{os.environ['LOCAL_TEST_VAR']}_END")
+
 sys.stdout.flush()
 
 memory = {}
@@ -137,6 +141,10 @@ while True:
             print(f"The TEST_VALUE is {memory['TEST_VALUE']}")
         else:
             print("I don't know the TEST_VALUE.")
+        sys.stdout.flush()
+    elif "CLEAR_SCREEN" in line:
+        print("\x1b[2J\x1b[3J")
+        print("Screen cleared.")
         sys.stdout.flush()
     else:
         print(f"You said: {line}")
