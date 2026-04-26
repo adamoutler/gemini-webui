@@ -94,20 +94,12 @@ if not env_config.SKIP_MONKEY_PATCH:
                         import os, signal
 
                         try:
-                            if os.getpgid(process.pid) != os.getpgrp():
-                                try:
-                                    if os.getpgid(process.pid) != os.getpgrp():
-                                        os.killpg(
-                                            os.getpgid(process.pid), signal.SIGKILL
-                                        )
-                                    else:
-                                        os.kill(process.pid, signal.SIGKILL)
-                                except OSError:
-                                    pass
-                            else:
-                                os.kill(process.pid, signal.SIGKILL)
+                            os.killpg(process.pid, signal.SIGKILL)
                         except OSError:
-                            process.kill()
+                            try:
+                                os.kill(process.pid, signal.SIGKILL)
+                            except OSError:
+                                pass
                     else:
                         process.kill()
                 except OSError:
@@ -293,13 +285,10 @@ def kill_and_reap(pid):
         return
     try:
         # Kill the entire process group started by setsid() in child
-        try:
-            if os.getpgid(pid) != os.getpgrp():
-                os.killpg(os.getpgid(pid), signal.SIGKILL)
-            else:
-                os.kill(pid, signal.SIGKILL)
-        except OSError:
-            pass
+        # The PID is the PGID because of setsid() or start_new_session=True.
+        # This will succeed even if the process leader is a reaped zombie,
+        # ensuring all grandchildren are killed.
+        os.killpg(pid, signal.SIGKILL)
     except OSError:
         try:
             os.kill(pid, signal.SIGKILL)
