@@ -142,6 +142,10 @@ while True:
         else:
             print("I don't know the TEST_VALUE.")
         sys.stdout.flush()
+    elif "CLEAR_SCREEN" in line:
+        print("\x1b[2J\x1b[3J")
+        print("Screen cleared.")
+        sys.stdout.flush()
     else:
         print(f"You said: {line}")
         sys.stdout.flush()
