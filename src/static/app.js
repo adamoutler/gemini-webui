@@ -1254,6 +1254,7 @@ function getGlobalSocket() {
     });
 
     globalSocket.on("sessions_updated", (payload) => {
+      console.log("Sessions updated payload:", payload);
       if (payload && payload.data && payload.data.output) {
         const sessions = [];
         const regex =
@@ -1269,18 +1270,21 @@ function getGlobalSocket() {
         }
 
         tabs.forEach((t) => {
+          console.log("Checking tab:", t.id, t.state, t.session);
           if (
             t.state === "terminal" &&
             t.session &&
-            (t.session.resume === "new" || /^\\d+$/.test(t.session.resume))
+            (t.session.resume === "new" || /^\d+$/.test(t.session.resume))
           ) {
             const match = sessions.find(
               (s) => s.uuid === t.id || s.id === t.session.resume,
             );
-            if (match && match.id) {
-              t.session.resume = match.id.toString();
+            console.log("Found match for tab:", match);
+            if (match && match.uuid) {
+              t.session.resume = match.uuid;
               saveTabsToStorage();
-              localStorage.setItem("geminiResume", match.id.toString());
+              localStorage.setItem("geminiResume", match.uuid);
+              console.log("Set geminiResume to:", match.uuid);
             }
           }
         });
@@ -1445,7 +1449,7 @@ async function fetchSessions(
       activeTerminalTab &&
       activeTerminalTab.session.resume &&
       (activeTerminalTab.session.resume === "new" ||
-        /^\\d+$/.test(activeTerminalTab.session.resume))
+        /^\d+$/.test(activeTerminalTab.session.resume))
     ) {
       const match = sessions.find(
         (s) =>
@@ -1548,6 +1552,19 @@ function startSession(
   if (!tab) {
     return;
   }
+
+  if (resumeParam === false || resumeParam === "new") {
+    let maxId = 0;
+    document.querySelectorAll(".session-meta").forEach((el) => {
+      const match = el.textContent.match(/ID #(\d+)/);
+      if (match) {
+        maxId = Math.max(maxId, parseInt(match[1], 10));
+      }
+    });
+    console.log("MaxID calculated: " + maxId);
+    resumeParam = (maxId + 1).toString();
+  }
+
   tab.state = "terminal";
   tab.session = { type, ssh_target: target, ssh_dir: dir, resume: resumeParam };
   tab.shouldReclaim = shouldReclaim;
@@ -2152,14 +2169,6 @@ function startSession(
       "\r\n\x1b[1;31m[Reconnection failed. Will keep trying...]\x1b[0m\r\n",
     );
     tab.socket.connect();
-  });
-
-  tab.socket.on("session_assigned", (data) => {
-    if (data.tab_id === tab.id && tab.session.resume === "new") {
-      tab.session.resume = data.session_id.toString();
-      saveTabsToStorage();
-      localStorage.setItem("geminiResume", data.session_id.toString());
-    }
   });
 
   tab.socket.on("session-terminated", () => {
