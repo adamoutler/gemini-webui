@@ -879,26 +879,30 @@ function refreshBackendSessionsList(id) {
 }
 
 async function renderLauncher(id) {
-  const config = await (await fetch("/api/config")).json();
   const container = document.getElementById(id + "_instance");
+  if (!container || container.dataset.rendering === "true") return;
+  container.dataset.rendering = "true";
 
-  let warningHtml = "";
-  if (!config.DATA_WRITABLE && !config.TMP_WRITABLE) {
-    warningHtml = `
+  try {
+    const config = await (await fetch("/api/config")).json();
+
+    let warningHtml = "";
+    if (!config.DATA_WRITABLE && !config.TMP_WRITABLE) {
+      warningHtml = `
                     <div class="js-style-31256e">
                         <strong>CRITICAL: No writable storage found.</strong><br>
                         Both /data and /tmp are read-only. Settings and keys cannot be saved.
                         Local sessions will not persist. Please mount a volume or enable tmpfs.
                     </div>`;
-  } else if (!config.DATA_WRITABLE) {
-    warningHtml = `
+    } else if (!config.DATA_WRITABLE) {
+      warningHtml = `
                     <div class="js-style-f80c50">
                         <strong>WARNING:</strong> Persistent storage (/data) is not writable.
                         Using temporary storage. Settings will be lost on restart.
                     </div>`;
-  }
+    }
 
-  container.innerHTML = `
+    container.innerHTML = `
                 <div class="launcher">
                     <h2>Select a Connection</h2>
                     <div class="js-style-a1ebd3">
@@ -920,33 +924,33 @@ async function renderLauncher(id) {
                     </div>
                 </div>`;
 
-  // Initial fetch
-  refreshBackendSessionsList(id);
+    // Initial fetch
+    refreshBackendSessionsList(id);
 
-  const hosts = await (await fetch("/api/hosts")).json();
+    const hosts = await (await fetch("/api/hosts")).json();
 
-  // Set up polling while this launcher is visible
-  const connContainer = document.getElementById(id + "_connections");
-  let draggedCard = null;
-  let placeholder = document.createElement("div");
-  placeholder.className = "drag-placeholder";
+    // Set up polling while this launcher is visible
+    const connContainer = document.getElementById(id + "_connections");
+    let draggedCard = null;
+    let placeholder = document.createElement("div");
+    placeholder.className = "drag-placeholder";
 
-  hosts.forEach((conn, index) => {
-    const card = document.createElement("div");
-    card.className = "connection-card";
-    card.dataset.label = conn.label;
+    hosts.forEach((conn, index) => {
+      const card = document.createElement("div");
+      card.className = "connection-card";
+      card.dataset.label = conn.label;
 
-    const sessionListId = `${id}_sessions_${conn.label.replace(
-      /[^a-z0-9]/gi,
-      "",
-    )}`;
-    const healthId = `${id}_health_${conn.label.replace(/[^a-z0-9]/gi, "")}`;
-    const pulseId = `${id}_pulse_${conn.label.replace(/[^a-z0-9]/gi, "")}`;
+      const sessionListId = `${id}_sessions_${conn.label.replace(
+        /[^a-z0-9]/gi,
+        "",
+      )}`;
+      const healthId = `${id}_health_${conn.label.replace(/[^a-z0-9]/gi, "")}`;
+      const pulseId = `${id}_pulse_${conn.label.replace(/[^a-z0-9]/gi, "")}`;
 
-    let initialIndicator = HostStateManager.getInitialIndicator(conn.label);
-    let initialStatus = HostStateManager.getInitialStatusClass(conn.label);
+      let initialIndicator = HostStateManager.getInitialIndicator(conn.label);
+      let initialStatus = HostStateManager.getInitialStatusClass(conn.label);
 
-    card.innerHTML = `
+      card.innerHTML = `
                     <div class="connection-header">
                         <div class="connection-drag-handle" title="Drag to reorder" draggable="true">⠿</div>
                         <div class="connection-title">
@@ -979,140 +983,146 @@ async function renderLauncher(id) {
                     </div>
                     <div id="${sessionListId}" class="session-list-container"><div class="js-style-2a672e">Loading sessions...</div></div>`;
 
-    const handle = card.querySelector(".connection-drag-handle");
+      const handle = card.querySelector(".connection-drag-handle");
 
-    handle.addEventListener("contextmenu", (e) => e.preventDefault());
+      handle.addEventListener("contextmenu", (e) => e.preventDefault());
 
-    handle.addEventListener("dragstart", (e) => {
-      draggedCard = card;
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", conn.label);
-
-      // Set the drag image to the whole card instead of just the handle
-      const rect = card.getBoundingClientRect();
-      if (e.dataTransfer.setDragImage) {
-        e.dataTransfer.setDragImage(
-          card,
-          e.clientX - rect.left,
-          e.clientY - rect.top,
-        );
-      }
-
-      // Use setTimeout to ensure the "dragging" class is added after the drag image is generated
-      setTimeout(() => {
-        card.classList.add("dragging");
-        card.after(placeholder);
-        placeholder.style.height = card.offsetHeight + "px";
-      }, 0);
-    });
-
-    handle.addEventListener("dragend", () => {
-      if (!draggedCard) return;
-      draggedCard.classList.remove("dragging");
-      if (placeholder.parentNode) {
-        placeholder.replaceWith(draggedCard);
-      }
-      draggedCard = null;
-
-      // Final background update
-      const newLabels = Array.from(
-        connContainer.querySelectorAll(".connection-card"),
-      ).map((c) => c.dataset.label);
-      fetch("/api/hosts/reorder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newLabels),
-      });
-    });
-
-    let dragOffset = { x: 0, y: 0 };
-
-    // Touch support for mobile dragging
-    handle.addEventListener(
-      "touchstart",
-      (e) => {
+      handle.addEventListener("dragstart", (e) => {
         draggedCard = card;
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", conn.label);
+
+        // Set the drag image to the whole card instead of just the handle
         const rect = card.getBoundingClientRect();
-        const touch = e.touches[0];
-        dragOffset.x = touch.clientX - rect.left;
-        dragOffset.y = touch.clientY - rect.top;
-
-        card.style.width = rect.width + "px";
-        card.classList.add("dragging-mobile");
-        card.style.position = "fixed";
-        card.style.left = touch.clientX - dragOffset.x + "px";
-        card.style.top = touch.clientY - dragOffset.y + "px";
-      },
-      { passive: false },
-    );
-
-    handle.addEventListener(
-      "touchmove",
-      (e) => {
-        e.preventDefault();
-        if (!draggedCard) return;
-        const touch = e.touches[0];
-
-        draggedCard.style.left = touch.clientX - dragOffset.x + "px";
-        draggedCard.style.top = touch.clientY - dragOffset.y + "px";
-
-        const target = document.elementFromPoint(touch.clientX, touch.clientY);
-        const overCard = target ? target.closest(".connection-card") : null;
-
-        if (
-          overCard &&
-          overCard !== draggedCard &&
-          !overCard.classList.contains("dragging-mobile")
-        ) {
-          const rect = overCard.getBoundingClientRect();
-          const midpoint = rect.top + rect.height / 2;
-          if (touch.clientY < midpoint) {
-            overCard.before(draggedCard);
-          } else {
-            overCard.after(draggedCard);
-          }
+        if (e.dataTransfer.setDragImage) {
+          e.dataTransfer.setDragImage(
+            card,
+            e.clientX - rect.left,
+            e.clientY - rect.top,
+          );
         }
-      },
-      { passive: false },
-    );
 
-    handle.addEventListener("touchend", (e) => {
-      if (!draggedCard) return;
-      draggedCard.classList.remove("dragging-mobile");
-      draggedCard.style.position = "";
-      draggedCard.style.left = "";
-      draggedCard.style.top = "";
-      draggedCard.style.width = "";
-      draggedCard = null;
-
-      const newLabels = Array.from(
-        connContainer.querySelectorAll(".connection-card"),
-      ).map((c) => c.dataset.label);
-      fetch("/api/hosts/reorder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newLabels),
+        // Use setTimeout to ensure the "dragging" class is added after the drag image is generated
+        setTimeout(() => {
+          card.classList.add("dragging");
+          card.after(placeholder);
+          placeholder.style.height = card.offsetHeight + "px";
+        }, 0);
       });
+
+      handle.addEventListener("dragend", () => {
+        if (!draggedCard) return;
+        draggedCard.classList.remove("dragging");
+        if (placeholder.parentNode) {
+          placeholder.replaceWith(draggedCard);
+        }
+        draggedCard = null;
+
+        // Final background update
+        const newLabels = Array.from(
+          connContainer.querySelectorAll(".connection-card"),
+        ).map((c) => c.dataset.label);
+        fetch("/api/hosts/reorder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newLabels),
+        });
+      });
+
+      let dragOffset = { x: 0, y: 0 };
+
+      // Touch support for mobile dragging
+      handle.addEventListener(
+        "touchstart",
+        (e) => {
+          draggedCard = card;
+          const rect = card.getBoundingClientRect();
+          const touch = e.touches[0];
+          dragOffset.x = touch.clientX - rect.left;
+          dragOffset.y = touch.clientY - rect.top;
+
+          card.style.width = rect.width + "px";
+          card.classList.add("dragging-mobile");
+          card.style.position = "fixed";
+          card.style.left = touch.clientX - dragOffset.x + "px";
+          card.style.top = touch.clientY - dragOffset.y + "px";
+        },
+        { passive: false },
+      );
+
+      handle.addEventListener(
+        "touchmove",
+        (e) => {
+          e.preventDefault();
+          if (!draggedCard) return;
+          const touch = e.touches[0];
+
+          draggedCard.style.left = touch.clientX - dragOffset.x + "px";
+          draggedCard.style.top = touch.clientY - dragOffset.y + "px";
+
+          const target = document.elementFromPoint(
+            touch.clientX,
+            touch.clientY,
+          );
+          const overCard = target ? target.closest(".connection-card") : null;
+
+          if (
+            overCard &&
+            overCard !== draggedCard &&
+            !overCard.classList.contains("dragging-mobile")
+          ) {
+            const rect = overCard.getBoundingClientRect();
+            const midpoint = rect.top + rect.height / 2;
+            if (touch.clientY < midpoint) {
+              overCard.before(draggedCard);
+            } else {
+              overCard.after(draggedCard);
+            }
+          }
+        },
+        { passive: false },
+      );
+
+      handle.addEventListener("touchend", (e) => {
+        if (!draggedCard) return;
+        draggedCard.classList.remove("dragging-mobile");
+        draggedCard.style.position = "";
+        draggedCard.style.left = "";
+        draggedCard.style.top = "";
+        draggedCard.style.width = "";
+        draggedCard = null;
+
+        const newLabels = Array.from(
+          connContainer.querySelectorAll(".connection-card"),
+        ).map((c) => c.dataset.label);
+        fetch("/api/hosts/reorder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newLabels),
+        });
+      });
+
+      card.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        if (!draggedCard || draggedCard === card) return;
+
+        const rect = card.getBoundingClientRect();
+        const midpoint = rect.top + rect.height / 2;
+        if (e.clientY < midpoint) {
+          card.before(placeholder);
+        } else {
+          card.after(placeholder);
+        }
+      });
+
+      connContainer.appendChild(card);
+      setTimeout(() => {
+        fetchSessions(id, conn, sessionListId, false, true); // Use cache first
+      }, index * 500);
     });
-
-    card.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      if (!draggedCard || draggedCard === card) return;
-
-      const rect = card.getBoundingClientRect();
-      const midpoint = rect.top + rect.height / 2;
-      if (e.clientY < midpoint) {
-        card.before(placeholder);
-      } else {
-        card.after(placeholder);
-      }
-    });
-
-    connContainer.appendChild(card);
-    setTimeout(() => {
-      fetchSessions(id, conn, sessionListId, false, true); // Use cache first
-    }, index * 500);
-  });
+  } finally {
+    delete container.dataset.rendering;
+  }
 }
 
 async function terminateBackendSession(launcherTabId, tabId) {
@@ -1310,15 +1320,19 @@ function getGlobalSocket() {
       const activeTab = tabs.find((t) => t.id === activeTabId);
       if (activeTab && activeTab.state === "launcher") {
         const id = activeTab.id;
-        const refreshBtn = document.getElementById(`${id}_backend_sessions`);
-        if (refreshBtn && payload && payload.host) {
+        const container = document.getElementById(id + "_instance");
+        if (
+          container &&
+          container.querySelector(".launcher") &&
+          payload &&
+          payload.host
+        ) {
           const conn = payload.host;
           const sessionListId = `${id}_sessions_${conn.label.replace(
             /[^a-z0-9]/gi,
             "",
           )}`;
           fetchSessions(id, conn, sessionListId, false, true, true);
-          refreshBackendSessionsList(id);
         }
       }
     });
@@ -2411,10 +2425,8 @@ function switchTab(id) {
   if (tab.state === "launcher") {
     // Trigger a refresh and restart polling when switching back to launcher
     // We don't re-render the whole launcher, just the dynamic parts if they exist
-    const refreshBtn = document.getElementById(`${id}_backend_sessions`);
-    if (refreshBtn) {
-      refreshBackendSessionsList(id);
-
+    const container = document.getElementById(id + "_instance");
+    if (container && container.querySelector(".launcher")) {
       fetch("/api/hosts")
         .then((r) => r.json())
         .then((hosts) => {
@@ -2430,7 +2442,6 @@ function switchTab(id) {
 
           if (launcherRefreshInterval) clearInterval(launcherRefreshInterval);
           launcherRefreshInterval = setInterval(() => {
-            refreshBackendSessionsList(id);
             hosts.forEach((conn, index) => {
               const sessionListId = `${id}_sessions_${conn.label.replace(
                 /[^a-z0-9]/gi,
@@ -2442,6 +2453,9 @@ function switchTab(id) {
             });
           }, 10000);
         });
+    } else {
+      // If the launcher was not fully rendered (e.g. previous fetch failed), render it now.
+      renderLauncher(id);
     }
   }
 
