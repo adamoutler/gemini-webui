@@ -36,7 +36,20 @@ pipeline {
         stage('Build Image') {
             steps {
                 sh 'docker pull python:3.11-slim'
-                sh "docker buildx build --load -t gemini-webui:${BUILD_NUMBER} ."
+                // Ensure a local directory exists for buildx caching
+                sh 'mkdir -p /tmp/.buildx-cache'
+
+                // Use buildx with local cache targets
+                sh """
+                docker buildx build \\
+                    --load \\
+                    --cache-from=type=local,src=/tmp/.buildx-cache \\
+                    --cache-to=type=local,dest=/tmp/.buildx-cache-new,mode=max \\
+                    -t gemini-webui:${BUILD_NUMBER} .
+                """
+
+                // Rotate the cache to prevent it from growing indefinitely
+                sh "rm -rf /tmp/.buildx-cache && mv /tmp/.buildx-cache-new /tmp/.buildx-cache"
             }
         }
 
