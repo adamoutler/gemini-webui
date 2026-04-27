@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The `tests/proof` directory is a dedicated storage for empirical verification scripts used to generate 'proof' of functionality and bug fixes. These scripts, mostly written in Python using Playwright and subprocess orchestration, interact with a live instance of the application to capture screenshots, DOM dumps, and diagnostic reports. They are primarily used by QA and automated agents (like @reality-checker) to verify that the 'Definition of Done' for specific project tasks (often tied to Kanban ticket IDs) has been met.
+The `tests/proof` directory is a dedicated storage for empirical verification scripts used to generate 'proof' of functionality and bug fixes. These scripts, mostly written in Python using Playwright and subprocess orchestration, interact with a live instance of the application to capture screenshots, DOM dumps, and diagnostic reports. They are primarily used by QA and automated agents (like reality-checker) to verify that the 'Definition of Done' for specific project tasks (often tied to Kanban ticket IDs) has been met.
 
 ## Internal Dependencies
 
