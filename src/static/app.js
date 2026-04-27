@@ -938,7 +938,9 @@ async function renderLauncher(id) {
                                     <span id="${healthId}" data-status="${initialStatus}" class="js-style-ae2742">${initialIndicator}</span>
                                     <div id="${pulseId}" class="pulse-indicator"></div>
                                 </div>
-                                <span>${conn.label}</span>
+                                <span class="js-style-037e58" title="${
+                                  conn.label
+                                }">${conn.label}</span>
                             </div>
                             <div class="js-style-cf9e3e">${
                               conn.target || "local"

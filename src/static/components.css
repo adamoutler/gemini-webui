@@ -984,6 +984,7 @@ textarea {
   margin-bottom: 2px;
   display: flex;
   align-items: center;
+  min-width: 0;
 }
 
 .js-style-86c2b8 {
