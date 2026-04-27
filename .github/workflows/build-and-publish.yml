@@ -13,13 +13,67 @@ permissions:
   contents: read
 
 jobs:
-  build-arch:
-    name: Build Image ${{ matrix.platform }}
+  setup-arch:
+    name: Detect Architecture
+    runs-on: ubuntu-22.04
+    outputs:
+      native: ${{ steps.detect.outputs.native }}
+      cross: ${{ steps.detect.outputs.cross }}
+    steps:
+      - name: Detect and Map Arch
+        id: detect
+        run: |
+          ARCH=$(uname -m)
+          if [ "$ARCH" = "x86_64" ]; then
+            echo "native=linux/amd64" >> $GITHUB_OUTPUT
+            echo "cross=linux/arm64" >> $GITHUB_OUTPUT
+          elif [ "$ARCH" = "aarch64" ]; then
+            echo "native=linux/arm64" >> $GITHUB_OUTPUT
+            echo "cross=linux/amd64" >> $GITHUB_OUTPUT
+          else
+            echo "Unsupported arch: $ARCH" && exit 1
+          fi
+
+  build-native:
+    name: Build Native Image
+    needs: setup-arch
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Native Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ needs.setup-arch.outputs.native }}
+          push: false
+          load: true
+          tags: gemini-webui:test-native
+          cache-from: type=gha,scope=build-${{ needs.setup-arch.outputs.native }}
+          cache-to: type=gha,mode=max,scope=build-${{ needs.setup-arch.outputs.native }}
+
+      - name: Export Native Image
+        run: docker save gemini-webui:test-native -o test-native.tar
+
+      - name: Upload Native Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-native
+          path: test-native.tar
+          retention-days: 1
+
+  build-cross:
+    name: Build Cross Image
+    needs: setup-arch
     runs-on: ubuntu-22.04
     timeout-minutes: 30
-    strategy:
-      matrix:
-        platform: [linux/amd64, linux/arm64]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,27 +81,32 @@ jobs:
           fetch-depth: 0
 
       - name: Set up QEMU
-        if: ${{ matrix.platform == 'linux/arm64' }}
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Test Build Docker image
+      - name: Build Cross Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: ${{ matrix.platform }}
+          platforms: ${{ needs.setup-arch.outputs.cross }}
           push: false
-          # Only load into local daemon if amd64 (since GitHub runner is amd64)
-          load: ${{ matrix.platform == 'linux/amd64' }}
-          tags: gemini-webui:test-build
-          cache-from: type=gha,scope=build-${{ matrix.platform }}
-          cache-to: type=gha,mode=max,scope=build-${{ matrix.platform }}
+          outputs: type=docker,dest=test-cross.tar
+          tags: gemini-webui:test-cross
+          cache-from: type=gha,scope=build-${{ needs.setup-arch.outputs.cross }}
+          cache-to: type=gha,mode=max,scope=build-${{ needs.setup-arch.outputs.cross }}
+
+      - name: Upload Cross Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-cross
+          path: test-cross.tar
+          retention-days: 1
 
   test-unit:
     name: Unit Tests
-    needs: build-arch
+    needs: build-native
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     steps:
@@ -72,7 +131,7 @@ jobs:
 
   test-e2e:
     name: E2E Tests
-    needs: build-arch
+    needs: build-native
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
@@ -81,24 +140,18 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Download Native Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: image-native
+
+      - name: Load Native Image
+        run: docker load -i test-native.tar
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Load Test Build Docker image from Cache
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64
-          push: false
-          load: true
-          tags: gemini-webui:test-build
-          # Only fetch from cache, do not overwrite max cache created in build-arch
-          cache-from: type=gha,scope=build-linux/amd64
 
       - name: Install dependencies
         run: |
@@ -110,13 +163,13 @@ jobs:
         env:
           DATA_DIR: /tmp/data
           TEST_SKIP_DOCKER_BUILD: "1"
-          TEST_DOCKER_IMAGE: "gemini-webui:test-build"
+          TEST_DOCKER_IMAGE: "gemini-webui:test-native"
         run: |
           PYTHONPATH=. timeout 15m .venv/bin/pytest -s tests/e2e/
 
   test-npm-lint:
     name: Lint & NPM Tests
-    needs: build-arch
+    needs: build-native
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     steps:
@@ -150,13 +203,12 @@ jobs:
 
   publish:
     name: Publish and Deploy
-    needs: [test-unit, test-e2e, test-npm-lint]
+    needs: [test-unit, test-e2e, test-npm-lint, build-cross]
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     permissions:
       contents: read
       packages: write
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -174,11 +226,20 @@ jobs:
           sed -i "s/const CACHE_NAME = .*/const CACHE_NAME = \"gemini-webui-v$NEW_VERSION\";/" src/static/sw.js
           echo "VERSION=$NEW_VERSION" >> $GITHUB_ENV
 
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+      - name: Download Native Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: image-native
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Download Cross Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: image-cross
+
+      - name: Load Images into Docker
+        run: |
+          docker load -i test-native.tar
+          docker load -i test-cross.tar
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -199,15 +260,21 @@ jobs:
             type=ref,event=pr
             type=sha
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: |
-            type=gha,scope=build-linux/amd64
-            type=gha,scope=build-linux/arm64
-          cache-to: type=gha,mode=max
+      - name: Push Architecture-Specific Images
+        run: |
+          docker tag gemini-webui:test-native ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-native
+          docker tag gemini-webui:test-cross ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-cross
+          docker push ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-native
+          docker push ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-cross
+
+      - name: Create and Push Multi-Arch Manifests
+        env:
+          DOCKER_METADATA_OUTPUT_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
+            echo "Creating manifest for $TAG"
+            docker manifest create $TAG \
+              --amend ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-native \
+              --amend ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-cross
+            docker manifest push $TAG
+          done
