@@ -145,19 +145,33 @@ jobs:
         with:
           name: image-native
 
-      - name: Load Native Image
-        run: docker load -i test-native.tar
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-e2e-${{ hashFiles('**/requirements.txt', 'setup_dev.sh') }}
+
+      - name: Parallel Environment Setup
         run: |
+          # 1. Load the native image artifact in the background
+          docker load -i test-native.tar &
+
+          # 2. Pre-pull the SSH fixture over the WAN in the background
+          docker pull lscr.io/linuxserver/openssh-server:latest &
+
+          # 3. Run Python and OS setup in the foreground
           ./setup_dev.sh
-          # Install OS dependencies for Playwright
           .venv/bin/playwright install-deps
+
+          # 4. Block until background Docker tasks finish
+          wait
 
       - name: Run E2E Tests
         env:
