@@ -11,7 +11,7 @@ import secrets
 import hashlib
 import datetime
 from functools import wraps
-from flask import Blueprint, jsonify, request, send_file, send_from_directory
+from flask import Blueprint, jsonify, request, send_file, send_from_directory, session
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import generate_csrf
 
@@ -325,6 +325,10 @@ def import_settings():
 
 @api_bp.route("/api/csrf-token", methods=["GET"])
 def get_csrf_token_endpoint():
+    # Clear the old token to force generation of a fresh, unexpired token
+    if "csrf_token" in session:
+        session.pop("csrf_token", None)
+
     token = generate_csrf()
     response = jsonify({"csrf_token": token})
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
@@ -335,6 +339,8 @@ def get_csrf_token_endpoint():
 
 @api_bp.route("/api/csrf", methods=["GET"])
 def get_csrf_token():
+    if "csrf_token" in session:
+        session.pop("csrf_token", None)
     return jsonify({"csrf_token": generate_csrf()})
 
 
