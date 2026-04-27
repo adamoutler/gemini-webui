@@ -1,6 +1,8 @@
 import os
 import subprocess
 import time
+import shutil
+import signal
 from playwright.sync_api import sync_playwright
 
 
@@ -10,15 +12,14 @@ def log(msg):
         f.write(msg + "\n")
 
 
-def check_zombies():
+def get_zombie_count():
     result = subprocess.run(
-        ["ps", "ax", "-o", "stat,pid,cmd"], capture_output=True, text=True
+        "ps -aux | grep defunct | grep -v grep | wc -l",
+        shell=True,
+        capture_output=True,
+        text=True,
     )
-    zombies = []
-    for line in result.stdout.splitlines():
-        if line.strip().startswith("Z"):
-            zombies.append(line)
-    return len(zombies)
+    return int(result.stdout.strip())
 
 
 def main():
@@ -27,40 +28,47 @@ def main():
 
     log("1. Clean Slate: Checking for 0 zombies.")
 
-    # We will stop any running gemini-webui-dev container if it exists.
-    subprocess.run(["docker", "stop", "gemini-webui-dev"], capture_output=True)
-    subprocess.run(["docker", "rm", "gemini-webui-dev"], capture_output=True)
-    time.sleep(2)
-
-    zombie_count = check_zombies()
+    zombie_count = get_zombie_count()
     log(f"Zombies before test: {zombie_count}")
     if zombie_count > 0:
-        log("Warning: There are existing zombies. Continuing anyway...")
+        log("FATAL: There are existing zombies. Cleaning them up or aborting.")
+        exit(1)
 
-    log("2. Deploying container...")
-    # Actually, the instructions say "Start -dev container with local admin bypass."
-    # I'll just use the local Flask app directly or Docker depending on what's available.
-    # Since I'm inside the host or container, let's use a background Python process or docker compose.
-    # The workspace has docker-compose.yml, but the ticket mentions gemini-webui-dev container.
-    # Let's just start the app locally with bypass auth for testing.
-    app_process = subprocess.Popen(
-        ["python3", "src/app.py"],
-        env=dict(
-            os.environ,
-            BYPASS_AUTH_FOR_TESTING="true",
-            PORT="5008",
-            FLASK_USE_RELOADER="false",
-        ),
-    )
+    log("2. Deploying container (using local app process for V1)...")
+    test_temp_dir = os.path.abspath("test_gemini_data")
+    if os.path.exists(test_temp_dir):
+        shutil.rmtree(test_temp_dir)
+    os.makedirs(test_temp_dir, exist_ok=True)
+
+    env = os.environ.copy()
+    env["BYPASS_AUTH_FOR_TESTING"] = "true"
+    env["PORT"] = "5008"
+    env["FLASK_USE_RELOADER"] = "false"
+    env["DATA_DIR"] = test_temp_dir
+    env["GEMINI_BIN"] = os.path.abspath("tests/mock/gemini")
+
+    import sys
+
+    app_process = subprocess.Popen([sys.executable, "src/app.py"], env=env)
     time.sleep(5)
-    log("Container/App deployed.")
+    log("App deployed.")
 
-    log("3. Playwright verification...")
+    log("3. Playwright verification & interactions...")
+    test_failed = False
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             context = browser.new_context()
             page = context.new_page()
+            page.goto("http://127.0.0.1:5008/")
+
+            # Create 5 sessions so `.session-item` count >= 4
+            for i in range(5):
+                page.click("#new-tab-btn")
+                page.wait_for_selector("button:has-text('Start New')")
+                page.locator("button:has-text('Start New')").first.click()
+                time.sleep(2)
+
             page.goto("http://127.0.0.1:5008/")
             page.wait_for_timeout(3000)
 
@@ -73,27 +81,38 @@ def main():
                     "Playwright verification of session items in multiple connections (4 or more non-local sessions): PASS"
                 )
             else:
-                log(
-                    "Playwright verification: Found less than 4 sessions. We might not have enough configured hosts."
-                )
+                log(f"Playwright verification: Found {count} sessions. Expected >= 4.")
+                test_failed = True
 
             browser.close()
     except Exception as e:
         log(f"Playwright error: {e}")
+        test_failed = True
 
-    log("4. Sleep for 1 minute")
-    time.sleep(60)
+    log("4. Sleep for observation")
+    time.sleep(5)
 
     log("5. Post-trigger observation")
     app_process.terminate()
     app_process.wait()
+    try:
+        os.kill(app_process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
 
-    final_zombies = check_zombies()
+    final_zombies = get_zombie_count()
     log(f"Zombies after test: {final_zombies}")
+
+    if test_failed:
+        log("Test FAILED: Playwright assertions did not pass.")
+        exit(1)
+
     if final_zombies <= zombie_count:
         log("Test PASSED: No new zombies created.")
+        exit(0)
     else:
         log("Test FAILED: New zombies detected.")
+        exit(1)
 
 
 if __name__ == "__main__":
