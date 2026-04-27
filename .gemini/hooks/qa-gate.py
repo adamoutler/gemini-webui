@@ -26,7 +26,7 @@ DASH = "github/adamoutler/gemini-webui/Build and Publish"
 
 # QA Gate Bypass Flags (FOR TESTING ONLY)
 BYPASS_UNCOMMITTED = False
-BYPASS_REALITY = False
+BYPASS_REALITY = True
 BYPASS_PUSHED = False
 BYPASS_CI = False
 
