@@ -10,20 +10,37 @@ function escapeHtml(str) {
 function filterTerminalFluff(text) {
   if (!text) return "";
 
-  // Replace box-drawing and block characters with spaces
-  let filtered = text.replace(/[\u2500-\u259F]/g, " ");
+  let lines = text.split("\n");
 
-  // Process line by line to remove specific terminal status bars and trailing spaces
-  let lines = filtered.split("\n");
-  lines = lines
-    .filter((line) => {
-      // Exclude the bottom status bar and prompt hints
-      if (line.includes("workspace (") && line.includes("branch:"))
-        return false;
-      if (line.includes("Shift+Tab to accept edits")) return false;
-      return true;
-    })
-    .map((line) => line.replace(/[ \t]+$/, "")); // Trim trailing spaces on every line
+  lines = lines.map((line) => {
+    // Exclude the bottom status bar and prompt hints
+    if (line.includes("workspace (") && line.includes("branch:")) return null;
+    if (line.includes("Shift+Tab to accept edits")) return null;
+
+    // If the line consists entirely of box-drawing chars and whitespace,
+    // and contains at least one box-drawing char, it's a pure border line. Drop it.
+    if (/^[\u2500-\u259F \t\r]+$/.test(line) && /[\u2500-\u259F]/.test(line)) {
+      return null;
+    }
+
+    // Replace remaining box-drawing and block characters with empty string
+    let cleaned = line.replace(/[\u2500-\u259F]/g, "");
+
+    // Trim trailing spaces and carriage returns
+    return cleaned.replace(/[ \t\r]+$/, "");
+  });
+
+  // Filter out the dropped lines
+  lines = lines.filter((line) => line !== null);
+
+  // Remove empty lines from the start
+  while (lines.length > 0 && lines[0] === "") {
+    lines.shift();
+  }
+  // Remove empty lines from the end
+  while (lines.length > 0 && lines[lines.length - 1] === "") {
+    lines.pop();
+  }
 
   return lines.join("\n");
 }
