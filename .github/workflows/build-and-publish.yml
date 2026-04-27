@@ -130,10 +130,14 @@ jobs:
           PYTHONPATH=. .venv/bin/pytest -s tests/unit/
 
   test-e2e:
-    name: E2E Tests
+    name: E2E Tests (Shard ${{ matrix.shard }}/4)
     needs: build-native
     runs-on: ubuntu-22.04
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -169,6 +173,7 @@ jobs:
           # 3. Run Python and OS setup in the foreground
           ./setup_dev.sh
           .venv/bin/playwright install-deps
+          .venv/bin/pip install pytest-split
 
           # 4. Block until background Docker tasks finish
           wait
@@ -179,7 +184,7 @@ jobs:
           TEST_SKIP_DOCKER_BUILD: "1"
           TEST_DOCKER_IMAGE: "gemini-webui:test-native"
         run: |
-          PYTHONPATH=. timeout 15m .venv/bin/pytest -s tests/e2e/
+          PYTHONPATH=. timeout 15m .venv/bin/pytest -s tests/e2e/ --splits 4 --group ${{ matrix.shard }}
 
   test-npm-lint:
     name: Lint & NPM Tests
