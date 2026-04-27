@@ -1062,6 +1062,7 @@ textarea {
   width: 14px;
   height: 14px;
   margin-right: 8px;
+  flex-shrink: 0;
 }
 
 .js-style-7160a4 {
