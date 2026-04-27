@@ -16,12 +16,13 @@ def docker_server(tmp_path, playwright):
     project_root = os.path.dirname(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     )
-    image_name = "gemwebui-test-image"
+    image_name = os.environ.get("TEST_DOCKER_IMAGE", "gemwebui-test-image")
 
     # 1. build and launch a fresh container
-    subprocess.run(
-        ["docker", "build", "-t", image_name, "."], cwd=project_root, check=True
-    )
+    if not os.environ.get("TEST_SKIP_DOCKER_BUILD"):
+        subprocess.run(
+            ["docker", "build", "-t", image_name, "."], cwd=project_root, check=True
+        )
 
     container_name = f"gemwebui-test-{port}"
 
