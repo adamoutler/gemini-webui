@@ -11,5 +11,5 @@ The `tests/proof` directory is a dedicated storage for empirical verification sc
 
 ## External Dependencies
 
-- **QA and Automated Agents**: Used heavily by `@reality-checker` and QA processes.
+- **QA and Automated Agents**: Used heavily by `reality-checker` and QA processes.
 - **Documentation**: Produces artifacts that are stored in documentation and public static directories (`docs/qa-images/`, `public/qa-screenshots/`).
