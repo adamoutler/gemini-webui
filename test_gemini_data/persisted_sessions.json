@@ -1,8 +1,16 @@
 {
   "tab_1777235115933": {
     "tab_id": "tab_1777235115933",
-    "title": "\u25c7  Ready (workspace)                                                            ",
+    "title": "",
     "ssh_target": "",
+    "ssh_dir": "",
+    "user_id": "admin",
+    "resume": "new"
+  },
+  "tab_123456789": {
+    "tab_id": "tab_123456789",
+    "title": "",
+    "ssh_target": "localhost",
     "ssh_dir": "",
     "user_id": "admin",
     "resume": "new"
