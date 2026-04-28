@@ -1411,7 +1411,7 @@ async function fetchSessions(
     if (!useCache || isPolling) {
       debugLog("ENTERED IF BLOCK");
       try {
-        HostStateManager.updateHealth(tabId, conn.label, !data.error, true);
+        HostStateManager.updateHealth(tabId, conn.label, !data.error, false);
       } catch (e) {
         debugLog("INNER ERROR: " + e.stack);
       }
@@ -1432,7 +1432,7 @@ async function fetchSessions(
 
       if (!useCache || isPolling) {
         try {
-          HostStateManager.updateHealth(tabId, conn.label, false, true);
+          HostStateManager.updateHealth(tabId, conn.label, false, false);
         } catch (e) {
           debugLog("INNER ERROR: " + e.stack);
         }
@@ -1549,7 +1549,7 @@ async function fetchSessions(
   } catch (e) {
     if (!useCache || isPolling) {
       debugLog("ENTERED IF BLOCK");
-      HostStateManager.updateHealth(tabId, conn.label, false, true);
+      HostStateManager.updateHealth(tabId, conn.label, false, false);
     }
     console.error(e);
   }
