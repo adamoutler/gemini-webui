@@ -1691,6 +1691,7 @@ function startSession(
   // }
 
   tab.term.open(termDiv);
+  fitTerminal(tab);
 
   tab.term.element.addEventListener("copy", (e) => {
     const selection = tab.term.getSelection();
@@ -1709,6 +1710,9 @@ function startSession(
       tab.webglAddon.onContextLoss(() => {
         console.warn("WebGL Context lost, disposing addon");
         tab.webglAddon.dispose();
+        if (tab.term) {
+          tab.term.refresh(0, tab.term.rows - 1);
+        }
       });
     } else if (typeof WebglAddon !== "undefined") {
       debugLog("WebGL addon explicitly disabled or test environment detected");
@@ -1755,6 +1759,18 @@ function startSession(
 
         const deltaScroll = proxy.scrollTop - lastScrollTop;
         const deltaLines = Math.round(deltaScroll / rowHeight);
+
+        // If the browser resets scrollTop abruptly (e.g., backgrounding PWA), recenter without scrolling
+        if (Math.abs(deltaScroll) > 10000) {
+          isSyncing = true;
+          proxy.scrollTop = 50000;
+          lastScrollTop = 50000;
+          selectionOverlay.style.top = proxy.scrollTop + "px";
+          setTimeout(() => {
+            isSyncing = false;
+          }, 10);
+          return;
+        }
 
         if (deltaLines !== 0) {
           if (tab.term.buffer.active.type === "alternate") {
@@ -2359,12 +2375,19 @@ function fitTerminal(tab) {
   const oldCols = tab.term.cols;
   const oldRows = tab.term.rows;
   try {
-    tab.fitAddon.fit();
-    if (tab.term.cols !== oldCols || tab.term.rows !== oldRows) {
-      if (tab.socket && tab.socket.connected) {
-        tab.socket.emit("resize", { cols: tab.term.cols, rows: tab.term.rows });
-      }
-    }
+    requestAnimationFrame(() => {
+      try {
+        tab.fitAddon.fit();
+        if (tab.term.cols !== oldCols || tab.term.rows !== oldRows) {
+          if (tab.socket && tab.socket.connected) {
+            tab.socket.emit("resize", {
+              cols: tab.term.cols,
+              rows: tab.term.rows,
+            });
+          }
+        }
+      } catch (e) {}
+    });
   } catch (e) {
     // Silently ignore fit errors during initialization (e.g. xterm-addon-fit dimensions getter throws)
   }
