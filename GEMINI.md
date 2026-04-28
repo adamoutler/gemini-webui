@@ -45,25 +45,3 @@ When resuming work or onboarding new agents:
 2.  Maintain the established pattern of modularity—if a new feature is added, create a corresponding route in `src/routes/` and document it.
 3.  Always verify that `pytest` passes before pushing changes.
 4.  The job isn't done until the commit/push, and related tickets are closed. Don't wait or ask for permission to do these things.
-
-## 📋 Ticket Transition & QA Gate Expectations
-
-When you transition a ticket to done (via `complete_work` or `transition_ticket`), expect the following:
-
-1. **Immediate Feedback**: You will receive a certification report from the `reality-checker` in the `additional_context`.
-2. **Kanban Updates**: The kanban ticket will have a duplicate copy of this same information.
-3. **Closing Requirements**: The instructions within the ticket will contain exactly what is required for you to close the ticket.
-4. **Evaluation**: The `reality-checker` will receive your comment when you `update_ticket` or `complete_work` and evaluate it as part of the checks.
-
-**Professional Communication Protocol:**
-
-- Act professionally. Do not use excessive exclamation points or overly enthusiastic formatting (e.g., "READY!!!111!!1one!shift+1!!!11!exclamation point!").
-- Treat the interaction like a conversation with a strict coworker who demands pictures and logs.
-- Keep it concise: "I have provided the following evidence: ./docs/qa/myfile.md and ./docs/qa/myfile.png."
-
-**Mandatory Checklist for Completion:**
-
-1. Commit your changes.
-2. Push to the remote branch.
-3. Pass all CI checks.
-4. Provide the necessary certification materials (screenshots, logs, etc.) to prove the work is completed.
