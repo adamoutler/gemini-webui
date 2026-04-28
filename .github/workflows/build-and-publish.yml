@@ -20,6 +20,11 @@ jobs:
       native: ${{ steps.detect.outputs.native }}
       cross: ${{ steps.detect.outputs.cross }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - name: Detect and Map Arch
         id: detect
         run: |
@@ -33,11 +38,16 @@ jobs:
           else
             echo "Unsupported arch: $ARCH" && exit 1
           fi
-          echo "=========================================================="
-          echo "CI/CD PIPELINE VALIDATION IS SUCCESSFUL"
-          echo "E2E Tests: 100% Passed. Unit Tests: 100% Passed."
-          echo "All checks completed successfully for this build."
-          echo "=========================================================="
+
+      - name: Set up Node.js for QA Gate Tests
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Run NPM Tests for Genuine QA Gate Validation
+        run: |
+          npm ci || npm install
+          npm run test
 
   build-native:
     name: Build Native Image
