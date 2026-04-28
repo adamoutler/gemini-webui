@@ -326,6 +326,7 @@ def import_settings():
 @api_bp.route("/api/csrf-token", methods=["GET"])
 def get_csrf_token_endpoint():
     from flask import g
+
     # Clear the old token to force generation of a fresh, unexpired token
     if "csrf_token" in session:
         session.pop("csrf_token", None)
@@ -343,6 +344,7 @@ def get_csrf_token_endpoint():
 @api_bp.route("/api/csrf", methods=["GET"])
 def get_csrf_token():
     from flask import g
+
     if "csrf_token" in session:
         session.pop("csrf_token", None)
     if hasattr(g, "csrf_token"):
