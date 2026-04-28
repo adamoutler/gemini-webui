@@ -49,6 +49,14 @@ jobs:
           npm ci || npm install
           npm run test
 
+      - name: Run Python E2E Tests for Genuine QA Gate Validation
+        run: |
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip install pytest playwright pytest-timeout pytest-base-url
+          playwright install --with-deps chromium
+          PYTHONPATH=. timeout 15m pytest -s tests/e2e/test_get_sessions_timeout.py
+
   build-native:
     name: Build Native Image
     needs: setup-arch
