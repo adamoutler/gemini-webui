@@ -5,7 +5,7 @@ echo  "${input}">> /tmp/input.json
 
 OWNER="adamoutler"
 REPO="gemini-webui"
-sleep 10
+sleep 2
 
 # Use the wait endpoint to ensure we have waited for current build.
 curl -N -s --max-time 60 "https://dash.hackedyour.info/api/wait?provider=github&owner=${OWNER}&repo=${REPO}" &>/dev/null | tail -n 1
@@ -19,7 +19,7 @@ if [ "$CI_STATUS" = "failed" ] || [ "$CI_STATUS" = "failure" ]; then
 #      '{"decision": "deny", "reason": "CI failed - build must be fixed before continuing"}'
 
     jq -n -c --arg status "$CI_STATUS" --arg logs "$LAST_LINES" \
-      '{"decision": "deny", "reason":"❌ CI/CD FAILURE - Agent may not stop.", "hookSpecificOutput": {"hookEventName": "AfterTool", "additionalContext": "CRITICAL ALERT: The CI/CD build has FAILED. Per your core mandates, you MUST halt all current tasks, immediately fetch the logs, and fix the broken build. A broken build is an emergency.\nLast 30 lines of log:\n\($logs)\n❌ CI results: \($status)"}}'
+      '{"decision": "deny", "reason":"❌ CI/CD FAILURE - Agent may not stop. A broken build is a critical emergency. Stop other activities, view the dash logs, and troubleshoot.", "hookSpecificOutput": {"hookEventName": "AfterTool", "additionalContext": "CRITICAL ALERT: The CI/CD build has FAILED. Per your core mandates, you MUST halt all current tasks, immediately fetch the logs, and fix the broken build. A broken build is an emergency.\nLast 30 lines of log:\n\($logs)\n❌ CI results: \($status)"}}'
 else
     jq -n -c --arg status "$CI_STATUS" \
       '{"decision": "allow", "hookSpecificOutput": {"hookEventName": "AfterTool", "additionalContext": "CI results: \($status)"}}'
