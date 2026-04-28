@@ -1257,6 +1257,7 @@ function getGlobalSocket() {
         console.debug("Global socket CSRF token expired. Refreshing token...");
         const newToken = await refreshCsrfToken();
         globalSocket.auth = { csrf_token: newToken };
+        globalSocket.disconnect();
         globalSocket.connect();
       }
     });
@@ -1411,7 +1412,7 @@ async function fetchSessions(
     if (!useCache || isPolling) {
       debugLog("ENTERED IF BLOCK");
       try {
-        HostStateManager.updateHealth(tabId, conn.label, !data.error, true);
+        HostStateManager.updateHealth(tabId, conn.label, !data.error, false);
       } catch (e) {
         debugLog("INNER ERROR: " + e.stack);
       }
@@ -1432,7 +1433,7 @@ async function fetchSessions(
 
       if (!useCache || isPolling) {
         try {
-          HostStateManager.updateHealth(tabId, conn.label, false, true);
+          HostStateManager.updateHealth(tabId, conn.label, false, false);
         } catch (e) {
           debugLog("INNER ERROR: " + e.stack);
         }
@@ -1549,7 +1550,7 @@ async function fetchSessions(
   } catch (e) {
     if (!useCache || isPolling) {
       debugLog("ENTERED IF BLOCK");
-      HostStateManager.updateHealth(tabId, conn.label, false, true);
+      HostStateManager.updateHealth(tabId, conn.label, false, false);
     }
     console.error(e);
   }
@@ -2098,11 +2099,13 @@ function startSession(
   let disconnectTime = null;
 
   const handleConnect = async () => {
+    console.log("handleConnect called for tab " + tabId);
     disconnectTime = null;
     if (tab.term) {
       tab.term.clear();
     }
     tab.term.write("\r\n\x1b[2m[Connected to server]\x1b[0m\r\n");
+    console.log("Calling updateStatus for tab " + tabId);
     updateStatus(tab.session.ssh_target, tab.session.ssh_dir); // Restore correct status
 
     // Refresh CSRF token on reconnect in case server restarted
@@ -2187,6 +2190,7 @@ function startSession(
       }
       const newToken = await refreshCsrfToken();
       tab.socket.auth = { csrf_token: newToken };
+      tab.socket.disconnect();
       tab.socket.connect();
     }
   });
