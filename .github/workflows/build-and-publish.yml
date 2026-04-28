@@ -55,7 +55,7 @@ jobs:
           . .venv/bin/activate
           pip install -r requirements.txt -r requirements-test.txt
           playwright install --with-deps chromium
-          PYTHONPATH=. timeout 15m pytest -s tests/e2e/test_get_sessions_timeout.py
+          PYTHONPATH=. timeout 15m pytest -q tests/unit/ tests/e2e/test_get_sessions_timeout.py
 
   build-native:
     name: Build Native Image
