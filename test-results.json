@@ -1,8 +1,0 @@
-{
-  "suites": 1,
-  "tests": 3,
-  "passes": 3,
-  "failures": 0,
-  "duration": 5.2,
-  "message": "All interactive elements functioning correctly with no regressions."
-}
