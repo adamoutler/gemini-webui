@@ -70,6 +70,9 @@ def test_get_sessions_timeout_auto_recovery(server, tmp_path, playwright):
         "Connection unstable. Local storage cleared. Reloading...", timeout=5000
     )
 
+    os.makedirs("docs/qa-images", exist_ok=True)
+    page.screenshot(path="docs/qa-images/proof_get_sessions_timeout.png")
+
     # Wait for the page to reload
     page.wait_for_load_state("networkidle")
 
