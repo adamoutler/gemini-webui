@@ -23,7 +23,7 @@ import urllib.parse
 SERVER = "https://kanban.hackedyour.info"
 WORKSPACE = "gemwebui"  # Kanban workspace identifier (URL segment)
 # Format: provider/owner/repo/workflow_name
-DASH = "github/adamoutler/gemini-webui/247584841"
+DASH = "github/adamoutler/gemini-webui/Build and Publish"
 
 # QA Gate Bypass Flags (FOR TESTING ONLY)
 BYPASS_UNCOMMITTED = False
