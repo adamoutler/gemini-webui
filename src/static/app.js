@@ -2259,6 +2259,14 @@ function startSession(
 
   tab.socket.on("pty-output", (data) => {
     if (tab.term) {
+      if (data.output.includes("Resume failed, starting new session...")) {
+        console.log("Detected resume failure, clearing geminiResume");
+        localStorage.removeItem("geminiResume");
+        if (tab.session) {
+          tab.session.resume = "new";
+          if (typeof saveTabsToStorage === "function") saveTabsToStorage();
+        }
+      }
       const buffer = tab.term.buffer.active;
       // If the user is at the bottom (or within 2 lines of it), we should ensure they stay at the bottom
       const isAtBottom = buffer.viewportY >= buffer.baseY - 2;

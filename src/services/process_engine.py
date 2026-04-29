@@ -378,7 +378,7 @@ def build_terminal_command(
         if "-r" in gemini_base_cmd:
             remote_cmd += f"{gemini_base_cmd}; "
             remote_cmd += "if [ $? -ne 0 ]; then "
-            remote_cmd += "printf '\\r\\n\\033[1;33mResume failed, starting new session...\\033[0m\\r\\n'; "
+            remote_cmd += "clear; printf '\\r\\n\\033[1;33mResume failed, starting new session...\\033[0m\\r\\n'; "
             remote_cmd += f"{quoted_gemini}; "
             remote_cmd += "if [ $? -ne 0 ]; then "
             remote_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "
@@ -484,7 +484,7 @@ def build_terminal_command(
         if "-r" in gemini_cmd:
             local_cmd += f"{gemini_cmd}; "
             local_cmd += "if [ $? -ne 0 ]; then "
-            local_cmd += "printf '\\r\\n\\033[1;33mResume failed, starting new session...\\033[0m\\r\\n'; "
+            local_cmd += "clear; printf '\\r\\n\\033[1;33mResume failed, starting new session...\\033[0m\\r\\n'; "
             local_cmd += f"{gemini_executable} {gemini_args}; "
             local_cmd += "if [ $? -ne 0 ]; then "
             local_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "
