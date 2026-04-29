@@ -294,8 +294,19 @@ def pty_input(data):
         # Filter out terminal identification responses
         if input_data.startswith("\x1b[?") and input_data.endswith("c"):
             return
-        # os.write will yield to the hub if O_NONBLOCK is set and buffer is full
-        os.write(session_obj.fd, input_data.encode())
+        # WARNING: PTY fd is O_NONBLOCK. os.write may write less than len(encoded)
+        # or raise BlockingIOError if the buffer is full. We must loop to ensure
+        # all pasted text (which can be large) is successfully written without truncating.
+        encoded_data = input_data.encode()
+        bytes_written = 0
+        while bytes_written < len(encoded_data):
+            try:
+                n = os.write(session_obj.fd, encoded_data[bytes_written:])
+                bytes_written += n
+            except (BlockingIOError, InterruptedError):
+                socketio.sleep(0.01)
+            except OSError:
+                break  # e.g. EIO if pty is closed
 
 
 @socketio.on("pty-resize")

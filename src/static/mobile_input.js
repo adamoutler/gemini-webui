@@ -954,18 +954,21 @@ class MobileTerminalController {
           pasteText = "\x1b[200~" + pasteText + "\x1b[201~";
         }
 
-        // Force flush the pasted text immediately
-        const newValue = this.buffer.handleInput(
-          { data: pasteText, inputType: "insertFromPaste" },
-          false,
-          this.ui.proxyInput.value + pasteText,
-          true,
-          this.ui.proxyInput.value,
-          false,
-        );
-        if (newValue !== undefined) {
-          this.ui.proxyInput.value = newValue;
-        }
+        // WARNING: Large pastes on mobile must be chunked (like xterm.js natively does)
+        // to prevent overwhelming the Python PTY backend's O_NONBLOCK os.write buffer,
+        // which truncates large payloads. We chunk at 1024 chars every 10ms.
+        this.ui.proxyInput.value = ""; // Clear proxy buffer to avoid duplicates
+
+        const chunkSize = 1024;
+        let offset = 0;
+        const sendChunk = () => {
+          if (offset >= pasteText.length) return;
+          const chunk = pasteText.slice(offset, offset + chunkSize);
+          this.emitToTerminal(chunk);
+          offset += chunkSize;
+          setTimeout(sendChunk, 10);
+        };
+        sendChunk();
       }
     });
     // Use a click listener on the document to focus our proxy input if they tap anywhere.

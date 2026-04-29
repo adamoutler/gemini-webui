@@ -1592,15 +1592,12 @@ function startSession(
   }
 
   if (resumeParam === false || resumeParam === "new") {
-    let maxId = 0;
-    document.querySelectorAll(".session-meta").forEach((el) => {
-      const match = el.textContent.match(/ID #(\d+)/);
-      if (match) {
-        maxId = Math.max(maxId, parseInt(match[1], 10));
-      }
-    });
-    console.log("MaxID calculated: " + maxId);
-    resumeParam = (maxId + 1).toString();
+    // WARNING: Do NOT attempt to "predict" the session ID here (e.g. maxId + 1).
+    // The gemini backend expects "new" to spawn a new session (-n flag).
+    // If we pass an invalid predicted ID (like 58), the CLI will return "Invalid session identifier"
+    // and refuse to start cleanly. The actual session ID is captured later from the
+    // "Session established. ID: X" output from the terminal.
+    resumeParam = "new";
   }
 
   tab.state = "terminal";
