@@ -639,6 +639,14 @@ def handle_get_management_sessions(*args):
     return active
 
 
+@socketio.on("get_all_sessions")
+def handle_get_all_sessions(data=None):
+    if not env_config.BYPASS_AUTH_FOR_TESTING and not session.get("authenticated"):
+        return {"error": "unauthenticated"}
+    with session_results_cache_lock:
+        return {"status": "success", "cache": dict(session_results_cache)}
+
+
 @socketio.on("get_sessions")
 def handle_get_sessions(data):
     if not env_config.BYPASS_AUTH_FOR_TESTING and not session.get("authenticated"):

@@ -1,0 +1,14 @@
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.6.0 -- /home/adamoutler/gemini-webui/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/adamoutler/gemini-webui
+configfile: pytest.ini
+plugins: playwright-0.7.2, timeout-2.4.0, base-url-2.1.0
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+[1mcollecting ... [0mcollected 5 items / 4 deselected / 1 selected
+
+tests/unit/test_socket.py::test_get_all_sessions [32mPASSED[0m[32m                  [100%][0m
+
+[32m======================= [32m[1m1 passed[0m, [33m4 deselected[0m[32m in 0.25s[0m[32m ========================[0m

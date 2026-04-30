@@ -444,7 +444,7 @@ async function loadTabsFromServer() {
         fitAddon: null,
         socket: null,
         session: null,
-        title: "",
+        title: "+New",
         userNamed: false,
         state: "launcher",
       });
@@ -755,7 +755,7 @@ async function addNewTab(autoResume = false) {
     fitAddon: null,
     socket: null,
     session: null,
-    title: "",
+    title: "+New",
     userNamed: false,
     state: "launcher",
   };
@@ -928,6 +928,24 @@ async function renderLauncher(id) {
     refreshBackendSessionsList(id);
 
     const hosts = await (await fetch("/api/hosts")).json();
+
+    let bulkCache = null;
+    try {
+      const socket = getGlobalSocket();
+      bulkCache = await new Promise((resolve) => {
+        const timeoutTimer = setTimeout(() => resolve(null), 5000);
+        socket.emit("get_all_sessions", {}, (response) => {
+          clearTimeout(timeoutTimer);
+          if (response && response.status === "success") {
+            resolve(response.cache);
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    } catch (e) {
+      console.error("Failed to fetch bulk sessions cache", e);
+    }
 
     // Set up polling while this launcher is visible
     const connContainer = document.getElementById(id + "_connections");
@@ -1116,9 +1134,16 @@ async function renderLauncher(id) {
       });
 
       connContainer.appendChild(card);
-      setTimeout(() => {
-        fetchSessions(id, conn, sessionListId, false, true); // Use cache first
-      }, index * 500);
+      const cacheKey = `${conn.type === "ssh" ? "ssh" : "local"}:${conn.target || "local"}:${conn.dir || ""}`;
+      const preloadedData = bulkCache && bulkCache[cacheKey] ? bulkCache[cacheKey] : null;
+
+      if (preloadedData) {
+        fetchSessions(id, conn, sessionListId, false, true, false, preloadedData);
+      } else {
+        setTimeout(() => {
+          fetchSessions(id, conn, sessionListId, false, true); // Use cache first
+        }, index * 500);
+      }
     });
   } finally {
     delete container.dataset.rendering;
@@ -1350,6 +1375,7 @@ async function fetchSessions(
   forceAll = false,
   useCache = false,
   isPolling = false,
+  preloadedData = null
 ) {
   debugLog(
     "FETCH SESSIONS CALLED WITH useCache=" +
@@ -1362,39 +1388,44 @@ async function fetchSessions(
     forceAll = true;
   }
 
-  const params = {};
-  if (conn.type === "ssh") {
-    params.ssh_target = conn.target;
-    if (conn.dir) params.ssh_dir = conn.dir;
-  }
-  if (useCache) params.cache = true;
-  params.bg = true;
-
+  let data;
   try {
-    debugLog("FETCH SESSIONS START");
-    const data = await new Promise((resolve, reject) => {
-      const socket = getGlobalSocket();
+    if (preloadedData) {
+      data = preloadedData;
+    } else {
+      const params = {};
+      if (conn.type === "ssh") {
+        params.ssh_target = conn.target;
+        if (conn.dir) params.ssh_dir = conn.dir;
+      }
+      if (useCache) params.cache = true;
+      params.bg = true;
 
-      const timeoutTimer = setTimeout(() => {
-        resolve({ error: "Timeout waiting for get_sessions" });
-      }, 5000);
+      debugLog("FETCH SESSIONS START");
+      data = await new Promise((resolve, reject) => {
+        const socket = getGlobalSocket();
 
-      socket.emit("get_sessions", params, (response) => {
-        clearTimeout(timeoutTimer);
-        if (
-          response &&
-          response.error &&
-          !response.output &&
-          !response.sessions
-        ) {
-          resolve(response); // Handle errors explicitly like API did
-        } else if (response) {
-          resolve(response);
-        } else {
-          reject(new Error("No response from WebSocket"));
-        }
+        const timeoutTimer = setTimeout(() => {
+          resolve({ error: "Timeout waiting for get_sessions" });
+        }, 5000);
+
+        socket.emit("get_sessions", params, (response) => {
+          clearTimeout(timeoutTimer);
+          if (
+            response &&
+            response.error &&
+            !response.output &&
+            !response.sessions
+          ) {
+            resolve(response); // Handle errors explicitly like API did
+          } else if (response) {
+            resolve(response);
+          } else {
+            reject(new Error("No response from WebSocket"));
+          }
+        });
       });
-    });
+    }
 
     debugLog("FETCH SESSIONS DATA: ", JSON.stringify(data));
     if (data.status === "fetching") {
