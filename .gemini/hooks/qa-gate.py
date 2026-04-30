@@ -224,8 +224,8 @@ def build_ticket_context(workspace, project_id, work_item_id, commit, ci_job, cu
         if log_data and "log" in log_data:
             full_log = log_data["log"]
             log_lines = full_log.splitlines()
-            # Expanded to 200 lines to ensure test results are fully included
-            dash_view = "\n".join(log_lines[-200:])
+            # Expanded to 1500 lines to ensure test results are fully included
+            dash_view = "\n".join(log_lines[-1500:])
         else:
             dash_view = "No logs returned from Dash."
     else:
