@@ -130,9 +130,8 @@ def test_default_health_indicator_grey(server, playwright):
         'div[data-label="local"] .connection-title span[id$="_health_local"]'
     )
 
-    # It should start grey ⚪
-    expect(local_health).to_have_text("⚪", timeout=2000)
-
+    # It should start grey ⚪ (increase timeout to 8000 because get_all_sessions timeouts after 5s offline)
+    expect(local_health).to_have_text("⚪", timeout=8000)
     # After the 5 second timeout in fetchSessions, it should turn red 🔴
     expect(local_health).to_have_text("🔴", timeout=15000)
     expect(local_health).to_have_attribute("data-status", "error", timeout=15000)
