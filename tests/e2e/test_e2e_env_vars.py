@@ -9,13 +9,25 @@ from playwright.sync_api import sync_playwright, expect
 @pytest.fixture(scope="session")
 def ssh_target_container_no_gemini(test_data_dir, playwright):
     ssh_dir = os.path.join(str(test_data_dir), ".ssh")
-    pub_key_path = os.path.join(ssh_dir, "id_ed25519.pub")
+    pub_key_path = os.path.join(ssh_dir, "id_rsa.pub")
 
     os.makedirs(ssh_dir, exist_ok=True)
-    key_path = os.path.join(ssh_dir, "id_ed25519")
+    key_path = os.path.join(ssh_dir, "id_rsa")
     if not os.path.exists(key_path):
         subprocess.run(
-            ["ssh-keygen", "-t", "ed25519", "-N", "", "-f", key_path, "-C", "test-key"],
+            [
+                "ssh-keygen",
+                "-t",
+                "rsa",
+                "-b",
+                "4096",
+                "-N",
+                "",
+                "-f",
+                key_path,
+                "-C",
+                "test-key",
+            ],
             check=True,
         )
 
