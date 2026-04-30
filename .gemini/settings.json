@@ -21,20 +21,6 @@
   "ui": {
     "inlineThinkingMode": "full"
   },
-  "agents": {
-    "overrides": {
-      "quality_control_agent": {
-        "enabled": false
-      },
-      "kanban_executor": {
-        "enabled": false
-      }
-    }
-  },
-  "hooksConfig": {
-    "enabled": true,
-    "disabled": []
-  },
   "hooks": {
     "BeforeTool": [
       {
