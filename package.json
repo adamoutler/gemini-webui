@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "lint": "npx eslint src/static/app.js",
     "test": "node tests/e2e/test_mobile_alignment.js && node tests/e2e/test_mobile_modifier.js && node tests/e2e/test_mobile_input_buffer.js && node tests/e2e/test_mobile_dictation.js"
   },
   "dependencies": {
