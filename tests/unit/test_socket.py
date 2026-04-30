@@ -108,14 +108,19 @@ def test_update_title_handling():
 @pytest.mark.timeout(60)
 def test_get_all_sessions():
     with app.test_request_context("/"):
-        from src.gateways.terminal_socket import handle_get_all_sessions, session_results_cache, session_results_cache_lock
+        from src.gateways.terminal_socket import (
+            handle_get_all_sessions,
+            session_results_cache,
+            session_results_cache_lock,
+        )
+
         with session_results_cache_lock:
             session_results_cache["test_key"] = {"sessions": "test_data"}
         from flask import session
+
         session["authenticated"] = True
-        
+
         response = handle_get_all_sessions()
         assert response["status"] == "success"
         assert "test_key" in response["cache"]
         assert response["cache"]["test_key"] == {"sessions": "test_data"}
-

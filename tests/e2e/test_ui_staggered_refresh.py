@@ -45,6 +45,10 @@ def staggered_page(server, playwright):
                         socket._isMocked = true;
                         const origEmit = socket.emit.bind(socket);
                         socket.emit = function(event, data, callback) {
+                            if (event === 'get_all_sessions') {
+                                if (callback) callback({ status: "success", cache: {} });
+                                return;
+                            }
                             if (event === 'get_sessions' && data && data.cache === true) {
                                 window.trackSocketEmit(data);
                             }
@@ -68,6 +72,8 @@ def staggered_page(server, playwright):
 
 @pytest.mark.timeout(60)
 def test_staggered_initial_load(staggered_page, playwright):
+    # The frontend now uses `get_all_sessions` to bulk load data.
+    # We intercepted that to return {} so that it falls back to the staggered fetch.
     # Wait for the stagger to complete (3 requests * 500ms = ~1500ms)
     staggered_page.wait_for_timeout(3000)
 

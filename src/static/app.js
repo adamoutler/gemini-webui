@@ -1134,11 +1134,22 @@ async function renderLauncher(id) {
       });
 
       connContainer.appendChild(card);
-      const cacheKey = `${conn.type === "ssh" ? "ssh" : "local"}:${conn.target || "local"}:${conn.dir || ""}`;
-      const preloadedData = bulkCache && bulkCache[cacheKey] ? bulkCache[cacheKey] : null;
+      const cacheKey = `${conn.type === "ssh" ? "ssh" : "local"}:${
+        conn.target || "local"
+      }:${conn.dir || ""}`;
+      const preloadedData =
+        bulkCache && bulkCache[cacheKey] ? bulkCache[cacheKey] : null;
 
       if (preloadedData) {
-        fetchSessions(id, conn, sessionListId, false, true, false, preloadedData);
+        fetchSessions(
+          id,
+          conn,
+          sessionListId,
+          false,
+          true,
+          false,
+          preloadedData,
+        );
       } else {
         setTimeout(() => {
           fetchSessions(id, conn, sessionListId, false, true); // Use cache first
@@ -1375,7 +1386,7 @@ async function fetchSessions(
   forceAll = false,
   useCache = false,
   isPolling = false,
-  preloadedData = null
+  preloadedData = null,
 ) {
   debugLog(
     "FETCH SESSIONS CALLED WITH useCache=" +
