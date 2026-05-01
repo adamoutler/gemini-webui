@@ -56,8 +56,8 @@ export function startSession(
 
   // Back button hijacking: push state so "back" has something to pop
   window.history.pushState({ terminal: true, tabId: tabId }, "");
-  window.window.saveTabsToStorage();
-  window.window.renderTabs();
+  window.saveTabsToStorage();
+  window.renderTabs();
 
   const container = document.getElementById(tabId + "_instance");
   container.innerHTML = "";
@@ -70,7 +70,7 @@ export function startSession(
   termDiv.setAttribute("aria-relevant", "additions");
   container.appendChild(termDiv);
 
-  window.window.switchTab(tabId);
+  window.switchTab(tabId);
 
   if (!document.documentElement.classList.contains("is-mobile")) {
     termDiv.addEventListener(
@@ -574,8 +574,8 @@ export function startSession(
       tab.term.clear();
     }
     tab.term.write("\r\n\x1b[2m[Connected to server]\x1b[0m\r\n");
-    console.log("Calling window.window.updateStatus for tab " + tabId);
-    window.window.updateStatus(tab.session.ssh_target, tab.session.ssh_dir); // Restore correct status
+    console.log("Calling window.updateStatus for tab " + tabId);
+    window.updateStatus(tab.session.ssh_target, tab.session.ssh_dir); // Restore correct status
 
     // Refresh CSRF token on reconnect in case server restarted
     try {
@@ -677,7 +677,7 @@ export function startSession(
 
   tab.socket.on("session-terminated", () => {
     debugLog("Session terminated via tab socket:", tabId);
-    window.window.closeTab(tabId, null, true);
+    window.closeTab(tabId, null, true);
   });
 
   tab.socket.on("session-dropped", () => {
@@ -714,8 +714,8 @@ export function startSession(
         localStorage.removeItem("geminiResume");
         if (tab.session) {
           tab.session.resume = "new";
-          if (typeof window.window.saveTabsToStorage === "function")
-            window.window.saveTabsToStorage();
+          if (typeof window.saveTabsToStorage === "function")
+            window.saveTabsToStorage();
         }
       }
       const buffer = tab.term.buffer.active;
@@ -763,7 +763,7 @@ export function startSession(
       if (tab.socket) {
         tab.socket.emit("update_title", { tab_id: tab.id, title: title });
       }
-      window.window.renderTabs();
+      window.renderTabs();
       updatePageTitle();
     }
 
@@ -824,8 +824,8 @@ export function startSession(
 
     return true;
   });
-  window.window.renderTabs();
-  window.window.switchTab(tabId);
+  window.renderTabs();
+  window.switchTab(tabId);
 }
 
 export function fitTerminal(tab) {
