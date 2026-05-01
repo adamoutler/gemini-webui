@@ -1,8 +1,8 @@
 {
   "tests_passed": 281,
   "tests_failed": 0,
-  "coverage": "90%",
+  "coverage": "91%",
   "performance": { "lcp": "0.5s", "fid": "12ms" },
   "viewport_checks": ["desktop", "mobile", "tablet"],
-  "window_bindings_verified": true
+  "terminal_module_verified": true
 }
