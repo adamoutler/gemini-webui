@@ -22,7 +22,9 @@ def page(server, playwright):
     page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
     page.goto(server, timeout=15000)
     page.wait_for_selector(
-        'button[data-onclick="openSettings()"]', state="visible", timeout=15000
+        'button[data-onclick="openSettings()"]:has-text("Settings")',
+        state="visible",
+        timeout=15000,
     )
     yield page
     context.close()
@@ -44,7 +46,7 @@ def test_ui_launcher_and_sessions(page):
 @pytest.mark.timeout(60)
 def test_ui_local_protection(page):
     """Verify the default 'local' host is protected from deletion."""
-    page.locator('button[data-onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]:has-text("Settings")').click()
     expect(page.locator("#hosts-list")).to_contain_text("local", timeout=5000)
 
     import re

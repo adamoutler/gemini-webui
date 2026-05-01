@@ -120,7 +120,7 @@ def test_ssh_connection_error_bubbling(ssh_test_server, playwright):
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
 
     # Open Settings to add host
-    page.locator('button[data-onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]:has-text("Settings")').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Fill in the new host details with a clearly invalid port to ensure it fails quickly

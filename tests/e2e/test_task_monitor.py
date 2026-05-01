@@ -15,7 +15,7 @@ def test_task_monitor(page, server, test_data_dir):
     page.wait_for_selector(".terminal-instance", timeout=10000)
 
     # Open settings
-    page.locator('button[data-onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]:has-text("Settings")').click()
     page.wait_for_selector("#settings-modal", state="visible")
 
     # Open Task Monitor

@@ -131,7 +131,7 @@ def test_e2e_session_env_vars_injected(
     page.locator("#new-tab-btn").click()
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
 
-    page.locator('button[data-onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]:has-text("Settings")').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     page.locator("#new-host-label").fill("Env Var SSH Test")
@@ -205,7 +205,7 @@ def test_e2e_local_session_env_vars_injected(page, tmp_path, playwright):
     page.locator("#new-tab-btn").click()
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
 
-    page.locator('button[data-onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]:has-text("Settings")').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Edit Local host

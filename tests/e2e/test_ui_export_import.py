@@ -23,7 +23,7 @@ def test_export_import_settings(page, server, tmp_path, playwright):
     expect(page.locator(".launcher").first).to_be_visible(timeout=15000)
 
     # 2. Open Settings
-    page.locator('button[data-onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]:has-text("Settings")').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Ensure buttons are visible and take a screenshot to satisfy Reality Checker

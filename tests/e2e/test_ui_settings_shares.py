@@ -50,7 +50,7 @@ def test_ui_settings_shared_sessions(page, server, playwright):
     page.locator("#share-modal .modal-content span").click()
 
     # 3. Open Settings
-    page.locator('button[data-onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]:has-text("Settings")').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # 4. Verify Session Snapshots section exists and has the item

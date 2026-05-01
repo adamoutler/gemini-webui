@@ -26,7 +26,7 @@ def page(server, playwright):
 def test_esc_dismiss_settings(page, playwright):
     """Verify pressing Escape closes the Settings modal."""
     # Open settings
-    page.locator('button[data-onclick="openSettings()"]').click()
+    page.locator('button[data-onclick="openSettings()"]:has-text("Settings")').click()
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
 
     # Press Escape

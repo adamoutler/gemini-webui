@@ -28,7 +28,7 @@ def test_ui_add_host_with_env_vars(page, server, playwright):
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=15000)
 
     # Open Settings
-    page.locator('button[data-onclick="openSettings()"]').click(
+    page.locator('button[data-onclick="openSettings()"]:has-text("Settings")').click(
         force=True, timeout=10000
     )
     expect(page.locator("#settings-modal")).to_be_visible(timeout=15000)
