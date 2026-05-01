@@ -2,10 +2,11 @@ import {
   initThemeUI,
   copyToClipboard,
   envVarManager,
-  editingHostLabel,
   renderLauncher,
   fetchWithCSRF,
 } from "../../app.js";
+
+let editingHostLabel = null;
 
 export async function openSettings() {
   document.getElementById("settings-modal").style.display = "block";

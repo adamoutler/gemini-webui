@@ -84,7 +84,7 @@ import {
 } from "./js/core/api.js";
 
 // SendPromptToTab functionality needs global state access:
-window.sendPromptToTab = function (tabId, text) {
+export function sendPromptToTab(tabId, text) {
   const tab = globalState.tabs.find((t) => t.id === tabId);
   if (tab && tab.socket && tab.state === "terminal") {
     const input =
@@ -95,7 +95,8 @@ window.sendPromptToTab = function (tabId, text) {
   } else {
     alert("Tab is not connected to a terminal.");
   }
-};
+}
+window.sendPromptToTab = sendPromptToTab;
 
 // PWA Service Worker Registration
 if ("serviceWorker" in navigator) {
@@ -590,6 +591,7 @@ export async function renderLauncher(id) {
 
     // Set up polling while this launcher is visible
     const connContainer = document.getElementById(id + "_connections");
+    if (!connContainer) return;
     let draggedCard = null;
     let placeholder = document.createElement("div");
     placeholder.className = "drag-placeholder";
@@ -1368,19 +1370,21 @@ setTimeout(() => {
     activeTabId = id;
     renderTabs();
     startSession(id, "local", "", "", sessionId, "Test Session", true);
-    const modalHtml = `
-                <div class="friction-modal js-style-224b51" id="friction-modal">
-                    <div class="friction-modal-content">
-                        <h2>Session Disconnected</h2>
-                        <p>The test session has ended or disconnected.</p>
-                        <div class="friction-actions">
-                            <button class="primary" data-onclick="window.location.href='/test-launcher'">Start Fresh Test</button>
-                            <button class="danger" data-onclick="forceReconnect()">Force Reconnect</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-    document.body.insertAdjacentHTML("beforeend", modalHtml);
+    if (!document.getElementById("friction-modal")) {
+      const modalHtml = `
+                  <div class="friction-modal js-style-224b51" id="friction-modal">
+                      <div class="friction-modal-content">
+                          <h2>Session Disconnected</h2>
+                          <p>The test session has ended or disconnected.</p>
+                          <div class="friction-actions">
+                              <button class="primary" data-onclick="window.location.href='/test-launcher'">Start Fresh Test</button>
+                              <button class="danger" data-onclick="forceReconnect()">Force Reconnect</button>
+                          </div>
+                      </div>
+                  </div>
+              `;
+      document.body.insertAdjacentHTML("beforeend", modalHtml);
+    }
     window.forceReconnect = () => {
       document.getElementById("friction-modal").style.display = "none";
       const currentTab = tabs.find((t) => t.id === activeTabId);
@@ -1696,7 +1700,7 @@ export async function fetchWithCSRF(url, options = {}) {
   }
   return response;
 }
-export let editingHostLabel = null; // Prevent iOS/Android pull-to-refresh or page slide when swiping on controls
+// Prevent iOS/Android pull-to-refresh or page slide when swiping on controls
 const mobileControlsContainer = document.getElementById("mobile-controls");
 if (mobileControlsContainer) {
   mobileControlsContainer.addEventListener(

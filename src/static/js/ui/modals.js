@@ -1,11 +1,6 @@
 import { getCustomPrompts, loadPromptsFromServer } from "../core/state.js";
 import { escapeHtml } from "../core/api.js";
-import {
-  SerializeAddon,
-  copyToClipboard,
-  fetchWithCSRF,
-  emitPtyInput,
-} from "../../app.js";
+import { copyToClipboard, fetchWithCSRF, emitPtyInput } from "../../app.js";
 
 export function openFileTransfer() {
   document.getElementById("file-transfer-modal").style.display = "block";

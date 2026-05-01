@@ -30,7 +30,7 @@ def test_deep_link_adhoc(page, server, playwright):
 
     # Check if it attempts to connect (look for terminal output or "Establishing connection")
     # Since it's a fake target, it might show an error eventually, but we check for initial state
-    expect(page.locator(".terminal")).to_be_visible()
+    expect(page.locator(".tab-instance.active .terminal").first).to_be_visible()
     page.screenshot(path="public/qa-screenshots/proof_311_adhoc.png")
 
 
@@ -42,7 +42,7 @@ def test_deep_link_host(page, server, playwright):
 
     # Check if a tab is created with title "local"
     expect(page.locator(".tab.active span").first).to_contain_text("local")
-    expect(page.locator(".terminal")).to_be_visible()
+    expect(page.locator(".tab-instance.active .terminal").first).to_be_visible()
     page.screenshot(path="public/qa-screenshots/proof_311_host.png")
 
 
