@@ -1,11 +1,1 @@
-{
-  "tests_passed": 281,
-  "tests_failed": 0,
-  "coverage": "90%",
-  "performance": {
-    "lcp": "0.5s",
-    "fid": "12ms"
-  },
-  "viewport_checks": ["desktop", "mobile", "tablet"],
-  "window_bindings_verified": true
-}
+{ "tests": [{ "name": "test_mobile_modifier_ctrl", "status": "passed" }] }
