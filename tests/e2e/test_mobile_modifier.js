@@ -87,46 +87,47 @@ global.window = {
   },
 };
 
-const {
-  MobileInputBuffer,
-  MobileInputUI,
-  MobileTerminalController,
-  MobileModifierState,
-} = require("../../src/static/mobile_input.js");
+import("../../src/static/js/mobile/index.js").then((module) => {
+  const {
+    MobileInputBuffer,
+    MobileInputUI,
+    MobileTerminalController,
+    MobileModifierState,
+  } = module;
+  let emitted = [];
+  let modifierState = new MobileModifierState();
+  let bufferWithMod = new MobileInputBuffer(
+    (data) => emitted.push(data),
+    true,
+    modifierState,
+  );
 
-let emitted = [];
-let modifierState = new MobileModifierState();
-let bufferWithMod = new MobileInputBuffer(
-  (data) => emitted.push(data),
-  true,
-  modifierState,
-);
+  // Simulate "tap Ctrl" -> "tap c" sequence
+  let preventDefaultCalled = false;
+  mockCtrlBtn.dispatchEvent({
+    type: "touchstart",
+    preventDefault: () => {
+      preventDefaultCalled = true;
+    },
+  });
+  mockCtrlBtn.dispatchEvent({
+    type: "touchend",
+    preventDefault: () => {},
+  });
 
-// Simulate "tap Ctrl" -> "tap c" sequence
-let preventDefaultCalled = false;
-mockCtrlBtn.dispatchEvent({
-  type: "touchstart",
-  preventDefault: () => {
-    preventDefaultCalled = true;
-  },
+  assert.strictEqual(preventDefaultCalled, true);
+  assert.strictEqual(modifierState.ctrlActive, true);
+  assert.ok(mockCtrlBtn.classes.includes("active"));
+
+  // Tap c
+  let inputRet = bufferWithMod.handleInput({ data: "c" }, false, "c");
+  assert.strictEqual(inputRet, ""); // buffer cleared
+  assert.strictEqual(emitted.length, 1);
+  assert.strictEqual(emitted[0], "\x03"); // \x03 emitted
+  assert.strictEqual(modifierState.ctrlActive, false); // state cleared
+  assert.strictEqual(mockCtrlBtn.classes.includes("active"), false); // active class removed
+
+  console.log(
+    "All unit tests passed. Modifier State Machine verified with full Event Sequence.",
+  );
 });
-mockCtrlBtn.dispatchEvent({
-  type: "touchend",
-  preventDefault: () => {},
-});
-
-assert.strictEqual(preventDefaultCalled, true);
-assert.strictEqual(modifierState.ctrlActive, true);
-assert.ok(mockCtrlBtn.classes.includes("active"));
-
-// Tap c
-let inputRet = bufferWithMod.handleInput({ data: "c" }, false, "c");
-assert.strictEqual(inputRet, ""); // buffer cleared
-assert.strictEqual(emitted.length, 1);
-assert.strictEqual(emitted[0], "\x03"); // \x03 emitted
-assert.strictEqual(modifierState.ctrlActive, false); // state cleared
-assert.strictEqual(mockCtrlBtn.classes.includes("active"), false); // active class removed
-
-console.log(
-  "All unit tests passed. Modifier State Machine verified with full Event Sequence.",
-);

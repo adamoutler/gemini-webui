@@ -63,45 +63,43 @@ global.document = {
   activeElement: null,
 };
 
-const {
-  MobileInputBuffer,
-  MobileInputUI,
-} = require("../../src/static/mobile_input.js");
+import("../../src/static/js/mobile/index.js").then((module) => {
+  const { MobileInputBuffer, MobileInputUI } = module;
+  let emitted = [];
+  let buffer = new MobileInputBuffer((data) => emitted.push(data), true, null);
+  let ui = new MobileInputUI(
+    "test",
+    buffer.handleInput.bind(buffer),
+    buffer.handleKeyDown.bind(buffer),
+  );
 
-let emitted = [];
-let buffer = new MobileInputBuffer((data) => emitted.push(data), true, null);
-let ui = new MobileInputUI(
-  "test",
-  buffer.handleInput.bind(buffer),
-  buffer.handleKeyDown.bind(buffer),
-);
+  // Test Dictation heuristics without spaces so it doesn't instantly flush
+  ui.proxyInput.value = "helloWorldNoSpaces";
+  console.log("Dispatching event...");
+  console.log("Dispatching event...");
+  console.log("Dispatching event...");
+  console.log("Dispatching event...");
+  console.log("Dispatching event...");
+  console.log("Dispatching event...");
+  console.log("Dispatching event...");
+  ui.proxyInput.dispatchEvent({
+    type: "input",
+    inputType: "insertDictationResult",
+    data: "helloWorldNoSpaces",
+  });
+  // Timer should commit after 800ms
+  assert.strictEqual(emitted.length, 0); // Not committed yet
 
-// Test Dictation heuristics without spaces so it doesn't instantly flush
-ui.proxyInput.value = "helloWorldNoSpaces";
-console.log("Dispatching event...");
-console.log("Dispatching event...");
-console.log("Dispatching event...");
-console.log("Dispatching event...");
-console.log("Dispatching event...");
-console.log("Dispatching event...");
-console.log("Dispatching event...");
-ui.proxyInput.dispatchEvent({
-  type: "input",
-  inputType: "insertDictationResult",
-  data: "helloWorldNoSpaces",
+  assert.ok(ui.dictationTimer);
+
+  // Manually trigger the timer callback
+  clearTimeout(ui.dictationTimer);
+  buffer.handleInput({ data: " " }, false, ui.proxyInput.value + " ");
+  ui.proxyInput.value = "";
+
+  assert.strictEqual(emitted.length, 1);
+  assert.strictEqual(emitted[0], "helloWorldNoSpaces ");
+  assert.strictEqual(ui.proxyInput.value, "");
+
+  console.log("Dictation detection and auto-commit heuristics verified.");
 });
-// Timer should commit after 800ms
-assert.strictEqual(emitted.length, 0); // Not committed yet
-
-assert.ok(ui.dictationTimer);
-
-// Manually trigger the timer callback
-clearTimeout(ui.dictationTimer);
-buffer.handleInput({ data: " " }, false, ui.proxyInput.value + " ");
-ui.proxyInput.value = "";
-
-assert.strictEqual(emitted.length, 1);
-assert.strictEqual(emitted[0], "helloWorldNoSpaces ");
-assert.strictEqual(ui.proxyInput.value, "");
-
-console.log("Dictation detection and auto-commit heuristics verified.");

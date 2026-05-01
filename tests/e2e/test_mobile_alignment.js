@@ -105,33 +105,34 @@ global.window = {
   },
 };
 
-const {
-  MobileInputBuffer,
-  MobileInputUI,
-  MobileTerminalController,
-  MobileModifierState,
-} = require("../../src/static/mobile_input.js");
+import("../../src/static/js/mobile/index.js").then((module) => {
+  const {
+    MobileInputBuffer,
+    MobileInputUI,
+    MobileTerminalController,
+    MobileModifierState,
+  } = module;
+  let ui = new MobileInputUI(
+    "testTab",
+    () => {},
+    () => {},
+  );
+  let mockTerm = { element: new MockElement("div", "term") };
 
-let ui = new MobileInputUI(
-  "testTab",
-  () => {},
-  () => {},
-);
-let mockTerm = { element: new MockElement("div", "term") };
+  // Test alignWithCursor calculation
+  ui.alignWithCursor(mockTerm);
 
-// Test alignWithCursor calculation
-ui.alignWithCursor(mockTerm);
+  // top = cursor.top(100) + vv.pageTop(10) = 110
+  // left = cursor.left(50) + vv.pageLeft(5) = 55
+  // With shift right 1 char (cellW=9): left = 59
+  assert.strictEqual(ui.proxyInput.style.left, "59px");
+  assert.strictEqual(ui.proxyInput.style.top, `${100 - 17 / 3}px`);
 
-// top = cursor.top(100) + vv.pageTop(10) = 110
-// left = cursor.left(50) + vv.pageLeft(5) = 55
-// With shift right 1 char (cellW=9): left = 59
-assert.strictEqual(ui.proxyInput.style.left, "59px");
-assert.strictEqual(ui.proxyInput.style.top, `${100 - 17 / 3}px`);
+  // Test with value
+  ui.proxyInput.value = "hello";
+  ui.alignWithCursor(mockTerm);
+  assert.strictEqual(ui.proxyInput.style.left, "59px");
+  assert.strictEqual(ui.proxyInput.style.top, `${100 - 17 / 3}px`);
 
-// Test with value
-ui.proxyInput.value = "hello";
-ui.alignWithCursor(mockTerm);
-assert.strictEqual(ui.proxyInput.style.left, "59px");
-assert.strictEqual(ui.proxyInput.style.top, `${100 - 17 / 3}px`);
-
-console.log("All unit tests passed. Alignment verified.");
+  console.log("All unit tests passed. Alignment verified.");
+});

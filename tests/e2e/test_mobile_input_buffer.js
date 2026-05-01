@@ -87,86 +87,87 @@ global.window = {
   },
 };
 
-const {
-  MobileInputBuffer,
-  MobileInputUI,
-  MobileTerminalController,
-  MobileModifierState,
-} = require("../../src/static/mobile_input.js");
+import("../../src/static/js/mobile/index.js").then((module) => {
+  const {
+    MobileInputBuffer,
+    MobileInputUI,
+    MobileTerminalController,
+    MobileModifierState,
+  } = module;
+  let emitted = [];
+  let modifierState = new MobileModifierState();
+  let bufferWithMod = new MobileInputBuffer(
+    (data) => emitted.push(data),
+    true,
+    modifierState,
+  );
 
-let emitted = [];
-let modifierState = new MobileModifierState();
-let bufferWithMod = new MobileInputBuffer(
-  (data) => emitted.push(data),
-  true,
-  modifierState,
-);
+  // Simulate "tap Ctrl" -> "tap c" sequence
+  let preventDefaultCalled = false;
+  mockCtrlBtn.dispatchEvent({
+    type: "touchstart",
+    preventDefault: () => {
+      preventDefaultCalled = true;
+    },
+  });
+  mockCtrlBtn.dispatchEvent({
+    type: "touchend",
+    preventDefault: () => {},
+  });
 
-// Simulate "tap Ctrl" -> "tap c" sequence
-let preventDefaultCalled = false;
-mockCtrlBtn.dispatchEvent({
-  type: "touchstart",
-  preventDefault: () => {
-    preventDefaultCalled = true;
-  },
+  assert.strictEqual(preventDefaultCalled, true);
+  assert.strictEqual(modifierState.ctrlActive, true);
+  assert.ok(mockCtrlBtn.classes.includes("active"));
+
+  // Tap c
+  let inputRet = bufferWithMod.handleInput({ data: "c" }, false, "c");
+  assert.strictEqual(inputRet, ""); // buffer cleared
+  assert.strictEqual(emitted.length, 1);
+  assert.strictEqual(emitted[0], "\x03"); // \x03 emitted
+  assert.strictEqual(modifierState.ctrlActive, false); // state cleared
+  assert.strictEqual(mockCtrlBtn.classes.includes("active"), false); // active class removed
+
+  // TEST TICKET 3: Passthrough
+  emitted = [];
+  let keydownRet = bufferWithMod.handleKeyDown(
+    { key: "Tab", preventDefault: () => {} },
+    "hello",
+    false,
+  );
+  assert.strictEqual(keydownRet, undefined); // buffer untouched
+  assert.strictEqual(emitted.length, 1);
+  assert.strictEqual(emitted[0], "\t"); // passed directly
+
+  emitted = [];
+  keydownRet = bufferWithMod.handleKeyDown(
+    { key: "Escape", preventDefault: () => {} },
+    "hello",
+    true,
+  ); // even if composing!
+  assert.strictEqual(keydownRet, ""); // buffer cleared
+  assert.strictEqual(emitted.length, 1);
+  assert.strictEqual(emitted[0], "\x1b");
+
+  // Physical keyboard Ctrl-C
+  emitted = [];
+  keydownRet = bufferWithMod.handleKeyDown(
+    { key: "c", ctrlKey: true, preventDefault: () => {} },
+    "hello",
+    false,
+  );
+  assert.strictEqual(keydownRet, ""); // buffer cleared
+  assert.strictEqual(emitted.length, 1);
+  assert.strictEqual(emitted[0], "\x03");
+
+  // Composition
+  emitted = [];
+  keydownRet = bufferWithMod.handleKeyDown(
+    { key: " ", preventDefault: () => {} },
+    "hello",
+    true,
+  );
+  assert.strictEqual(keydownRet, undefined); // do nothing if composing
+  assert.strictEqual(emitted.length, 0);
+
+  console.log("All unit tests passed.");
 });
-mockCtrlBtn.dispatchEvent({
-  type: "touchend",
-  preventDefault: () => {},
-});
-
-assert.strictEqual(preventDefaultCalled, true);
-assert.strictEqual(modifierState.ctrlActive, true);
-assert.ok(mockCtrlBtn.classes.includes("active"));
-
-// Tap c
-let inputRet = bufferWithMod.handleInput({ data: "c" }, false, "c");
-assert.strictEqual(inputRet, ""); // buffer cleared
-assert.strictEqual(emitted.length, 1);
-assert.strictEqual(emitted[0], "\x03"); // \x03 emitted
-assert.strictEqual(modifierState.ctrlActive, false); // state cleared
-assert.strictEqual(mockCtrlBtn.classes.includes("active"), false); // active class removed
-
-// TEST TICKET 3: Passthrough
-emitted = [];
-let keydownRet = bufferWithMod.handleKeyDown(
-  { key: "Tab", preventDefault: () => {} },
-  "hello",
-  false,
-);
-assert.strictEqual(keydownRet, undefined); // buffer untouched
-assert.strictEqual(emitted.length, 1);
-assert.strictEqual(emitted[0], "\t"); // passed directly
-
-emitted = [];
-keydownRet = bufferWithMod.handleKeyDown(
-  { key: "Escape", preventDefault: () => {} },
-  "hello",
-  true,
-); // even if composing!
-assert.strictEqual(keydownRet, ""); // buffer cleared
-assert.strictEqual(emitted.length, 1);
-assert.strictEqual(emitted[0], "\x1b");
-
-// Physical keyboard Ctrl-C
-emitted = [];
-keydownRet = bufferWithMod.handleKeyDown(
-  { key: "c", ctrlKey: true, preventDefault: () => {} },
-  "hello",
-  false,
-);
-assert.strictEqual(keydownRet, ""); // buffer cleared
-assert.strictEqual(emitted.length, 1);
-assert.strictEqual(emitted[0], "\x03");
-
-// Composition
-emitted = [];
-keydownRet = bufferWithMod.handleKeyDown(
-  { key: " ", preventDefault: () => {} },
-  "hello",
-  true,
-);
-assert.strictEqual(keydownRet, undefined); // do nothing if composing
-assert.strictEqual(emitted.length, 0);
-
-console.log("All unit tests passed.");
