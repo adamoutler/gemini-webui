@@ -10,6 +10,7 @@ export const globalState = {
   launcherRefreshInterval: null,
   titleFlashInterval: null,
   originalPageTitle: "Gemini WebUI",
+  currentFontSize: 14,
   mode: new URLSearchParams(window.location.search).get("mode"),
   sessionId: new URLSearchParams(window.location.search).get("session_id"),
   deepHost: new URLSearchParams(window.location.search).get("host"),
