@@ -436,6 +436,7 @@ export const terminalTheme = {
   brightCyan: "#29b8db",
   brightWhite: "#e5e5e5",
 };
+if (typeof window !== "undefined") window.terminalTheme = terminalTheme;
 
 // Initialize CSS variables immediately to reflect any saved theme
 document.documentElement.style.setProperty(

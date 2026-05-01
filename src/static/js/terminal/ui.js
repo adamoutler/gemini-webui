@@ -1,15 +1,5 @@
-const isMobile = document.documentElement.classList.contains("is-mobile");
 import { globalState } from "../core/state.js";
 import { debugLog } from "../core/api.js";
-import {
-  terminalTheme,
-  switchTab,
-  renderTabs,
-  updateStatus,
-  saveTabsToStorage,
-  restartActiveTab,
-  closeTab,
-} from "../../app.js";
 
 export function createTerminalContainer(id) {
   if (document.getElementById(id + "_instance")) return;
@@ -66,8 +56,8 @@ export function startSession(
 
   // Back button hijacking: push state so "back" has something to pop
   window.history.pushState({ terminal: true, tabId: tabId }, "");
-  saveTabsToStorage();
-  renderTabs();
+  window.window.saveTabsToStorage();
+  window.window.renderTabs();
 
   const container = document.getElementById(tabId + "_instance");
   container.innerHTML = "";
@@ -80,9 +70,9 @@ export function startSession(
   termDiv.setAttribute("aria-relevant", "additions");
   container.appendChild(termDiv);
 
-  switchTab(tabId);
+  window.window.switchTab(tabId);
 
-  if (!isMobile) {
+  if (!document.documentElement.classList.contains("is-mobile")) {
     termDiv.addEventListener(
       "contextmenu",
       (e) => {
@@ -135,7 +125,7 @@ export function startSession(
     fontSize: globalState.currentFontSize,
     fontFamily: 'Menlo, Monaco, "Courier New", monospace',
     allowProposedApi: true,
-    theme: terminalTheme,
+    theme: window.terminalTheme,
     scrollOnUserInput: true,
     scrollOnData: false,
   });
@@ -179,7 +169,7 @@ export function startSession(
   }
 
   // Passive Portal Implementation for Native Momentum
-  if (isMobile) {
+  if (document.documentElement.classList.contains("is-mobile")) {
     const proxy = document.createElement("div");
     proxy.className = "mobile-scroll-proxy";
     const content = document.createElement("div");
@@ -584,8 +574,8 @@ export function startSession(
       tab.term.clear();
     }
     tab.term.write("\r\n\x1b[2m[Connected to server]\x1b[0m\r\n");
-    console.log("Calling updateStatus for tab " + tabId);
-    updateStatus(tab.session.ssh_target, tab.session.ssh_dir); // Restore correct status
+    console.log("Calling window.window.updateStatus for tab " + tabId);
+    window.window.updateStatus(tab.session.ssh_target, tab.session.ssh_dir); // Restore correct status
 
     // Refresh CSRF token on reconnect in case server restarted
     try {
@@ -687,7 +677,7 @@ export function startSession(
 
   tab.socket.on("session-terminated", () => {
     debugLog("Session terminated via tab socket:", tabId);
-    closeTab(tabId, null, true);
+    window.window.closeTab(tabId, null, true);
   });
 
   tab.socket.on("session-dropped", () => {
@@ -724,7 +714,8 @@ export function startSession(
         localStorage.removeItem("geminiResume");
         if (tab.session) {
           tab.session.resume = "new";
-          if (typeof saveTabsToStorage === "function") saveTabsToStorage();
+          if (typeof window.window.saveTabsToStorage === "function")
+            window.window.saveTabsToStorage();
         }
       }
       const buffer = tab.term.buffer.active;
@@ -772,7 +763,7 @@ export function startSession(
       if (tab.socket) {
         tab.socket.emit("update_title", { tab_id: tab.id, title: title });
       }
-      renderTabs();
+      window.window.renderTabs();
       updatePageTitle();
     }
 
@@ -823,16 +814,18 @@ export function startSession(
       !e.altKey &&
       e.key.length === 1
     ) {
-      if (isMobile) return false;
+      if (document.documentElement.classList.contains("is-mobile"))
+        return false;
     }
     if (e.type === "keydown" && e.key === "Backspace") {
-      if (isMobile) return false;
+      if (document.documentElement.classList.contains("is-mobile"))
+        return false;
     }
 
     return true;
   });
-  renderTabs();
-  switchTab(tabId);
+  window.window.renderTabs();
+  window.window.switchTab(tabId);
 }
 
 export function fitTerminal(tab) {

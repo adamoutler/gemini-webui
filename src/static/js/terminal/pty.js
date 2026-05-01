@@ -1,4 +1,3 @@
-const isMobile = document.documentElement.classList.contains("is-mobile");
 import { globalState } from "../core/state.js";
 import { fitTerminal } from "./ui.js";
 
