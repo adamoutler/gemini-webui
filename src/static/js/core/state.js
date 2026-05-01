@@ -1,21 +1,20 @@
-// src/static/js/core/state.js
-
-/**
- * Global application state
- * Encapsulated in an object so we can mutate it across modules without 'Assignment to constant variable' errors
- */
-export const state = {
+export const globalState = {
+  isMobile: false,
   tabs: [],
-  activeTabId: null,
   customPrompts: [],
   currentEditPromptIndex: -1,
+  activeTabId: null,
   ctrlActive: false,
   altActive: false,
   initialAutoResumeDone: false,
   launcherRefreshInterval: null,
   titleFlashInterval: null,
   originalPageTitle: "Gemini WebUI",
-  wakeLock: null,
+  mode: new URLSearchParams(window.location.search).get("mode"),
+  sessionId: new URLSearchParams(window.location.search).get("session_id"),
+  deepHost: new URLSearchParams(window.location.search).get("host"),
+  deepTarget: new URLSearchParams(window.location.search).get("target"),
+  deepDir: new URLSearchParams(window.location.search).get("dir"),
 };
 
 export const DEFAULT_PROMPTS = [
@@ -37,105 +36,105 @@ export const DEFAULT_PROMPTS = [
   },
 ];
 
-const urlParams = new URLSearchParams(window.location.search);
-export const URL_PARAMS = {
-  mode: urlParams.get("mode"),
-  sessionId: urlParams.get("session_id"),
-  deepHost: urlParams.get("host"),
-  deepTarget: urlParams.get("target"),
-  deepDir: urlParams.get("dir"),
-};
-
-// Debug Configuration
-window.ENABLE_DEBUG = localStorage.getItem("GEMINI_DEBUG") === "true";
-
-export function setDebug(enabled) {
-  window.ENABLE_DEBUG = !!enabled;
-  if (enabled) {
-    localStorage.setItem("GEMINI_DEBUG", "true");
-    console.log("Verbose debugging enabled. To disable, run: setDebug(false)");
-  } else {
-    localStorage.removeItem("GEMINI_DEBUG");
-    console.log("Verbose debugging disabled. To enable, run: setDebug(true)");
-  }
-}
-window.setDebug = setDebug;
-
-export function debugLog(...args) {
-  if (window.ENABLE_DEBUG) {
-    console.log(...args);
+export async function loadPromptsFromServer() {
+  try {
+    const response = await fetch("/api/prompts");
+    if (response.ok) {
+      globalState.customPrompts = await response.json();
+    }
+  } catch (e) {
+    console.error("Failed to load prompts from server:", e);
+    try {
+      globalState.customPrompts =
+        JSON.parse(localStorage.getItem("custom_prompts")) || [];
+    } catch (err) {
+      globalState.customPrompts = [];
+    }
   }
 }
 
-export const HostStateManager = {
-  states: {},
+export function getCustomPrompts() {
+  return globalState.customPrompts;
+}
 
-  updateState: function (label, isSuccess) {
-    if (!this.states[label]) this.states[label] = { failures: -1 };
+if (typeof window !== "undefined") {
+  window.globalState = globalState;
+  window.DEFAULT_PROMPTS = DEFAULT_PROMPTS;
+  window.loadPromptsFromServer = loadPromptsFromServer;
+  window.getCustomPrompts = getCustomPrompts;
 
-    if (isSuccess) {
-      this.states[label].failures = 0;
-    } else {
-      if (this.states[label].failures < 0) this.states[label].failures = 2;
-      else this.states[label].failures++;
-    }
+  // For backwards compatibility before full ESM conversion
+  Object.defineProperty(window, "tabs", {
+    get: () => globalState.tabs,
+    set: (v) => {
+      globalState.tabs = v;
+    },
+  });
+  Object.defineProperty(window, "activeTabId", {
+    get: () => globalState.activeTabId,
+    set: (v) => {
+      globalState.activeTabId = v;
+    },
+  });
+  Object.defineProperty(window, "customPrompts", {
+    get: () => globalState.customPrompts,
+    set: (v) => {
+      globalState.customPrompts = v;
+    },
+  });
+  Object.defineProperty(window, "ctrlActive", {
+    get: () => globalState.ctrlActive,
+    set: (v) => {
+      globalState.ctrlActive = v;
+    },
+  });
+  Object.defineProperty(window, "altActive", {
+    get: () => globalState.altActive,
+    set: (v) => {
+      globalState.altActive = v;
+    },
+  });
+  Object.defineProperty(window, "currentEditPromptIndex", {
+    get: () => globalState.currentEditPromptIndex,
+    set: (v) => {
+      globalState.currentEditPromptIndex = v;
+    },
+  });
+  Object.defineProperty(window, "initialAutoResumeDone", {
+    get: () => globalState.initialAutoResumeDone,
+    set: (v) => {
+      globalState.initialAutoResumeDone = v;
+    },
+  });
+  Object.defineProperty(window, "launcherRefreshInterval", {
+    get: () => globalState.launcherRefreshInterval,
+    set: (v) => {
+      globalState.launcherRefreshInterval = v;
+    },
+  });
+  Object.defineProperty(window, "titleFlashInterval", {
+    get: () => globalState.titleFlashInterval,
+    set: (v) => {
+      globalState.titleFlashInterval = v;
+    },
+  });
+  Object.defineProperty(window, "originalPageTitle", {
+    get: () => globalState.originalPageTitle,
+    set: (v) => {
+      globalState.originalPageTitle = v;
+    },
+  });
 
-    return this.states[label].failures;
-  },
-
-  getIndicator: function (failures) {
-    if (failures === 0) return "🟢";
-    if (failures === 1) return "🟡";
-    if (failures < 0) return "⚪";
-    return "🔴";
-  },
-
-  getStatusClass: function (failures) {
-    if (failures === 0) return "connected";
-    if (failures === 1) return "degraded";
-    if (failures < 0) return "offline";
-    return "error";
-  },
-
-  renderHealthUI: function (tabId, label, failures) {
-    const indicatorId = `${tabId}_health_${label.replace(/[^a-z0-9]/gi, "")}`;
-    const el = document.getElementById(indicatorId);
-    if (el) {
-      el.innerText = this.getIndicator(failures);
-      el.dataset.status = this.getStatusClass(failures);
-    }
-  },
-
-  triggerPulse: function (tabId, label) {
-    const pulseId = `${tabId}_pulse_${label.replace(/[^a-z0-9]/gi, "")}`;
-    const pulseEl = document.getElementById(pulseId);
-    if (pulseEl) {
-      pulseEl.classList.remove("pulsing", "superbright");
-      void pulseEl.offsetWidth; // trigger reflow
-      requestAnimationFrame(() => {
-        pulseEl.classList.add("pulsing", "superbright");
-      });
-    }
-  },
-
-  updateHealth: function (tabId, label, isSuccess, shouldPulse = false) {
-    const prevClass = this.getInitialStatusClass(label);
-    debugLog("UPDATE HEALTH CALLED WITH " + isSuccess);
-    const failures = this.updateState(label, isSuccess);
-    const newClass = this.getStatusClass(failures);
-    this.renderHealthUI(tabId, label, failures);
-    if (shouldPulse || prevClass !== newClass) {
-      this.triggerPulse(tabId, label);
-    }
-  },
-
-  getInitialIndicator: function (label) {
-    if (!this.states[label]) return "⚪";
-    return this.getIndicator(this.states[label].failures);
-  },
-
-  getInitialStatusClass: function (label) {
-    if (!this.states[label]) return "offline";
-    return this.getStatusClass(this.states[label].failures);
-  },
-};
+  // URL params mappings
+  Object.defineProperty(window, "mode", { get: () => globalState.mode });
+  Object.defineProperty(window, "sessionId", {
+    get: () => globalState.sessionId,
+  });
+  Object.defineProperty(window, "deepHost", {
+    get: () => globalState.deepHost,
+  });
+  Object.defineProperty(window, "deepTarget", {
+    get: () => globalState.deepTarget,
+  });
+  Object.defineProperty(window, "deepDir", { get: () => globalState.deepDir });
+}

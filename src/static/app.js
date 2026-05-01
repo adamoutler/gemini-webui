@@ -1,151 +1,28 @@
-function escapeHtml(str) {
-  if (!str) return "";
-  return String(str)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-function filterTerminalFluff(text) {
-  if (!text) return "";
+import {
+  globalState,
+  DEFAULT_PROMPTS,
+  loadPromptsFromServer,
+  getCustomPrompts,
+} from "./js/core/state.js";
+import {
+  escapeHtml,
+  filterTerminalFluff,
+  setDebug,
+  debugLog,
+  customFetch,
+  originalFetch,
+} from "./js/core/api.js";
 
-  let lines = text.split("\n");
-
-  lines = lines.map((line) => {
-    // Exclude the bottom status bar and prompt hints
-    if (line.includes("workspace (") && line.includes("branch:")) return null;
-    if (line.includes("Shift+Tab to accept edits")) return null;
-
-    // If the line consists entirely of box-drawing chars and whitespace,
-    // and contains at least one box-drawing char, it's a pure border line. Drop it.
-    if (/^[\u2500-\u259F \t\r]+$/.test(line) && /[\u2500-\u259F]/.test(line)) {
-      return null;
-    }
-
-    // Replace remaining box-drawing and block characters with empty string
-    let cleaned = line.replace(/[\u2500-\u259F]/g, "");
-
-    // Trim trailing spaces and carriage returns
-    return cleaned.replace(/[ \t\r]+$/, "");
-  });
-
-  // Filter out the dropped lines
-  lines = lines.filter((line) => line !== null);
-
-  // Remove empty lines from the start
-  while (lines.length > 0 && lines[0] === "") {
-    lines.shift();
-  }
-  // Remove empty lines from the end
-  while (lines.length > 0 && lines[lines.length - 1] === "") {
-    lines.pop();
-  }
-
-  return lines.join("\n");
-}
-window.ENABLE_DEBUG = localStorage.getItem("GEMINI_DEBUG") === "true";
-window.setDebug = function (enabled) {
-  window.ENABLE_DEBUG = !!enabled;
-  if (enabled) {
-    localStorage.setItem("GEMINI_DEBUG", "true");
-    console.log("Verbose debugging enabled. To disable, run: setDebug(false)");
+// SendPromptToTab functionality needs global state access:
+window.sendPromptToTab = function (tabId, text) {
+  const tab = globalState.tabs.find((t) => t.id === tabId);
+  if (tab && tab.socket && tab.state === "terminal") {
+    const input =
+      text.endsWith("\n") || text.endsWith("\r") ? text : text + "\r";
+    tab.socket.emit("pty-input", { input: input });
   } else {
-    localStorage.removeItem("GEMINI_DEBUG");
-    console.log("Verbose debugging disabled. To enable, run: setDebug(true)");
+    alert("Tab is not connected to a terminal.");
   }
-};
-function debugLog(...args) {
-  if (window.ENABLE_DEBUG) {
-    console.log(...args);
-  }
-}
-let isRefreshingToken = false;
-let tokenRefreshSubscribers = [];
-let csrfRefreshAttempts = 0;
-let lastCsrfRefreshTime = 0;
-
-async function refreshCsrfToken() {
-  const now = Date.now();
-  if (now - lastCsrfRefreshTime < 500) {
-    csrfRefreshAttempts++;
-  } else {
-    csrfRefreshAttempts = 0;
-  }
-  lastCsrfRefreshTime = now;
-
-  if (csrfRefreshAttempts > 10) {
-    const details = document.getElementById("connection-issue-details");
-    if (details) details.innerText = "Error: Too many CSRF refresh attempts.";
-    const modal = document.getElementById("connection-issue-modal");
-    if (modal) modal.style.display = "block";
-    throw new Error("Too many CSRF refresh attempts");
-  }
-
-  if (isRefreshingToken) {
-    return new Promise((resolve) => tokenRefreshSubscribers.push(resolve));
-  }
-  isRefreshingToken = true;
-  try {
-    const response = await originalFetch("/api/csrf-token", {
-      cache: "no-store",
-      credentials: "same-origin",
-    });
-    if (!response.ok) throw new Error("Failed to fetch token");
-    const data = await response.json();
-    const newToken = data.csrf_token;
-    const metaTag = document.querySelector('meta[name="csrf-token"]');
-    if (metaTag) metaTag.setAttribute("content", newToken);
-    tokenRefreshSubscribers.forEach((cb) => cb(newToken));
-    return newToken;
-  } finally {
-    isRefreshingToken = false;
-    tokenRefreshSubscribers = [];
-  }
-}
-
-const originalFetch = window.fetch;
-window.fetch = async function () {
-  let currentCsrfToken = document
-    .querySelector('meta[name="csrf-token"]')
-    ?.getAttribute("content");
-  let [resource, config] = arguments;
-  if (config === undefined) {
-    config = {};
-  }
-
-  const injectToken = (token, cfg) => {
-    if (
-      cfg.method &&
-      ["POST", "PUT", "DELETE", "PATCH"].includes(cfg.method.toUpperCase())
-    ) {
-      if (cfg.headers instanceof Headers) {
-        if (token) cfg.headers.set("X-CSRFToken", token);
-      } else {
-        cfg.headers = cfg.headers || {};
-        if (token) cfg.headers["X-CSRFToken"] = token;
-      }
-    }
-  };
-
-  injectToken(currentCsrfToken, config);
-
-  let response = await originalFetch(resource, config);
-
-  if (response.status === 400 || response.status === 403) {
-    try {
-      const clonedResponse = response.clone();
-      const data = await clonedResponse.json();
-      if (data && data.csrf_expired === true && !config.skipCsrfReload) {
-        const newToken = await refreshCsrfToken();
-        injectToken(newToken, config);
-        response = await originalFetch(resource, config);
-      }
-    } catch (e) {
-      // Ignore JSON parse errors for non-JSON responses
-    }
-  }
-  return response;
 };
 
 // PWA Service Worker Registration
@@ -183,76 +60,6 @@ if ("Notification" in window && Notification.permission === "default") {
     { once: true },
   );
 }
-
-let tabs = [];
-const DEFAULT_PROMPTS = [
-  {
-    name: "Explain Code",
-    text: "Please explain the code in the current context.",
-  },
-  {
-    name: "Refactor Code",
-    text: "Suggest improvements and refactor the code in the current context.",
-  },
-  {
-    name: "Summarize File",
-    text: "Provide a high-level summary of the file's purpose and functionality.",
-  },
-  {
-    name: "Gemini Audit",
-    text: "Please run a security audit on the current context.",
-  },
-];
-
-let currentEditPromptIndex = -1;
-let customPrompts = [];
-
-async function loadPromptsFromServer() {
-  try {
-    const response = await fetch("/api/prompts");
-    if (response.ok) {
-      customPrompts = await response.json();
-    }
-  } catch (e) {
-    console.error("Failed to load prompts from server:", e);
-    // Fallback to localStorage for backward compatibility or offline
-    try {
-      customPrompts = JSON.parse(localStorage.getItem("custom_prompts")) || [];
-    } catch (err) {
-      customPrompts = [];
-    }
-  }
-}
-
-function getCustomPrompts() {
-  return customPrompts;
-}
-
-function sendPromptToTab(tabId, text) {
-  const tab = tabs.find((t) => t.id === tabId);
-  if (tab && tab.socket && tab.state === "terminal") {
-    // Ensure it ends with a newline to execute
-    const input =
-      text.endsWith("\n") || text.endsWith("\r") ? text : text + "\r";
-    tab.socket.emit("pty-input", { input: input });
-  } else {
-    alert("Tab is not connected to a terminal.");
-  }
-}
-let activeTabId = null;
-let ctrlActive = false;
-let altActive = false;
-let initialAutoResumeDone = false;
-let launcherRefreshInterval = null;
-let titleFlashInterval = null;
-let originalPageTitle = "Gemini WebUI";
-
-const urlParams = new URLSearchParams(window.location.search);
-const mode = urlParams.get("mode");
-const sessionId = urlParams.get("session_id");
-const deepHost = urlParams.get("host");
-const deepTarget = urlParams.get("target");
-const deepDir = urlParams.get("dir");
 
 const HostStateManager = {
   states: {},
@@ -4659,4 +4466,95 @@ async function killTask(tabId, pid) {
     console.error(`[Task Monitor] Error killing task ${pid}:`, err);
     alert(`Failed to kill task: ${err.message}`);
   }
+}
+
+// Global exports for inline HTML handlers and E2E tests
+if (typeof window !== "undefined") {
+  window.updateWakeLock = updateWakeLock;
+  window.updateHostHealthIndicator = updateHostHealthIndicator;
+  window.updatePageTitle = updatePageTitle;
+  window.loadTabsFromServer = loadTabsFromServer;
+  window.syncTabs = syncTabs;
+  window.createTerminalContainer = createTerminalContainer;
+  window.saveTabsToStorage = saveTabsToStorage;
+  window.loadTabsFromStorage = loadTabsFromStorage;
+  window.recreateTerminalUI = recreateTerminalUI;
+  window.initThemeUI = initThemeUI;
+  window.applyTheme = applyTheme;
+  window.resetTheme = resetTheme;
+  window.updateStatus = updateStatus;
+  window.addNewTab = addNewTab;
+  window.refreshBackendSessionsList = refreshBackendSessionsList;
+  window.renderLauncher = renderLauncher;
+  window.terminateBackendSession = terminateBackendSession;
+  window.terminateAllBackendSessions = terminateAllBackendSessions;
+  window.reclaimBackendSession = reclaimBackendSession;
+  window.getGlobalSocket = getGlobalSocket;
+  window.fetchSessions = fetchSessions;
+  window.parseSessions = parseSessions;
+  window.startSession = startSession;
+  window.fitTerminal = fitTerminal;
+  window.triggerHapticFeedback = triggerHapticFeedback;
+  window.emitPtyInput = emitPtyInput;
+  window.sendToTerminal = sendToTerminal;
+  window.adjustFontSize = adjustFontSize;
+  window.switchTab = switchTab;
+  window.reclaimStolenSession = reclaimStolenSession;
+  window.restartActiveTab = restartActiveTab;
+  window.closeTab = closeTab;
+  window.renderTabs = renderTabs;
+  window.showTabContextMenu = showTabContextMenu;
+  window.parseQuickInput = parseQuickInput;
+  window.saveHost = saveHost;
+  window.quickConnectAction = quickConnectAction;
+  window.closeQuickAddKey = closeQuickAddKey;
+  window.submitQuickAddKey = submitQuickAddKey;
+  window.openSettings = openSettings;
+  window.loadSharedSessions = loadSharedSessions;
+  window.deleteSharedSession = deleteSharedSession;
+  window.viewSharedSession = viewSharedSession;
+  window.closePreviewModal = closePreviewModal;
+  window.loadPublicKey = loadPublicKey;
+  window.copyToClipboard = copyToClipboard;
+  window.copyPublicKey = copyPublicKey;
+  window.copyInstanceSnippet = copyInstanceSnippet;
+  window.rotateInstanceKey = rotateInstanceKey;
+  window.fetchWithCSRF = fetchWithCSRF;
+  window.loadHosts = loadHosts;
+  window.populateHostForm = populateHostForm;
+  window.setHostMode = setHostMode;
+  window.clearHostForm = clearHostForm;
+  window.submitHostForm = submitHostForm;
+  window.removeHost = removeHost;
+  window.loadKeys = loadKeys;
+  window.removeKey = removeKey;
+  window.closeSettings = closeSettings;
+  window.exportSettings = exportSettings;
+  window.importSettings = importSettings;
+  window.savePastedKey = savePastedKey;
+  window.uploadKeyFile = uploadKeyFile;
+  window.openFileTransfer = openFileTransfer;
+  window.closeFileTransfer = closeFileTransfer;
+  window.shareSession = shareSession;
+  window.closeShareModal = closeShareModal;
+  window.confirmShareSession = confirmShareSession;
+  window.copyShareLink = copyShareLink;
+  window.uploadPastedImage = uploadPastedImage;
+  window.uploadWorkspaceFile = uploadWorkspaceFile;
+  window.downloadWorkspaceFile = downloadWorkspaceFile;
+  window.initDesktopContextMenu = initDesktopContextMenu;
+  window.checkInstallationStatus = checkInstallationStatus;
+  window.dismissInstallBanner = dismissInstallBanner;
+  window.openAddPromptModal = openAddPromptModal;
+  window.closeAddPromptModal = closeAddPromptModal;
+  window.openManagePromptsModal = openManagePromptsModal;
+  window.closeManagePromptsModal = closeManagePromptsModal;
+  window.renderPromptsList = renderPromptsList;
+  window.deletePrompt = deletePrompt;
+  window.saveNewPrompt = saveNewPrompt;
+  window.executeDataAction = executeDataAction;
+  window.openTaskMonitor = openTaskMonitor;
+  window.closeTaskMonitor = closeTaskMonitor;
+  window.refreshTaskMonitor = refreshTaskMonitor;
+  window.killTask = killTask;
 }
