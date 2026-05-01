@@ -140,6 +140,7 @@ def custom_mobile_page(custom_server, playwright):
 def test_mobile_ui_exists(mobile_page):
     """Verify that mobile UI is functional."""
     mobile_page.wait_for_selector("#tab-bar", timeout=5000)
+    mobile_page.screenshot(path="public/qa-screenshots/mobile_core_refactor.png")
 
 
 @pytest.mark.timeout(20)

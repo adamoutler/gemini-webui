@@ -17,12 +17,14 @@ def test_ui_tab_management(server, playwright):
 
     # Wait for the app to load and the connection card to be visible
     expect(page.locator(".connection-card").first).to_be_visible(timeout=15000)
+    page.screenshot(path="public/qa-screenshots/desktop_core_refactor.png")
 
     # Click "Start New" on the first connection (Local)
     page.locator('button:has-text("Start New")').first.click()
 
     # Wait for terminal to be active
     expect(page.locator(".tab-instance.active .xterm")).to_be_visible(timeout=15000)
+    page.screenshot(path="public/qa-screenshots/desktop_session_active.png")
 
     # Locate the active tab
     active_tab = page.locator(".tab.active")
