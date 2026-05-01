@@ -69,7 +69,7 @@ def test_ui_autocomplete_dropdown(page, server, playwright):
 
     page.evaluate("""() => {
         const tab = tabs.find(t => t.id === activeTabId);
-        console.log("Autocomplete input check", wsDownloadInput.value, tab ? tab.session.type : "no tab");
+        console.log("Autocomplete input check", document.getElementById("workspace-download-filename").value, tab ? tab.session.type : "no tab");
     }""")
 
     download_input.click()

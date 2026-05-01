@@ -87,7 +87,7 @@ def test_shift_tab_toggle(mobile_page):
     This also serves as a regression check to ensure the on-screen Shift button does not reappear.
     """
     mobile_page.evaluate(
-        "window.lastSentData = null; window.emitPtyInput = (tab, data) => { window.lastSentData = data; };"
+        "window.lastSentData = null; window.sendToTerminal = (data) => { window.lastSentData = data; };"
     )
 
     shift_btn = mobile_page.locator("#shift-toggle")

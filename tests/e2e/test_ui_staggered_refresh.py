@@ -31,33 +31,40 @@ def staggered_page(server, playwright):
     def track_emit(event_data):
         page.session_requests.append(time.time())
 
+    page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.on("request", lambda req: print(f"REQ: {req.url}"))
     page.expose_binding("trackSocketEmit", lambda source, data: track_emit(data))
 
     # We must inject the mock after the page loads but before the scripts run, or right after.
     # Actually, if we expose a binding, we can just patch getGlobalSocket's emit.
     page.add_init_script("""
-        window.addEventListener('DOMContentLoaded', () => {
-            const originalGetGlobalSocket = window.getGlobalSocket;
-            if (originalGetGlobalSocket) {
-                window.getGlobalSocket = function() {
-                    const socket = originalGetGlobalSocket();
-                    if (!socket._isMocked) {
-                        socket._isMocked = true;
-                        const origEmit = socket.emit.bind(socket);
-                        socket.emit = function(event, data, callback) {
-                            if (event === 'get_all_sessions') {
-                                if (callback) callback({ status: "success", cache: {} });
-                                return;
-                            }
-                            if (event === 'get_sessions' && data && data.cache === true) {
-                                window.trackSocketEmit(data);
-                            }
-                            return origEmit(event, data, callback);
-                        };
-                    }
+        let _io;
+        Object.defineProperty(window, 'io', {
+            set: function(val) {
+                console.log("Mocking window.io");
+                _io = function(...args) {
+                    console.log("io() called");
+                    const socket = val(...args);
+                    const origEmit = socket.emit.bind(socket);
+                    socket.emit = function(event, data, callback) {
+                        console.log("socket emit intercepted: " + event);
+                        if (event === 'get_all_sessions') {
+                            if (callback) callback({ status: "success", cache: {} });
+                            return;
+                        }
+                        if (event === 'get_sessions' && data && data.cache === true) {
+                            window.trackSocketEmit(data);
+                        }
+                        return origEmit(event, data, callback);
+                    };
                     return socket;
                 };
-            }
+                Object.assign(_io, val);
+                _io.connect = _io;
+            },
+            get: function() { return _io; },
+            configurable: true
         });
     """)
 
