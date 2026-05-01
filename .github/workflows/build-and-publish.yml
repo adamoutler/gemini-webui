@@ -291,11 +291,24 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      # To enable pushing images to Docker Hub in addition to GitHub Container Registry (ghcr.io),
+      # you must configure two Repository Secrets in your GitHub repository settings:
+      # 1. DOCKERHUB_USERNAME: Your Docker Hub username.
+      # 2. DOCKERHUB_TOKEN: A Docker Hub Personal Access Token with read/write permissions.
+      # If these secrets are not configured, the Docker Hub push steps will fail.
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository }}-dev
+          images: |
+            ghcr.io/${{ github.repository }}-dev
+            ${{ secrets.DOCKERHUB_USERNAME }}/gemini-webui-dev
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=raw,value=${{ env.VERSION }}
@@ -310,14 +323,25 @@ jobs:
           docker push ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-native
           docker push ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-cross
 
+          docker tag gemini-webui:test-native ${{ secrets.DOCKERHUB_USERNAME }}/gemini-webui-dev:${{ github.sha }}-native
+          docker tag gemini-webui:test-cross ${{ secrets.DOCKERHUB_USERNAME }}/gemini-webui-dev:${{ github.sha }}-cross
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/gemini-webui-dev:${{ github.sha }}-native
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/gemini-webui-dev:${{ github.sha }}-cross
+
       - name: Create and Push Multi-Arch Manifests
         env:
           DOCKER_METADATA_OUTPUT_TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           for TAG in $DOCKER_METADATA_OUTPUT_TAGS; do
             echo "Creating manifest for $TAG"
-            docker manifest create $TAG \
-              --amend ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-native \
-              --amend ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-cross
+            if [[ $TAG == ghcr.io/* ]]; then
+              docker manifest create $TAG \
+                --amend ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-native \
+                --amend ghcr.io/${{ github.repository }}-dev:${{ github.sha }}-cross
+            else
+              docker manifest create $TAG \
+                --amend ${{ secrets.DOCKERHUB_USERNAME }}/gemini-webui-dev:${{ github.sha }}-native \
+                --amend ${{ secrets.DOCKERHUB_USERNAME }}/gemini-webui-dev:${{ github.sha }}-cross
+            fi
             docker manifest push $TAG
           done

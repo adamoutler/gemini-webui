@@ -275,6 +275,18 @@ def update_title(data):
         session_manager.update_title(tab_id, title, user_id, user_named)
 
 
+@socketio.on("update_resume")
+def update_resume(data):
+    sid = getattr(request, "sid", None)
+    user_id = session.get("user_id") or (
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+    )
+    tab_id = data.get("tab_id") or session_manager.sid_to_tabid.get(sid)
+    resume = data.get("resume")
+    if tab_id and resume is not None:
+        session_manager.update_resume(tab_id, resume, user_id)
+
+
 @socketio.on("pty-input")
 def pty_input(data):
     from flask import request as socket_request

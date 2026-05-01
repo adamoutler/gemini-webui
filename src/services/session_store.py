@@ -193,6 +193,14 @@ class SessionManager:
                 if self.persistence:
                     self.persistence.add(session)
 
+    def update_resume(self, tab_id, new_resume, user_id=None):
+        with self._lock:
+            session = self.get_session(tab_id, user_id)
+            if session:
+                session.resume = new_resume
+                if self.persistence:
+                    self.persistence.add(session)
+
     def remove_session(self, tab_id, user_id=None):
         import os
 

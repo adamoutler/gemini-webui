@@ -453,8 +453,7 @@ export function startSession(
 
         const urlRegex = /https?:\/\/[^\s"'<>^`]+[^\s"'<>^`.,!?;:]/g;
         const links = [];
-        let match;
-        while ((match = urlRegex.exec(fullText)) !== null) {
+        for (const match of fullText.matchAll(urlRegex)) {
           const uri = match[0];
           const matchStart = match.index;
           const matchEnd = match.index + uri.length;
