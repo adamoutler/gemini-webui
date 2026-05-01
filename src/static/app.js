@@ -1827,30 +1827,31 @@ if (window.appVisualViewport) {
   // Also initialize with the current height
   updateViewport();
 }
-if (mode === "fake" && sessionId) {
-  document.body.classList.add("theme-fake-session");
-  const id = "tab_" + (Date.now() + Math.floor(Math.random() * 1000));
-  const tab = {
-    id,
-    term: null,
-    fitAddon: null,
-    socket: null,
-    session: null,
-    title: "Test Session",
-    state: "terminal",
-  };
-  tabs.push(tab);
+setTimeout(() => {
+  if (mode === "fake" && sessionId) {
+    document.body.classList.add("theme-fake-session");
+    const id = "tab_" + (Date.now() + Math.floor(Math.random() * 1000));
+    const tab = {
+      id,
+      term: null,
+      fitAddon: null,
+      socket: null,
+      session: null,
+      title: "Test Session",
+      state: "terminal",
+    };
+    tabs.push(tab);
 
-  const container = document.createElement("div");
-  container.id = id + "_instance";
-  container.className = "tab-instance active";
-  document.getElementById("terminal-container").appendChild(container);
+    const container = document.createElement("div");
+    container.id = id + "_instance";
+    container.className = "tab-instance active";
+    document.getElementById("terminal-container").appendChild(container);
 
-  activeTabId = id;
-  renderTabs();
-  startSession(id, "local", "", "", sessionId, "Test Session", true);
+    activeTabId = id;
+    renderTabs();
+    startSession(id, "local", "", "", sessionId, "Test Session", true);
 
-  const modalHtml = `
+    const modalHtml = `
                 <div class="friction-modal js-style-224b51" id="friction-modal">
                     <div class="friction-modal-content">
                         <h2>Session Disconnected</h2>
@@ -1862,83 +1863,84 @@ if (mode === "fake" && sessionId) {
                     </div>
                 </div>
             `;
-  document.body.insertAdjacentHTML("beforeend", modalHtml);
+    document.body.insertAdjacentHTML("beforeend", modalHtml);
 
-  window.forceReconnect = () => {
-    document.getElementById("friction-modal").style.display = "none";
-    const currentTab = tabs.find((t) => t.id === activeTabId);
-    if (currentTab && currentTab.socket) {
-      currentTab.socket.connect();
-    }
-  };
+    window.forceReconnect = () => {
+      document.getElementById("friction-modal").style.display = "none";
+      const currentTab = tabs.find((t) => t.id === activeTabId);
+      if (currentTab && currentTab.socket) {
+        currentTab.socket.connect();
+      }
+    };
 
-  window.addEventListener("beforeunload", (e) => {
-    document.getElementById("friction-modal").style.display = "flex";
-    e.preventDefault();
-    e.returnValue = "";
-  });
-} else if (deepHost || deepTarget) {
-  // GEMWEBUI-311: Deep link handling
-  const id = "tab_" + (Date.now() + Math.floor(Math.random() * 1000));
-  const tab = {
-    id,
-    term: null,
-    fitAddon: null,
-    socket: null,
-    session: null,
-    title: deepHost || deepTarget.split("@").pop(),
-    state: "terminal",
-  };
-  tabs.push(tab);
+    window.addEventListener("beforeunload", (e) => {
+      document.getElementById("friction-modal").style.display = "flex";
+      e.preventDefault();
+      e.returnValue = "";
+    });
+  } else if (deepHost || deepTarget) {
+    // GEMWEBUI-311: Deep link handling
+    const id = "tab_" + (Date.now() + Math.floor(Math.random() * 1000));
+    const tab = {
+      id,
+      term: null,
+      fitAddon: null,
+      socket: null,
+      session: null,
+      title: deepHost || deepTarget.split("@").pop(),
+      state: "terminal",
+    };
+    tabs.push(tab);
 
-  const container = document.createElement("div");
-  container.id = id + "_instance";
-  container.className = "tab-instance active";
-  document.getElementById("terminal-container").appendChild(container);
+    const container = document.createElement("div");
+    container.id = id + "_instance";
+    container.className = "tab-instance active";
+    document.getElementById("terminal-container").appendChild(container);
 
-  activeTabId = id;
-  renderTabs();
+    activeTabId = id;
+    renderTabs();
 
-  if (deepHost) {
-    fetch("/api/hosts")
-      .then((r) => r.json())
-      .then((hosts) => {
-        const host = hosts.find((h) => h.label === deepHost);
-        if (host) {
-          startSession(
-            id,
-            host.type,
-            host.target || "",
-            deepDir || host.dir || "",
-            false,
-            host.label,
-          );
-        } else {
-          // Fallback to launcher if host not found
+    if (deepHost) {
+      fetch("/api/hosts")
+        .then((r) => r.json())
+        .then((hosts) => {
+          const host = hosts.find((h) => h.label === deepHost);
+          if (host) {
+            startSession(
+              id,
+              host.type,
+              host.target || "",
+              deepDir || host.dir || "",
+              false,
+              host.label,
+            );
+          } else {
+            // Fallback to launcher if host not found
+            closeTab(id);
+            addNewTab();
+            alert("Deep link host not found: " + deepHost);
+          }
+        })
+        .catch((err) => {
+          console.error("Deep link host fetch failed", err);
           closeTab(id);
           addNewTab();
-          alert("Deep link host not found: " + deepHost);
-        }
-      })
-      .catch((err) => {
-        console.error("Deep link host fetch failed", err);
-        closeTab(id);
-        addNewTab();
-      });
-  } else {
-    // deepTarget
-    startSession(
-      id,
-      "ssh",
-      deepTarget,
-      deepDir || "",
-      false,
-      deepTarget.split("@").pop(),
-    );
+        });
+    } else {
+      // deepTarget
+      startSession(
+        id,
+        "ssh",
+        deepTarget,
+        deepDir || "",
+        false,
+        deepTarget.split("@").pop(),
+      );
+    }
+  } else if (!loadTabsFromStorage()) {
+    addNewTab(true);
   }
-} else if (!loadTabsFromStorage()) {
-  addNewTab(true);
-}
+}, 0);
 
 // --- Quick Connect Logic ---
 let currentQuickTabId = null;
