@@ -374,8 +374,9 @@ if __name__ == "__main__":
             result_text = run_reality_checker(ticket_md)
             post_kanban_comment(WORKSPACE, project_id, work_item_id, result_text)
 
-        # Must contain literal 'READY' and not contain 'NEEDS_WORK' (or 'NEEDS WORK')
-        is_ready = "READY" in result_text and "NEEDS_WORK" not in result_text and "NEEDS WORK" not in result_text
+        # Extract the actual response after any potential thought blocks
+        final_text = result_text.split("</thought>")[-1].split("</think>")[-1]
+        is_ready = "READY" in final_text and "NEEDS_WORK" not in final_text and "NEEDS WORK" not in final_text
 
         if is_ready:
             # We explicitly return the reality checker's message so the agent receives it
