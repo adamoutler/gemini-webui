@@ -205,114 +205,153 @@ def get_remote_command_prefix(ssh_dir, gemini_bin="gemini", env_vars=None):
 
 def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
     """Internal helper to fetch sessions for a host config."""
-    ssh_target = host.get("target")
-    ssh_dir = host.get("dir")
-    env_vars = host.get("env_vars")
-    cmd = []
-    if ssh_target:
-        if not validate_ssh_target(ssh_target):
-            return {"error": "Invalid SSH target format", "timestamp": time.time()}
+    target_key = host.get("target") or "local"
+    current_time = time.time()
 
-        quoted_gemini = shlex.quote(gemini_bin)
-        gemini_list_cmd = f"{quoted_gemini} --list-sessions"
-        remote_prefix = get_remote_command_prefix(
-            ssh_dir, gemini_bin, env_vars=env_vars
-        )
+    from src.shared_state import (
+        session_listing_locks,
+        session_listing_locks_lock,
+        session_results_cache,
+        session_results_cache_lock,
+    )
 
-        # Check for gemini before running list-sessions to avoid ugly bash errors
-        remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then exec timeout 15 {gemini_list_cmd}; else exec {gemini_list_cmd}; fi; else exit 0; fi"
+    with session_listing_locks_lock:
+        latch = session_listing_locks.get(target_key)
+        if latch and latch.get("active"):
+            if current_time - latch.get("timestamp", 0) < 60:
+                with session_results_cache_lock:
+                    cached = session_results_cache.get(target_key)
+                    if cached:
+                        return cached
+                    return {
+                        "output": "",
+                        "error": "Fetch in progress",
+                        "timestamp": current_time,
+                    }
 
-        # Use bash -ilc (interactive login shell) so gemini's PATH is fully loaded
-        # (handles NVM, npm globals, etc.) and gemini outputs session text instead
-        # of a screen-clear escape sequence (which it emits when stdin is not a TTY).
-        # Use ControlMaster=no to avoid corrupting the master socket's TTY state,
-        # since this fetch runs without a real PTY (stdin=DEVNULL).
-        login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
-        cmd = build_ssh_args(ssh_target, ssh_dir_path, control_master="no")
+        session_listing_locks[target_key] = {"active": True, "timestamp": current_time}
 
-        clean_target = ssh_target
-        if ":" in ssh_target:
-            parts = ssh_target.rsplit(":", 1)
-            if parts[1].isdigit():
-                clean_target = parts[0]
-                cmd.extend(["-p", parts[1]])
-
-        cmd.extend(["--", clean_target, login_wrapped_cmd])
-    else:
-        # Use workspace for local session listing to match startSession
-        data_dir = env_config.DATA_DIR
-        work_dir = os.path.join(data_dir, "workspace")
-        # In fake/test mode, we don't cd to workspace because the mock bin is often a relative path
-        if os.path.exists(work_dir) and not os.environ.get("GEMWEBUI_HARNESS"):
-            cmd = [
-                "/bin/sh",
-                "-c",
-                f"cd {shlex.quote(work_dir)} && exec {shlex.quote(gemini_bin)} --list-sessions",
-            ]
-        else:
-            cmd = [gemini_bin, "--list-sessions"]
-
-    import uuid
-    from src.shared_state import active_monitors, active_monitors_lock
-
-    monitor_id = str(uuid.uuid4())
-    proc = None
     try:
-        proc = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            stdin=subprocess.DEVNULL,
-            start_new_session=True,  # Ensure it doesn't receive signals from parent
-        )
+        ssh_target = host.get("target")
+        ssh_dir = host.get("dir")
+        env_vars = host.get("env_vars")
+        cmd = []
+        if ssh_target:
+            if not validate_ssh_target(ssh_target):
+                return {"error": "Invalid SSH target format", "timestamp": time.time()}
 
-        with active_monitors_lock:
-            active_monitors[monitor_id] = {
-                "pid": proc.pid,
-                "target": host.get("target") or "local",
-                "dir": host.get("dir") or "workspace",
+            quoted_gemini = shlex.quote(gemini_bin)
+            gemini_list_cmd = f"{quoted_gemini} --list-sessions"
+            remote_prefix = get_remote_command_prefix(
+                ssh_dir, gemini_bin, env_vars=env_vars
+            )
+
+            # Check for gemini before running list-sessions to avoid ugly bash errors
+            remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then exec timeout 15 {gemini_list_cmd}; else exec {gemini_list_cmd}; fi; else exit 0; fi"
+
+            # Use bash -ilc (interactive login shell) so gemini's PATH is fully loaded
+            # (handles NVM, npm globals, etc.) and gemini outputs session text instead
+            # of a screen-clear escape sequence (which it emits when stdin is not a TTY).
+            # Use ControlMaster=no to avoid corrupting the master socket's TTY state,
+            # since this fetch runs without a real PTY (stdin=DEVNULL).
+            login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
+            cmd = build_ssh_args(ssh_target, ssh_dir_path, control_master="no")
+
+            clean_target = ssh_target
+            if ":" in ssh_target:
+                parts = ssh_target.rsplit(":", 1)
+                if parts[1].isdigit():
+                    clean_target = parts[0]
+                    cmd.extend(["-p", parts[1]])
+
+            cmd.extend(["--", clean_target, login_wrapped_cmd])
+        else:
+            # Use workspace for local session listing to match startSession
+            data_dir = env_config.DATA_DIR
+            work_dir = os.path.join(data_dir, "workspace")
+            # In fake/test mode, we don't cd to workspace because the mock bin is often a relative path
+            if os.path.exists(work_dir) and not os.environ.get("GEMWEBUI_HARNESS"):
+                cmd = [
+                    "/bin/sh",
+                    "-c",
+                    f"cd {shlex.quote(work_dir)} && exec {shlex.quote(gemini_bin)} --list-sessions",
+                ]
+            else:
+                cmd = [gemini_bin, "--list-sessions"]
+
+        import uuid
+        from src.shared_state import active_monitors, active_monitors_lock
+
+        monitor_id = str(uuid.uuid4())
+        proc = None
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                stdin=subprocess.DEVNULL,
+                start_new_session=True,  # Ensure it doesn't receive signals from parent
+            )
+
+            with active_monitors_lock:
+                active_monitors[monitor_id] = {
+                    "pid": proc.pid,
+                    "target": host.get("target") or "local",
+                    "dir": host.get("dir") or "workspace",
+                    "timestamp": time.time(),
+                }
+
+            stdout, stderr = proc.communicate(timeout=15)
+
+            with active_monitors_lock:
+                active_monitors.pop(monitor_id, None)
+
+            # Suppress auth errors from the CLI - just show as "no sessions"
+            if proc.returncode != 0 and (
+                "Please set an Auth method" in stderr or "GEMINI_API_KEY" in stderr
+            ):
+                result = {"output": "", "error": None, "timestamp": time.time()}
+                with session_results_cache_lock:
+                    session_results_cache[target_key] = result
+                return result
+
+            result = {
+                "output": stdout,
+                "error": stderr if proc.returncode != 0 else None,
                 "timestamp": time.time(),
             }
+            with session_results_cache_lock:
+                session_results_cache[target_key] = result
+            return result
 
-        stdout, stderr = proc.communicate(timeout=15)
-
-        with active_monitors_lock:
-            active_monitors.pop(monitor_id, None)
-
-        # Suppress auth errors from the CLI - just show as "no sessions"
-        if proc.returncode != 0 and (
-            "Please set an Auth method" in stderr or "GEMINI_API_KEY" in stderr
-        ):
-            return {"output": "", "error": None, "timestamp": time.time()}
-        return {
-            "output": stdout,
-            "error": stderr if proc.returncode != 0 else None,
-            "timestamp": time.time(),
-        }
-    except subprocess.TimeoutExpired:
-        if proc:
-            kill_and_reap(proc.pid)
-            if proc.stdout:
-                proc.stdout.close()
-            if proc.stderr:
-                proc.stderr.close()
-        with active_monitors_lock:
-            active_monitors.pop(monitor_id, None)
-        return {
-            "error": "Could not establish connection (timed out)",
-            "timestamp": time.time(),
-        }
-    except Exception:
-        if proc:
-            kill_and_reap(proc.pid)
-            if proc.stdout:
-                proc.stdout.close()
-            if proc.stderr:
-                proc.stderr.close()
-        with active_monitors_lock:
-            active_monitors.pop(monitor_id, None)
-        return {"error": "Connection failed", "timestamp": time.time()}
+        except subprocess.TimeoutExpired:
+            if proc:
+                kill_and_reap(proc.pid)
+                if proc.stdout:
+                    proc.stdout.close()
+                if proc.stderr:
+                    proc.stderr.close()
+            with active_monitors_lock:
+                active_monitors.pop(monitor_id, None)
+            return {
+                "error": "Could not establish connection (timed out)",
+                "timestamp": time.time(),
+            }
+        except Exception:
+            if proc:
+                kill_and_reap(proc.pid)
+                if proc.stdout:
+                    proc.stdout.close()
+                if proc.stderr:
+                    proc.stderr.close()
+            with active_monitors_lock:
+                active_monitors.pop(monitor_id, None)
+            return {"error": "Connection failed", "timestamp": time.time()}
+    finally:
+        with session_listing_locks_lock:
+            if target_key in session_listing_locks:
+                session_listing_locks[target_key]["active"] = False
 
 
 def _wrap_with_multiplexer(cmd):

@@ -14,3 +14,6 @@ active_fake_sockets_lock = threading.Lock()
 
 active_monitors = {}
 active_monitors_lock = threading.Lock()
+
+session_listing_locks = {}
+session_listing_locks_lock = threading.Lock()
