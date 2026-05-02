@@ -29,6 +29,20 @@
     <link rel="stylesheet" href="/static/pwa.css?v={{ version }}" />
   </head>
   <body>
+    <div class="ptr-indicator" id="ptr-indicator">
+      <svg
+        class="ptr-icon"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <polyline points="19 12 12 19 5 12"></polyline>
+      </svg>
+    </div>
     {% include 'partials/toolbar.html' %} {% include 'partials/tab_bar.html' %}
     {% include 'partials/install_banner.html' %} {% include
     'partials/terminal_container.html' %} {% include
