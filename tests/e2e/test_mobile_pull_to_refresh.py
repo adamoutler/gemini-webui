@@ -4,10 +4,10 @@ import time
 
 
 @pytest.fixture
-def mobile_page(page: Page):
+def mobile_page(server, page: Page):
     page.set_viewport_size({"width": 375, "height": 667})
     # Emulate touch device
-    page.goto("http://localhost:5001")
+    page.goto(server)
     # Ensure it's fully loaded
     page.wait_for_selector("#toolbar")
     return page
