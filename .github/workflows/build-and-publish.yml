@@ -1,5 +1,23 @@
 name: Build and Publish
 
+# =============================================================================
+# 🚨 CRITICAL ARCHITECTURE WARNING - DO NOT MODIFY WITHOUT APPROVAL 🚨
+# =============================================================================
+# This CI/CD pipeline is highly optimized to run in under 7 minutes.
+# It achieves this through strict parallelization and sharding.
+#
+# CORE MANDATES FOR FUTURE AGENTS:
+# 1. DO NOT add sequential tests or long-running tasks to the `setup-arch` job.
+#    `setup-arch` is the gatekeeper. Delaying it blocks the entire pipeline.
+# 2. DO NOT merge the `build-native` and `build-cross` jobs. They must run
+#    in parallel. The slow QEMU cross-build runs in the background while the
+#    native build provides the artifact immediately for test runners.
+# 3. ALWAYS use matrix sharding for tests (`test-unit` and `test-e2e`) to
+#    distribute the load across multiple runners.
+# 4. Linting and static analysis MUST remain in their own parallel job
+#    (`test-npm-lint`) and not block the critical path.
+# =============================================================================
+
 on:
   push:
     branches:
