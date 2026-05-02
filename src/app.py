@@ -59,7 +59,8 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
-    data_dir, config_file, ssh_dir = get_config_paths()
+    data_dir = app.config.get("DATA_DIR") or env_config.DATA_DIR
+    data_dir, config_file, ssh_dir = get_config_paths(data_dir)
     logger.info(f"Initializing app with DATA_DIR: {data_dir}")
 
     from src.bootstrap import setup_environment
@@ -88,6 +89,17 @@ def create_app(test_config=None):
         SESSION_COOKIE_SAMESITE="Lax",
         DATA_DIR=data_dir,
         WTF_CSRF_ENABLED=not app.config.get("TESTING", False),
+        ADMIN_USER=app.config.get("ADMIN_USER") or env_config.ADMIN_USER,
+        ADMIN_PASS=app.config.get("ADMIN_PASS") or env_config.ADMIN_PASS,
+        LDAP_SERVER=app.config.get("LDAP_SERVER") or env_config.LDAP_SERVER,
+        LDAP_BASE_DN=app.config.get("LDAP_BASE_DN") or env_config.LDAP_BASE_DN,
+        LDAP_BIND_USER_DN=app.config.get("LDAP_BIND_USER_DN")
+        or env_config.LDAP_BIND_USER_DN,
+        LDAP_BIND_PASS=app.config.get("LDAP_BIND_PASS") or env_config.LDAP_BIND_PASS,
+        LDAP_AUTHORIZED_GROUP=app.config.get("LDAP_AUTHORIZED_GROUP")
+        or env_config.LDAP_AUTHORIZED_GROUP,
+        LDAP_FALLBACK_DOMAIN=app.config.get("LDAP_FALLBACK_DOMAIN")
+        or env_config.LDAP_FALLBACK_DOMAIN,
     )
 
     # Initialize extensions

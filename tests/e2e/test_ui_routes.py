@@ -26,16 +26,28 @@ def test_index_route_no_auth(client):
 @pytest.mark.timeout(60)
 def test_index_route_with_auth(client):
     # Mocking admin user
-    with patch("src.auth.ADMIN_USER", "admin"), patch(
-        "src.app.ADMIN_PASS", "admin"
-    ), patch("src.auth.LDAP_SERVER", None):
-        import base64
+    from src.app import create_app
 
-        headers = {
-            "Authorization": "Basic " + base64.b64encode(b"admin:admin").decode("utf-8")
+    app = create_app(
+        {
+            "TESTING": True,
+            "BYPASS_AUTH_FOR_TESTING": "false",
+            "ADMIN_USER": "admin",
+            "ADMIN_PASS": "admin",
+            "LDAP_SERVER": None,
+            "SECRET_KEY": "test-secret",
         }
-        response = client.get("/", headers=headers)
-        assert response.status_code == 200
+    )
+    with patch.dict("os.environ", {"BYPASS_AUTH_FOR_TESTING": "false"}):
+        with app.test_client() as client:
+            import base64
+
+            headers = {
+                "Authorization": "Basic "
+                + base64.b64encode(b"admin:admin").decode("utf-8")
+            }
+            response = client.get("/", headers=headers)
+            assert response.status_code == 200
 
 
 @pytest.mark.timeout(60)
@@ -47,9 +59,11 @@ def test_instance_key_generation_logic(client, test_data_dir):
 
         shutil.rmtree(ssh_dir)
 
-    with patch("subprocess.run") as mock_run:
+    with patch("src.bootstrap.subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0)
         from src.app import create_app
+
+        create_app({"DATA_DIR": str(test_data_dir)})
 
         # Key generation should have been triggered
         assert mock_run.called
