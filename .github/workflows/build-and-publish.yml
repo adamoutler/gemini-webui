@@ -20,11 +20,6 @@ jobs:
       native: ${{ steps.detect.outputs.native }}
       cross: ${{ steps.detect.outputs.cross }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
       - name: Detect and Map Arch
         id: detect
         run: |
@@ -38,25 +33,6 @@ jobs:
           else
             echo "Unsupported arch: $ARCH" && exit 1
           fi
-
-      - name: Set up Node.js for QA Gate Tests
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
-      - name: Run NPM Tests for Genuine QA Gate Validation
-        run: |
-          npm ci || npm install
-          npm run lint
-          npm run test
-
-      - name: Run Python E2E Tests for Genuine QA Gate Validation
-        run: |
-          python3 -m venv .venv
-          . .venv/bin/activate
-          pip install -r requirements.txt -r requirements-test.txt
-          playwright install --with-deps chromium
-          PYTHONPATH=. timeout 20m pytest -q tests/unit/ tests/e2e/
 
   build-native:
     name: Build Native Image
@@ -151,7 +127,7 @@ jobs:
         env:
           DATA_DIR: /tmp/data
         run: |
-          PYTHONPATH=. .venv/bin/pytest -s tests/unit/
+          PYTHONPATH=. .venv/bin/pytest -v -s tests/unit/
 
   test-e2e:
     name: E2E Tests (Shard ${{ matrix.shard }}/4)
@@ -208,7 +184,7 @@ jobs:
           TEST_SKIP_DOCKER_BUILD: "1"
           TEST_DOCKER_IMAGE: "gemini-webui:test-native"
         run: |
-          PYTHONPATH=. timeout 15m .venv/bin/pytest -s tests/e2e/ --splits 4 --group ${{ matrix.shard }}
+          PYTHONPATH=. timeout 15m .venv/bin/pytest -v -s tests/e2e/ --splits 4 --group ${{ matrix.shard }}
 
   test-npm-lint:
     name: Lint & NPM Tests
@@ -232,10 +208,12 @@ jobs:
           node-version: "20"
 
       - name: Install NPM dependencies
-        run: npm install
+        run: npm ci || npm install
 
-      - name: Run NPM tests if any
-        run: npm run test --if-present
+      - name: Run NPM tests and lint
+        run: |
+          npm run lint
+          npm run test --if-present
 
       - name: Run pre-commit/lint
         run: |
@@ -291,11 +269,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # To enable pushing images to Docker Hub in addition to GitHub Container Registry (ghcr.io),
-      # you must configure two Repository Secrets in your GitHub repository settings:
-      # 1. DOCKERHUB_USERNAME: Your Docker Hub username.
-      # 2. DOCKERHUB_TOKEN: A Docker Hub Personal Access Token with read/write permissions.
-      # If these secrets are not configured, the Docker Hub push steps will fail.
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
