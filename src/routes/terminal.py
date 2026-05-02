@@ -157,10 +157,8 @@ def list_gemini_sessions():
     with session_results_cache_lock:
         res = session_results_cache.get(cache_key)
 
-    print(f"DEBUG IN ROUTE: cache_key={cache_key}, res={res}")
-
     if not res:
-        res = {"output": "", "error": "Fetching...", "timestamp": 0}
+        res = {"status": "fetching"}
 
     if (
         isinstance(res, dict)

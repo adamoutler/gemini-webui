@@ -669,9 +669,16 @@ def handle_get_sessions(data):
     cache_key = (
         f"{'ssh' if ssh_target else 'local'}:{ssh_target or 'local'}:{ssh_dir or ''}"
     )
-    use_cache = data.get("cache") is True
-    bg = data.get("bg") is True
+    from src.services.session_poller import session_poller_manager
 
-    from src.routes.terminal import _get_gemini_sessions_impl
+    session_poller_manager.update_frontend_activity()
 
-    return _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg)
+    from src.shared_state import session_results_cache, session_results_cache_lock
+
+    with session_results_cache_lock:
+        res = session_results_cache.get(cache_key)
+
+    if not res:
+        res = {"status": "fetching"}
+
+    return res
