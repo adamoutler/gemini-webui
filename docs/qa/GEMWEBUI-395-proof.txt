@@ -463,3 +463,11 @@ tests/unit/test_session_poller.py::test_session_poller_active_interval [32mPASS
 tests/unit/test_session_poller.py::test_session_poller_backoff_interval [32mPASSED[0m[32m [100%][0m
 
 [32m============================== [32m[1m2 passed[0m[32m in 0.06s[0m[32m ===============================[0m
+
+--- Polling Interval Backoff Simulation Log ---
+
+Starting poller simulation...
+T=0: Frontend requests active.
+Poller sleeping for 5s
+Poller sleeping for 5s
+Poller sleeping for 120s
