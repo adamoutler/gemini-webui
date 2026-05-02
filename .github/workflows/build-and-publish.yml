@@ -105,10 +105,14 @@ jobs:
           retention-days: 1
 
   test-unit:
-    name: Unit Tests
+    name: Unit Tests (Shard ${{ matrix.shard }}/2)
     needs: build-native
     runs-on: ubuntu-22.04
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -121,13 +125,15 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: ./setup_dev.sh
+        run: |
+          ./setup_dev.sh
+          .venv/bin/pip install pytest-split
 
       - name: Run Unit Tests
         env:
           DATA_DIR: /tmp/data
         run: |
-          PYTHONPATH=. .venv/bin/pytest -v -s tests/unit/
+          PYTHONPATH=. timeout 15m .venv/bin/pytest -v -s tests/unit/ --splits 2 --group ${{ matrix.shard }}
 
   test-e2e:
     name: E2E Tests (Shard ${{ matrix.shard }}/4)
