@@ -18,6 +18,13 @@ pip install -r requirements.txt
 echo "Installing testing dependencies..."
 pip install -r requirements-test.txt
 
+# Fix for intermittent Azure Ubuntu mirror timeouts on GitHub Actions
+if [ "$CI" = "true" ]; then
+    echo "Running in CI: Switching apt mirrors from azure to archive.ubuntu.com to prevent timeouts..."
+    sudo sed -i 's/azure.archive.ubuntu.com/archive.ubuntu.com/g' /etc/apt/sources.list || true
+    sudo apt-get update || true
+fi
+
 echo "Installing Playwright browsers..."
 playwright install --with-deps chromium webkit
 
