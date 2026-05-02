@@ -1,6 +1,6 @@
 import pytest
 import io
-from src.app import app, init_app
+from src.app import app
 
 
 @pytest.fixture
@@ -11,7 +11,7 @@ def client(test_data_dir, monkeypatch):
     app.config["BYPASS_AUTH_FOR_TESTING"] = "true"
     app.config["SECRET_KEY"] = "test-secret-key"
     with app.app_context():
-        init_app()
+        pass
     with app.test_client() as client:
         yield client
 

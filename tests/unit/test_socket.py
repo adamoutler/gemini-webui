@@ -9,11 +9,8 @@ from src.gateways.terminal_socket import (
 import pytest
 import os
 from unittest.mock import patch
-from src.app import (
-    app,
-    session_manager,
-    Session,
-)
+from src.app import app
+from src.services.session_store import session_manager, Session
 
 
 @pytest.fixture(autouse=True)

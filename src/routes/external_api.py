@@ -6,7 +6,14 @@ from flask.views import MethodView
 from marshmallow import Schema, fields
 from flask_smorest import Blueprint, Api
 
-from src.app import get_config, get_config_paths, logger, GEMINI_BIN, api_key_required
+from src.config import get_config, get_config_paths
+import logging
+
+logger = logging.getLogger(__name__)
+from src.config import env_config
+
+GEMINI_BIN = env_config.GEMINI_BIN
+from src.auth import api_key_required
 from src.services.process_engine import (
     fetch_sessions_for_host,
     validate_ssh_target,

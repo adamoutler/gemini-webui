@@ -3,7 +3,8 @@ import os
 import json
 import signal
 from unittest.mock import patch
-from src.app import app, init_app, session_manager, Session
+from src.app import app
+from src.services.session_store import session_manager, Session
 
 
 @pytest.fixture(autouse=True)
@@ -27,7 +28,7 @@ def client(test_data_dir, monkeypatch):
 
     # Force initialization to set up globals and paths
     with app.app_context():
-        init_app()
+        pass
     with app.test_client() as client:
         with client.session_transaction() as sess:
             sess["authenticated"] = True

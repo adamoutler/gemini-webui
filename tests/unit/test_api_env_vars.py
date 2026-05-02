@@ -1,6 +1,10 @@
 import pytest
 import json
-from src.app import app, init_app
+from src.app import create_app
+
+app = create_app(
+    {"TESTING": True, "WTF_CSRF_ENABLED": False, "BYPASS_AUTH_FOR_TESTING": "true"}
+)
 
 
 @pytest.fixture
@@ -10,7 +14,7 @@ def client(tmp_path):
     app.config["BYPASS_AUTH_FOR_TESTING"] = "true"
     app.config["SECRET_KEY"] = "test-secret-key"
     with app.app_context():
-        init_app()
+        pass
     with app.test_client() as client:
         yield client
 

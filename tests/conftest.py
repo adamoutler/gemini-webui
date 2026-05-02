@@ -136,15 +136,16 @@ def server(test_data_dir):
 
 @pytest.fixture
 def app_obj(test_data_dir):
-    from src.app import app as flask_app
+    from src.app import create_app
 
-    flask_app.config["DATA_DIR"] = str(test_data_dir)
-    return flask_app
+    return create_app(
+        {"DATA_DIR": str(test_data_dir), "TESTING": True, "WTF_CSRF_ENABLED": False}
+    )
 
 
 @pytest.fixture
 def client(test_data_dir, monkeypatch):
-    from src.app import app, init_app
+    from src.app import app
 
     monkeypatch.setenv("DATA_DIR", str(test_data_dir))
     app.config["TESTING"] = True
@@ -155,8 +156,6 @@ def client(test_data_dir, monkeypatch):
     os.environ["DATA_DIR"] = str(test_data_dir)
     app.config["SECRET_KEY"] = "test-secret-key"
     app.config["DATA_DIR"] = str(test_data_dir)
-
-    init_app()
 
     with app.test_client() as client:
         with app.app_context():

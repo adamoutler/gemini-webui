@@ -52,7 +52,7 @@ def test_orphan_session():
     # Note: sid_to_tabid is purposefully left alone or cleared externally in app.py
 
 
-@patch("src.app.socketio.emit")
+@patch("src.gateways.terminal_socket.socketio.emit")
 @pytest.mark.timeout(60)
 def test_reclaim_session(mock_emit):
     manager = SessionManager()

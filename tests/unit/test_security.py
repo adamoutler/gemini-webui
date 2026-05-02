@@ -1,5 +1,5 @@
 import pytest
-from src.app import validate_ssh_target, fetch_sessions_for_host
+from src.services.process_engine import validate_ssh_target, fetch_sessions_for_host
 
 
 @pytest.mark.timeout(60)

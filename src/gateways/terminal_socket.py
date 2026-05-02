@@ -25,7 +25,9 @@ from src.shared_state import (
     session_results_cache_lock,
 )
 from src.services.process_engine import fetch_sessions_for_host, build_terminal_command
-from src.app import kill_and_reap, add_managed_pty, IDENTIFICATION_REGEX, app
+from src.infrastructure.process_manager import kill_and_reap, add_managed_pty
+from src.constants import IDENTIFICATION_REGEX
+from src.app import app
 from src.models.session import Session
 
 logger = logging.getLogger(__name__)

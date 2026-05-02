@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 import os
-from src.app import app, init_app
+from src.app import app
 
 
 @pytest.fixture
@@ -12,8 +12,6 @@ def client(test_data_dir):
     app.config["BYPASS_AUTH_FOR_TESTING"] = "false"
     # Clear bypass for some tests
     with patch.dict("os.environ", {"BYPASS_AUTH_FOR_TESTING": "false"}):
-        with app.app_context():
-            init_app()
         with app.test_client() as client:
             yield client
 
@@ -28,9 +26,9 @@ def test_index_route_no_auth(client):
 @pytest.mark.timeout(60)
 def test_index_route_with_auth(client):
     # Mocking admin user
-    with patch("src.app.ADMIN_USER", "admin"), patch(
+    with patch("src.auth.ADMIN_USER", "admin"), patch(
         "src.app.ADMIN_PASS", "admin"
-    ), patch("src.app.LDAP_SERVER", None):
+    ), patch("src.auth.LDAP_SERVER", None):
         import base64
 
         headers = {
@@ -49,11 +47,10 @@ def test_instance_key_generation_logic(client, test_data_dir):
 
         shutil.rmtree(ssh_dir)
 
-    with patch("src.app.subprocess.run") as mock_run:
+    with patch("subprocess.run") as mock_run:
         mock_run.return_value = MagicMock(returncode=0)
-        from src.app import init_app
+        from src.app import create_app
 
-        init_app()
         # Key generation should have been triggered
         assert mock_run.called
 

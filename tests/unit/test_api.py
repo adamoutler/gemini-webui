@@ -4,7 +4,11 @@ import os
 
 pytestmark = pytest.mark.timeout(30)
 
-from src.app import app, init_app
+from src.app import create_app
+
+app = create_app(
+    {"TESTING": True, "WTF_CSRF_ENABLED": False, "BYPASS_AUTH_FOR_TESTING": "true"}
+)
 
 
 @pytest.fixture
@@ -16,7 +20,7 @@ def client(test_data_dir, monkeypatch):
     app.config["SECRET_KEY"] = "test-secret-key"
     # Force initialization to set up globals and paths
     with app.app_context():
-        init_app()
+        pass
     with app.test_client() as client:
         yield client
 

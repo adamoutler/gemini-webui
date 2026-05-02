@@ -2,7 +2,7 @@ import pytest
 from src.gateways.terminal_socket import set_winsize
 import os
 from src.config import get_config_paths
-from src.app import validate_ssh_target
+from src.services.process_engine import validate_ssh_target
 
 
 @pytest.mark.timeout(60)
@@ -51,10 +51,12 @@ def test_get_config_paths_failover(tmp_path):
 
 @pytest.mark.timeout(60)
 def test_set_winsize_no_error():
-    with patch("src.app.struct.pack") as mock_pack:
+    with patch("src.gateways.terminal_socket.struct.pack") as mock_pack:
         mock_pack.return_value = b"mocked_winsize"
-        with patch("src.app.fcntl.ioctl") as mock_ioctl:
-            with patch("src.app.termios.TIOCSWINSZ", 21524, create=True):
+        with patch("src.gateways.terminal_socket.fcntl.ioctl") as mock_ioctl:
+            with patch(
+                "src.gateways.terminal_socket.termios.TIOCSWINSZ", 21524, create=True
+            ):
                 set_winsize(42, 24, 80, 0, 0)
                 mock_pack.assert_called_once_with("HHHH", 24, 80, 0, 0)
                 mock_ioctl.assert_called_once_with(42, 21524, b"mocked_winsize")

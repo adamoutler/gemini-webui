@@ -1,18 +1,18 @@
 import pytest
-from src.app import app
+from src.app import create_app
 from src.routes.api import api_bp
 
 
 @pytest.fixture
 def client():
-    app.config["TESTING"] = True
-    app.config["WTF_CSRF_ENABLED"] = False
-    app.config["BYPASS_AUTH_FOR_TESTING"] = "true"
-    app.config["SECRET_KEY"] = "test-secret"
-
-    if not hasattr(app, "_blueprints_registered"):
-        app.register_blueprint(api_bp)
-        app._blueprints_registered = True
+    app = create_app(
+        {
+            "TESTING": True,
+            "WTF_CSRF_ENABLED": False,
+            "BYPASS_AUTH_FOR_TESTING": "true",
+            "SECRET_KEY": "test-secret",
+        }
+    )
 
     with app.test_client() as client:
         with app.app_context():

@@ -2,7 +2,11 @@ import pytest
 import os
 import io
 import json
-from src.app import app, init_app
+from src.app import create_app
+
+app = create_app(
+    {"TESTING": True, "WTF_CSRF_ENABLED": False, "BYPASS_AUTH_FOR_TESTING": "true"}
+)
 
 
 @pytest.fixture
@@ -13,7 +17,7 @@ def client(test_data_dir, monkeypatch):
     app.config["BYPASS_AUTH_FOR_TESTING"] = "true"
     app.config["SECRET_KEY"] = "test-secret-key"
     with app.app_context():
-        init_app()
+        pass
     with app.test_client() as client:
         yield client
 
@@ -53,7 +57,7 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
         "ssh_dir": "/remote/dir",
     }
     with patch("src.routes.api.subprocess.run") as mock_run, patch(
-        "src.app.validate_ssh_target", return_value=True
+        "src.services.remote_fs.validate_ssh_target", return_value=True
     ), patch(
         "src.config.get_config_paths",
         return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
@@ -127,7 +131,7 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
         "ssh_dir": "~",
     }
     with patch("src.routes.api.subprocess.run") as mock_run, patch(
-        "src.app.validate_ssh_target", return_value=True
+        "src.services.remote_fs.validate_ssh_target", return_value=True
     ), patch(
         "src.config.get_config_paths",
         return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
@@ -204,7 +208,7 @@ def test_upload_file_ssh_proxy_mkdir_failure(client, test_data_dir):
         "ssh_dir": "/remote/dir",
     }
     with patch("src.routes.api.subprocess.run") as mock_run, patch(
-        "src.app.validate_ssh_target", return_value=True
+        "src.services.remote_fs.validate_ssh_target", return_value=True
     ), patch(
         "src.config.get_config_paths",
         return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
@@ -233,7 +237,7 @@ def test_upload_file_ssh_proxy_scp_failure(client, test_data_dir):
         "ssh_dir": "/remote/dir",
     }
     with patch("src.routes.api.subprocess.run") as mock_run, patch(
-        "src.app.validate_ssh_target", return_value=True
+        "src.services.remote_fs.validate_ssh_target", return_value=True
     ), patch(
         "src.config.get_config_paths",
         return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
@@ -267,7 +271,7 @@ def test_upload_file_ssh_proxy_verify_failure(client, test_data_dir):
         "ssh_dir": "/remote/dir",
     }
     with patch("src.routes.api.subprocess.run") as mock_run, patch(
-        "src.app.validate_ssh_target", return_value=True
+        "src.services.remote_fs.validate_ssh_target", return_value=True
     ), patch(
         "src.config.get_config_paths",
         return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),

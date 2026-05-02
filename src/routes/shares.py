@@ -2,7 +2,13 @@ import os
 import re
 from flask import Blueprint, jsonify, request, render_template
 
-from src.app import authenticated_only, logger, share_manager
+from src.auth import authenticated_only
+import logging
+
+logger = logging.getLogger(__name__)
+from src.share_manager import ShareManager
+
+share_manager = ShareManager()
 
 shares_bp = Blueprint("shares", __name__)
 

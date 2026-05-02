@@ -7,10 +7,9 @@ import pytest
 from unittest.mock import patch
 import os
 import signal
-from src.app import (
-    cleanup_orphaned_ptys,
-    session_results_cache,
-)
+from src.infrastructure.process_manager import cleanup_orphaned_ptys, zombie_reaper_task
+from src.services.session_store import Session, session_manager
+from src.shared_state import session_results_cache
 
 
 @pytest.fixture
@@ -21,7 +20,7 @@ def mock_socketio():
 
 @pytest.fixture
 def mock_pty():
-    with patch("src.app.pty.fork") as mock_fork:
+    with patch("src.gateways.terminal_socket.pty.fork") as mock_fork:
         yield mock_fork
 
 
@@ -31,7 +30,7 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     os.environ["BYPASS_AUTH_FOR_TESTING"] = "true"
 
     # Mock some ptys
-    from src.app import session_manager, Session
+    from src.services.session_store import session_manager, Session, Session
     import time
 
     # 1. Active PTY
@@ -51,10 +50,10 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     with patch("os.killpg") as mock_kill, patch("os.waitpid") as mock_wait, patch(
         "os.getpgid", side_effect=lambda x: x
     ):  # Mock ORPHANED_SESSION_TTL to 60 for testing
-        from src.app import app, env_config
+        from src.app import app
+        from src.config import env_config
 
         app.config["ORPHANED_SESSION_TTL"] = 60
-
         cleanup_orphaned_ptys(app, session_manager, env_config)
         # Only old_orphan should be killed
         assert mock_kill.call_count == 1
@@ -97,6 +96,8 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
     # Use non-zero child_pid to avoid child branch execution in tests
     mock_pty.return_value = (1234, 10)
 
+    from src.app import app
+
     with app.test_request_context("/"):
         mock_request = MagicMock()
         mock_request.sid = "test-sid"
@@ -108,7 +109,7 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
         ), patch("os.chdir"), patch("os.execv"), patch("os.closerange"), patch(
             "os.execvp"
         ) as mock_execvp, patch("os._exit"), patch(
-            "src.app.build_terminal_command", return_value=["bash"]
+            "src.gateways.terminal_socket.build_terminal_command", return_value=["bash"]
         ) as mock_build_cmd, patch(
             "src.gateways.terminal_socket.set_winsize"
         ) as mock_set_winsize, patch("fcntl.fcntl"):
@@ -128,7 +129,7 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
                 }
             )
 
-            from src.app import session_manager
+            from src.services.session_store import session_manager, Session
 
             session = session_manager.get_session("tab1")
             assert session is not None
@@ -137,7 +138,7 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
 
 @pytest.mark.timeout(60)
 def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
-    from src.app import app, session_manager, Session
+    from src.services.session_store import session_manager, Session, Session
     import time
 
     # child_pid=999, fd=10
@@ -157,6 +158,8 @@ def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
         session_manager.add_session(s)
         # Ensure it has 0 SIDs so it's eligible for eviction
         session_manager.tabid_to_sids[tab_id] = set()
+
+    from src.app import app
 
     with app.test_request_context("/"):
         with patch("os.killpg") as mock_killpg, patch(

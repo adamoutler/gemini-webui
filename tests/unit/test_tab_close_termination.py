@@ -6,7 +6,7 @@ from src.services.session_store import SessionManager
 from src.models.session import Session
 from src.gateways.terminal_socket import on_terminate_session
 from src.routes.terminal import terminate_session
-from src.app import app, init_app
+from src.app import app
 
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def client():
     app.config["BYPASS_AUTH_FOR_TESTING"] = "true"
     app.config["SECRET_KEY"] = "test-secret"
     with app.app_context():
-        init_app()
+        pass
     with app.test_client() as client:
         yield client
 

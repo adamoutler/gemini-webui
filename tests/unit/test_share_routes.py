@@ -6,7 +6,7 @@ from src.app import app, env_config
 
 @pytest.fixture
 def client():
-    from src.app import init_app
+    from src.app import app
     import os
 
     app.config["TESTING"] = True
@@ -14,7 +14,7 @@ def client():
     app.config["BYPASS_AUTH_FOR_TESTING"] = "false"
     os.environ["BYPASS_AUTH_FOR_TESTING"] = "false"
     app.secret_key = "test_secret_key"
-    init_app()
+
     with app.test_client() as client:
         yield client
 
