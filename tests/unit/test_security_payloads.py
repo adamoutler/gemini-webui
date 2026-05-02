@@ -1,19 +1,5 @@
 import pytest
 import io
-from src.app import app
-
-
-@pytest.fixture
-def client(test_data_dir, monkeypatch):
-    monkeypatch.setenv("DATA_DIR", str(test_data_dir))
-    app.config["TESTING"] = True
-    app.config["DATA_DIR"] = str(test_data_dir)
-    app.config["BYPASS_AUTH_FOR_TESTING"] = "true"
-    app.config["SECRET_KEY"] = "test-secret-key"
-    with app.app_context():
-        pass
-    with app.test_client() as client:
-        yield client
 
 
 @pytest.mark.timeout(60)

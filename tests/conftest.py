@@ -145,17 +145,25 @@ def app_obj(test_data_dir):
 
 @pytest.fixture
 def client(test_data_dir, monkeypatch):
-    from src.app import app
+    from src.app import create_app
+    import os
 
     monkeypatch.setenv("DATA_DIR", str(test_data_dir))
-    app.config["TESTING"] = True
-    app.config["BYPASS_AUTH_FOR_TESTING"] = "true"
-    app.config["WTF_CSRF_ENABLED"] = False
     os.environ["BYPASS_AUTH_FOR_TESTING"] = "true"
     os.environ["WTF_CSRF_ENABLED"] = "false"
     os.environ["DATA_DIR"] = str(test_data_dir)
-    app.config["SECRET_KEY"] = "test-secret-key"
-    app.config["DATA_DIR"] = str(test_data_dir)
+
+    app = create_app(
+        {
+            "TESTING": True,
+            "BYPASS_AUTH_FOR_TESTING": "true",
+            "WTF_CSRF_ENABLED": False,
+            "SECRET_KEY": "test-secret-key",
+            "DATA_DIR": str(test_data_dir),
+        }
+    )
+
+    os.makedirs(os.path.join(str(test_data_dir), ".ssh"), exist_ok=True)
 
     with app.test_client() as client:
         with app.app_context():
