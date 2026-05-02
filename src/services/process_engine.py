@@ -205,7 +205,11 @@ def get_remote_command_prefix(ssh_dir, gemini_bin="gemini", env_vars=None):
 
 def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
     """Internal helper to fetch sessions for a host config."""
-    target_key = host.get("target") or "local"
+    ssh_target = host.get("target")
+    ssh_dir = host.get("dir")
+    target_key = (
+        f"{'ssh' if ssh_target else 'local'}:{ssh_target or 'local'}:{ssh_dir or ''}"
+    )
     current_time = time.time()
 
     from src.shared_state import (
@@ -334,10 +338,13 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
                     proc.stderr.close()
             with active_monitors_lock:
                 active_monitors.pop(monitor_id, None)
-            return {
+            result = {
                 "error": "Could not establish connection (timed out)",
                 "timestamp": time.time(),
             }
+            with session_results_cache_lock:
+                session_results_cache[target_key] = result
+            return result
         except Exception:
             if proc:
                 kill_and_reap(proc.pid)
@@ -347,7 +354,10 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
                     proc.stderr.close()
             with active_monitors_lock:
                 active_monitors.pop(monitor_id, None)
-            return {"error": "Connection failed", "timestamp": time.time()}
+            result = {"error": "Connection failed", "timestamp": time.time()}
+            with session_results_cache_lock:
+                session_results_cache[target_key] = result
+            return result
     finally:
         with session_listing_locks_lock:
             if target_key in session_listing_locks:

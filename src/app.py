@@ -622,6 +622,10 @@ if __name__ == "__main__":
         ):
             socketio.start_background_task(cleanup_orphaned_ptys)
             socketio.start_background_task(zombie_reaper_task)
+
+            from src.services.session_poller import session_poller_manager
+
+            session_poller_manager.start()
             if not env_config.SKIP_PRELOADER:
                 socketio.start_background_task(
                     src.gateways.terminal_socket.background_session_preloader

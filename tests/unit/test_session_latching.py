@@ -11,10 +11,11 @@ from src.shared_state import (
 
 def test_fetch_sessions_latch(monkeypatch):
     host = {"target": "test-latch-host", "dir": "~"}
+    cache_key = "ssh:test-latch-host:~"
 
     # 1. Populate cache
     with session_results_cache_lock:
-        session_results_cache["test-latch-host"] = {
+        session_results_cache[cache_key] = {
             "output": "cached_sessions",
             "error": None,
             "timestamp": time.time(),
@@ -22,13 +23,7 @@ def test_fetch_sessions_latch(monkeypatch):
 
     # 2. Simulate an active latch
     with session_listing_locks_lock:
-        session_listing_locks["test-latch-host"] = {
-            "active": True,
-            "timestamp": time.time(),
-        }
-
-    # 3. Call fetch_sessions_for_host
-    # It should return immediately from cache without calling Popen
+        session_listing_locks[cache_key] = {"active": True, "timestamp": time.time()}
 
     # Track if Popen is called
     popen_called = False
@@ -37,6 +32,10 @@ def test_fetch_sessions_latch(monkeypatch):
         def __init__(self, *args, **kwargs):
             nonlocal popen_called
             popen_called = True
+            self.pid = 1234
+            self.returncode = 0
+            self.stdout = None
+            self.stderr = None
 
         def communicate(self, *args, **kwargs):
             return "output", "error"
@@ -51,17 +50,18 @@ def test_fetch_sessions_latch(monkeypatch):
     assert res == {
         "output": "cached_sessions",
         "error": None,
-        "timestamp": session_results_cache["test-latch-host"]["timestamp"],
+        "timestamp": session_results_cache[cache_key]["timestamp"],
     }
     assert not popen_called, "Popen should not be called when latch is active"
 
 
 def test_fetch_sessions_timeout(monkeypatch):
     host = {"target": "test-timeout-host", "dir": "~"}
+    cache_key = "ssh:test-timeout-host:~"
 
     # 1. Simulate an OLD active latch (older than 60s)
     with session_listing_locks_lock:
-        session_listing_locks["test-timeout-host"] = {
+        session_listing_locks[cache_key] = {
             "active": True,
             "timestamp": time.time() - 65,
         }
@@ -92,4 +92,4 @@ def test_fetch_sessions_timeout(monkeypatch):
 
     # Verify latch is released after completion
     with session_listing_locks_lock:
-        assert not session_listing_locks["test-timeout-host"]["active"]
+        assert not session_listing_locks[cache_key]["active"]

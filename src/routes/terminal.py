@@ -137,65 +137,6 @@ def search_files(session_id):
     return jsonify({"matches": matches})
 
 
-def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
-    if use_cache:
-        with session_results_cache_lock:
-            if cache_key in session_results_cache:
-                return session_results_cache[cache_key]
-
-    if bg:
-        with session_results_cache_lock:
-            if not hasattr(_get_gemini_sessions_impl, "fetching_locks"):
-                _get_gemini_sessions_impl.fetching_locks = set()
-            should_fetch = cache_key not in _get_gemini_sessions_impl.fetching_locks
-            if should_fetch:
-                _get_gemini_sessions_impl.fetching_locks.add(cache_key)
-
-        if should_fetch:
-
-            def background_fetch(target, directory, key):
-                try:
-                    _, _, ssh_dir_path = get_config_paths()
-                    res = fetch_sessions_for_host(
-                        {
-                            "target": target,
-                            "dir": directory,
-                            "type": "ssh" if target else "local",
-                        },
-                        ssh_dir_path,
-                        env_config.GEMINI_BIN,
-                    )
-                    with session_results_cache_lock:
-                        session_results_cache[key] = res
-                except Exception as e:
-                    logger.error(f"Background fetch error: {e}")
-                    with session_results_cache_lock:
-                        session_results_cache[key] = {"error": str(e)}
-                finally:
-                    with session_results_cache_lock:
-                        if key in _get_gemini_sessions_impl.fetching_locks:
-                            _get_gemini_sessions_impl.fetching_locks.remove(key)
-
-            socketio.start_background_task(
-                background_fetch, ssh_target, ssh_dir, cache_key
-            )
-        return {"status": "fetching"}
-
-    _, _, ssh_dir_path = get_config_paths()
-    result = fetch_sessions_for_host(
-        {
-            "target": ssh_target,
-            "dir": ssh_dir,
-            "type": "ssh" if ssh_target else "local",
-        },
-        ssh_dir_path,
-        env_config.GEMINI_BIN,
-    )
-    with session_results_cache_lock:
-        session_results_cache[cache_key] = result
-    return result
-
-
 @terminal_bp.route("/api/sessions", methods=["GET"])
 @authenticated_only
 def list_gemini_sessions():
@@ -208,14 +149,23 @@ def list_gemini_sessions():
     cache_key = (
         f"{'ssh' if ssh_target else 'local'}:{ssh_target or 'local'}:{ssh_dir or ''}"
     )
-    use_cache = request.args.get("cache") == "true"
-    bg = request.args.get("bg") == "true"
 
-    res = _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg)
+    from src.services.session_poller import session_poller_manager
+
+    session_poller_manager.update_frontend_activity()
+
+    with session_results_cache_lock:
+        res = session_results_cache.get(cache_key)
+
+    print(f"DEBUG IN ROUTE: cache_key={cache_key}, res={res}")
+
+    if not res:
+        res = {"output": "", "error": "Fetching...", "timestamp": 0}
+
     if (
         isinstance(res, dict)
         and isinstance(res.get("error"), str)
-        and "timeout" in res["error"].lower()
+        and "time" in res["error"].lower()
     ):
         return jsonify(res), 504
     return jsonify(res)

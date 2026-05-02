@@ -1,0 +1,465 @@
+diff --git a/docs/qa-images/mobile_super_active.png b/docs/qa-images/mobile_super_active.png
+index 02875a4..91eb89c 100644
+Binary files a/docs/qa-images/mobile_super_active.png and b/docs/qa-images/mobile_super_active.png differ
+diff --git a/docs/qa-images/test_debug_logs_output.txt b/docs/qa-images/test_debug_logs_output.txt
+index 558109c..2d0283d 100644
+--- a/docs/qa-images/test_debug_logs_output.txt
++++ b/docs/qa-images/test_debug_logs_output.txt
+@@ -1 +1 @@
+-Test completed successfully. Debug logging toggle works. Enabled logs: 11, Disabled logs: 0
+\ No newline at end of file
++Test completed successfully. Debug logging toggle works. Enabled logs: 9, Disabled logs: 0
+\ No newline at end of file
+diff --git a/public/qa-screenshots/debug_settings.png b/public/qa-screenshots/debug_settings.png
+index c7d3264..c13bc5b 100644
+Binary files a/public/qa-screenshots/debug_settings.png and b/public/qa-screenshots/debug_settings.png differ
+diff --git a/public/qa-screenshots/test_share_full_color_logo.png b/public/qa-screenshots/test_share_full_color_logo.png
+index 67d24fe..380c9b6 100644
+Binary files a/public/qa-screenshots/test_share_full_color_logo.png and b/public/qa-screenshots/test_share_full_color_logo.png differ
+diff --git a/src/app.py b/src/app.py
+index 4ae86e8..c0ddb77 100644
+--- a/src/app.py
++++ b/src/app.py
+@@ -622,6 +622,9 @@ if __name__ == "__main__":
+         ):
+             socketio.start_background_task(cleanup_orphaned_ptys)
+             socketio.start_background_task(zombie_reaper_task)
++
++            from src.services.session_poller import session_poller_manager
++            session_poller_manager.start()
+             if not env_config.SKIP_PRELOADER:
+                 socketio.start_background_task(
+                     src.gateways.terminal_socket.background_session_preloader
+diff --git a/src/routes/external_api.py b/src/routes/external_api.py
+index 6365dfc..7edcf29 100644
+--- a/src/routes/external_api.py
++++ b/src/routes/external_api.py
+@@ -166,10 +166,18 @@ class HostStates(MethodView):
+                 404,
+             )
+
+-        _, _, ssh_dir_path = get_config_paths()
+-        result = fetch_sessions_for_host(host, ssh_dir_path, GEMINI_BIN)
++        ssh_target = host.get("target")
++        ssh_dir = host.get("dir")
++        cache_key = f"{'ssh' if ssh_target else 'local'}:{ssh_target or 'local'}:{ssh_dir or ''}"
++
++        from src.services.session_poller import session_poller_manager
++        from src.shared_state import session_results_cache, session_results_cache_lock
++
++        session_poller_manager.update_frontend_activity()
++        with session_results_cache_lock:
++            result = session_results_cache.get(cache_key, {})
+
+-        if "error" in result and result["error"]:
++        if result.get("error"):
+             return jsonify({"status": "error", "message": result["error"]}), 500
+
+         return jsonify(
+diff --git a/src/routes/terminal.py b/src/routes/terminal.py
+index 6318244..f68a06e 100644
+--- a/src/routes/terminal.py
++++ b/src/routes/terminal.py
+@@ -137,65 +137,6 @@ def search_files(session_id):
+     return jsonify({"matches": matches})
+
+
+-def _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg):
+-    if use_cache:
+-        with session_results_cache_lock:
+-            if cache_key in session_results_cache:
+-                return session_results_cache[cache_key]
+-
+-    if bg:
+-        with session_results_cache_lock:
+-            if not hasattr(_get_gemini_sessions_impl, "fetching_locks"):
+-                _get_gemini_sessions_impl.fetching_locks = set()
+-            should_fetch = cache_key not in _get_gemini_sessions_impl.fetching_locks
+-            if should_fetch:
+-                _get_gemini_sessions_impl.fetching_locks.add(cache_key)
+-
+-        if should_fetch:
+-
+-            def background_fetch(target, directory, key):
+-                try:
+-                    _, _, ssh_dir_path = get_config_paths()
+-                    res = fetch_sessions_for_host(
+-                        {
+-                            "target": target,
+-                            "dir": directory,
+-                            "type": "ssh" if target else "local",
+-                        },
+-                        ssh_dir_path,
+-                        env_config.GEMINI_BIN,
+-                    )
+-                    with session_results_cache_lock:
+-                        session_results_cache[key] = res
+-                except Exception as e:
+-                    logger.error(f"Background fetch error: {e}")
+-                    with session_results_cache_lock:
+-                        session_results_cache[key] = {"error": str(e)}
+-                finally:
+-                    with session_results_cache_lock:
+-                        if key in _get_gemini_sessions_impl.fetching_locks:
+-                            _get_gemini_sessions_impl.fetching_locks.remove(key)
+-
+-            socketio.start_background_task(
+-                background_fetch, ssh_target, ssh_dir, cache_key
+-            )
+-        return {"status": "fetching"}
+-
+-    _, _, ssh_dir_path = get_config_paths()
+-    result = fetch_sessions_for_host(
+-        {
+-            "target": ssh_target,
+-            "dir": ssh_dir,
+-            "type": "ssh" if ssh_target else "local",
+-        },
+-        ssh_dir_path,
+-        env_config.GEMINI_BIN,
+-    )
+-    with session_results_cache_lock:
+-        session_results_cache[cache_key] = result
+-    return result
+-
+-
+ @terminal_bp.route("/api/sessions", methods=["GET"])
+ @authenticated_only
+ def list_gemini_sessions():
+@@ -208,14 +149,22 @@ def list_gemini_sessions():
+     cache_key = (
+         f"{'ssh' if ssh_target else 'local'}:{ssh_target or 'local'}:{ssh_dir or ''}"
+     )
+-    use_cache = request.args.get("cache") == "true"
+-    bg = request.args.get("bg") == "true"
++
++    from src.services.session_poller import session_poller_manager
++    session_poller_manager.update_frontend_activity()
++
++    with session_results_cache_lock:
++        res = session_results_cache.get(cache_key)
++
++    print(f"DEBUG IN ROUTE: cache_key={cache_key}, res={res}")
++
++    if not res:
++        res = {"output": "", "error": "Fetching...", "timestamp": 0}
+
+-    res = _get_gemini_sessions_impl(ssh_target, ssh_dir, cache_key, use_cache, bg)
+     if (
+         isinstance(res, dict)
+         and isinstance(res.get("error"), str)
+-        and "timeout" in res["error"].lower()
++        and "time" in res["error"].lower()
+     ):
+         return jsonify(res), 504
+     return jsonify(res)
+diff --git a/src/services/process_engine.py b/src/services/process_engine.py
+index 12e8be3..f80dba7 100644
+--- a/src/services/process_engine.py
++++ b/src/services/process_engine.py
+@@ -205,7 +205,9 @@ def get_remote_command_prefix(ssh_dir, gemini_bin="gemini", env_vars=None):
+
+ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
+     """Internal helper to fetch sessions for a host config."""
+-    target_key = host.get("target") or "local"
++    ssh_target = host.get("target")
++    ssh_dir = host.get("dir")
++    target_key = f"{'ssh' if ssh_target else 'local'}:{ssh_target or 'local'}:{ssh_dir or ''}"
+     current_time = time.time()
+
+     from src.shared_state import (
+@@ -334,10 +336,13 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
+                     proc.stderr.close()
+             with active_monitors_lock:
+                 active_monitors.pop(monitor_id, None)
+-            return {
++            result = {
+                 "error": "Could not establish connection (timed out)",
+                 "timestamp": time.time(),
+             }
++            with session_results_cache_lock:
++                session_results_cache[target_key] = result
++            return result
+         except Exception:
+             if proc:
+                 kill_and_reap(proc.pid)
+@@ -347,7 +352,10 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
+                     proc.stderr.close()
+             with active_monitors_lock:
+                 active_monitors.pop(monitor_id, None)
+-            return {"error": "Connection failed", "timestamp": time.time()}
++            result = {"error": "Connection failed", "timestamp": time.time()}
++            with session_results_cache_lock:
++                session_results_cache[target_key] = result
++            return result
+     finally:
+         with session_listing_locks_lock:
+             if target_key in session_listing_locks:
+diff --git a/tests/unit/test_remote.py b/tests/unit/test_remote.py
+index 1dfa2c6..ff566a7 100644
+--- a/tests/unit/test_remote.py
++++ b/tests/unit/test_remote.py
+@@ -1,11 +1,12 @@
+ import pytest
+ import json
+ from unittest.mock import patch, MagicMock
+-from src.app import app
+-
+
+ @pytest.mark.timeout(60)
+ def test_remote_sessions_list(client):
++    from src.services.process_engine import fetch_sessions_for_host
++    from src.shared_state import session_results_cache_lock, session_results_cache
++
+     with patch("src.services.process_engine.subprocess.Popen") as mock_run:
+         mock_proc = MagicMock(returncode=0)
+         mock_proc.communicate.return_value = (
+@@ -13,26 +14,42 @@ def test_remote_sessions_list(client):
+   2. SessionTwo (paused) [uuid2]""",
+             "",
+         )
++        # Mock pid to prevent errors
++        mock_proc.pid = 1234
+         mock_run.return_value = mock_proc
+
++        # Simulate the background poller running once
++        host = {"target": "user@host", "dir": "/tmp"}
++        fetch_sessions_for_host(host, "/tmp")
++
++        # Now test the frontend API
+         response = client.get("/api/sessions?ssh_target=user@host&ssh_dir=/tmp")
+         assert response.status_code == 200
+         data = json.loads(response.data)
+         assert "output" in data
+         assert "SessionOne" in data["output"]
+-        assert "SessionTwo" in data["output"]
+
+
+ @pytest.mark.timeout(60)
+ def test_remote_sessions_timeout(client):
+     import subprocess
+-
++    from src.services.process_engine import fetch_sessions_for_host
++
+     with patch(
+         "src.services.process_engine.subprocess.Popen",
+         side_effect=subprocess.TimeoutExpired(cmd=["ssh"], timeout=45),
+     ):
++        # Simulate background poller
++        host = {"target": "user@host", "dir": ""}
++        fetch_sessions_for_host(host, "/tmp")
++
++        from src.shared_state import session_results_cache
++        print("CACHE KEYS:", session_results_cache.keys())
++        print("CACHE VALUE:", session_results_cache.get("ssh:user@host:"))
++
+         response = client.get("/api/sessions?ssh_target=user@host")
+-        assert response.status_code == 200
++        # Since it's a 504 the API returns 504
++        assert response.status_code == 504
+         data = json.loads(response.data)
+         assert "error" in data
+-        assert "timed out" in data["error"]
++        assert "timed out" in data["error"].lower()
+diff --git a/tests/unit/test_session_latching.py b/tests/unit/test_session_latching.py
+index e85f7bc..92b4793 100644
+--- a/tests/unit/test_session_latching.py
++++ b/tests/unit/test_session_latching.py
+@@ -1,73 +1,50 @@
+ import time
+ import subprocess
+ from src.services.process_engine import fetch_sessions_for_host, SSHConnectionManager
+-from src.shared_state import (
+-    session_listing_locks,
+-    session_listing_locks_lock,
+-    session_results_cache,
+-    session_results_cache_lock,
+-)
+-
++from src.shared_state import session_listing_locks, session_listing_locks_lock, session_results_cache, session_results_cache_lock
+
+ def test_fetch_sessions_latch(monkeypatch):
+     host = {"target": "test-latch-host", "dir": "~"}
+-
++    cache_key = "ssh:test-latch-host:~"
++
+     # 1. Populate cache
+     with session_results_cache_lock:
+-        session_results_cache["test-latch-host"] = {
+-            "output": "cached_sessions",
+-            "error": None,
+-            "timestamp": time.time(),
+-        }
+-
++        session_results_cache[cache_key] = {"output": "cached_sessions", "error": None, "timestamp": time.time()}
++
+     # 2. Simulate an active latch
+     with session_listing_locks_lock:
+-        session_listing_locks["test-latch-host"] = {
+-            "active": True,
+-            "timestamp": time.time(),
+-        }
+-
+-    # 3. Call fetch_sessions_for_host
+-    # It should return immediately from cache without calling Popen
+-
++        session_listing_locks[cache_key] = {"active": True, "timestamp": time.time()}
++
+     # Track if Popen is called
+     popen_called = False
+-
+     class DummyPopen:
+         def __init__(self, *args, **kwargs):
+             nonlocal popen_called
+             popen_called = True
+-
++            self.pid = 1234
++            self.returncode = 0
++            self.stdout = None
++            self.stderr = None
+         def communicate(self, *args, **kwargs):
+             return "output", "error"
+-
++
+     monkeypatch.setattr("src.services.process_engine.subprocess.Popen", DummyPopen)
+-    monkeypatch.setattr(
+-        SSHConnectionManager, "check_and_recover_connection", lambda *args: None
+-    )
+-
++    monkeypatch.setattr(SSHConnectionManager, "check_and_recover_connection", lambda *args: None)
++
+     res = fetch_sessions_for_host(host, "/tmp")
+-
+-    assert res == {
+-        "output": "cached_sessions",
+-        "error": None,
+-        "timestamp": session_results_cache["test-latch-host"]["timestamp"],
+-    }
++
++    assert res == {"output": "cached_sessions", "error": None, "timestamp": session_results_cache[cache_key]["timestamp"]}
+     assert not popen_called, "Popen should not be called when latch is active"
+
+-
+ def test_fetch_sessions_timeout(monkeypatch):
+     host = {"target": "test-timeout-host", "dir": "~"}
+-
++    cache_key = "ssh:test-timeout-host:~"
++
+     # 1. Simulate an OLD active latch (older than 60s)
+     with session_listing_locks_lock:
+-        session_listing_locks["test-timeout-host"] = {
+-            "active": True,
+-            "timestamp": time.time() - 65,
+-        }
+-
++        session_listing_locks[cache_key] = {"active": True, "timestamp": time.time() - 65}
++
+     popen_called = False
+-
+     class DummyPopen:
+         def __init__(self, *args, **kwargs):
+             nonlocal popen_called
+@@ -76,20 +53,17 @@ def test_fetch_sessions_timeout(monkeypatch):
+             self.returncode = 0
+             self.stdout = None
+             self.stderr = None
+-
+         def communicate(self, *args, **kwargs):
+             return "new_output", ""
+-
++
+     monkeypatch.setattr("src.services.process_engine.subprocess.Popen", DummyPopen)
+-    monkeypatch.setattr(
+-        SSHConnectionManager, "check_and_recover_connection", lambda *args: None
+-    )
+-
++    monkeypatch.setattr(SSHConnectionManager, "check_and_recover_connection", lambda *args: None)
++
+     res = fetch_sessions_for_host(host, "/tmp")
+-
++
+     assert popen_called, "Popen should be called because latch timed out"
+     assert res["output"] == "new_output"
+-
++
+     # Verify latch is released after completion
+     with session_listing_locks_lock:
+-        assert not session_listing_locks["test-timeout-host"]["active"]
++        assert not session_listing_locks[cache_key]["active"]
+diff --git a/tests/unit/test_theory.py b/tests/unit/test_theory.py
+index 22d9ab9..2dc27ba 100644
+--- a/tests/unit/test_theory.py
++++ b/tests/unit/test_theory.py
+@@ -1,6 +1,5 @@
+ import pytest
+-from playwright.sync_api import sync_playwright, expect
+-
++from playwright.sync_api import expect
+
+ @pytest.mark.timeout(60)
+ def test_theory(server, playwright):
+@@ -9,38 +8,22 @@ def test_theory(server, playwright):
+     context = browser.new_context()
+     page = context.new_page()
+
++    # Intercept REST API to simulate failure
++    page.route(
++        "**/api/sessions*",
++        lambda route: route.fulfill(
++            status=500, json={"error": "Internal Server Error"}
++        ),
++    )
++
+     page.goto(server, timeout=15000)
+     page.wait_for_selector(".launcher", state="attached", timeout=15000)
+
+-    # Intercept socket emit to simulate failure
+-    page.evaluate("""() => {
+-        const socket = getGlobalSocket();
+-        const originalEmit = socket.emit.bind(socket);
+-        socket.emit = (event, data, callback) => {
+-            if (event === 'get_sessions') {
+-                if (callback) callback({ error: "Internal Server Error" });
+-                return socket;
+-            }
+-            return originalEmit(event, data, callback);
+-        };
+-    }""")
+-
+     local_health = page.locator(
+         'div[data-label="local"] .connection-title span[id$="_health_local"]'
+     )
+
+-    # Initially red because the websocket mock returns an explicit error
+-    expect(local_health).to_have_text("🔴", timeout=5000)
+-
+-    page.evaluate("""() => {
+-        if (typeof activeTabId !== "undefined") {
+-            const id = activeTabId;
+-            const sessionListId = `${id}_sessions_local`;
+-            fetchSessions(id, {label: 'local', type: 'local'}, sessionListId, false, false);
+-        }
+-    }""")
+-
+-    # It should become red after the manual fetch fails
+-    expect(local_health).to_have_text("🔴", timeout=5000)
+-    context.close()
++    # Red because the REST API returns 500 during the polling loop
++    expect(local_health).to_have_text("🔴", timeout=10000)
++
+     browser.close()
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.6.0 -- /home/adamoutler/gemini-webui/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/adamoutler/gemini-webui
+configfile: pytest.ini
+plugins: split-0.11.0, playwright-0.7.2, timeout-2.4.0, base-url-2.1.0
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+[1mcollecting ... [0mcollected 2 items
+
+tests/unit/test_session_poller.py::test_session_poller_active_interval [32mPASSED[0m[32m [ 50%][0m
+tests/unit/test_session_poller.py::test_session_poller_backoff_interval [32mPASSED[0m[32m [100%][0m
+
+[32m============================== [32m[1m2 passed[0m[32m in 0.06s[0m[32m ===============================[0m

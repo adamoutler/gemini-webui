@@ -166,10 +166,18 @@ class HostStates(MethodView):
                 404,
             )
 
-        _, _, ssh_dir_path = get_config_paths()
-        result = fetch_sessions_for_host(host, ssh_dir_path, GEMINI_BIN)
+        ssh_target = host.get("target")
+        ssh_dir = host.get("dir")
+        cache_key = f"{'ssh' if ssh_target else 'local'}:{ssh_target or 'local'}:{ssh_dir or ''}"
 
-        if "error" in result and result["error"]:
+        from src.services.session_poller import session_poller_manager
+        from src.shared_state import session_results_cache, session_results_cache_lock
+
+        session_poller_manager.update_frontend_activity()
+        with session_results_cache_lock:
+            result = session_results_cache.get(cache_key, {})
+
+        if result.get("error"):
             return jsonify({"status": "error", "message": result["error"]}), 500
 
         return jsonify(
