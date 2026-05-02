@@ -316,8 +316,8 @@ export async function saveNewPrompt() {
 }
 
 // CSP Event Delegation
-export // Task Monitor
-async function openTaskMonitor() {
+// Task Monitor
+export async function openTaskMonitor() {
   document.getElementById("task-monitor-modal").style.display = "block";
   await refreshTaskMonitor();
 }
@@ -424,3 +424,39 @@ window.openTaskMonitor = openTaskMonitor;
 window.closeTaskMonitor = closeTaskMonitor;
 window.refreshTaskMonitor = refreshTaskMonitor;
 window.killTask = killTask;
+
+document.addEventListener("DOMContentLoaded", () => {
+  let modalMouseDownTarget = null;
+  const settingsModal = document.getElementById("settings-modal");
+  const quickAddModal = document.getElementById("quick-add-key-modal");
+  const shareModal = document.getElementById("share-modal");
+  const previewModal = document.getElementById("preview-modal");
+
+  [settingsModal, quickAddModal, shareModal, previewModal].forEach((modal) => {
+    if (!modal) return;
+    modal.addEventListener("mousedown", (e) => {
+      modalMouseDownTarget = e.target;
+    });
+    modal.addEventListener("mouseup", (e) => {
+      if (modalMouseDownTarget === modal && e.target === modal) {
+        if (
+          modal === settingsModal &&
+          typeof window.closeSettings === "function"
+        )
+          window.closeSettings();
+        else if (
+          modal === quickAddModal &&
+          typeof window.closeQuickAddKey === "function"
+        )
+          window.closeQuickAddKey();
+        else if (modal === shareModal) closeShareModal();
+        else if (
+          modal === previewModal &&
+          typeof window.closePreviewModal === "function"
+        )
+          window.closePreviewModal();
+      }
+      modalMouseDownTarget = null;
+    });
+  });
+});

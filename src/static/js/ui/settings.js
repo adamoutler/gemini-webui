@@ -1,10 +1,70 @@
-import {
-  initThemeUI,
-  copyToClipboard,
-  envVarManager,
-  renderLauncher,
-  fetchWithCSRF,
-} from "../../app.js";
+import { copyToClipboard, renderLauncher, fetchWithCSRF } from "../../app.js";
+import { initThemeUI } from "./theme.js";
+
+class EnvVarManager {
+  constructor() {
+    this.container = document.getElementById("env-vars-list");
+    this.addBtn = document.getElementById("add-env-var-btn");
+    this.addBtn.addEventListener("click", () => this.addVariable());
+    this.variables = [];
+  }
+  addVariable(key = "", value = "") {
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.gap = "5px";
+    const keyInput = document.createElement("input");
+    keyInput.type = "text";
+    keyInput.placeholder = "Key (e.g. PORT)";
+    keyInput.value = key;
+    keyInput.style.flex = "1";
+    const valInput = document.createElement("input");
+    valInput.type = "text";
+    valInput.placeholder = "Value";
+    valInput.value = value;
+    valInput.style.flex = "1";
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "danger small";
+    removeBtn.innerText = "X";
+    removeBtn.onclick = () => {
+      this.container.removeChild(row);
+    };
+    row.appendChild(keyInput);
+    row.appendChild(valInput);
+    row.appendChild(removeBtn);
+    this.container.appendChild(row);
+  }
+  clear() {
+    this.container.innerHTML = "";
+  }
+  load(envVars) {
+    this.clear();
+    if (envVars) {
+      for (const [key, value] of Object.entries(envVars)) {
+        this.addVariable(key, value);
+      }
+    }
+  }
+  get() {
+    const envVars = {};
+    for (let i = 0; i < this.container.children.length; i++) {
+      const row = this.container.children[i];
+      const key = row.children[0].value.trim();
+      const value = row.children[1].value.trim();
+      if (key) {
+        envVars[key] = value;
+      }
+    }
+    return envVars;
+  }
+}
+
+export let envVarManager = null;
+document.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("env-vars-list")) {
+    envVarManager = new EnvVarManager();
+  }
+});
 
 let editingHostLabel = null;
 

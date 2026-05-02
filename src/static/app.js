@@ -1,3 +1,5 @@
+import { initializeTheme, terminalTheme } from "./js/ui/theme.js";
+
 import {
   loadTabsFromServer,
   syncTabs,
@@ -309,115 +311,9 @@ window.addEventListener("popstate", (event) => {
     addNewTab();
   }
 });
-let savedTheme = localStorage.getItem("gemini_theme");
-let customTheme = savedTheme ? JSON.parse(savedTheme) : {};
-const defaultFontSize = isMobile ? 10 : 14;
-let customFontSize = localStorage.getItem("gemini_font_size");
-globalState.currentFontSize = customFontSize
-  ? parseInt(customFontSize)
-  : defaultFontSize;
-export const terminalTheme = {
-  background: customTheme.background || "#1e1e1e",
-  foreground: customTheme.foreground || "#d4d4d4",
-  cursor: customTheme.cursor || "#ffffff",
-  selection: "#264f78",
-  black: "#000000",
-  red: "#cd3131",
-  green: "#0dbc79",
-  yellow: "#e5e510",
-  blue: "#2472c8",
-  magenta: "#bc3fbc",
-  cyan: "#11a8cd",
-  white: "#e5e5e5",
-  brightBlack: "#666666",
-  brightRed: "#f14c4c",
-  brightGreen: "#23d18b",
-  brightYellow: "#f5f543",
-  brightBlue: "#3b8eea",
-  brightMagenta: "#d670d6",
-  brightCyan: "#29b8db",
-  brightWhite: "#e5e5e5",
-};
-if (typeof window !== "undefined") window.terminalTheme = terminalTheme;
 
-// Initialize CSS variables immediately to reflect any saved theme
-document.documentElement.style.setProperty(
-  "--terminal-bg",
-  terminalTheme.background,
-);
-document.documentElement.style.setProperty(
-  "--terminal-fg",
-  terminalTheme.foreground,
-);
-export function initThemeUI() {
-  document.documentElement.style.setProperty(
-    "--terminal-bg",
-    terminalTheme.background,
-  );
-  document.documentElement.style.setProperty(
-    "--terminal-fg",
-    terminalTheme.foreground,
-  );
-  document.getElementById("theme-bg").value = terminalTheme.background;
-  document.getElementById("theme-fg").value = terminalTheme.foreground;
-  document.getElementById("theme-cursor").value = terminalTheme.cursor;
-  document.getElementById("theme-font").value = globalState.currentFontSize;
-}
-function applyTheme() {
-  terminalTheme.background = document.getElementById("theme-bg").value;
-  terminalTheme.foreground = document.getElementById("theme-fg").value;
-  terminalTheme.cursor = document.getElementById("theme-cursor").value;
-  globalState.currentFontSize =
-    parseInt(document.getElementById("theme-font").value) || defaultFontSize;
-  localStorage.setItem(
-    "gemini_theme",
-    JSON.stringify({
-      background: terminalTheme.background,
-      foreground: terminalTheme.foreground,
-      cursor: terminalTheme.cursor,
-    }),
-  );
-  localStorage.setItem("gemini_font_size", globalState.currentFontSize);
+initializeTheme();
 
-  // Set CSS variables for global styling matching the theme
-  document.documentElement.style.setProperty(
-    "--terminal-bg",
-    terminalTheme.background,
-  );
-  document.documentElement.style.setProperty(
-    "--terminal-fg",
-    terminalTheme.foreground,
-  );
-
-  // Apply to all open terminals
-  tabs.forEach((tab) => {
-    if (tab.term) {
-      tab.term.options.theme = terminalTheme;
-      tab.term.options.fontSize = globalState.currentFontSize;
-      if (tab.term.textarea) {
-      }
-      fitTerminal(tab);
-    }
-  });
-}
-function resetTheme() {
-  localStorage.removeItem("gemini_theme");
-  localStorage.removeItem("gemini_font_size");
-  terminalTheme.background = "#1e1e1e";
-  terminalTheme.foreground = "#d4d4d4";
-  terminalTheme.cursor = "#ffffff";
-  globalState.currentFontSize = defaultFontSize;
-  initThemeUI();
-
-  // Apply immediately to terminals
-  tabs.forEach((tab) => {
-    if (tab.term) {
-      tab.term.options.theme = terminalTheme;
-      tab.term.options.fontSize = globalState.currentFontSize;
-      fitTerminal(tab);
-    }
-  });
-}
 export function updateStatus(target, dir) {
   const statusEl = document.getElementById("connection-status");
   if (target === "local" || target === "picker" || !target) {
@@ -1564,27 +1460,6 @@ async function submitQuickAddKey() {
 }
 // --- End Quick Connect Logic ---
 
-// --- Modal Management ---
-let modalMouseDownTarget = null;
-const settingsModal = document.getElementById("settings-modal");
-const quickAddModal = document.getElementById("quick-add-key-modal");
-const shareModal = document.getElementById("share-modal");
-const previewModal = document.getElementById("preview-modal");
-[settingsModal, quickAddModal, shareModal, previewModal].forEach((modal) => {
-  if (!modal) return;
-  modal.addEventListener("mousedown", (e) => {
-    modalMouseDownTarget = e.target;
-  });
-  modal.addEventListener("mouseup", (e) => {
-    if (modalMouseDownTarget === modal && e.target === modal) {
-      if (modal === settingsModal) closeSettings();
-      else if (modal === quickAddModal) closeQuickAddKey();
-      else if (modal === shareModal) closeShareModal();
-      else if (modal === previewModal) closePreviewModal();
-    }
-    modalMouseDownTarget = null;
-  });
-});
 export function copyToClipboard(text) {
   if (navigator.clipboard && window.isSecureContext) {
     navigator.clipboard
@@ -1613,71 +1488,13 @@ export function copyToClipboard(text) {
 function copyInstanceSnippet() {
   copyToClipboard(document.getElementById("instance-key-snippet").innerText);
 }
-class EnvVarManager {
-  constructor() {
-    this.container = document.getElementById("env-vars-list");
-    this.addBtn = document.getElementById("add-env-var-btn");
-    this.addBtn.addEventListener("click", () => this.addVariable());
-    this.variables = [];
-  }
-  addVariable(key = "", value = "") {
-    const row = document.createElement("div");
-    row.style.display = "flex";
-    row.style.gap = "5px";
-    const keyInput = document.createElement("input");
-    keyInput.type = "text";
-    keyInput.placeholder = "Key (e.g. PORT)";
-    keyInput.value = key;
-    keyInput.style.flex = "1";
-    const valInput = document.createElement("input");
-    valInput.type = "text";
-    valInput.placeholder = "Value";
-    valInput.value = value;
-    valInput.style.flex = "1";
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.className = "danger small";
-    removeBtn.innerText = "X";
-    removeBtn.onclick = () => {
-      this.container.removeChild(row);
-    };
-    row.appendChild(keyInput);
-    row.appendChild(valInput);
-    row.appendChild(removeBtn);
-    this.container.appendChild(row);
-  }
-  clear() {
-    this.container.innerHTML = "";
-  }
-  load(envVars) {
-    this.clear();
-    if (envVars) {
-      for (const [key, value] of Object.entries(envVars)) {
-        this.addVariable(key, value);
-      }
-    }
-  }
-  get() {
-    const envVars = {};
-    for (let i = 0; i < this.container.children.length; i++) {
-      const row = this.container.children[i];
-      const key = row.children[0].value.trim();
-      const value = row.children[1].value.trim();
-      if (key) {
-        envVars[key] = value;
-      }
-    }
-    return envVars;
-  }
-}
-export let envVarManager;
+
 document.addEventListener("DOMContentLoaded", async () => {
   try {
     await refreshCsrfToken();
   } catch (e) {
     console.error("Failed to initialize CSRF token:", e);
   }
-  envVarManager = new EnvVarManager();
   await loadPromptsFromServer();
 });
 export async function fetchWithCSRF(url, options = {}) {
@@ -2249,9 +2066,6 @@ if (typeof window !== "undefined") {
   window.saveTabsToStorage = saveTabsToStorage;
   window.loadTabsFromStorage = loadTabsFromStorage;
   window.recreateTerminalUI = recreateTerminalUI;
-  window.initThemeUI = initThemeUI;
-  window.applyTheme = applyTheme;
-  window.resetTheme = resetTheme;
   window.updateStatus = updateStatus;
   window.addNewTab = addNewTab;
   window.refreshBackendSessionsList = refreshBackendSessionsList;

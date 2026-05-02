@@ -1,0 +1,26 @@
+<div id="add-prompt-modal" class="modal">
+  <div class="modal-content">
+    <span data-onclick="closeAddPromptModal()" class="auto-style-6c8878"
+      >&times;</span
+    >
+    <h2 class="auto-style-b8f7c9" id="prompt-modal-title">Add Prompt</h2>
+    <div class="auto-style-a774ed">
+      <h4 class="auto-style-aecc05">Name</h4>
+      <input
+        type="text"
+        id="new-prompt-name"
+        placeholder="Prompt Name"
+        class="auto-style-3bbb81"
+      />
+      <h4 class="auto-style-aecc05">Prompt</h4>
+      <textarea
+        id="new-prompt-text"
+        placeholder="Enter prompt text here..."
+        class="auto-style-46d6d7"
+      ></textarea>
+      <button class="primary auto-style-be70d9" data-onclick="saveNewPrompt()">
+        Save Prompt
+      </button>
+    </div>
+  </div>
+</div>

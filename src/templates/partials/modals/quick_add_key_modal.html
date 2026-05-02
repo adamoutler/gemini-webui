@@ -1,0 +1,28 @@
+<div id="quick-add-key-modal" class="modal">
+  <div class="modal-content">
+    <span data-onclick="closeQuickAddKey()" class="auto-style-6c8878"
+      >&times;</span
+    >
+    <h2 class="auto-style-b8f7c9">Add SSH Key & Connect</h2>
+    <p id="quick-add-host-info" class="auto-style-e56083"></p>
+    <div class="auto-style-a774ed">
+      <h4 class="auto-style-aecc05">Paste Private Key</h4>
+      <input
+        type="text"
+        id="quick-key-name"
+        placeholder="Key name (e.g. id_rsa_prod)"
+      />
+      <textarea
+        id="quick-key-text"
+        placeholder="-----BEGIN OPENSSH PRIVATE KEY----- ..."
+        class="auto-style-5e9e78"
+      ></textarea>
+      <button
+        class="primary auto-style-5a91f7"
+        data-onclick="submitQuickAddKey()"
+      >
+        Save Key & Connect
+      </button>
+    </div>
+  </div>
+</div>

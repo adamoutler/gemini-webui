@@ -1,0 +1,46 @@
+<div id="share-modal" class="modal">
+  <div class="modal-content">
+    <span data-onclick="closeShareModal()" class="auto-style-6c8878"
+      >&times;</span
+    >
+    <h2 class="auto-style-b8f7c9">Create Snapshot</h2>
+    <div class="auto-style-a774ed">
+      <p class="auto-style-ef9ddf">Warning!</p>
+      <p>
+        This will generate a publicly accessible link. Ensure there are no
+        passwords, API keys, or sensitive environment variables in the terminal
+        scrollback before sharing.
+      </p>
+
+      <div id="share-result" class="auto-style-b1d5df">
+        <input
+          type="text"
+          id="share-link-input"
+          readonly
+          class="auto-style-d26a94"
+        />
+        <div class="auto-style-2be0d8">
+          <button
+            class="primary auto-style-d2dc0a"
+            data-onclick="copyShareLink()"
+          >
+            Copy Link
+          </button>
+          <button
+            class="success auto-style-d2dc0a"
+            data-onclick="window.open(document.getElementById('share-link-input').value, '_blank')"
+          >
+            Open Link
+          </button>
+        </div>
+      </div>
+      <button
+        class="primary auto-style-a74b11"
+        id="confirm-share-btn"
+        data-onclick="confirmShareSession()"
+      >
+        Generate Share Link
+      </button>
+    </div>
+  </div>
+</div>

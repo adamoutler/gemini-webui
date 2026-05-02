@@ -1,0 +1,26 @@
+<div id="connection-issue-modal" class="modal">
+  <div class="modal-content">
+    <span
+      data-onclick="document.getElementById('connection-issue-modal').style.display='none'"
+      class="auto-style-6c8878"
+      >&times;</span
+    >
+    <h2 class="auto-style-b8f7c9">Connection Problem</h2>
+    <p>
+      We're having trouble maintaining a secure connection to the server. This
+      often happens after a server restart.
+    </p>
+    <p
+      id="connection-issue-details"
+      style="font-size: 0.9em; color: #888; margin-bottom: 20px"
+    ></p>
+    <div class="auto-style-a71f31">
+      <button
+        class="primary auto-style-cd7753"
+        data-onclick="window.location.reload()"
+      >
+        Reload Page
+      </button>
+    </div>
+  </div>
+</div>
