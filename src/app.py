@@ -82,13 +82,19 @@ def create_app(test_config=None):
             except Exception as e:
                 pass
 
+    csrf_enabled = (
+        test_config.get("WTF_CSRF_ENABLED")
+        if test_config and "WTF_CSRF_ENABLED" in test_config
+        else not app.config.get("TESTING", False)
+    )
+
     app.config.update(
         SECRET_KEY=secret_key,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SECURE=False,
         SESSION_COOKIE_SAMESITE="Lax",
         DATA_DIR=data_dir,
-        WTF_CSRF_ENABLED=not app.config.get("TESTING", False),
+        WTF_CSRF_ENABLED=csrf_enabled,
         ADMIN_USER=app.config.get("ADMIN_USER") or env_config.ADMIN_USER,
         ADMIN_PASS=app.config.get("ADMIN_PASS") or env_config.ADMIN_PASS,
         LDAP_SERVER=app.config.get("LDAP_SERVER") or env_config.LDAP_SERVER,

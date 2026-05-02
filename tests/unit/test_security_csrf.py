@@ -7,7 +7,16 @@ from src.app import app
 @pytest.mark.timeout(60)
 def test_csrf_protection_missing_token(client, playwright):
     # Enable CSRF for this test
-    app.config["WTF_CSRF_ENABLED"] = True
+    from src.app import create_app
+
+    app = create_app(
+        {"TESTING": True, "WTF_CSRF_ENABLED": True, "BYPASS_AUTH_FOR_TESTING": "true"}
+    )
+    client = app.test_client()
+    with app.app_context():
+        with client.session_transaction() as sess:
+            sess["authenticated"] = True
+            sess["user_id"] = "admin"
 
     # Try a state-changing operation without a CSRF token
     response = client.post(
@@ -27,7 +36,16 @@ def test_csrf_protection_missing_token(client, playwright):
 
 @pytest.mark.timeout(60)
 def test_csrf_protection_with_token(client, playwright):
-    app.config["WTF_CSRF_ENABLED"] = True
+    from src.app import create_app
+
+    app = create_app(
+        {"TESTING": True, "WTF_CSRF_ENABLED": True, "BYPASS_AUTH_FOR_TESTING": "true"}
+    )
+    client = app.test_client()
+    with app.app_context():
+        with client.session_transaction() as sess:
+            sess["authenticated"] = True
+            sess["user_id"] = "admin"
 
     # First, get the main page to extract the CSRF token from the meta tag
     response = client.get("/")
@@ -59,7 +77,16 @@ def test_csrf_protection_with_token(client, playwright):
 
 @pytest.mark.timeout(60)
 def test_csrf_failure_returns_json_for_api(client, playwright):
-    app.config["WTF_CSRF_ENABLED"] = True
+    from src.app import create_app
+
+    app = create_app(
+        {"TESTING": True, "WTF_CSRF_ENABLED": True, "BYPASS_AUTH_FOR_TESTING": "true"}
+    )
+    client = app.test_client()
+    with app.app_context():
+        with client.session_transaction() as sess:
+            sess["authenticated"] = True
+            sess["user_id"] = "admin"
 
     # Make a POST request to an endpoint with an invalid CSRF token
     response = client.post("/api/hosts", headers={"X-CSRFToken": "invalid-token"})
@@ -81,7 +108,16 @@ def test_csrf_failure_returns_json_for_api(client, playwright):
 
 @pytest.mark.timeout(60)
 def test_csrf_failure_returns_expired_flag(client, playwright):
-    app.config["WTF_CSRF_ENABLED"] = True
+    from src.app import create_app
+
+    app = create_app(
+        {"TESTING": True, "WTF_CSRF_ENABLED": True, "BYPASS_AUTH_FOR_TESTING": "true"}
+    )
+    client = app.test_client()
+    with app.app_context():
+        with client.session_transaction() as sess:
+            sess["authenticated"] = True
+            sess["user_id"] = "admin"
 
     response = client.post(
         "/api/hosts",
@@ -100,7 +136,16 @@ def test_csrf_failure_returns_expired_flag(client, playwright):
 
 @pytest.mark.timeout(60)
 def test_csrf_socketio_rejection(client, playwright):
-    app.config["WTF_CSRF_ENABLED"] = True
+    from src.app import create_app
+
+    app = create_app(
+        {"TESTING": True, "WTF_CSRF_ENABLED": True, "BYPASS_AUTH_FOR_TESTING": "true"}
+    )
+    client = app.test_client()
+    with app.app_context():
+        with client.session_transaction() as sess:
+            sess["authenticated"] = True
+            sess["user_id"] = "admin"
 
     from flask_socketio import ConnectionRefusedError
 
