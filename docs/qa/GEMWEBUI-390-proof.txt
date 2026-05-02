@@ -1,0 +1,33 @@
+commit d01aba7a5d4a511f2a6f64bd440f1908cac699a2
+Author: Adam Outler <adamoutler@gmail.com>
+Date:   Sat May 2 08:54:22 2026 -0400
+
+    test: update qa screenshots for UI validation
+
+diff --git a/docs/qa-images/mobile_new_modifiers_layout.png b/docs/qa-images/mobile_new_modifiers_layout.png
+index 9d26ad0..9801d01 100644
+Binary files a/docs/qa-images/mobile_new_modifiers_layout.png and b/docs/qa-images/mobile_new_modifiers_layout.png differ
+diff --git a/docs/qa-images/mobile_super_active.png b/docs/qa-images/mobile_super_active.png
+index 42f896e..02875a4 100644
+Binary files a/docs/qa-images/mobile_super_active.png and b/docs/qa-images/mobile_super_active.png differ
+diff --git a/public/qa-screenshots/debug_settings.png b/public/qa-screenshots/debug_settings.png
+index 75a0d99..c7d3264 100644
+Binary files a/public/qa-screenshots/debug_settings.png and b/public/qa-screenshots/debug_settings.png differ
+diff --git a/public/qa-screenshots/test_share_full_color_logo.png b/public/qa-screenshots/test_share_full_color_logo.png
+index b588382..67d24fe 100644
+Binary files a/public/qa-screenshots/test_share_full_color_logo.png and b/public/qa-screenshots/test_share_full_color_logo.png differ
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.6.0 -- /home/adamoutler/gemini-webui/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/adamoutler/gemini-webui
+configfile: pytest.ini
+plugins: split-0.11.0, playwright-0.7.2, timeout-2.4.0, base-url-2.1.0
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+[1mcollecting ... [0mcollected 2 items
+
+tests/unit/test_session_latching.py::test_fetch_sessions_latch [32mPASSED[0m[32m    [ 50%][0m
+tests/unit/test_session_latching.py::test_fetch_sessions_timeout [32mPASSED[0m[32m  [100%][0m
+
+[32m============================== [32m[1m2 passed[0m[32m in 0.09s[0m[32m ===============================[0m
