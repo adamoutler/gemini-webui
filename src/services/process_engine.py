@@ -563,24 +563,7 @@ import signal
 from src.shared_state import abandoned_pids, abandoned_pids_lock
 
 
-def kill_and_reap(pid):
-    """Kills a process and its entire group, then reaps the zombie immediately."""
-    if pid is None:
-        return
-    try:
-        os.killpg(pid, signal.SIGKILL)
-    except OSError:
-        try:
-            os.kill(pid, signal.SIGKILL)
-        except OSError:
-            pass
-
-    try:
-        res = os.waitpid(pid, os.WNOHANG)
-        if res == (0, 0):
-            with abandoned_pids_lock:
-                abandoned_pids.add(pid)
-    except ChildProcessError:
-        pass
-    except OSError:
-        pass
+try:
+    from infrastructure.process_manager import kill_and_reap
+except ImportError:
+    from src.infrastructure.process_manager import kill_and_reap

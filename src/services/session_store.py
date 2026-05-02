@@ -1,3 +1,4 @@
+from src.infrastructure.process_manager import kill_and_reap
 import os
 import subprocess
 import shlex
@@ -98,23 +99,8 @@ class SessionManager:
                 if on_remove:
                     on_remove(old_same_tab.pid)
                 else:
-                    try:
-                        if old_same_tab.pid is not None:
-                            try:
-                                if os.getpgid(old_same_tab.pid) != os.getpgrp():
-                                    os.killpg(
-                                        os.getpgid(old_same_tab.pid), signal.SIGKILL
-                                    )
-                                else:
-                                    os.kill(old_same_tab.pid, signal.SIGKILL)
-                            except OSError:
-                                pass
-                    except OSError:
-                        try:
-                            if old_same_tab.pid is not None:
-                                os.kill(old_same_tab.pid, signal.SIGKILL)
-                        except OSError:
-                            pass
+                    if old_same_tab.pid is not None:
+                        kill_and_reap(old_same_tab.pid)
                 try:
                     if old_same_tab.fd is not None:
                         os.close(old_same_tab.fd)
@@ -140,23 +126,8 @@ class SessionManager:
                     if on_remove:
                         on_remove(oldest.pid)
                     else:
-                        try:
-                            if oldest.pid is not None:
-                                try:
-                                    if os.getpgid(oldest.pid) != os.getpgrp():
-                                        os.killpg(
-                                            os.getpgid(oldest.pid), signal.SIGKILL
-                                        )
-                                    else:
-                                        os.kill(oldest.pid, signal.SIGKILL)
-                                except OSError:
-                                    pass
-                        except OSError:
-                            try:
-                                if oldest.pid is not None:
-                                    os.kill(oldest.pid, signal.SIGKILL)
-                            except OSError:
-                                pass
+                        if oldest.pid is not None:
+                            kill_and_reap(oldest.pid)
                     try:
                         if oldest.fd is not None:
                             os.close(oldest.fd)

@@ -529,7 +529,7 @@ def kill_task():
     if not tab_id:
         return jsonify({"error": "tab_id required"}), 400
 
-    from src.services.process_engine import kill_and_reap
+    from src.infrastructure.process_manager import kill_and_reap
 
     if tab_id.startswith("monitor_"):
         mid = tab_id.replace("monitor_", "", 1)
@@ -552,7 +552,7 @@ def kill_task():
     with session_manager._lock:
         sess = session_manager.sessions.get(tab_id)
         if sess:
-            from src.services.process_engine import kill_and_reap
+            from src.infrastructure.process_manager import kill_and_reap
 
             pid = sess.pid
             logger.info(

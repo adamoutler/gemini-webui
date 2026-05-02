@@ -51,12 +51,11 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     with patch("os.killpg") as mock_kill, patch("os.waitpid") as mock_wait, patch(
         "os.getpgid", side_effect=lambda x: x
     ):  # Mock ORPHANED_SESSION_TTL to 60 for testing
-        from src.app import app
+        from src.app import app, env_config
 
         app.config["ORPHANED_SESSION_TTL"] = 60
 
-        cleanup_orphaned_ptys()
-
+        cleanup_orphaned_ptys(app, session_manager, env_config)
         # Only old_orphan should be killed
         assert mock_kill.call_count == 1
         # SessionManager now uses os.getpgid(pid)
