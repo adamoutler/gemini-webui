@@ -542,6 +542,10 @@ export async function fetchSessions(
       });
     }
     debugLog("FETCH SESSIONS DATA: ", JSON.stringify(data));
+    if (data.error === "Fetch in progress") {
+      data.status = "fetching";
+      data.error = null;
+    }
     if (data.status === "fetching") {
       const listEl = document.getElementById(targetId);
       if (listEl && listEl.innerHTML === "") {
