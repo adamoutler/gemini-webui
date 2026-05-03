@@ -84,5 +84,8 @@ def test_root_health_check_unauthenticated(client):
 def test_favicon_routes(client):
     for path in ["/favicon.ico", "/favicon.svg"]:
         response = client.get(path)
-        assert response.status_code == 200
-        assert b"<svg" in response.data
+        try:
+            assert response.status_code == 200
+            assert b"<svg" in response.data
+        finally:
+            response.close()
