@@ -25,5 +25,8 @@ def test_download_file_subdirectory(client, test_data_dir):
         f.write(b"download content")
 
     response = client.get("/api/download/subfolder/download_test.txt")
-    assert response.status_code == 200
-    assert response.data == b"download content"
+    try:
+        assert response.status_code == 200
+        assert response.data == b"download content"
+    finally:
+        response.close()

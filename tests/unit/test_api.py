@@ -2,9 +2,9 @@ import pytest
 import json
 import os
 
-pytestmark = pytest.mark.timeout(30)
-
 from src.app import create_app
+
+pytestmark = pytest.mark.timeout(30)
 
 app = create_app(
     {"TESTING": True, "WTF_CSRF_ENABLED": False, "BYPASS_AUTH_FOR_TESTING": "true"}
@@ -167,11 +167,14 @@ def test_api_export_settings(client, test_data_dir):
         f.write("test content")
 
     response = client.get("/api/settings/export")
-    assert response.status_code == 200
-    assert response.headers["Content-Type"] == "application/zip"
-    assert "attachment" in response.headers["Content-Disposition"]
-    assert "settings.gwui" in response.headers["Content-Disposition"]
-    assert len(response.data) > 0
+    try:
+        assert response.status_code == 200
+        assert response.headers["Content-Type"] == "application/zip"
+        assert "attachment" in response.headers["Content-Disposition"]
+        assert "settings.gwui" in response.headers["Content-Disposition"]
+        assert len(response.data) > 0
+    finally:
+        response.close()
 
 
 @pytest.mark.timeout(60)

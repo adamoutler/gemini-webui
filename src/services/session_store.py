@@ -14,7 +14,7 @@ import threading
 
 
 try:
-    from src.models.session import Session
+    pass
 except ImportError:
     pass
 

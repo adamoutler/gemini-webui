@@ -1,3 +1,8 @@
+import os
+import subprocess
+import time
+import signal
+from playwright.sync_api import expect
 from src.gateways.terminal_socket import handle_connect
 import pytest
 import re
@@ -159,13 +164,6 @@ def test_csrf_socketio_rejection(client, playwright):
                 handle_connect(auth={"csrf_token": "bad-token"})
     finally:
         app.config["WTF_CSRF_ENABLED"] = False
-
-
-import os
-import subprocess
-import time
-import signal
-from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")

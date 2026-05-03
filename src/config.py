@@ -1,4 +1,8 @@
 import os
+import json
+import logging
+import socket
+import hashlib
 
 
 class EnvConfig:
@@ -102,11 +106,6 @@ class EnvConfig:
 
 
 env_config = EnvConfig()
-
-import json
-import logging
-import socket
-import hashlib
 
 logger = logging.getLogger(__name__)
 

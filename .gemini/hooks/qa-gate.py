@@ -104,14 +104,16 @@ def verify_kanban_key():
 
 def verify_git_clean():
     """4. Validates the local git working tree has no uncommitted changes."""
-    if BYPASS_UNCOMMITTED: return
+    if BYPASS_UNCOMMITTED:
+        return
     status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True).stdout.strip()
     if status:
         deny_transition("Please commit all project files and delete non-project files - if there are any uncommitted files.")
 
 def verify_git_pushed():
     """5. Validates that the local branch is not ahead of its remote tracking counterpart."""
-    if BYPASS_PUSHED: return
+    if BYPASS_PUSHED:
+        return
     status = subprocess.run(["git", "status", "-sb"], capture_output=True, text=True).stdout
     if not status or "..." not in status.splitlines()[0]:
         deny_transition("Git branch has no upstream tracking branch. Please push changes before QA to ensure we match the main repo.")
@@ -120,14 +122,16 @@ def verify_git_pushed():
 
 def verify_ci_integrity():
     """Validates that CI workflow configuration files have not been maliciously modified."""
-    if BYPASS_CI: return
+    if BYPASS_CI:
+        return
     status = subprocess.run(["git", "diff", "--name-only", "origin/main...HEAD", ".github/workflows/"], capture_output=True, text=True).stdout.strip()
     if status:
         deny_transition(f"GATE DENIED: Unauthorized modifications to .github/workflows/ detected.\nCI Pipeline integrity is compromised. Please revert changes to workflow files.\nModified:\n{status}")
 
 def verify_dash_ci():
     """6. Queries the Dash API for the build status matching the DASH environment string."""
-    if BYPASS_CI: return None
+    if BYPASS_CI:
+        return None
 
     if not DASH:
         deny_transition("GATE DENIED: DASH configuration variable is not set (e.g., github/adamoutler/repo/Workflow).")
@@ -165,7 +169,8 @@ def verify_dash_ci():
 
 def fetch_project_id(workspace, prefix):
     data = api_request(f"/api/v1/workspaces/{workspace}/projects/")
-    if not data: return None
+    if not data:
+        return None
     for p in data.get("results", []):
         if p.get("identifier") == prefix:
             return str(p.get("id"))
@@ -173,7 +178,8 @@ def fetch_project_id(workspace, prefix):
 
 def fetch_work_item(workspace, project_id, ticket_id, seq):
     data = api_request(f"/api/v1/workspaces/{workspace}/projects/{project_id}/issues/?search={ticket_id}")
-    if not data: return None
+    if not data:
+        return None
     for w in data.get("results", []):
         if str(w.get("sequence_id")) == str(seq):
             return str(w.get("id"))
@@ -181,7 +187,8 @@ def fetch_work_item(workspace, project_id, ticket_id, seq):
 
 def fetch_done_state(workspace, project_id):
     data = api_request(f"/api/v1/workspaces/{workspace}/projects/{project_id}/states/")
-    if not data: return None
+    if not data:
+        return None
     for s in data.get("results", []):
         if s.get("name", "").lower() == "done":
             return str(s.get("id"))

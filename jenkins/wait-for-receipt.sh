@@ -29,10 +29,8 @@ if [ "$started" = false ]; then
 fi
 
 # Now wait for "Gemini WebUI Build Finished"
-finished=false
 while [ $SECONDS -lt $end_time ]; do
     if grep -q "Gemini WebUI Build Finished" "$RECEIPT" 2>/dev/null; then
-        finished=true
         echo -e "\nDeployment Complete. Results:"
         echo "----------------------------------------"
         cat "$RECEIPT"

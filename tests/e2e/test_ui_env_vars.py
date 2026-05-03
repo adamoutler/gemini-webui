@@ -1,4 +1,5 @@
 import pytest
+import re
 from playwright.sync_api import expect
 
 
@@ -68,9 +69,7 @@ def test_ui_add_host_with_env_vars(page, server, playwright):
     )
 
     # Verify it entered edit mode
-    expect(page.locator("#add-host-btn")).to_have_text(
-        import_re := __import__("re").compile(r"Update Host.*")
-    )
+    expect(page.locator("#add-host-btn")).to_have_text(re.compile(r"Update Host.*"))
 
     # Verify the env var is populated
     expect(

@@ -6,10 +6,9 @@ import eventlet.green.subprocess
 import threading
 import time
 import logging
+from src.shared_state import abandoned_pids, abandoned_pids_lock
 
 logger = logging.getLogger(__name__)
-
-from src.shared_state import abandoned_pids, abandoned_pids_lock
 
 managed_ptys = set()
 managed_ptys_lock = threading.Lock()

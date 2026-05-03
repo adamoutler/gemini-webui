@@ -98,7 +98,7 @@ def main(playwright):
             page.wait_for_selector(".xterm-cursor", timeout=5000)
             page.keyboard.type("ssh localhost\n")
             time.sleep(3)
-        except:
+        except Exception:
             pass
 
         screenshot_path_2 = "docs/qa-images/ssh_session_no_gemini.png"

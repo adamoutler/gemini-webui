@@ -15,7 +15,7 @@ def main(playwright):
     for f in glob.glob("/tmp/session-*-DEBUG.log"):
         try:
             os.remove(f)
-        except:
+        except Exception:
             pass
 
     print("Starting server...")

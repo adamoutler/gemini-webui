@@ -2,16 +2,15 @@ from flask import jsonify
 from flask.views import MethodView
 from marshmallow import Schema, fields
 from flask_smorest import Blueprint
+from src.config import env_config
+from src.auth import api_key_required
 
 from src.config import get_config
 import logging
 
 logger = logging.getLogger(__name__)
-from src.config import env_config
 
 GEMINI_BIN = env_config.GEMINI_BIN
-from src.auth import api_key_required
-from src.config import env_config
 
 external_api_bp = Blueprint(
     "external_api",

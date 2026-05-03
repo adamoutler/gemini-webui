@@ -9,16 +9,12 @@ from flask import Blueprint, jsonify, request, session
 from src.config import env_config
 from src.services.session_store import session_manager
 from src.routes.auth_utils import authenticated_only
+from src.services.process_engine import validate_ssh_target, kill_and_reap
+from src.extensions import socketio
+from src.utils import smart_file_search
 import logging
 
 logger = logging.getLogger(__name__)
-
-from src.services.process_engine import (
-    validate_ssh_target,
-    kill_and_reap,
-)
-from src.extensions import socketio
-from src.utils import smart_file_search
 
 terminal_bp = Blueprint("sessions", __name__)
 

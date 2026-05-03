@@ -1,13 +1,13 @@
+import unittest.mock
 import os
-
-os.environ["SKIP_MONKEY_PATCH"] = "true"
-os.environ["SKIP_MULTIPLEXER"] = "true"
-
 import time
 import subprocess
 import pytest
 import signal
 import requests
+
+os.environ["SKIP_MONKEY_PATCH"] = "true"
+os.environ["SKIP_MULTIPLEXER"] = "true"
 
 
 @pytest.fixture(autouse=True)
@@ -171,9 +171,6 @@ def client(test_data_dir, monkeypatch):
                 sess["authenticated"] = True
                 sess["user_id"] = "admin"
         yield client
-
-
-import unittest.mock
 
 
 @pytest.fixture(autouse=True)

@@ -3,10 +3,10 @@ import re
 from flask import Blueprint, jsonify, request, render_template
 
 from src.auth import authenticated_only
+from src.share_manager import ShareManager
 import logging
 
 logger = logging.getLogger(__name__)
-from src.share_manager import ShareManager
 
 share_manager = ShareManager()
 

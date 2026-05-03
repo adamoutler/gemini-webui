@@ -49,7 +49,9 @@ def test_debug_logging(page, server, playwright):
     logs.clear()  # clear logs
     page.wait_for_timeout(2000)
 
-    disabled_log_count = len([l for l in logs if "Verbose debugging" not in l])
+    disabled_log_count = len(
+        [log_line for log_line in logs if "Verbose debugging" not in log_line]
+    )
     assert disabled_log_count < 10, "Too many logs appeared after disabling"
 
     with open("docs/qa-images/test_debug_logs_output.txt", "w") as f:

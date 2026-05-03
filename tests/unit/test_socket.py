@@ -9,7 +9,8 @@ import pytest
 import os
 from unittest.mock import patch
 from src.app import app
-from src.services.session_store import session_manager, Session
+from src.services.session_store import session_manager
+from src.models.session import Session
 
 
 @pytest.fixture(autouse=True)

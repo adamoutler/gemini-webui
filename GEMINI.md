@@ -45,3 +45,4 @@ When resuming work or onboarding new agents:
 2.  Maintain the established pattern of modularity—if a new feature is added, create a corresponding route in `src/routes/` and document it.
 3.  Always verify that `pytest` passes before pushing changes.
 4.  The job isn't done until the commit/push, and related tickets are closed. Don't wait or ask for permission to do these things.
+    Project Key adamoutler_gemini-webui  Organization Key adamoutler 

@@ -4,7 +4,8 @@ import pytest
 @pytest.mark.timeout(60)
 def test_bola_get_sessions(client):
     # Important: import services.session_store here because conftest reloads src.app
-    from src.services.session_store import session_manager, Session
+    from src.services.session_store import session_manager
+    from src.models.session import Session
 
     # Setup two different users
     user_a = "user_A"
@@ -41,7 +42,8 @@ def test_bola_get_sessions(client):
 
 @pytest.mark.timeout(60)
 def test_bola_websocket_events(client):
-    from src.services.session_store import session_manager, Session
+    from src.services.session_store import session_manager
+    from src.models.session import Session
 
     # Testing the session manager directly shows the protection
     user_a = "user_A"

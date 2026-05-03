@@ -1,3 +1,4 @@
+from unittest.mock import patch
 import pytest
 from src.gateways.terminal_socket import set_winsize
 import os
@@ -13,9 +14,6 @@ def test_validate_ssh_target():
     assert validate_ssh_target("user@host:2222") is True
     assert validate_ssh_target("invalid-target!") is False
     assert validate_ssh_target("user@host; rm -rf /") is False
-
-
-from unittest.mock import patch
 
 
 @pytest.mark.timeout(60)

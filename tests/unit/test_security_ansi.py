@@ -1,7 +1,8 @@
 from src.gateways.terminal_socket import session_output_reader
 import pytest
 from unittest.mock import patch
-from src.services.session_store import session_manager, Session
+from src.services.session_store import session_manager
+from src.models.session import Session
 
 
 def read_and_forward_pty_output():

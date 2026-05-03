@@ -7,7 +7,8 @@ from unittest.mock import patch
 import os
 import signal
 from src.infrastructure.process_manager import cleanup_orphaned_ptys
-from src.services.session_store import Session, session_manager
+from src.services.session_store import session_manager
+from src.models.session import Session
 from src.shared_state import session_results_cache
 
 

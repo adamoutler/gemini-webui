@@ -117,9 +117,6 @@ def test_ui_tab_management(page):
     expect(page.locator(".tab")).to_have_count(initial_tabs)
 
 
-import pytest
-
-
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
 def test_fresh_session_no_reclaim_warning(page, server):

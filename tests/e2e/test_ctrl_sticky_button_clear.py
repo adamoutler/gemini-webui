@@ -1,6 +1,7 @@
 # Resolves Ticket GEMWEBUI-175
 import pytest
 from playwright.sync_api import expect
+import re
 
 
 @pytest.fixture(scope="function")
@@ -25,9 +26,6 @@ def mobile_page(server, browser_context, playwright):
     expect(page.locator("#mobile-controls")).to_be_visible(timeout=15000)
     yield page
     page.close()
-
-
-import re
 
 
 @pytest.mark.timeout(60)

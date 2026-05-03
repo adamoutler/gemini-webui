@@ -1,32 +1,31 @@
 import pytest
 import pty
 import os
-import time
+import subprocess
+import sys
 
 
 @pytest.mark.timeout(60)
 def test_pty_overflow():
-    pid, fd = pty.fork()
+    master_fd, slave_fd = pty.openpty()
 
-    if pid == 0:
-        # Child
-        try:
-            time.sleep(0.5)
-            # Use raw file descriptor 0 instead of sys.stdin.fileno()
-            # since pytest captures sys.stdin and it lacks fileno().
-            data = os.read(0, 100000)
-            os._exit(0)
-        except Exception:
-            os._exit(1)
-    else:
-        # Parent
-        os.set_blocking(fd, False)
-        data = b"a" * 1000 + b"\n"
-        try:
-            os.write(fd, data)
-        except OSError:
-            pass
+    # Run a simple child process that sleeps, then reads
+    proc = subprocess.Popen(
+        [sys.executable, "-c", "import time, os; time.sleep(0.5); os.read(0, 100000)"],
+        stdin=slave_fd,
+        stdout=slave_fd,
+        stderr=slave_fd,
+        close_fds=True,
+    )
+    os.close(slave_fd)  # close slave in parent
 
-        _, status = os.waitpid(pid, 0)
-        os.close(fd)
-        assert status == 0
+    os.set_blocking(master_fd, False)
+    data = b"a" * 1000 + b"\n"
+    try:
+        os.write(master_fd, data)
+    except OSError:
+        pass
+
+    proc.wait()
+    os.close(master_fd)
+    assert proc.returncode == 0

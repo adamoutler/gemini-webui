@@ -42,7 +42,7 @@ def main(playwright):
 
         try:
             page.click('button:has-text("Start New")', timeout=5000)
-        except:
+        except Exception:
             pass
 
         time.sleep(3)
@@ -84,7 +84,7 @@ def main(playwright):
 
         try:
             page_m.click('button:has-text("Start New")', timeout=5000)
-        except:
+        except Exception:
             pass
 
         time.sleep(3)

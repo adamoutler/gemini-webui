@@ -4,19 +4,16 @@ set -e
 VENV_DIR=".venv"
 
 echo "Creating virtual environment in $VENV_DIR..."
-python3 -m venv $VENV_DIR
-
-echo "Activating virtual environment..."
-source $VENV_DIR/bin/activate
+python3 -m venv "$VENV_DIR"
 
 echo "Updating pip..."
-pip install --upgrade pip
+"$VENV_DIR/bin/pip" install --upgrade pip
 
 echo "Installing application dependencies..."
-pip install -r requirements.txt
+"$VENV_DIR/bin/pip" install -r requirements.txt
 
 echo "Installing testing dependencies..."
-pip install -r requirements-test.txt
+"$VENV_DIR/bin/pip" install -r requirements-test.txt
 
 # Fix for intermittent Azure Ubuntu mirror timeouts on GitHub Actions
 if [ "$CI" = "true" ]; then
@@ -26,12 +23,12 @@ if [ "$CI" = "true" ]; then
 fi
 
 echo "Installing Playwright browsers..."
-playwright install --with-deps chromium webkit
+"$VENV_DIR/bin/playwright" install --with-deps chromium webkit
 
 echo "Configuring git hooks..."
 
 echo "Injecting git push interceptor into virtual environment..."
-cat << 'EOF' >> $VENV_DIR/bin/activate
+cat << 'EOF' >> "$VENV_DIR/bin/activate"
 
 # Intercept git push to automatically wait for deployment receipt
 git() {

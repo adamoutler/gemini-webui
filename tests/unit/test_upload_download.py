@@ -1,3 +1,4 @@
+from unittest.mock import patch, MagicMock
 import pytest
 import os
 import io
@@ -44,9 +45,6 @@ def test_upload_file_no_file(client):
     assert response.status_code == 400
     resp_data = json.loads(response.data)
     assert resp_data["message"] == "No file part"
-
-
-from unittest.mock import patch, MagicMock
 
 
 @pytest.mark.timeout(60)
@@ -193,9 +191,12 @@ def test_download_file_success(client, test_data_dir):
         f.write(b"download content")
 
     response = client.get("/api/download/download_test.txt")
-    assert response.status_code == 200
-    assert response.data == b"download content"
-    assert response.headers["Content-Disposition"].startswith("attachment;")
+    try:
+        assert response.status_code == 200
+        assert response.data == b"download content"
+        assert response.headers["Content-Disposition"].startswith("attachment;")
+    finally:
+        response.close()
 
 
 @pytest.mark.timeout(60)

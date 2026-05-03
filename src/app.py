@@ -26,11 +26,11 @@ if not env_config.SKIP_MONKEY_PATCH:
         from src.infrastructure.process_manager import apply_subprocess_monkey_patch
     apply_subprocess_monkey_patch()
 
+from src.share_manager import ShareManager
+
 logger = logging.getLogger(__name__)
 
 # Re-export share_manager and IDENTIFICATION_REGEX for backward compatibility for now
-from src.share_manager import ShareManager
-
 share_manager = ShareManager()
 
 

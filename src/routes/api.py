@@ -11,6 +11,8 @@ import datetime
 from flask import Blueprint, jsonify, request, send_file, send_from_directory, session
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import generate_csrf
+from src.services.session_store import session_manager
+from src.prompt_manager import prompt_manager
 
 from src.config import env_config
 from src.config import get_config, get_config_paths
@@ -31,8 +33,6 @@ class TaskKillSchema(Schema):
 
 
 logger = logging.getLogger(__name__)
-from src.services.session_store import session_manager
-from src.prompt_manager import prompt_manager
 
 api_bp = Blueprint("api", __name__)
 

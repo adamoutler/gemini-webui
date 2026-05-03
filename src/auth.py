@@ -1,5 +1,7 @@
 from functools import wraps
 from flask import request, Response, session, current_app
+import hashlib
+from src.config import get_config
 
 from src.auth_ldap import check_auth
 from src.config import env_config
@@ -82,10 +84,6 @@ def require_auth():
 
     if not session.get("authenticated"):
         return authenticate()
-
-
-import hashlib
-from src.config import get_config
 
 
 def bearer_token_required(f):

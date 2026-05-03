@@ -3,7 +3,8 @@ import pty
 import fcntl
 import shlex
 import logging
-from src.services.session_store import Session, session_manager
+from src.services.session_store import session_manager
+from src.models.session import Session
 from src.services.process_engine import build_terminal_command
 from src.config import get_config_paths, env_config
 from src.infrastructure.process_manager import kill_and_reap, add_managed_pty

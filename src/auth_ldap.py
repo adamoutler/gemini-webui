@@ -1,5 +1,5 @@
 try:
-    from config import env_config
+    pass
 except ImportError:
     pass
 import ldap3

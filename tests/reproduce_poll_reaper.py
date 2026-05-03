@@ -1,8 +1,8 @@
+import os
 import eventlet
+import eventlet.green.subprocess as subprocess
 
 eventlet.monkey_patch()
-import eventlet.green.subprocess as subprocess
-import os
 
 _spawned_popens = set()
 orig_init = subprocess.Popen.__init__
