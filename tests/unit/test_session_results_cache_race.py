@@ -1,4 +1,3 @@
-import threading
 import pytest
 from src.app import app
 

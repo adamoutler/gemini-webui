@@ -2,7 +2,7 @@ import eventlet
 
 eventlet.monkey_patch()
 import eventlet.green.subprocess as subprocess
-import os, time
+import os
 
 _spawned_popens = set()
 orig_init = subprocess.Popen.__init__

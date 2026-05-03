@@ -1,6 +1,6 @@
 # Resolves Ticket GEMWEBUI-175
 import pytest
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")
@@ -55,7 +55,7 @@ def test_ctrl_clears_on_paste(mobile_page, playwright):
     expect(mobile_page.locator("#ctrl-toggle")).to_have_class(re.compile(r".*active.*"))
 
     # Find the active tab ID
-    active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
+    mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
     textarea = mobile_page.locator(".mobile-text-area")
 
     # Simulate typing multiple characters at once (like a paste or swipe type that emits multiple chars)

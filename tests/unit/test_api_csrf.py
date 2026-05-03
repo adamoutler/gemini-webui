@@ -1,6 +1,5 @@
 import pytest
 from src.app import create_app
-from src.routes.api import api_bp
 
 
 @pytest.fixture

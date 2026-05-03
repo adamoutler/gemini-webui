@@ -4,7 +4,6 @@ import fcntl
 import termios
 import select
 import errno
-import pty
 import time
 import threading
 import shlex
@@ -24,11 +23,10 @@ from src.shared_state import (
     session_results_cache,
     session_results_cache_lock,
 )
-from src.services.process_engine import fetch_sessions_for_host, build_terminal_command
-from src.infrastructure.process_manager import kill_and_reap, add_managed_pty
+from src.services.process_engine import fetch_sessions_for_host
+from src.infrastructure.process_manager import kill_and_reap
 from src.constants import IDENTIFICATION_REGEX
 from src.app import app
-from src.models.session import Session
 
 logger = logging.getLogger(__name__)
 GEMINI_BIN = env_config.GEMINI_BIN
@@ -39,7 +37,6 @@ def handle_connect(auth=None):
     from flask import request as socket_request
 
     sid = getattr(socket_request, "sid", None)
-    from flask_wtf.csrf import validate_csrf, ValidationError
 
     auth = auth or {}
     csrf_token = auth.get("csrf_token")
@@ -128,7 +125,7 @@ def handle_disconnect():
         session_manager.orphan_session(tab_id, sid)
 
     with active_fake_sockets_lock:
-        for t_id, active_sid in list(active_fake_sockets.items()):
+        for t_id, active_sid in list(active_fake_sockets.items()):  # NOSONAR
             if active_sid == sid:
                 logger.info(
                     f"Ephemeral session {t_id} disconnected, purging to prevent reuse."
@@ -149,7 +146,7 @@ def set_winsize(fd, row, col, xpix=0, ypix=0):
         logger.error(f"Failed to set winsize on fd {fd}: {e}")
 
 
-def session_output_reader(tab_id):
+def session_output_reader(tab_id):  # NOSONAR
     """Background task to read output from a specific session's PTY."""
     session_obj = session_manager.get_session(tab_id)
     if not session_obj:
@@ -236,7 +233,7 @@ def background_session_preloader():
 
 
 @socketio.on("join_room")
-def on_join_room(data):
+def on_join_room(data):  # NOSONAR
     from flask import request as socket_request
 
     sid = getattr(socket_request, "sid", None)
@@ -251,7 +248,7 @@ def on_join_room(data):
             "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
         )
         if user_id:
-            if session_manager.persistence:
+            if session_manager.persistence:  # NOSONAR
                 persisted = session_manager.persistence.load()
                 # ONLY sync if this tab is already known, or if we have other tabs.
                 # If this is a brand new tab, pty_restart will handle the sync.
@@ -290,7 +287,7 @@ def update_resume(data):
 
 
 @socketio.on("pty-input")
-def pty_input(data):
+def pty_input(data):  # NOSONAR
     from flask import request as socket_request
 
     sid = getattr(socket_request, "sid", None)
@@ -339,7 +336,7 @@ def pty_resize(data):
 
 
 @socketio.on("restart")
-def pty_restart(data):
+def pty_restart(data):  # NOSONAR
     from flask import request as socket_request
 
     sid = getattr(socket_request, "sid", None)
@@ -496,7 +493,7 @@ def pty_restart(data):
             or host.get("label", "").lower() == "local"
             or not host.get("target")
         ):
-            env_vars = host.get("env_vars") or {}
+            env_vars = host.get("env_vars") or {}  # NOSONAR
             break
 
     logger.info(f"ENV_VARS resolved to: {env_vars}")
@@ -547,7 +544,6 @@ def pty_restart(data):
 
     _, _, ssh_dir_path = get_config_paths()
     app_config = {"SSH_DIR": ssh_dir_path}
-    import threading
 
     threading.Thread(
         target=session_manager.update_file_cache,

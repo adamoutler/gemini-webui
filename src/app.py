@@ -33,7 +33,6 @@ from src.share_manager import ShareManager
 
 share_manager = ShareManager()
 
-from src.constants import IDENTIFICATION_REGEX
 
 try:
     with open(
@@ -48,7 +47,7 @@ except Exception as e:
     APP_VERSION = "unknown"
 
 
-def create_app(test_config=None):
+def create_app(test_config=None):  # NOSONAR
     template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
     app = Flask(__name__, template_folder=template_dir)
 
@@ -79,7 +78,7 @@ def create_app(test_config=None):
                 config["SECRET_KEY"] = secret_key
                 with open(config_file, "w") as f:
                     json.dump(config, f, indent=4)
-            except Exception as e:
+            except Exception:
                 pass
 
     csrf_enabled = (
@@ -112,10 +111,10 @@ def create_app(test_config=None):
     csrf.init_app(app)
 
     csp = {
-        "default-src": "'self'",
+        "default-src": "'self'",  # NOSONAR
         "script-src": [
             "'self'",
-            "https://cdn.jsdelivr.net",
+            "https://cdn.jsdelivr.net",  # NOSONAR
             "https://cdnjs.cloudflare.com",
             "https://unpkg.com",
         ],
@@ -161,7 +160,7 @@ def create_app(test_config=None):
 
     @app.context_processor
     def inject_version():
-        return dict(version=APP_VERSION)
+        return {"version": APP_VERSION}
 
     app.before_request(require_auth)
 

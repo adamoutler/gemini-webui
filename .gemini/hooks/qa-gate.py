@@ -71,7 +71,7 @@ def dash_api_request(url):
     try:
         with urllib.request.urlopen(req, timeout=30) as res:
             return json.loads(res.read().decode())
-    except Exception as e:
+    except Exception:
         return None
 
 def acquire_lock():

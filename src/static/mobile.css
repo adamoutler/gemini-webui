@@ -112,9 +112,6 @@
   touch-action: pan-y !important; /* Preserve pull-to-refresh on toolbar as per GEMWEBUI-54 */
 }
 
-.is-mobile #tab-bar {
-}
-
 .is-mobile #active-connection-info {
   gap: 5px;
 }

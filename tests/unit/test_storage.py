@@ -22,14 +22,12 @@ def test_init_app_full(test_data_dir):
     src.config.app_config.init_config(str(test_data_dir))
     app.config["TESTING"] = True
 
-    with patch("src.bootstrap.os.makedirs") as mock_mkdir, patch(
-        "src.app.os.chmod"
-    ) as mock_chmod, patch("subprocess.run") as mock_run:
+    with patch("src.bootstrap.os.makedirs"), patch("src.app.os.chmod"), patch(
+        "subprocess.run"
+    ) as mock_run:
         # Simulate key generation needed
         mock_run.return_value = MagicMock(pid=123, returncode=0)
         mock_run.return_value.communicate.return_value = ("", "")
-
-        from src.app import create_app
 
         # Verify key generation was attempted if file missing
         # (This depends on actual existence in test_data_dir)

@@ -1,7 +1,7 @@
 import pytest
 import json
 from unittest.mock import MagicMock
-from src.services.session_store import session_manager, Session
+from src.services.session_store import session_manager
 
 
 @pytest.mark.timeout(60)

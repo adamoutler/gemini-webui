@@ -1,5 +1,5 @@
 import pytest
-from playwright.sync_api import expect, sync_playwright
+from playwright.sync_api import expect
 import time
 import os
 
@@ -38,7 +38,7 @@ def test_mobile_backspace_removes_characters(mobile_page, playwright):
     print("Term rendered")
 
     # Get active tab ID and find textarea
-    active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
+    mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
     textarea = mobile_page.locator(".mobile-text-area")
     textarea.focus()
 

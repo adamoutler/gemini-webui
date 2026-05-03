@@ -1,5 +1,5 @@
 import pytest
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")
@@ -49,7 +49,7 @@ def test_ctrl_sticky_modifier(mobile_page, playwright):
     expect(ctrl_btn).to_have_class("control-btn active")
 
     # Wait for the focus to settle on textarea
-    active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
+    mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
     textarea = mobile_page.locator(".mobile-text-area")
 
     # Fill the textarea as if user is typing 'c'

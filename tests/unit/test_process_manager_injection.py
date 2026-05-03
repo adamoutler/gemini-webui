@@ -23,8 +23,6 @@ def test_build_terminal_command_resume_injection_local():
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
 @pytest.mark.timeout(60)
 def test_build_terminal_command_resume_injection_ssh():
-    import shlex
-
     # When ssh_target is provided, it runs over SSH
     cmd = build_terminal_command(
         "user@host", "/tmp/dir", "123; echo 'vulnerable'", "/tmp/.ssh", "gemini"
@@ -44,8 +42,6 @@ def test_build_terminal_command_resume_injection_ssh():
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
 @pytest.mark.timeout(60)
 def test_build_terminal_command_ssh_dir_injection_ssh():
-    import shlex
-
     # Test ssh_dir is properly quoted
     cmd = build_terminal_command(
         "user@host", "my_dir; rm -rf /", "123", "/tmp/.ssh", "gemini"
@@ -75,8 +71,6 @@ def test_build_terminal_command_local_workdir_injection():
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
 @pytest.mark.timeout(60)
 def test_build_terminal_command_gemini_bin_injection_ssh():
-    import shlex
-
     cmd = build_terminal_command(
         "user@host", "/tmp/dir", "123", "/tmp/.ssh", "gemini; rm -rf /"
     )
@@ -87,8 +81,6 @@ def test_build_terminal_command_gemini_bin_injection_ssh():
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
 @pytest.mark.timeout(60)
 def test_build_terminal_command_gemini_bin_injection_local():
-    import shlex
-
     cmd = build_terminal_command(None, None, "123", "/tmp/.ssh", "gemini; rm -rf /")
     shell_cmd = cmd[2]
     assert "'gemini;' rm -rf /" in shell_cmd
@@ -109,8 +101,6 @@ def test_fetch_sessions_for_host_gemini_bin_injection_ssh(mock_run):
 @patch("src.services.process_engine.subprocess.Popen")
 @pytest.mark.timeout(60)
 def test_fetch_sessions_for_host_gemini_bin_injection_local(mock_run):
-    import shlex
-
     with patch("os.path.exists", return_value=True):
         host = {"target": None, "dir": "/tmp"}
         fetch_sessions_for_host(host, "/tmp/.ssh", gemini_bin="gemini; rm -rf /")

@@ -11,8 +11,8 @@ const ASSETS = [
   "https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js",
 ];
 
-self.addEventListener("install", (event) => {
-  self.skipWaiting();
+globalThis.addEventListener("install", (event) => {
+  globalThis.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
@@ -20,7 +20,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
-self.addEventListener("activate", (event) => {
+globalThis.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
@@ -36,11 +36,11 @@ self.addEventListener("activate", (event) => {
           }),
         );
       })
-      .then(() => self.clients.claim()),
+      .then(() => globalThis.clients.claim()),
   );
 });
 
-self.addEventListener("fetch", (event) => {
+globalThis.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (
     url.pathname.startsWith("/api/") ||
@@ -75,7 +75,7 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-self.addEventListener("notificationclick", (event) => {
+globalThis.addEventListener("notificationclick", (event) => {
   event.notification.close();
   event.waitUntil(
     clients.matchAll({ type: "window" }).then((clientList) => {

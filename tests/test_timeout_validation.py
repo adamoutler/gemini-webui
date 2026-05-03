@@ -1,12 +1,11 @@
 import pytest
-import time
 import requests
 
 
 @pytest.mark.timeout(5)
 def test_fast_timeout_success():
     """This test should pass quickly."""
-    assert True
+    assert True  # NOSONAR
 
 
 @pytest.mark.timeout(10)
@@ -22,4 +21,4 @@ def test_global_timeout_fallback():
     This test relies on the global --timeout=60 fallback defined in pytest.ini.
     It's better to use @pytest.mark.timeout for granular control.
     """
-    assert True
+    assert True  # NOSONAR

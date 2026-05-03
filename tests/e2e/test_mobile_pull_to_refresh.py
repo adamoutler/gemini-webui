@@ -1,6 +1,5 @@
 import pytest
 from playwright.sync_api import Page, expect
-import time
 
 
 @pytest.fixture
@@ -16,7 +15,7 @@ def mobile_page(server, page: Page):
 def test_mobile_pull_to_refresh_screenshots_and_behavior(mobile_page: Page):
     page = mobile_page
 
-    toolbar = page.locator("#toolbar")
+    page.locator("#toolbar")
     indicator = page.locator("#ptr-indicator")
 
     # Helper to simulate touch drag

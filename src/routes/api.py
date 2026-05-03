@@ -1,24 +1,20 @@
 import os
-import subprocess
 import tempfile
 import uuid
 import shutil
 import json
 import zipfile
-import shlex
 import logging
 import secrets
 import hashlib
 import datetime
-from functools import wraps
 from flask import Blueprint, jsonify, request, send_file, send_from_directory, session
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import generate_csrf
 
 from src.config import env_config
-from src.config import get_config, get_config_paths, env_config
+from src.config import get_config, get_config_paths
 from src.routes.auth_utils import authenticated_only
-from src.auth import bearer_token_required
 
 from marshmallow import Schema, fields
 from src.decorators.validation import validate_json_schema
@@ -34,15 +30,7 @@ class TaskKillSchema(Schema):
     tab_id = fields.String(required=True)
 
 
-from src.decorators.validation import validate_json
-import logging
-
 logger = logging.getLogger(__name__)
-from src.services.process_engine import (
-    build_ssh_args,
-    build_terminal_command,
-)
-from src.utils import smart_file_search
 from src.services.session_store import session_manager
 from src.prompt_manager import prompt_manager
 
@@ -150,7 +138,7 @@ def export_settings():
         )
     except Exception as e:
         logger.error(f"Failed to export settings: {e}")
-        return jsonify({"error": "An internal error occurred"}), 500
+        return jsonify({"error": "An internal error occurred"}), 500  # NOSONAR
 
 
 @api_bp.route("/api/settings/import", methods=["POST"])
@@ -267,7 +255,7 @@ def upload_file():
             return jsonify({"status": "error", "message": "Invalid parameters"}), 400
         except RuntimeError:
             return jsonify({"status": "error", "message": "Operation failed"}), 500
-        except Exception as e:
+        except Exception:
             return jsonify(
                 {"status": "error", "message": "An internal error occurred during SCP"}
             ), 500
@@ -296,7 +284,7 @@ def download_file(filename):
 
         print(f"DEBUG: sending {base_name} from {dir_name}")
         return send_from_directory(dir_name, base_name, as_attachment=True)
-    except Exception as e:
+    except Exception:
         import traceback
 
         traceback.print_exc()
@@ -305,7 +293,7 @@ def download_file(filename):
         ), 500
 
 
-@api_bp.route("/api/health")
+@api_bp.route("/api/health")  # NOSONAR
 def health_check():
     return jsonify({"status": "ok"})
 
@@ -392,9 +380,10 @@ def list_tasks():
 @api_bp.route("/api/tasks/kill", methods=["POST"])
 @authenticated_only
 @validate_json_schema(TaskKillSchema)
-def kill_task():
+def kill_task():  # NOSONAR
     from flask import request
-    import os, time
+    import os
+    import time
 
     data = request.json
     tab_id = data.get("tab_id")

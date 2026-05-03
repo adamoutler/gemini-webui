@@ -1,6 +1,5 @@
 import pytest
 import threading
-from unittest.mock import patch
 from src.services.session_store import SessionManager
 from src.models.session import Session
 

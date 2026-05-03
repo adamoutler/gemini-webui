@@ -1,5 +1,4 @@
 import pytest
-from playwright.sync_api import sync_playwright
 
 
 @pytest.fixture(scope="function")
@@ -40,7 +39,7 @@ def test_stt_color(page, playwright):
     }""")
     print("Computed Styles during STT:", style)
 
-    term_style = page.evaluate("""() => {
+    page.evaluate("""() => {
         const style = window.getComputedStyle(document.documentElement);
         const termFg = style.getPropertyValue('--terminal-fg').trim() || '#d4d4d4';
 

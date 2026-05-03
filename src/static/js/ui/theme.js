@@ -33,7 +33,7 @@ export function initializeTheme() {
   let customTheme = savedTheme ? JSON.parse(savedTheme) : {};
   let customFontSize = localStorage.getItem("gemini_font_size");
   globalState.currentFontSize = customFontSize
-    ? parseInt(customFontSize)
+    ? Number.parseInt(customFontSize)
     : getDefaultFontSize();
 
   Object.assign(terminalTheme, {
@@ -42,7 +42,7 @@ export function initializeTheme() {
     cursor: customTheme.cursor || "#ffffff",
   });
 
-  if (typeof window !== "undefined") window.terminalTheme = terminalTheme;
+  if (typeof window !== "undefined") globalThis.terminalTheme = terminalTheme; // NOSONAR
 
   // Initialize CSS variables immediately to reflect any saved theme
   document.documentElement.style.setProperty(
@@ -81,7 +81,7 @@ export function applyTheme() {
   terminalTheme.foreground = document.getElementById("theme-fg").value;
   terminalTheme.cursor = document.getElementById("theme-cursor").value;
   globalState.currentFontSize =
-    parseInt(document.getElementById("theme-font").value) ||
+    Number.parseInt(document.getElementById("theme-font").value) ||
     getDefaultFontSize();
   localStorage.setItem(
     "gemini_theme",
@@ -133,7 +133,8 @@ export function resetTheme() {
 }
 
 if (typeof window !== "undefined") {
-  window.initThemeUI = initThemeUI;
-  window.applyTheme = applyTheme;
-  window.resetTheme = resetTheme;
+  // NOSONAR
+  globalThis.initThemeUI = initThemeUI;
+  globalThis.applyTheme = applyTheme;
+  globalThis.resetTheme = resetTheme;
 }

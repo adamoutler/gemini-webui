@@ -23,7 +23,7 @@ def test_pty_overflow():
         os.set_blocking(fd, False)
         data = b"a" * 1000 + b"\n"
         try:
-            written = os.write(fd, data)
+            os.write(fd, data)
         except OSError:
             pass
 

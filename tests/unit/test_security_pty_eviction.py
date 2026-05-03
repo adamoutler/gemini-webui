@@ -1,7 +1,6 @@
 import pytest
 import time
 import os
-import signal
 from unittest.mock import patch
 from src.services.session_store import SessionManager
 from src.models.session import Session
@@ -12,9 +11,7 @@ def test_lru_pty_eviction():
     manager = SessionManager()
     user_id = "test_user_123"
 
-    with patch("os.close") as mock_close, patch("os.kill") as mock_kill, patch(
-        "fcntl.fcntl"
-    ):
+    with patch("os.close") as mock_close, patch("os.kill"), patch("fcntl.fcntl"):
         # Create 51 sessions for the same user
         sessions = []
         for i in range(51):

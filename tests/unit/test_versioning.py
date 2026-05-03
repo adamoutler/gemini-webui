@@ -21,7 +21,6 @@ def test_version_files_consistency(client):
     response = client.get("/")
     assert response.status_code == 200
     html_content = response.data.decode("utf-8")
-    expected_footer = f'<div id="version-footer" style="position: fixed; bottom: 5px; right: 5px; font-size: 10px; color: rgba(255, 255, 255, 0.3); pointer-events: none; z-index: 9999; font-family: monospace;">v{version}</div>'
 
     # Check if the exact footer exists or just the version string in the footer context
     import re

@@ -1,7 +1,6 @@
 from src.gateways.terminal_socket import (
     pty_input,
     pty_resize,
-    set_winsize,
     handle_connect,
     handle_disconnect,
     update_title,
@@ -32,7 +31,7 @@ def test_pty_input_handling():
     with app.test_request_context("/"):
         with patch("src.gateways.terminal_socket.request") as mock_req, patch(
             "os.write"
-        ) as mock_write:
+        ):
             mock_req.sid = "sid1"
             session = Session("tab1", None, 123, "admin")
             session_manager.add_session(session)

@@ -1,5 +1,4 @@
 import pytest
-from src.models.session import Session
 
 
 @pytest.mark.timeout(60)

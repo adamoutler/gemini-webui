@@ -4,7 +4,7 @@ import os
 import subprocess
 import signal
 import stat
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 # Individual test execution MUST NOT exceed 20 seconds.
 MAX_TEST_TIME = 20.0
@@ -182,7 +182,7 @@ def test_mobile_pull_to_refresh_enabled(mobile_page):
     body_overflow = mobile_page.evaluate(
         "window.getComputedStyle(document.body).getPropertyValue('overflow')"
     )
-    body_overscroll = mobile_page.evaluate(
+    mobile_page.evaluate(
         "window.getComputedStyle(document.body).getPropertyValue('overscroll-behavior')"
     )
 

@@ -1,7 +1,4 @@
 import pytest
-import os
-import json
-import signal
 from unittest.mock import patch
 from src.app import app
 from src.services.session_store import session_manager, Session

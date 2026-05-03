@@ -2,7 +2,9 @@ import eventlet
 
 eventlet.monkey_patch()
 import eventlet.green.subprocess as subprocess
-import os, time, weakref
+import os
+import time
+import weakref
 
 _active_popens = weakref.WeakValueDictionary()
 _known_pids = {}

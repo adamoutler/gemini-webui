@@ -1,5 +1,4 @@
 import time
-import subprocess
 from src.services.process_engine import fetch_sessions_for_host, SSHConnectionManager
 from src.shared_state import (
     session_listing_locks,

@@ -1,12 +1,10 @@
 import pytest
 import re
-from playwright.sync_api import Page, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")
 def page(server, playwright):
-    from playwright.sync_api import sync_playwright
-
     p = playwright
     browser = p.chromium.launch(headless=True)
     context = browser.new_context()
@@ -21,7 +19,6 @@ def page(server, playwright):
 @pytest.mark.timeout(60)
 def test_mobile_layout_locked(page, server, playwright):
     # Emulate Pixel 5
-    from playwright.sync_api import sync_playwright
 
     # We need a new context with mobile emulation
     browser = page.context.browser

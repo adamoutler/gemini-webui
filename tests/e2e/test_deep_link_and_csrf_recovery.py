@@ -1,12 +1,9 @@
 import pytest
-import time
-from playwright.sync_api import Page, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")
 def page(server, playwright):
-    from playwright.sync_api import sync_playwright
-
     p = playwright
     browser = p.chromium.launch(headless=True)
     context = browser.new_context()

@@ -1,7 +1,5 @@
-import pytest
 import os
 import json
-from playwright.sync_api import sync_playwright
 
 
 def test_take_proof_263(playwright):

@@ -1,11 +1,7 @@
 import pytest
-import os
-import signal
-from unittest.mock import patch, MagicMock
-from src.services.session_store import SessionManager
+from unittest.mock import patch
 from src.models.session import Session
 from src.gateways.terminal_socket import on_terminate_session
-from src.routes.terminal import terminate_session
 from src.app import app
 
 

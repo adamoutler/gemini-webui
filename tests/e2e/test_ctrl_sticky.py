@@ -1,6 +1,6 @@
 # Resolves Tickets GEMWEBUI-174, GEMWEBUI-175
 import pytest
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")
@@ -41,7 +41,7 @@ def test_ctrl_sticky(mobile_page, playwright):
 
     # Now type 'c' in the terminal
     # Find the active tab ID
-    active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
+    mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
     textarea = mobile_page.locator(".mobile-text-area")
 
     textarea.evaluate(

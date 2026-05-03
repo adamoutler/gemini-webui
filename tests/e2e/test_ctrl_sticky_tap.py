@@ -1,5 +1,5 @@
 import pytest
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")
@@ -36,8 +36,8 @@ def test_ctrl_sticky_tap(mobile_page, playwright):
     # It should be active
     expect(ctrl_btn).to_have_class("control-btn active")
 
-    active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
-    textarea = mobile_page.locator(".mobile-text-area")
+    mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
+    mobile_page.locator(".mobile-text-area")
 
     # Wait to ensure no immediate toggle off happens due to click
     mobile_page.wait_for_timeout(500)

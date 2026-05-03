@@ -1,12 +1,12 @@
 # Resolves Ticket GEMWEBUI-176
 import pytest
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")
 def browser_context(playwright):
     playwright = playwright
-    device = playwright.devices["Desktop Chrome"]
+    playwright.devices["Desktop Chrome"]
     browser = playwright.chromium.launch(headless=True)
     context = browser.new_context()
     yield context

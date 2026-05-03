@@ -1,5 +1,5 @@
 import pytest
-from playwright.sync_api import expect, sync_playwright
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")

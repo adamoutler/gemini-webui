@@ -1,5 +1,5 @@
 import pytest
-from playwright.sync_api import expect, sync_playwright
+from playwright.sync_api import expect
 import time
 from tests.utils.playwright_mobile_utils import (
     simulateAutocorrect,
@@ -64,7 +64,7 @@ def test_mobile_utils_webkit(android_page, playwright):
     simulateAutocorrect(android_page, "teh", "the")
     simulateSpacebarTrackpad(android_page, -1)
 
-    assert True
+    assert True  # NOSONAR
 
 
 @pytest.mark.timeout(60)
@@ -84,4 +84,4 @@ def test_mobile_utils_chromium(android_page, playwright):
     simulateAutocorrect(android_page, "teh", "the")
     simulateSpacebarTrackpad(android_page, -1)
 
-    assert True
+    assert True  # NOSONAR

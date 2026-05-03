@@ -2,7 +2,6 @@ import pytest
 import time
 from playwright.sync_api import Page, expect
 import subprocess
-import os
 
 
 @pytest.mark.timeout(60)

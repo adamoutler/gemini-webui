@@ -1,7 +1,3 @@
-import pytest
-from playwright.sync_api import sync_playwright
-
-
 def run_proof(playwright):
     p = playwright
     browser = p.chromium.launch(headless=True)

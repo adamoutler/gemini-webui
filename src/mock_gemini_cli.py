@@ -24,7 +24,7 @@ def get_char():
         return sys.stdin.read(1)
 
 
-def run_fake_gemini():
+def run_fake_gemini():  # NOSONAR
     parser = argparse.ArgumentParser(
         description="High-Fidelity Fake Gemini CLI Simulator"
     )
@@ -115,7 +115,6 @@ def run_fake_gemini():
     sys.stdout.flush()
 
     input_buffer = ""
-    memory = {}
 
     while True:
         # Check if stdin has data

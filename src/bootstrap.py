@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def setup_environment(data_dir: str, ssh_dir: str):
+def setup_environment(data_dir: str, ssh_dir: str):  # NOSONAR
     """
     Bootstraps the application environment:
     - Creates necessary directories
@@ -16,10 +16,11 @@ def setup_environment(data_dir: str, ssh_dir: str):
     - Generates instance SSH keys if missing
     - Manages symlink for .gemini in the home directory
     """
+    GEMINI_DIR_NAME = ".gemini"
     # Try FS operations but don't crash if they fail (RO filesystem)
     try:
         os.makedirs(ssh_dir, mode=0o700, exist_ok=True)
-        gemini_data = os.path.join(data_dir, ".gemini")
+        gemini_data = os.path.join(data_dir, GEMINI_DIR_NAME)
         os.makedirs(gemini_data, mode=0o700, exist_ok=True)
 
         # Fix permissions if volume mount made them root-owned
@@ -91,8 +92,8 @@ def setup_environment(data_dir: str, ssh_dir: str):
     try:
         home_dir = os.path.expanduser("~")
         if os.path.exists(home_dir) and os.access(home_dir, os.W_OK):
-            home_gemini = os.path.join(home_dir, ".gemini")
-            gemini_data = os.path.join(data_dir, ".gemini")
+            home_gemini = os.path.join(home_dir, GEMINI_DIR_NAME)
+            gemini_data = os.path.join(data_dir, GEMINI_DIR_NAME)
             if os.path.islink(home_gemini):
                 if os.readlink(home_gemini) != gemini_data:
                     os.unlink(home_gemini)

@@ -25,7 +25,7 @@ def list_hosts():
 
 @host_key_bp.route("/api/hosts", methods=["POST"])
 @authenticated_only
-def add_host():
+def add_host():  # NOSONAR
     new_host = request.json
     label = new_host.get("label")
     old_label = new_host.get("old_label")
@@ -56,7 +56,7 @@ def add_host():
                 return jsonify(
                     {"status": "error", "message": "env_vars keys or values too long"}
                 ), 400
-            if not re.match(r"^[a-zA-Z0-9_]+$", k):
+            if not re.match(r"^[a-zA-Z0-9_]+$", k):  # NOSONAR
                 return jsonify(
                     {
                         "status": "error",

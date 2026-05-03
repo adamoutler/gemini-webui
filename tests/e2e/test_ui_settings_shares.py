@@ -1,7 +1,7 @@
 import pytest
 import time
 import re
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")
@@ -42,7 +42,7 @@ def test_ui_settings_shared_sessions(page, server, playwright):
     expect(page.locator("#share-modal")).to_be_visible(timeout=15000)
 
     # Generate Share Link
-    with page.expect_request("**/api/shares/create") as req_info:
+    with page.expect_request("**/api/shares/create"):
         page.locator("#confirm-share-btn").click()
     expect(page.locator("#share-result")).to_be_visible(timeout=15000)
 

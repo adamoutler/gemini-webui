@@ -1,7 +1,7 @@
 import pytest
 import time
 import os
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 from PIL import Image
 import io
 

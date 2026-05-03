@@ -1,6 +1,6 @@
 import pytest
 import os
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="module")
@@ -43,7 +43,7 @@ def test_modifier_keyboard_focus(mobile_page, playwright):
     expect(ctrl_btn).to_have_class("control-btn active")
 
     # Get active tab ID
-    active_tab_id = mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
+    mobile_page.evaluate("sessionStorage.getItem('gemini_active_tab')")
 
     # Evaluate what the active element is right after tapping Ctrl
     is_textarea_focused, active_id = mobile_page.evaluate("""() => {

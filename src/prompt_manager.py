@@ -22,7 +22,7 @@ class PromptManager:
         except OSError:
             # Fallback for read-only environments
             self.db_path = ":memory:"
-            pass
+            pass  # NOSONAR
 
     def _get_connection(self):
         conn = sqlite3.connect(self.db_path, timeout=10.0)

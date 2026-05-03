@@ -4,7 +4,6 @@ import os
 import signal
 import json
 import glob
-from playwright.sync_api import sync_playwright
 
 
 def main(playwright):

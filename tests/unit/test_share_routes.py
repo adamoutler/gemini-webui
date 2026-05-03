@@ -6,7 +6,6 @@ from src.app import app, env_config
 
 @pytest.fixture
 def client():
-    from src.app import app
     import os
 
     app.config["TESTING"] = True

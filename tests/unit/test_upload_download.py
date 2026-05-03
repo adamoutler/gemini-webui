@@ -88,22 +88,22 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
         workspace_dir = os.path.join(test_data_dir, "workspace")
         save_path = os.path.abspath(os.path.join(workspace_dir, "testfile.txt"))
 
-        expected_ssh_call = (
+        (
             ["ssh"]
             + base_ssh_args
             + ["--", "user@host", f"mkdir -p {shlex.quote('/remote/dir')}"]
         )
-        expected_scp_call = (
+        (
             ["scp"]
             + base_ssh_args
             + ["--", save_path, "user@host:/remote/dir/testfile.txt"]
         )
-        expected_verify_call = (
+        (
             ["ssh"]
             + base_ssh_args
             + ["--", "user@host", f"ls {shlex.quote('/remote/dir/testfile.txt')}"]
         )
-        expected_path_call = (
+        (
             ["ssh"]
             + base_ssh_args
             + [
@@ -159,15 +159,13 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
         workspace_dir = os.path.join(test_data_dir, "workspace")
         save_path = os.path.abspath(os.path.join(workspace_dir, "testfile.txt"))
 
-        expected_scp_call = (
-            ["scp"] + base_ssh_args + ["--", save_path, "user@host:testfile.txt"]
-        )
-        expected_verify_call = (
+        (["scp"] + base_ssh_args + ["--", save_path, "user@host:testfile.txt"])
+        (
             ["ssh"]
             + base_ssh_args
             + ["--", "user@host", f"ls {shlex.quote('testfile.txt')}"]
         )
-        expected_path_call = (
+        (
             ["ssh"]
             + base_ssh_args
             + [

@@ -1,7 +1,6 @@
 from src.gateways.terminal_socket import handle_connect
 import pytest
 import re
-from src.app import app
 
 
 @pytest.mark.timeout(60)
@@ -166,7 +165,7 @@ import os
 import subprocess
 import time
 import signal
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")

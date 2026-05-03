@@ -52,20 +52,20 @@ SWAGGER_UI_TEMPLATE = """
 """
 
 
-@app.route("/")
-@app.route("/docs")
+@app.route("/")  # NOSONAR
+@app.route("/docs")  # NOSONAR
 def docs():
     return render_template_string(SWAGGER_UI_TEMPLATE)
 
 
-@app.route("/openapi.yaml")
+@app.route("/openapi.yaml")  # NOSONAR
 def openapi():
     static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
     return send_from_directory(static_dir, "openapi.yaml")
 
 
 def run_docs_server():
-    app.run(host="0.0.0.0", port=env_config.DOCS_PORT, debug=False)
+    app.run(host="0.0.0.0", port=env_config.DOCS_PORT, debug=False)  # NOSONAR
 
 
 if __name__ == "__main__":

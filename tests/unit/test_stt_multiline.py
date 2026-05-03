@@ -1,6 +1,6 @@
 import pytest
 import os
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 def run_test_with_viewport(server, width, height, expect_visible, playwright):

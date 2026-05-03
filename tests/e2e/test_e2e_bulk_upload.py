@@ -3,7 +3,7 @@ import os
 import glob
 import random
 import string
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")
@@ -30,7 +30,6 @@ def page(server, playwright):
 @pytest.mark.prone_to_timeout
 @pytest.mark.timeout(60)
 def test_bulk_random_upload_e2e(page, test_data_dir, playwright):
-    import os
     import shutil
 
     try:

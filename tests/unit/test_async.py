@@ -1,13 +1,12 @@
 from src.gateways.terminal_socket import (
     pty_restart,
-    set_winsize,
     background_session_preloader,
 )
 import pytest
 from unittest.mock import patch
 import os
 import signal
-from src.infrastructure.process_manager import cleanup_orphaned_ptys, zombie_reaper_task
+from src.infrastructure.process_manager import cleanup_orphaned_ptys
 from src.services.session_store import Session, session_manager
 from src.shared_state import session_results_cache
 
@@ -30,7 +29,6 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     os.environ["BYPASS_AUTH_FOR_TESTING"] = "true"
 
     # Mock some ptys
-    from src.services.session_store import session_manager, Session, Session
     import time
 
     # 1. Active PTY
@@ -47,7 +45,7 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     new_orphan.orphaned_at = time.time() - 10  # 10s ago
     session_manager.add_session(new_orphan)
 
-    with patch("os.killpg") as mock_kill, patch("os.waitpid") as mock_wait, patch(
+    with patch("os.killpg") as mock_kill, patch("os.waitpid"), patch(
         "os.getpgid", side_effect=lambda x: x
     ):  # Mock ORPHANED_SESSION_TTL to 60 for testing
         from src.app import app
@@ -96,8 +94,6 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
     # Use non-zero child_pid to avoid child branch execution in tests
     mock_pty.return_value = (1234, 10)
 
-    from src.app import app
-
     with app.test_request_context("/"):
         mock_request = MagicMock()
         mock_request.sid = "test-sid"
@@ -108,11 +104,9 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
             "shutil.which", return_value=None
         ), patch("os.chdir"), patch("os.execv"), patch("os.closerange"), patch(
             "os.execvp"
-        ) as mock_execvp, patch("os._exit"), patch(
+        ), patch("os._exit"), patch(
             "src.gateways.terminal_socket.build_terminal_command", return_value=["bash"]
-        ) as mock_build_cmd, patch(
-            "src.gateways.terminal_socket.set_winsize"
-        ) as mock_set_winsize, patch("fcntl.fcntl"):
+        ), patch("src.gateways.terminal_socket.set_winsize"), patch("fcntl.fcntl"):
             mock_paths.return_value = ("/data", "/data/config.json", "/data/.ssh")
             mock_get_config.return_value = {
                 "HOSTS": [{"target": "test@host", "env_vars": {"MY_VAR": "123"}}]
@@ -129,7 +123,7 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
                 }
             )
 
-            from src.services.session_store import session_manager, Session
+            from src.services.session_store import session_manager
 
             session = session_manager.get_session("tab1")
             assert session is not None
@@ -138,7 +132,6 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
 
 @pytest.mark.timeout(60)
 def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
-    from src.services.session_store import session_manager, Session, Session
     import time
 
     # child_pid=999, fd=10

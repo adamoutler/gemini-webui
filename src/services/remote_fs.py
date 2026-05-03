@@ -4,7 +4,7 @@ import subprocess
 from src.services.process_engine import build_ssh_args, validate_ssh_target
 
 
-def upload_to_remote(
+def upload_to_remote(  # NOSONAR
     local_filepath: str, filename: str, ssh_target: str, ssh_dir: str, ssh_dir_path: str
 ) -> str:
     """

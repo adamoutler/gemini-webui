@@ -4,7 +4,6 @@ from unittest.mock import patch, MagicMock
 # We will need to implement SSHConnectionManager in src/process_manager.py
 from src.services.process_engine import (
     SSHConnectionManager,
-    build_ssh_args,
     SSH_SOCKET_DIR,
 )
 

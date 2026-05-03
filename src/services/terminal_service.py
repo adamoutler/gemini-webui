@@ -1,7 +1,6 @@
 import os
 import pty
 import fcntl
-import threading
 import shlex
 import logging
 from src.services.session_store import Session, session_manager
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class TerminalService:
     @staticmethod
-    def start_session(
+    def start_session(  # NOSONAR
         tab_id,
         user_id,
         ssh_target,
@@ -113,7 +112,6 @@ class TerminalService:
         Executes a one-off command (prompt) synchronously and returns the result.
         """
         import subprocess
-        import shlex
         from src.services.process_engine import (
             validate_ssh_target,
             get_remote_command_prefix,

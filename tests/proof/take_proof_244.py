@@ -1,11 +1,9 @@
 import os
 import time
-from playwright.sync_api import sync_playwright
 
 
 def main(playwright):
     os.makedirs("docs/qa-images", exist_ok=True)
-    screenshot_path = "docs/qa-images/issue_244_flash_transition.png"
 
     # We will just run a simple server or use the pytest fixture approach
     # Let's just start the app locally and take a screenshot

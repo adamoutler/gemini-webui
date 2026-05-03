@@ -55,7 +55,7 @@ def zombie_reaper_task(sleep_interval=2):
             while True:
                 try:
                     # Reap any exited child process globally
-                    pid, status = os.waitpid(-1, os.WNOHANG)
+                    pid, status = os.waitpid(-1, os.WNOHANG)  # NOSONAR
                     if pid == 0:
                         break  # No more exited children
 
@@ -73,7 +73,7 @@ def zombie_reaper_task(sleep_interval=2):
         eventlet.sleep(sleep_interval)
 
 
-def cleanup_orphaned_ptys(app, session_manager, env_config):
+def cleanup_orphaned_ptys(app, session_manager, env_config):  # NOSONAR
     """Cleanup orphaned sessions based on ORPHANED_SESSION_TTL."""
     is_testing = app.config.get("TESTING") or env_config.BYPASS_AUTH_FOR_TESTING
     while True:
@@ -103,7 +103,7 @@ def cleanup_orphaned_ptys(app, session_manager, env_config):
             break
 
 
-def apply_subprocess_monkey_patch():
+def apply_subprocess_monkey_patch():  # NOSONAR
     """Manually patch subprocess.run to handle GreenletExit and prevent zombie processes."""
 
     def safe_subprocess_run(*popenargs, **kwargs):

@@ -112,9 +112,9 @@ def server(test_data_dir):
             pass
         time.sleep(1)
         if process.poll() is not None:
-            pytest.fail(f"Server failed to start. (stdout discarded)")
+            pytest.fail("Server failed to start. (stdout discarded)")
     else:
-        pytest.fail(f"Server health check timed out. (stdout discarded)")
+        pytest.fail("Server health check timed out. (stdout discarded)")
 
     yield f"http://127.0.0.1:{port}"
 
@@ -185,9 +185,7 @@ def safe_killpg_fixture(request):
     Prevents tests from accidentally killing real processes on the host.
     Any call to os.killpg will be ignored unless explicitly tested.
     """
-    with unittest.mock.patch("os.killpg") as mock_killpg, unittest.mock.patch(
+    with unittest.mock.patch("os.killpg"), unittest.mock.patch(
         "os.kill"
-    ) as mock_kill, unittest.mock.patch(
-        "os.getpgid", return_value=123456789
-    ) as mock_getpgid:
+    ), unittest.mock.patch("os.getpgid", return_value=123456789):
         yield

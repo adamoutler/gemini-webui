@@ -4,7 +4,7 @@ import subprocess
 import os
 import signal
 import socket
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 @pytest.fixture(scope="function")
@@ -13,7 +13,6 @@ def authenticated_server(tmp_path, playwright):
     env["SECRET_KEY"] = "testsecret"
     env["ADMIN_USER"] = "testuser"
     env["ADMIN_PASS"] = "testpass"
-    import socket
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))

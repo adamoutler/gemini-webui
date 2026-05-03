@@ -1,7 +1,6 @@
 import pytest
 import os
-import time
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import expect
 
 
 @pytest.mark.timeout(60)

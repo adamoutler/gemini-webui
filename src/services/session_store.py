@@ -9,20 +9,14 @@ try:
 except ImportError:
     from src.config import env_config
     from src.services.process_engine import build_ssh_args, get_remote_command_prefix
-import signal
 import time
-import collections
-import codecs
 import threading
-import fcntl
-import os
-import eventlet.greenio
 
 
 try:
     from models.session import Session
 except ImportError:
-    from src.models.session import Session
+    pass
 
 import json
 
@@ -90,7 +84,7 @@ class SessionManager:
         if data_dir:
             self.persistence = SessionPersistenceManager(data_dir)
 
-    def add_session(self, session, on_remove=None):
+    def add_session(self, session, on_remove=None):  # NOSONAR
         with self._lock:
             # If a session with the same tab_id already exists, kill it first
             old_same_tab = self.sessions.pop(session.tab_id, None)

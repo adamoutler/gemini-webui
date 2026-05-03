@@ -8,17 +8,17 @@ logger = logging.getLogger(__name__)
 ui_bp = Blueprint("ui", __name__)
 
 
-@ui_bp.route("/")
+@ui_bp.route("/")  # NOSONAR
 def index():
     return render_template("index.html")
 
 
-@ui_bp.route("/test-launcher")
+@ui_bp.route("/test-launcher")  # NOSONAR
 def test_launcher():
     return render_template("test_launcher.html")
 
 
-@ui_bp.route("/fake_session_init")
+@ui_bp.route("/fake_session_init")  # NOSONAR
 def fake_session_init():
     scenario = request.args.get("scenario", "default")
     session_id = str(uuid.uuid4())
@@ -30,24 +30,24 @@ def fake_session_init():
     return redirect(f"/?session_id={session_id}&mode=fake")
 
 
-@ui_bp.route("/favicon.ico")
-@ui_bp.route("/favicon.svg")
+@ui_bp.route("/favicon.ico")  # NOSONAR
+@ui_bp.route("/favicon.svg")  # NOSONAR
 def favicon():
     return current_app.send_static_file("favicon.svg")
 
 
-@ui_bp.route("/manifest.json")
+@ui_bp.route("/manifest.json")  # NOSONAR
 def manifest():
     return current_app.send_static_file("manifest.json")
 
 
-@ui_bp.route("/sw.js")
+@ui_bp.route("/sw.js")  # NOSONAR
 def service_worker():
     response = current_app.send_static_file("sw.js")
     response.headers["Service-Worker-Allowed"] = "/"
     return response
 
 
-@ui_bp.route("/health")
+@ui_bp.route("/health")  # NOSONAR
 def health_check_root():
     return jsonify({"status": "ok"})

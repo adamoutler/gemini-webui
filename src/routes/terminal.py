@@ -4,11 +4,9 @@ from src.shared_state import (
     session_results_cache_lock,
 )
 import os
-import shlex
-import subprocess
 from flask import Blueprint, jsonify, request, session
 
-from src.config import env_config, get_config_paths
+from src.config import env_config
 from src.services.session_store import session_manager
 from src.routes.auth_utils import authenticated_only
 import logging
@@ -16,12 +14,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 from src.services.process_engine import (
-    fetch_sessions_for_host,
     validate_ssh_target,
-    get_remote_command_prefix,
     kill_and_reap,
 )
-from src.config import env_config
 from src.extensions import socketio
 from src.utils import smart_file_search
 
@@ -141,7 +136,6 @@ def search_files(session_id):
 @authenticated_only
 def list_gemini_sessions():
     ssh_target = request.args.get("ssh_target")
-    from src.services.process_engine import validate_ssh_target
 
     if ssh_target and not validate_ssh_target(ssh_target):
         return jsonify({"error": "Invalid target"}), 400
@@ -171,7 +165,6 @@ def list_gemini_sessions():
 
 @terminal_bp.route("/api/test_inject_session", methods=["GET"])
 def inject_sess():
-    import time
     from src.services.session_store import session_manager
     from src.models.session import Session
 

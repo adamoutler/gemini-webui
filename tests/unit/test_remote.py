@@ -6,7 +6,6 @@ from unittest.mock import patch, MagicMock
 @pytest.mark.timeout(60)
 def test_remote_sessions_list(client):
     from src.services.process_engine import fetch_sessions_for_host
-    from src.shared_state import session_results_cache_lock, session_results_cache
 
     with patch("src.services.process_engine.subprocess.Popen") as mock_run:
         mock_proc = MagicMock(returncode=0)

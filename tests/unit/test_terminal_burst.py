@@ -1,6 +1,5 @@
 import pytest
 import time
-from playwright.sync_api import sync_playwright
 
 
 @pytest.fixture(scope="function")
@@ -96,7 +95,7 @@ def test_terminal_burst_scroll(desktop_page, playwright):
     # We want viewportY to be equal to baseY (or very close to it)
     viewport_y = result["viewportY"]
     base_y = result["baseY"]
-    length = result["length"]
+    result["length"]
 
     assert base_y > 0, "Terminal buffer did not grow"
 
