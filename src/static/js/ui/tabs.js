@@ -214,19 +214,6 @@ export function switchTab(id) {
             }, index * 500);
           });
           if (launcherRefreshInterval) clearInterval(launcherRefreshInterval);
-          launcherRefreshInterval = setInterval(() => {
-            hosts.forEach((conn, index) => {
-              const sessionListId = `${id}_sessions_${conn.label.replace(
-                // NOSONAR
-                /[^a-z0-9]/gi,
-                "",
-              )}`;
-              setTimeout(() => {
-                // NOSONAR
-                fetchSessions(id, conn, sessionListId, false, false, true);
-              }, index * 500);
-            });
-          }, 10000);
         });
     } else {
       // If the launcher was not fully rendered (e.g. previous fetch failed), render it now.

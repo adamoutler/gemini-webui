@@ -583,13 +583,9 @@ export async function fetchSessions( // NOSONAR
       consecutiveTimeouts[timeoutKey] =
         (consecutiveTimeouts[timeoutKey] || 0) + 1;
       if (consecutiveTimeouts[timeoutKey] > 5) {
-        debugLog("Clearing local storage due to consecutive timeouts");
-        localStorage.removeItem("geminiResume");
-        localStorage.removeItem("pinned_tabs");
-        localStorage.removeItem("sessionsCache");
+        debugLog("Multiple timeouts detected");
         consecutiveTimeouts[timeoutKey] = 0;
-        listEl.innerHTML = `<div class="js-style-7b7303">Connection unstable. Local storage cleared. Reloading...</div>`;
-        setTimeout(() => globalThis.location.reload(), 1500);
+        listEl.innerHTML = `<div class="js-style-7b7303">Connection unstable. Please refresh manually if needed.</div>`;
         return;
       }
       if (!useCache || isPolling) {
