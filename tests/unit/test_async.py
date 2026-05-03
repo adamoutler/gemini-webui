@@ -19,7 +19,7 @@ def mock_socketio():
 
 @pytest.fixture
 def mock_pty():
-    with patch("src.gateways.terminal_socket.pty.fork") as mock_fork:
+    with patch("src.services.terminal_service.pty.fork") as mock_fork:
         yield mock_fork
 
 
@@ -105,7 +105,8 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
         ), patch("os.chdir"), patch("os.execv"), patch("os.closerange"), patch(
             "os.execvp"
         ), patch("os._exit"), patch(
-            "src.gateways.terminal_socket.build_terminal_command", return_value=["bash"]
+            "src.services.terminal_service.build_terminal_command",
+            return_value=["bash"],
         ), patch("src.gateways.terminal_socket.set_winsize"), patch("fcntl.fcntl"):
             mock_paths.return_value = ("/data", "/data/config.json", "/data/.ssh")
             mock_get_config.return_value = {

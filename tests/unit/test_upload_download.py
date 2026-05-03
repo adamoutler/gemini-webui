@@ -56,7 +56,7 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
         "ssh_target": "user@host",
         "ssh_dir": "/remote/dir",
     }
-    with patch("src.routes.api.subprocess.run") as mock_run, patch(
+    with patch("src.services.remote_fs.subprocess.run") as mock_run, patch(
         "src.services.remote_fs.validate_ssh_target", return_value=True
     ), patch(
         "src.config.get_config_paths",
@@ -130,7 +130,7 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
         "ssh_target": "user@host",
         "ssh_dir": "~",
     }
-    with patch("src.routes.api.subprocess.run") as mock_run, patch(
+    with patch("src.services.remote_fs.subprocess.run") as mock_run, patch(
         "src.services.remote_fs.validate_ssh_target", return_value=True
     ), patch(
         "src.config.get_config_paths",
@@ -205,7 +205,7 @@ def test_upload_file_ssh_proxy_mkdir_failure(client, test_data_dir):
         "ssh_target": "user@host",
         "ssh_dir": "/remote/dir",
     }
-    with patch("src.routes.api.subprocess.run") as mock_run, patch(
+    with patch("src.services.remote_fs.subprocess.run") as mock_run, patch(
         "src.services.remote_fs.validate_ssh_target", return_value=True
     ), patch(
         "src.config.get_config_paths",
@@ -234,7 +234,7 @@ def test_upload_file_ssh_proxy_scp_failure(client, test_data_dir):
         "ssh_target": "user@host",
         "ssh_dir": "/remote/dir",
     }
-    with patch("src.routes.api.subprocess.run") as mock_run, patch(
+    with patch("src.services.remote_fs.subprocess.run") as mock_run, patch(
         "src.services.remote_fs.validate_ssh_target", return_value=True
     ), patch(
         "src.config.get_config_paths",
@@ -268,7 +268,7 @@ def test_upload_file_ssh_proxy_verify_failure(client, test_data_dir):
         "ssh_target": "user@host",
         "ssh_dir": "/remote/dir",
     }
-    with patch("src.routes.api.subprocess.run") as mock_run, patch(
+    with patch("src.services.remote_fs.subprocess.run") as mock_run, patch(
         "src.services.remote_fs.validate_ssh_target", return_value=True
     ), patch(
         "src.config.get_config_paths",

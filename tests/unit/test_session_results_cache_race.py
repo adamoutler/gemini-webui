@@ -6,10 +6,9 @@ from src.app import app
 def test_concurrent_list_sessions(client, monkeypatch):
     # Mock fetch_sessions_for_host to simulate work and prevent actual network/fs calls
     monkeypatch.setattr(
-        "src.routes.terminal.fetch_sessions_for_host",
+        "src.services.process_engine.fetch_sessions_for_host",
         lambda *args, **kwargs: {"sessions": []},
     )
-
     # We must patch authenticated_only if it strictly requires session
     # but BYPASS_AUTH_FOR_TESTING usually handles this in the codebase.
     import os
