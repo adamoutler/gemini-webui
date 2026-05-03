@@ -167,12 +167,11 @@ def test_sync_pulse_with_health_indicator(server, playwright):
 
     # Call updateHostHealthIndicator directly
     page.evaluate("""() => {
-        if (typeof activeTabId !== "undefined") {
-            const id = activeTabId;
-            updateHostHealthIndicator(id, 'local', true);
-        }
+    if (typeof activeTabId !== "undefined") {
+        const id = activeTabId;
+        updateHostHealthIndicator(id, 'local', true, true);
+    }
     }""")
-
     # Verify the pulse indicator triggers immediately
     expect(pulse_indicator).to_have_class(re.compile(r"pulsing"), timeout=15000)
     expect(pulse_indicator).to_have_class(re.compile(r"superbright"), timeout=15000)

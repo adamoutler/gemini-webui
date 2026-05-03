@@ -3,6 +3,7 @@ import time
 import os
 import subprocess
 import requests
+import re
 from playwright.sync_api import sync_playwright, expect
 
 
@@ -117,10 +118,14 @@ class TestReconnectionRegression:
         )
 
         try:
+            # Wait for it to be attached first
+            local_health.wait_for(state="attached", timeout=15000)
+            # The test previously checked for 🟢 but it could be ⚪ initially, wait until it turns green.
             expect(local_health).to_have_text("🟢", timeout=15000)
         except AssertionError:
             # If CI is slow and Socket.IO didn't bind in time for the first load, reload the page
             page.reload()
+            local_health.wait_for(state="attached", timeout=15000)
             expect(local_health).to_have_text("🟢", timeout=15000)
 
         # 4. Restart the container
@@ -167,6 +172,7 @@ class TestReconnectionRegression:
         local_health2 = page.locator(
             'div[data-label="local"] .connection-title span[id$="_health_local"]'
         )
+        local_health2.wait_for(state="attached", timeout=60000)
         expect(local_health2).to_have_text("🟢", timeout=60000)
 
         page.screenshot(path="docs/qa-images/GEMWEBUI-265/reconnected.png")
