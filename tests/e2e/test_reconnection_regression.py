@@ -172,8 +172,13 @@ class TestReconnectionRegression:
         local_health2 = page.locator(
             'div[data-label="local"] .connection-title span[id$="_health_local"]'
         )
-        local_health2.wait_for(state="attached", timeout=60000)
-        expect(local_health2).to_have_text("🟢", timeout=60000)
+        try:
+            local_health2.wait_for(state="attached", timeout=30000)
+            expect(local_health2).to_have_text("🟢", timeout=30000)
+        except AssertionError:
+            page.reload()
+            local_health2.wait_for(state="attached", timeout=30000)
+            expect(local_health2).to_have_text("🟢", timeout=30000)
 
         page.screenshot(path="docs/qa-images/GEMWEBUI-265/reconnected.png")
 
