@@ -19,6 +19,21 @@ from src.config import env_config
 from src.config import get_config, get_config_paths, env_config
 from src.routes.auth_utils import authenticated_only
 from src.auth import bearer_token_required
+
+from marshmallow import Schema, fields
+from src.decorators.validation import validate_json_schema
+
+
+class PromptSchema(Schema):
+    id = fields.String(required=False)
+    name = fields.String(required=True)
+    text = fields.String(required=True)
+
+
+class TaskKillSchema(Schema):
+    tab_id = fields.String(required=True)
+
+
 from src.decorators.validation import validate_json
 import logging
 
@@ -117,138 +132,6 @@ def delete_api_key(hash_val):
             json.dump(curr_conf, f, indent=4)
         return jsonify({"status": "success"})
     return jsonify({"status": "error", "message": "Key not found"}), 404
-
-
-@api_bp.route("/api/v1/sessions/create", methods=["POST"])
-@bearer_token_required
-@validate_json("host_id", "prompt")
-def v1_create_session():
-    data = request.json
-    host_id = data.get("host_id")
-    prompt = data.get("prompt")
-
-    if not host_id or not prompt:
-        return jsonify({"error": "Missing host_id or prompt"}), 400
-
-    conf = get_config()
-    if conf.get("host_id") != host_id:
-        return jsonify({"error": "Invalid host_id for this server"}), 403
-
-    # Use default local target for now, or extend to handle SSH targets if needed
-    ssh_target = None
-    ssh_dir = None
-    resume = "new"
-    tab_id = "v1-" + uuid.uuid4().hex[:8]
-
-    _, _, ssh_dir_path = get_config_paths()
-    cmd = build_terminal_command(
-        ssh_target,
-        ssh_dir,
-        resume,
-        ssh_dir_path,
-        env_config.GEMINI_BIN,
-    )
-
-    # In a real scenario, we'd pipe the prompt to the session.
-    # For this simplified implementation, we'll just run it once if possible.
-    # But the requirement is to "execute prompt via Gemini CLI on the target host".
-
-    # Since cmd is typically ["/bin/sh", "-c", "script"] or ["ssh", ... "bash -ilc 'script'"],
-    # appending prompt doesn't work correctly. We will pass the prompt safely by rebuilding
-    # the command specifically for one-off execution without PTY complex wrappers if needed,
-    # or just execute it securely.
-
-    # A secure way for local execution:
-    safe_prompt = shlex.quote(prompt)
-    if not ssh_target:
-        gemini_bin = shlex.split(env_config.GEMINI_BIN)
-        full_cmd = gemini_bin + [prompt]
-    else:
-        _, _, ssh_dir_path = get_config_paths()
-        from src.services.process_engine import build_ssh_args
-
-        ssh_cmd_base = build_ssh_args(ssh_target, ssh_dir_path)
-        full_cmd = ssh_cmd_base + [
-            "--",
-            ssh_target,
-            f"{env_config.GEMINI_BIN} {safe_prompt}",
-        ]
-
-    try:
-        result = subprocess.run(full_cmd, capture_output=True, text=True, timeout=120)
-        return jsonify(
-            {
-                "status": "success" if result.returncode == 0 else "failure",
-                "stdout": result.stdout,
-                "stderr": result.stderr,
-                "returncode": result.returncode,
-            }
-        )
-    except subprocess.TimeoutExpired:
-        return jsonify({"status": "failure", "error": "Timeout expired"}), 504
-    except Exception as e:
-        logger.error(f"Error in v1_sessions_create: {e}")
-        return jsonify(
-            {"status": "failure", "error": "An internal error occurred"}
-        ), 500
-
-
-@api_bp.route("/api/v1/hosts/states", methods=["GET"])
-@bearer_token_required
-def v1_host_states():
-    # Return current session status for this host
-    sessions = session_manager.get_all_sessions()
-    states = []
-    for s in sessions:
-        states.append(
-            {
-                "tab_id": s.tab_id,
-                "title": s.title,
-                "ssh_target": s.ssh_target,
-                "last_seen": s.last_seen,
-                "orphaned_at": s.orphaned_at,
-            }
-        )
-    return jsonify({"host_id": get_config().get("host_id"), "sessions": states})
-
-
-@api_bp.route("/api/v1/hosts/states/wait/<host_id>/<wait_time>", methods=["GET"])
-@bearer_token_required
-def v1_wait_for_ready(host_id, wait_time):
-    conf = get_config()
-    if conf.get("host_id") != host_id:
-        return jsonify({"error": "Invalid host_id"}), 403
-
-    # Parse wait_time (eg. 10s, 5m, 2h)
-    seconds = 0
-    if wait_time.endswith("s"):
-        seconds = int(wait_time[:-1])
-    elif wait_time.endswith("m"):
-        seconds = int(wait_time[:-1]) * 60
-    elif wait_time.endswith("h"):
-        seconds = int(wait_time[:-1]) * 3600
-    else:
-        try:
-            seconds = int(wait_time)
-        except ValueError:
-            return jsonify({"error": "Invalid time format"}), 400
-
-    start_time = time.time()
-    while time.time() - start_time < seconds:
-        sessions = session_manager.get_all_sessions()
-        all_ready = True
-        for s in sessions:
-            # Simple heuristic: if title doesn't contain "Working" or "✋", it's ready
-            if s.title and ("Working" in s.title or "✋" in s.title):
-                all_ready = False
-                break
-
-        if all_ready and sessions:  # Ensure there are sessions to wait for
-            return jsonify({"status": "ready"})
-
-        time.sleep(2)
-
-    return jsonify({"status": "timeout"}), 504
 
 
 @api_bp.route("/api/settings/export", methods=["GET"])
@@ -435,7 +318,7 @@ def list_prompts():
 
 @api_bp.route("/api/prompts", methods=["POST"])
 @authenticated_only
-@validate_json("id", "title", "prompt")
+@validate_json_schema(PromptSchema)
 def save_prompt():
     data = request.json
     prompt_id = data.get("id")
@@ -508,14 +391,13 @@ def list_tasks():
 
 @api_bp.route("/api/tasks/kill", methods=["POST"])
 @authenticated_only
+@validate_json_schema(TaskKillSchema)
 def kill_task():
     from flask import request
     import os, time
 
-    data = request.json or {}
+    data = request.json
     tab_id = data.get("tab_id")
-    if not tab_id:
-        return jsonify({"error": "tab_id required"}), 400
 
     from src.infrastructure.process_manager import kill_and_reap
 

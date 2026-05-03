@@ -31,10 +31,11 @@ external_api_bp = Blueprint(
 
 class SessionCreateSchema(Schema):
     host_id = fields.String(
-        required=True, description="The label of the host to run the command on."
+        required=True,
+        metadata={"description": "The label of the host to run the command on."},
     )
     prompt = fields.String(
-        required=True, description="The prompt/command to pass to Gemini."
+        required=True, metadata={"description": "The prompt/command to pass to Gemini."}
     )
 
 
@@ -72,89 +73,13 @@ class SessionCreate(MethodView):
 
         ssh_target = host.get("target")
         ssh_dir = host.get("dir")
-        env_vars = host.get("env_vars")
 
-        cmd = []
-        if ssh_target:
-            if not validate_ssh_target(ssh_target):
-                return (
-                    jsonify(
-                        {"status": "error", "message": "Invalid SSH target format"}
-                    ),
-                    400,
-                )
+        from src.services.terminal_service import TerminalService
 
-            remote_prefix = get_remote_command_prefix(
-                ssh_dir, GEMINI_BIN, env_vars=env_vars
-            )
-            remote_cmd = (
-                f"{remote_prefix} {shlex.quote(GEMINI_BIN)} {shlex.quote(prompt)}"
-            )
-
-            login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
-            _, _, ssh_dir_path = get_config_paths()
-            cmd = build_ssh_args(ssh_target, ssh_dir_path, control_master="no")
-
-            clean_target = ssh_target
-            if ":" in ssh_target:
-                parts = ssh_target.rsplit(":", 1)
-                if parts[1].isdigit():
-                    clean_target = parts[0]
-                    cmd.extend(["-p", parts[1]])
-
-            cmd.extend(["--", clean_target, login_wrapped_cmd])
-        else:
-            data_dir = env_config.DATA_DIR
-            work_dir = os.path.join(data_dir, "workspace")
-            if os.path.exists(work_dir):
-                cmd = [
-                    "/bin/sh",
-                    "-c",
-                    f'cd {shlex.quote(work_dir)} && exec {shlex.quote(GEMINI_BIN)} "$1"',
-                    "--",
-                    prompt,
-                ]
-            else:
-                cmd = [
-                    "/bin/sh",
-                    "-c",
-                    f'exec {shlex.quote(GEMINI_BIN)} "$1"',
-                    "--",
-                    prompt,
-                ]
-
-        try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-
-            if result.returncode != 0:
-                return (
-                    jsonify(
-                        {
-                            "status": "error",
-                            "message": "Gemini command failed",
-                            "stderr": result.stderr,
-                            "stdout": result.stdout,
-                        }
-                    ),
-                    500,
-                )
-
-            return jsonify(
-                {
-                    "status": "success",
-                    "data": {"stdout": result.stdout, "stderr": result.stderr},
-                }
-            )
-        except subprocess.TimeoutExpired:
-            return (
-                jsonify({"status": "error", "message": "Gemini command timed out"}),
-                504,
-            )
-        except Exception as e:
-            logger.error(f"Error creating session: {e}")
-            return jsonify(
-                {"status": "error", "message": "An internal error occurred"}
-            ), 500
+        result, status_code = TerminalService.execute_command_sync(
+            ssh_target, ssh_dir, prompt
+        )
+        return jsonify(result), status_code
 
 
 @external_api_bp.route("/v1/hosts/<host_id>/states")
@@ -196,3 +121,56 @@ class HostStates(MethodView):
                 },
             }
         )
+
+
+@external_api_bp.route("/v1/hosts/<host_id>/states/wait/<wait_time>")
+class HostStateWait(MethodView):
+    @external_api_bp.response(200, HostStateResponseSchema)
+    @api_key_required
+    def get(self, host_id, wait_time):
+        """Wait for sessions of a given host to be ready."""
+        import time
+
+        conf = get_config()
+        hosts = conf.get("HOSTS", [])
+        host = next((h for h in hosts if h["label"] == host_id), None)
+
+        if not host:
+            return jsonify(
+                {"status": "error", "message": f"Host '{host_id}' not found"}
+            ), 404
+
+        # Parse wait_time (eg. 10s, 5m, 2h)
+        seconds = 0
+        if wait_time.endswith("s"):
+            seconds = int(wait_time[:-1])
+        elif wait_time.endswith("m"):
+            seconds = int(wait_time[:-1]) * 60
+        elif wait_time.endswith("h"):
+            seconds = int(wait_time[:-1]) * 3600
+        else:
+            try:
+                seconds = int(wait_time)
+            except ValueError:
+                return jsonify(
+                    {"status": "error", "message": "Invalid time format"}
+                ), 400
+
+        from src.services.session_store import session_manager
+
+        start_time = time.time()
+        while time.time() - start_time < seconds:
+            sessions = session_manager.get_all_sessions()
+            all_ready = True
+            for s in sessions:
+                # Simple heuristic: if title doesn't contain "Working" or "✋", it's ready
+                if s.title and ("Working" in s.title or "✋" in s.title):
+                    all_ready = False
+                    break
+
+            if all_ready and sessions:  # Ensure there are sessions to wait for
+                return jsonify({"status": "success", "message": "ready"})
+
+            time.sleep(2)
+
+        return jsonify({"status": "error", "message": "timeout"}), 504

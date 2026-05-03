@@ -106,3 +106,82 @@ class TerminalService:
             session_manager.add_session(session_obj, on_remove=kill_and_reap)
 
             return session_obj, None
+
+    @staticmethod
+    def execute_command_sync(ssh_target, ssh_dir, prompt, timeout=60):
+        """
+        Executes a one-off command (prompt) synchronously and returns the result.
+        """
+        import subprocess
+        import shlex
+        from src.services.process_engine import (
+            validate_ssh_target,
+            get_remote_command_prefix,
+            build_ssh_args,
+        )
+
+        cmd = []
+        gemini_bin = env_config.GEMINI_BIN
+
+        if ssh_target:
+            if not validate_ssh_target(ssh_target):
+                return {"status": "error", "message": "Invalid SSH target format"}, 400
+
+            remote_prefix = get_remote_command_prefix(ssh_dir, gemini_bin)
+            remote_cmd = (
+                f"{remote_prefix} {shlex.quote(gemini_bin)} {shlex.quote(prompt)}"
+            )
+            login_wrapped_cmd = f"bash -ilc {shlex.quote(remote_cmd)}"
+
+            _, _, ssh_dir_path = get_config_paths()
+            cmd = build_ssh_args(ssh_target, ssh_dir_path, control_master="no")
+
+            clean_target = ssh_target
+            if ":" in ssh_target:
+                parts = ssh_target.rsplit(":", 1)
+                if parts[1].isdigit():
+                    clean_target = parts[0]
+                    cmd.extend(["-p", parts[1]])
+
+            cmd.extend(["--", clean_target, login_wrapped_cmd])
+        else:
+            data_dir = env_config.DATA_DIR
+            work_dir = os.path.join(data_dir, "workspace")
+            if os.path.exists(work_dir):
+                cmd = [
+                    "/bin/sh",
+                    "-c",
+                    f'cd {shlex.quote(work_dir)} && exec {shlex.quote(gemini_bin)} "$1"',
+                    "--",
+                    prompt,
+                ]
+            else:
+                cmd = [
+                    "/bin/sh",
+                    "-c",
+                    f'exec {shlex.quote(gemini_bin)} "$1"',
+                    "--",
+                    prompt,
+                ]
+
+        try:
+            result = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=timeout
+            )
+            if result.returncode != 0:
+                return {
+                    "status": "error",
+                    "message": "Gemini command failed",
+                    "stderr": result.stderr,
+                    "stdout": result.stdout,
+                }, 500
+
+            return {
+                "status": "success",
+                "data": {"stdout": result.stdout, "stderr": result.stderr},
+            }, 200
+        except subprocess.TimeoutExpired:
+            return {"status": "error", "message": "Gemini command timed out"}, 504
+        except Exception as e:
+            logger.error(f"Error creating session: {e}")
+            return {"status": "error", "message": "An internal error occurred"}, 500
