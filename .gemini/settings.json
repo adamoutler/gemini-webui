@@ -51,7 +51,7 @@
       }
     ],
     "AfterAgent": [
-       {
+      {
         "hooks": [
           {
             "type": "command",
