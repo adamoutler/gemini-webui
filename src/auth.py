@@ -84,9 +84,25 @@ def require_auth():
         return authenticate()
 
 
-def api_key_required(f):
+import hashlib
+from src.config import get_config
+
+
+def bearer_token_required(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            return {"error": "Unauthorized"}, 401
+        token = auth_header[7:]
+        hashed_token = hashlib.sha256(token.encode()).hexdigest()
+        conf = get_config()
+        if hashed_token not in conf.get("API_KEYS", []):
+            return {"error": "Unauthorized"}, 401
         return f(*args, **kwargs)
 
     return wrapped
+
+
+def api_key_required(f):
+    return bearer_token_required(f)

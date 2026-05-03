@@ -1,4 +1,9 @@
-import { copyToClipboard, renderLauncher, fetchWithCSRF } from "../../app.js";
+import { fetchWithCSRF } from "../core/api.js";
+import { renderLauncher } from "../core/session-manager.js";
+
+export function copyToClipboard(text) {
+  navigator.clipboard.writeText(text);
+}
 import { initThemeUI } from "./theme.js";
 
 class EnvVarManager {

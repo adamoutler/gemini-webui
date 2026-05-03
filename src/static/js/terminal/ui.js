@@ -36,7 +36,7 @@ export function startSession(
   sessionName = null,
   shouldReclaim = false,
 ) {
-  const tab = tabs.find((t) => t.id === tabId);
+  const tab = globalState.tabs.find((t) => t.id === tabId);
   if (!tab) {
     return;
   }
@@ -49,6 +49,9 @@ export function startSession(
     // "Session established. ID: X" output from the terminal.
     resumeParam = "new";
   }
+
+  if (target === "null" || target === "undefined") target = "";
+  if (dir === "null" || dir === "undefined") dir = "";
 
   tab.state = "terminal";
   tab.session = { type, ssh_target: target, ssh_dir: dir, resume: resumeParam };

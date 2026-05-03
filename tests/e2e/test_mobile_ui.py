@@ -361,13 +361,14 @@ def test_mobile_pinch_zoom_no_resize(mobile_page):
     # We redefine the getters on the abstracted window.appVisualViewport object
     mobile_page.evaluate("""() => {
         if (window.appVisualViewport) {
+            delete window.appVisualViewport.scale;
+            delete window.appVisualViewport.height;
             Object.defineProperty(window.appVisualViewport, 'scale', {
-                get: () => 2.0 // simulate pinch zoom (> 1.05)
+                get: () => 2.0, configurable: true // simulate pinch zoom (> 1.05)
             });
             Object.defineProperty(window.appVisualViewport, 'height', {
-                get: () => parseInt(document.body.style.height || "0") - 100 // simulate height changing
+                get: () => parseInt(document.body.style.height || "0") - 100, configurable: true // simulate height changing
             });
-
             // Trigger the resize event on the native visualViewport, which will call the app.js listener
             // that reads from window.appVisualViewport.
             if (window.visualViewport) {
@@ -390,10 +391,11 @@ def test_mobile_pinch_zoom_no_resize(mobile_page):
     # Now let's test what happens when scale is 1.0 (no zoom) to ensure our test works
     mobile_page.evaluate("""() => {
         if (window.appVisualViewport) {
+            // If already defined, delete it first
+            delete window.appVisualViewport.scale;
             Object.defineProperty(window.appVisualViewport, 'scale', {
-                get: () => 1.0 // no zoom
-            });
-            if (window.visualViewport) {
+                get: () => 1.0, configurable: true // no zoom
+            });            if (window.visualViewport) {
                 window.visualViewport.dispatchEvent(new Event('resize'));
             }
         }

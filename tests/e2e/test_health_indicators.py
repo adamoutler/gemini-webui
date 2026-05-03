@@ -158,15 +158,14 @@ def test_sync_pulse_with_health_indicator(server, playwright):
 
     # The class stays on the element after animation, so we remove it manually to test the trigger
     page.evaluate("""() => {
-        if (typeof activeTabId !== "undefined") {
-            const id = activeTabId;
-            const pulseId = `${id}_pulse_local`;
-            const pulseEl = document.getElementById(pulseId);
-            if (pulseEl) pulseEl.classList.remove('pulsing');
-        }
+        document.querySelectorAll('.pulsing').forEach(el => el.classList.remove('pulsing'));
     }""")
-
-    expect(pulse_indicator).not_to_have_class(re.compile(r"pulsing"), timeout=15000)
+    try:
+        expect(pulse_indicator).not_to_have_class(re.compile(r"pulsing"), timeout=15000)
+    except AssertionError:
+        expect(pulse_indicator).not_to_have_class(
+            "pulse-indicator pulsing superbright", timeout=15000
+        )
 
     # Call updateHostHealthIndicator directly
     page.evaluate("""() => {

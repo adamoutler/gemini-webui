@@ -1,6 +1,11 @@
 import { getCustomPrompts, loadPromptsFromServer } from "../core/state.js";
 import { escapeHtml } from "../core/api.js";
-import { copyToClipboard, fetchWithCSRF, emitPtyInput } from "../../app.js";
+import { fetchWithCSRF } from "../core/api.js";
+import { emitPtyInput } from "../terminal/pty.js";
+
+export function copyToClipboard(text) {
+  navigator.clipboard.writeText(text);
+}
 
 export function openFileTransfer() {
   document.getElementById("file-transfer-modal").style.display = "block";

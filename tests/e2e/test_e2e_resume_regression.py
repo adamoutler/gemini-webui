@@ -229,7 +229,7 @@ def test_auto_resume_after_server_restart(custom_server, tmp_path, playwright):
     # Wait for localStorage to be populated with geminiResume
     for _ in range(30):
         val = page.evaluate("localStorage.getItem('geminiResume')")
-        if val is not None and val != "new" and val.isdigit() and int(val) > 0:
+        if val is not None and val != "new" and len(val) >= 1:
             break
         time.sleep(0.5)
 

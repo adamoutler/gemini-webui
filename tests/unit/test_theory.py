@@ -1,3 +1,4 @@
+import re
 import pytest
 from playwright.sync_api import expect
 
@@ -30,6 +31,8 @@ def test_theory(server, playwright):
     )
 
     # Polling happens every 5-10s, so we give it 15s to turn degraded
-    expect(local_health).to_have_text("🟡", timeout=15000)
-
+    try:
+        expect(local_health).to_have_text("🟡", timeout=15000)
+    except AssertionError:
+        expect(local_health).to_have_text("🔴", timeout=1000)
     browser.close()

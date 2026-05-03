@@ -18,6 +18,8 @@ from flask_wtf.csrf import generate_csrf
 from src.config import env_config
 from src.config import get_config, get_config_paths, env_config
 from src.routes.auth_utils import authenticated_only
+from src.auth import bearer_token_required
+from src.decorators.validation import validate_json
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,22 +32,6 @@ from src.services.session_store import session_manager
 from src.prompt_manager import prompt_manager
 
 api_bp = Blueprint("api", __name__)
-
-
-def bearer_token_required(f):
-    @wraps(f)
-    def wrapped(*args, **kwargs):
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return jsonify({"error": "Unauthorized"}), 401
-        token = auth_header[7:]
-        hashed_token = hashlib.sha256(token.encode()).hexdigest()
-        conf = get_config()
-        if hashed_token not in conf.get("API_KEYS", []):
-            return jsonify({"error": "Unauthorized"}), 401
-        return f(*args, **kwargs)
-
-    return wrapped
 
 
 @api_bp.route("/api/config", methods=["GET"])
@@ -135,6 +121,7 @@ def delete_api_key(hash_val):
 
 @api_bp.route("/api/v1/sessions/create", methods=["POST"])
 @bearer_token_required
+@validate_json("host_id", "prompt")
 def v1_create_session():
     data = request.json
     host_id = data.get("host_id")
@@ -448,6 +435,7 @@ def list_prompts():
 
 @api_bp.route("/api/prompts", methods=["POST"])
 @authenticated_only
+@validate_json("id", "title", "prompt")
 def save_prompt():
     data = request.json
     prompt_id = data.get("id")

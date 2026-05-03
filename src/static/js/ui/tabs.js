@@ -1,17 +1,20 @@
-import { DEFAULT_PROMPTS, getCustomPrompts } from "../core/state.js";
+import {
+  globalState,
+  DEFAULT_PROMPTS,
+  getCustomPrompts,
+} from "../core/state.js";
 import { debugLog } from "../core/api.js";
 import {
   createTerminalContainer,
-  renderLauncher,
   recreateTerminalUI,
-  updatePageTitle,
-  fetchSessions,
-  isMobile,
-  updateStatus,
   fitTerminal,
-  fetchWithCSRF,
-  sendPromptToTab,
-} from "../../app.js";
+} from "../terminal/ui.js";
+import { updateStatus, updatePageTitle } from "./launcher.js";
+import { renderLauncher } from "../core/session-manager.js";
+import { fetchSessions } from "../core/session-manager.js";
+import { fetchWithCSRF } from "../core/api.js";
+import { sendPromptToTab } from "../../main.js";
+import { isMobile } from "../mobile/mobile-input-extra.js";
 import { openAddPromptModal, openManagePromptsModal } from "./modals.js";
 
 export async function loadTabsFromServer() {
@@ -21,7 +24,7 @@ export async function loadTabsFromServer() {
     const persisted = await response.json();
 
     // Clear existing tabs
-    tabs = [];
+    globalState.tabs = [];
     document.getElementById("terminal-container").innerHTML = "";
 
     // Add persisted tabs
@@ -38,15 +41,15 @@ export async function loadTabsFromServer() {
         userNamed: s.user_named || false,
         state: "terminal",
       };
-      tabs.push(tab);
+      globalState.tabs.push(tab);
       createTerminalContainer(tid);
-      if (tid === activeTabId) foundActive = true;
+      if (tid === globalState.activeTabId) foundActive = true;
     }
 
     // Always add a launcher if none exist
-    if (!tabs.find((t) => t.state === "launcher")) {
+    if (!globalState.tabs.find((t) => t.state === "launcher")) {
       const id = "tab_" + (Date.now() + Math.floor(Math.random() * 1000));
-      tabs.push({
+      globalState.tabs.push({
         id,
         term: null,
         fitAddon: null,
@@ -59,12 +62,12 @@ export async function loadTabsFromServer() {
       createTerminalContainer(id);
       renderLauncher(id);
     }
-    if (!foundActive) activeTabId = tabs[0].id;
+    if (!foundActive) globalState.activeTabId = tabs[0].id;
     renderTabs();
-    switchTab(activeTabId);
+    switchTab(globalState.activeTabId);
 
     // Start sessions
-    tabs.forEach((t) => {
+    globalState.tabs.forEach((t) => {
       if (t.state === "terminal") {
         recreateTerminalUI(t, true);
       }
@@ -99,7 +102,7 @@ export async function loadTabsFromServer() {
     }
   } catch (e) {
     debugLog("Error loading tabs from server:", e);
-    if (tabs.length === 0) addNewTab();
+    if (globalState.tabs.length === 0) addNewTab();
   }
 }
 export function syncTabs(serverTabs) {
@@ -107,8 +110,8 @@ export function syncTabs(serverTabs) {
   let changed = false;
 
   // Remove tabs no longer on server
-  for (let i = tabs.length - 1; i >= 0; i--) {
-    const t = tabs[i];
+  for (let i = globalState.tabs.length - 1; i >= 0; i--) {
+    const t = globalState.tabs[i];
     if (t.state === "terminal" && !serverTabs[t.id]) {
       closeTab(t.id, null, true);
       changed = true;
@@ -118,7 +121,7 @@ export function syncTabs(serverTabs) {
   // Add or update tabs
   for (const tid in serverTabs) {
     const s = serverTabs[tid];
-    const existing = tabs.find((t) => t.id === tid);
+    const existing = globalState.tabs.find((t) => t.id === tid);
     if (!existing) {
       const tab = {
         id: tid,
@@ -129,7 +132,7 @@ export function syncTabs(serverTabs) {
         title: s.title,
         state: "terminal",
       };
-      tabs.push(tab);
+      globalState.tabs.push(tab);
       createTerminalContainer(tid);
       recreateTerminalUI(tab, true);
       changed = true;
@@ -144,7 +147,7 @@ export function syncTabs(serverTabs) {
   }
 }
 export function saveTabsToStorage() {
-  sessionStorage.setItem("gemini_active_tab", activeTabId);
+  sessionStorage.setItem("gemini_active_tab", globalState.activeTabId);
 }
 export function loadTabsFromStorage() {
   loadTabsFromServer();
@@ -152,7 +155,7 @@ export function loadTabsFromStorage() {
 }
 export async function addNewTab(autoResume = false) {
   // If a launcher tab already exists, just switch to it instead of creating a new one.
-  const existingLauncher = tabs.find((t) => t.state === "launcher");
+  const existingLauncher = globalState.tabs.find((t) => t.state === "launcher");
   if (existingLauncher) {
     switchTab(existingLauncher.id);
     return;
@@ -172,16 +175,16 @@ export async function addNewTab(autoResume = false) {
   container.id = id + "_instance";
   container.className = "tab-instance";
   document.getElementById("terminal-container").appendChild(container);
-  tabs.push(tab);
+  globalState.tabs.push(tab);
   renderTabs();
   switchTab(id);
   renderLauncher(id);
   saveTabsToStorage();
 }
 export function switchTab(id) {
-  activeTabId = id;
-  window.activeTabId = id;
-  const tab = tabs.find((t) => t.id === id);
+  globalState.activeTabId = id;
+  window.globalState.activeTabId = id;
+  const tab = globalState.tabs.find((t) => t.id === id);
   if (!tab) return;
   if (launcherRefreshInterval) {
     clearInterval(launcherRefreshInterval);
@@ -254,7 +257,7 @@ export function switchTab(id) {
       if (tab.term) {
         tab.term.focus();
       }
-      tabs.forEach((t) => {
+      globalState.tabs.forEach((t) => {
         if (t.mobileProxy && t.mobileProxy.ui && t.term) {
           t.mobileProxy.ui.alignWithCursor(t.term);
         }
@@ -267,7 +270,7 @@ export function switchTab(id) {
   }
 }
 export function restartActiveTab() {
-  const tab = tabs.find((t) => t.id === activeTabId);
+  const tab = globalState.tabs.find((t) => t.id === globalState.activeTabId);
   if (tab && tab.state === "terminal") {
     const { ssh_target, ssh_dir, resume } = tab.session;
     tab.term.clear();
@@ -286,9 +289,9 @@ export function restartActiveTab() {
 }
 export function closeTab(id, event, isLocalOnly = false) {
   if (event) event.stopPropagation();
-  const index = tabs.findIndex((t) => t.id === id);
+  const index = globalState.tabs.findIndex((t) => t.id === id);
   if (index === -1) return;
-  const tab = tabs[index];
+  const tab = globalState.tabs[index];
   if (tab.state === "launcher") return; // Cannot close the launcher (+ New) tab
 
   if (!isLocalOnly) {
@@ -324,10 +327,11 @@ export function closeTab(id, event, isLocalOnly = false) {
   if (tab.term) tab.term.dispose();
   const inst = document.getElementById(id + "_instance");
   if (inst) inst.remove();
-  tabs.splice(index, 1);
-  if (tabs.length === 0) addNewTab();
+  globalState.tabs.splice(index, 1);
+  if (globalState.tabs.length === 0) addNewTab();
   else {
-    if (activeTabId === id) switchTab(tabs[Math.max(0, index - 1)].id);
+    if (globalState.activeTabId === id)
+      switchTab(globalState.tabs[Math.max(0, index - 1)].id);
     renderTabs();
   }
   saveTabsToStorage();
@@ -336,10 +340,11 @@ export function closeTab(id, event, isLocalOnly = false) {
 export function renderTabs() {
   const bar = document.getElementById("tab-bar");
   bar.innerHTML = "";
-  tabs.forEach((tab) => {
+  globalState.tabs.forEach((tab) => {
     const el = document.createElement("div");
     el.id = "nav-" + tab.id;
-    el.className = "tab" + (tab.id === activeTabId ? " active" : "");
+    el.className =
+      "tab" + (tab.id === globalState.activeTabId ? " active" : "");
     el.title = tab.title; // Add tooltip for full tab name
     el.onclick = () => switchTab(tab.id);
 
@@ -375,7 +380,7 @@ export function showTabContextMenu(id, x, y) {
   menu.className = "context-menu js-style-87d2f1"; // Shared style for menus
   menu.style.left = x + "px";
   menu.style.top = y + "px";
-  const tab = tabs.find((t) => t.id === id);
+  const tab = globalState.tabs.find((t) => t.id === id);
   if (!tab) {
     return;
   }

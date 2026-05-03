@@ -503,118 +503,69 @@ def pty_restart(data):
 
     if is_fake:
         env_vars["GEMINI_WEBUI_HARNESS_ID"] = tab_id
-        ssh_target = None
-        gemini_bin_override = GEMINI_BIN
-    else:
-        gemini_bin_override = GEMINI_BIN
-        if env_config.BYPASS_AUTH_FOR_TESTING:
-            env_vars["GEMINI_WEBUI_HARNESS_ID"] = tab_id
 
-    _, _, ssh_dir_path = get_config_paths()
+    from src.services.terminal_service import TerminalService
 
-    cmd = build_terminal_command(
+    session_obj, err = TerminalService.start_session(
+        tab_id,
+        user_id,
         ssh_target,
         ssh_dir,
         resume,
-        ssh_dir_path,
-        gemini_bin_override,
-        env_vars=env_vars,
+        cols,
+        rows,
+        env_vars,
+        title=data.get("title") or "",
         is_fake=is_fake,
         executable_override=executable_override,
     )
 
-    if not cmd:
+    if err:
         socketio.emit(
             "pty-output",
-            {"output": "\r\n\x1b[31mError: Invalid SSH target format\x1b[0m\r\n"},
+            {"output": f"\r\n\x1b[31mError: {err}\x1b[0m\r\n"},
             room=sid,
         )
         return
 
-    (child_pid, fd) = pty.fork()
-    if child_pid == 0:
-        try:
-            os.setsid()
-        except OSError:
-            pass
-        os.closerange(3, 65536)
-        env = os.environ.copy()
-        env["TERM"] = "xterm-256color"
-        env["COLORTERM"] = "truecolor"
-        env["FORCE_COLOR"] = "3"
+    if not session_obj:
+        return
 
-        if env_vars:
-            for k, v in env_vars.items():
-                if k == "PATH":
-                    env["PATH"] = f"{v}:{env.get('PATH', '')}"
-                else:
-                    env[k] = str(v)
+    session_manager.reclaim_session(tab_id, sid, user_id)
 
-        if is_fake or env_config.BYPASS_AUTH_FOR_TESTING:
-            env["GEMINI_WEBUI_HARNESS_ID"] = tab_id
+    # Broadcast sync to ensure client has the new session
+    if user_id:
+        if session_manager.persistence:
+            persisted = session_manager.persistence.load()
+            user_persisted = {
+                tid: s for tid, s in persisted.items() if s.get("user_id") == user_id
+            }
+            socketio.emit("sync-tabs", user_persisted, room=f"user_{user_id}")
 
-        try:
-            os.execvpe(cmd[0], cmd, env)
-        except OSError as e:
-            import sys
+    # Start the dedicated output reader for this session
+    socketio.start_background_task(session_output_reader, tab_id)
 
-            msg = f"\r\n\x1b[1;31mError: Failed to execute '{cmd[0]}' on the server.\x1b[0m\r\n\x1b[1;31mDetails: {e}\x1b[0m\r\n\x1b[1;33mPlease ensure '{cmd[0]}' is installed and accessible in the system PATH.\x1b[0m\r\n"
-            os.write(sys.stdout.fileno(), msg.encode())
-            os._exit(1)
-        os._exit(0)
-    else:
-        import fcntl
+    _, _, ssh_dir_path = get_config_paths()
+    app_config = {"SSH_DIR": ssh_dir_path}
+    import threading
 
-        flags = fcntl.fcntl(fd, fcntl.F_GETFL)
-        fcntl.fcntl(fd, fcntl.F_SETFL, flags | os.O_NONBLOCK)
+    threading.Thread(
+        target=session_manager.update_file_cache,
+        args=(tab_id, app_config),
+        daemon=True,
+    ).start()
 
-        add_managed_pty(child_pid)
-        session_obj = Session(
-            tab_id,
-            fd,
-            child_pid,
-            user_id,
-            title=data.get("title") or "",
-            ssh_target=ssh_target,
-            ssh_dir=ssh_dir,
-            resume=resume,
-        )
-        session_manager.add_session(session_obj, on_remove=kill_and_reap)
-        session_manager.reclaim_session(tab_id, sid, user_id)
+    try:
+        set_winsize(session_obj.fd, rows, cols)
+    except Exception as e:
+        logger.warning(f"Failed to set winsize on fd {session_obj.fd}: {e}")
 
-        # Broadcast sync to ensure client has the new session
-        if user_id:
-            if session_manager.persistence:
-                persisted = session_manager.persistence.load()
-                user_persisted = {
-                    tid: s
-                    for tid, s in persisted.items()
-                    if s.get("user_id") == user_id
-                }
-                socketio.emit("sync-tabs", user_persisted, room=f"user_{user_id}")
-
-        # Start the dedicated output reader for this session
-        socketio.start_background_task(session_output_reader, tab_id)
-
-        _, _, ssh_dir_path = get_config_paths()
-        app_config = {"SSH_DIR": ssh_dir_path}
-        threading.Thread(
-            target=session_manager.update_file_cache,
-            args=(tab_id, app_config),
-            daemon=True,
-        ).start()
-
-        try:
-            set_winsize(fd, rows, cols)
-        except Exception as e:
-            logger.warning(f"Failed to set winsize on fd {fd}: {e}")
-
-        initial_msg = (
-            "\x1b[2mEstablishing connection...\x1b[0m\r\n"
-            if ssh_target
-            else "\x1b[2mLoading Context...\x1b[0m\r\n"
-        )
-        socketio.emit("pty-output", {"output": initial_msg}, room=tab_id)
+    initial_msg = (
+        "\x1b[2mEstablishing connection...\x1b[0m\r\n"
+        if ssh_target
+        else "\x1b[2mLoading Context...\x1b[0m\r\n"
+    )
+    socketio.emit("pty-output", {"output": initial_msg}, room=tab_id)
 
 
 @socketio.on("get_management_sessions")
