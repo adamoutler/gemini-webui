@@ -66,16 +66,13 @@ def test_get_sessions_timeout_auto_recovery(server, tmp_path, playwright):
     # Verify reloading message
     msg_locator = page.locator(".js-style-7b7303")
     expect(msg_locator).to_have_text(
-        "Connection unstable. Local storage cleared. Reloading...", timeout=5000
+        "Connection unstable. Please refresh manually if needed.", timeout=5000
     )
 
     os.makedirs("docs/qa-images", exist_ok=True)
     page.screenshot(path="docs/qa-images/proof_get_sessions_timeout.png")
 
-    # Wait for the page to reload
-    page.wait_for_load_state("networkidle")
-
-    # Verify storage is cleared
-    assert page.evaluate("localStorage.getItem('geminiResume')") is None
-    assert page.evaluate("localStorage.getItem('pinned_tabs')") is None
-    assert page.evaluate("localStorage.getItem('sessionsCache')") is None
+    # Verify storage is NOT cleared
+    assert page.evaluate("localStorage.getItem('geminiResume')") == "corrupt_resume_id"
+    assert page.evaluate("localStorage.getItem('pinned_tabs')") == "corrupt_tabs_data"
+    assert page.evaluate("localStorage.getItem('sessionsCache')") == "corrupt_cache"
