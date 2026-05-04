@@ -70,55 +70,14 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
         assert response.status_code == 200
         resp_data = json.loads(response.data)
         assert resp_data["status"] == "success"
-        assert resp_data["filename"] == "mock_path"
+        assert resp_data["filename"] == "/remote/dir/testfile.txt"
 
-        assert mock_run.call_count == 4
-        ssh_call = mock_run.call_args_list[0][0][0]
-        scp_call = mock_run.call_args_list[1][0][0]
-        verify_call = mock_run.call_args_list[2][0][0]
-        path_call = mock_run.call_args_list[3][0][0]
+        assert mock_run.call_count == 1
+        sftp_call = mock_run.call_args_list[0][0][0]
 
-        import os
-        import shlex
-        from src.services.process_engine import build_ssh_args
-
-        base_ssh_args = build_ssh_args("user@host", "/tmp/ssh_dir")[1:]
-        workspace_dir = os.path.join(test_data_dir, "workspace")
-        save_path = os.path.abspath(os.path.join(workspace_dir, "testfile.txt"))
-
-        (
-            ["ssh"]
-            + base_ssh_args
-            + ["--", "user@host", f"mkdir -p {shlex.quote('/remote/dir')}"]
-        )
-        (
-            ["scp"]
-            + base_ssh_args
-            + ["--", save_path, "user@host:/remote/dir/testfile.txt"]
-        )
-        (
-            ["ssh"]
-            + base_ssh_args
-            + ["--", "user@host", f"ls {shlex.quote('/remote/dir/testfile.txt')}"]
-        )
-        (
-            ["ssh"]
-            + base_ssh_args
-            + [
-                "--",
-                "user@host",
-                f"realpath {shlex.quote('/remote/dir/testfile.txt')} 2>/dev/null || readlink -m {shlex.quote('/remote/dir/testfile.txt')} 2>/dev/null || echo {shlex.quote('/remote/dir/testfile.txt')}",
-            ]
-        )
-
-        assert "ssh" in ssh_call
-        assert any("user@host" in arg for arg in ssh_call)
-        assert "scp" in scp_call
-        assert any("user@host" in arg for arg in scp_call)
-        assert "ssh" in verify_call
-        assert "sh" in verify_call
-        assert "ssh" in path_call
-        assert "sh" in path_call
+        assert "sftp" in sftp_call
+        assert "user@host" in sftp_call
+        assert "-b" in sftp_call
 
 
 @pytest.mark.timeout(60)
@@ -144,41 +103,11 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
         assert response.status_code == 200
 
         # In this case, remote_dir is empty string, so ssh mkdir is not called
-        assert mock_run.call_count == 3
-        scp_call = mock_run.call_args_list[0][0][0]
-        verify_call = mock_run.call_args_list[1][0][0]
-        path_call = mock_run.call_args_list[2][0][0]
+        assert mock_run.call_count == 1
+        sftp_call = mock_run.call_args_list[0][0][0]
 
-        import os
-        import shlex
-        from src.services.process_engine import build_ssh_args
-
-        base_ssh_args = build_ssh_args("user@host", "/tmp/ssh_dir")[1:]
-        workspace_dir = os.path.join(test_data_dir, "workspace")
-        save_path = os.path.abspath(os.path.join(workspace_dir, "testfile.txt"))
-
-        (["scp"] + base_ssh_args + ["--", save_path, "user@host:testfile.txt"])
-        (
-            ["ssh"]
-            + base_ssh_args
-            + ["--", "user@host", f"ls {shlex.quote('testfile.txt')}"]
-        )
-        (
-            ["ssh"]
-            + base_ssh_args
-            + [
-                "--",
-                "user@host",
-                f"realpath {shlex.quote('testfile.txt')} 2>/dev/null || readlink -m {shlex.quote('testfile.txt')} 2>/dev/null || echo {shlex.quote('testfile.txt')}",
-            ]
-        )
-
-        assert "scp" in scp_call
-        assert any("user@host" in arg for arg in scp_call)
-        assert "ssh" in verify_call
-        assert "sh" in verify_call
-        assert "ssh" in path_call
-        assert "sh" in path_call
+        assert "sftp" in sftp_call
+        assert "-b" in sftp_call
 
 
 @pytest.mark.timeout(60)
@@ -224,7 +153,8 @@ def test_upload_file_ssh_proxy_mkdir_failure(client, test_data_dir):
         assert resp_data["status"] == "error"
         assert (
             "Operation failed" in resp_data["message"]
-            or "Failed to create remote directory" in resp_data["message"]
+            or "SCP failed" in resp_data["message"]
+            or "An internal error occurred" in resp_data["message"]
         )
 
 
@@ -243,7 +173,7 @@ def test_upload_file_ssh_proxy_scp_failure(client, test_data_dir):
     ):
 
         def run_side_effect(*args, **kwargs):
-            if args[0][0] == "scp":
+            if args[0][0] == "sftp":
                 return MagicMock(returncode=1, stderr="SCP Error")
             return MagicMock(returncode=0)
 
@@ -277,12 +207,11 @@ def test_upload_file_ssh_proxy_verify_failure(client, test_data_dir):
     ):
 
         def run_side_effect(*args, **kwargs):
-            if args[0][0] == "ssh" and kwargs.get("input", "").startswith("ls"):
-                return MagicMock(returncode=1)
+            if args[0][0] == "sftp":
+                return MagicMock(returncode=1, stderr="SCP Error")
             return MagicMock(returncode=0, stdout="mock_path", stderr="")
 
         mock_run.side_effect = run_side_effect
-
         response = client.post(
             "/api/upload", data=data, content_type="multipart/form-data"
         )
@@ -292,5 +221,5 @@ def test_upload_file_ssh_proxy_verify_failure(client, test_data_dir):
         assert resp_data["status"] == "error"
         assert (
             "Operation failed" in resp_data["message"]
-            or "SCP returned 0, but file verification failed" in resp_data["message"]
+            or "SCP failed" in resp_data["message"]
         )

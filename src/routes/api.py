@@ -138,7 +138,7 @@ def export_settings():
         )
     except Exception as e:
         logger.error(f"Failed to export settings: {e}")
-        return jsonify({"error": "An internal error occurred"}), 500  # NOSONAR
+        return jsonify({"error": "An internal error occurred"}), 500
 
 
 @api_bp.route("/api/settings/import", methods=["POST"])
@@ -213,54 +213,54 @@ def get_csrf_token():
 @api_bp.route("/api/upload", methods=["POST"])
 @authenticated_only
 def upload_file():
-    if "file" not in request.files:
-        return jsonify({"status": "error", "message": "No file part"}), 400
-    file = request.files["file"]
-    if file.filename == "":
-        return jsonify({"status": "error", "message": "No selected file"}), 400
+    try:
+        if "file" not in request.files:
+            return jsonify({"status": "error", "message": "No file part"}), 400
+        file = request.files["file"]
+        if file.filename == "":
+            return jsonify({"status": "error", "message": "No selected file"}), 400
 
-    original_filename = file.filename
-    if "/" in original_filename or "\\" in original_filename:
-        normalized_path = original_filename.replace("\\", "/")
-        parts = [secure_filename(p) for p in normalized_path.split("/") if p]
-        filename = "/".join(parts)
-    else:
-        filename = secure_filename(file.filename)
+        original_filename = file.filename
+        if "/" in original_filename or "\\" in original_filename:
+            normalized_path = original_filename.replace("\\", "/")
+            parts = [secure_filename(p) for p in normalized_path.split("/") if p]
+            filename = "/".join(parts)
+        else:
+            filename = secure_filename(file.filename)
 
-    if not filename:
-        return jsonify({"status": "error", "message": "Invalid filename"}), 400
+        if not filename:
+            return jsonify({"status": "error", "message": "Invalid filename"}), 400
 
-    workspace_dir = os.path.join(env_config.DATA_DIR, "workspace")
-    base_path = os.path.abspath(workspace_dir)
-    save_path = os.path.abspath(os.path.join(base_path, filename))
+        workspace_dir = os.path.join(env_config.DATA_DIR, "workspace")
+        base_path = os.path.abspath(workspace_dir)
+        save_path = os.path.abspath(os.path.join(base_path, filename))
 
-    if not save_path.startswith(base_path):
-        return jsonify({"status": "error", "message": "Access denied"}), 403
+        if not save_path.startswith(base_path):
+            return jsonify({"status": "error", "message": "Access denied"}), 403
 
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    file.save(save_path)
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        file.save(save_path)
 
-    ssh_target = request.form.get("ssh_target")
-    if ssh_target:
-        ssh_dir = request.form.get("ssh_dir")
-        _, _, ssh_dir_path = get_config_paths()
+        ssh_target = request.form.get("ssh_target")
+        if ssh_target:
+            ssh_dir = request.form.get("ssh_dir")
+            from src.config import get_config_paths
 
-        from src.services.remote_fs import upload_to_remote
+            _, _, ssh_dir_path = get_config_paths()
 
-        try:
+            from src.services.remote_fs import upload_to_remote
+
             filename = upload_to_remote(
                 save_path, filename, ssh_target, ssh_dir, ssh_dir_path
             )
-        except ValueError:
-            return jsonify({"status": "error", "message": "Invalid parameters"}), 400
-        except RuntimeError:
-            return jsonify({"status": "error", "message": "Operation failed"}), 500
-        except Exception:
-            return jsonify(
-                {"status": "error", "message": "An internal error occurred during SCP"}
-            ), 500
 
-    return jsonify({"status": "success", "filename": filename})
+        return jsonify({"status": "success", "filename": filename})
+    except Exception as e:
+        import traceback
+
+        with open("/tmp/upload_err2.log", "w") as f:
+            f.write(traceback.format_exc())
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 
 @api_bp.route("/api/download/<path:filename>", methods=["GET"])
@@ -293,7 +293,7 @@ def download_file(filename):
         ), 500
 
 
-@api_bp.route("/api/health")  # NOSONAR
+@api_bp.route("/api/health")
 def health_check():
     return jsonify({"status": "ok"})
 
@@ -380,7 +380,7 @@ def list_tasks():
 @api_bp.route("/api/tasks/kill", methods=["POST"])
 @authenticated_only
 @validate_json_schema(TaskKillSchema)
-def kill_task():  # NOSONAR
+def kill_task():
     from flask import request
     import os
     import time

@@ -155,6 +155,7 @@ def page(server, playwright):
     page.set_default_timeout(60000)
     page.on("console", lambda msg: print(f"CONSOLE: {msg.text}"))
     page.on("pageerror", lambda err: print(f"PAGE ERROR: {err}"))
+    page.on("dialog", lambda dialog: print(f"DIALOG: {dialog.message}"))
     page.goto(server, timeout=15000)
     page.wait_for_selector(
         ".launcher, .terminal-instance", state="attached", timeout=15000
@@ -209,26 +210,33 @@ def test_ssh_drag_and_drop_upload(page, tmp_path, ssh_target_container, playwrig
     }""")
     expect(page.locator(".drop-zone")).to_have_class("drop-zone active")
 
-    # Trigger drop
-    page.evaluate("""() => {
-        const file = new File(["ssh dropped content e2e"], "e2e_ssh_upload.txt", { type: 'text/plain' });
+    with page.expect_response(
+        lambda response: "/api/upload" in response.url,
+        timeout=60000,
+    ) as response_info:
+        # Trigger drop
+        page.evaluate("""() => {
+            const file = new File(["ssh dropped content e2e"], "e2e_ssh_upload.txt", { type: 'text/plain' });
 
-        const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
-        dropEvent.dataTransfer = {
-            items: [
-                {
-                    webkitGetAsEntry: () => ({
-                        isFile: true,
-                        isDirectory: false,
-                        name: 'e2e_ssh_upload.txt',
-                        file: (cb) => cb(file)
-                    })
-                }
-            ],
-            files: [file]
-        };
-        document.dispatchEvent(dropEvent);
-    }""")
+            const dropEvent = new Event('drop', { bubbles: true, cancelable: true });
+            dropEvent.dataTransfer = {
+                items: [
+                    {
+                        webkitGetAsEntry: () => ({
+                            isFile: true,
+                            isDirectory: false,
+                            name: 'e2e_ssh_upload.txt',
+                            file: (cb) => cb(file)
+                        })
+                    }
+                ],
+                files: [file]
+            };
+            document.dispatchEvent(dropEvent);
+        }""")
+
+    resp = response_info.value
+    print(f"API UPLOAD RESP STATUS: {resp.status}")
 
     # Check dropzone inactive
     expect(page.locator(".drop-zone")).not_to_have_class("drop-zone active")

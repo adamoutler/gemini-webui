@@ -2,6 +2,7 @@ import os
 import shlex
 import subprocess
 import re
+import tempfile
 from src.services.process_engine import build_ssh_args, validate_ssh_target
 
 
@@ -10,7 +11,7 @@ def validate_path_strict(path_str: str) -> bool:
     return bool(re.match(r"^[\w\-. /~]+$", path_str))
 
 
-def upload_to_remote(  # NOSONAR
+def upload_to_remote(
     local_filepath: str, filename: str, ssh_target: str, ssh_dir: str, ssh_dir_path: str
 ) -> str:
     """
@@ -33,6 +34,7 @@ def upload_to_remote(  # NOSONAR
 
     if remote_dir and not validate_path_strict(remote_dir):
         raise ValueError("Invalid remote directory")
+
     port = None
     clean_target = ssh_target
     if ":" in ssh_target:
@@ -41,60 +43,69 @@ def upload_to_remote(  # NOSONAR
             clean_target = parts[0]
             port = parts[1]
 
-    ssh_cmd_base = build_ssh_args(ssh_target, ssh_dir_path)
+    ssh_cmd_base_raw = build_ssh_args(ssh_target, ssh_dir_path, control_master="no")
+    ssh_cmd_base = []
+    i = 0
+    while i < len(ssh_cmd_base_raw):
+        if ssh_cmd_base_raw[i] == "-o" and ssh_cmd_base_raw[i + 1].startswith(
+            "Control"
+        ):
+            i += 2
+        else:
+            ssh_cmd_base.append(ssh_cmd_base_raw[i])
+            i += 1
+
     if port:
         ssh_cmd_base.extend(["-p", port])
 
-    scp_cmd_base = ["scp"] + build_ssh_args(ssh_target, ssh_dir_path)[1:]
+    sftp_cmd_base = ["sftp"] + ssh_cmd_base[1:]
     if port:
-        scp_cmd_base.extend(["-P", port])
+        # replace ssh -p with sftp -P
+        sftp_cmd_base[-2] = "-P"
 
+    script = ""
     if remote_dir:
-        ssh_cmd = ssh_cmd_base + [
-            "--",
-            clean_target,
-            "mkdir",
-            "-p",
-            "--",
-            shlex.quote(remote_dir),
-        ]
-        res = subprocess.run(
-            ssh_cmd, capture_output=True, text=True, timeout=15
-        )  # NOSONAR
-        if res.returncode != 0:
-            raise RuntimeError(f"Failed to create remote directory: {res.stderr}")
+        # sftp doesn't support mkdir -p, so we create each parent directory and ignore errors with -mkdir
+        parts = [p for p in remote_dir.split("/") if p]
+        paths_to_create = []
+        current = ""
+        if remote_dir.startswith("/"):
+            for p in parts:
+                current += "/" + p
+                paths_to_create.append(current)
+        else:
+            for p in parts:
+                current += p + "/"
+                paths_to_create.append(current.rstrip("/"))
 
-    scp_cmd = scp_cmd_base + ["--", local_filepath, f"{clean_target}:{remote_path}"]
-    result = subprocess.run(scp_cmd, capture_output=True, text=True, timeout=60)
-    if result.returncode != 0:
-        raise RuntimeError(f"SCP failed: {result.stderr}")
+        for p in paths_to_create:
+            script += f"-mkdir {shlex.quote(p)}\n"
 
-    verify_cmd = ssh_cmd_base + [
-        "--",
-        clean_target,
-        "sh",
-    ]
-    verify_script = f"ls {shlex.quote(remote_path)}\n"
-    # codeql[py/command-line-injection] False positive: Args are passed securely.
-    verify_res = subprocess.run(
-        verify_cmd, input=verify_script, text=True, capture_output=True, timeout=15
-    )  # NOSONAR
-    if verify_res.returncode != 0:
-        raise RuntimeError(
-            "SCP returned 0, but file verification failed on remote host."
-        )
+    # upload file
+    script += f"put {shlex.quote(local_filepath)} {shlex.quote(remote_path)}\n"
+    # verify file
+    script += f"ls {shlex.quote(remote_path)}\n"
 
-    path_cmd = ssh_cmd_base + [
-        "--",
-        clean_target,
-        "sh",
-    ]
-    path_script = f"realpath {shlex.quote(remote_path)} 2>/dev/null || readlink -m {shlex.quote(remote_path)} 2>/dev/null || echo {shlex.quote(remote_path)}\n"
-    # codeql[py/command-line-injection] False positive: Args are passed securely.
-    path_res = subprocess.run(
-        path_cmd, input=path_script, capture_output=True, text=True, timeout=15
-    )  # NOSONAR
-    if path_res.returncode == 0 and path_res.stdout.strip():
-        return path_res.stdout.strip()
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as script_f:
+        script_f.write(script)
+        script_f.flush()
+        script_path = script_f.name
+
+    sftp_cmd = sftp_cmd_base + ["-b", script_path, "--", clean_target]
+
+    try:
+        with tempfile.TemporaryFile() as err_f:
+            res = subprocess.run(
+                sftp_cmd, text=True, stdout=subprocess.DEVNULL, stderr=err_f, timeout=60
+            )
+            if res.returncode != 0:
+                err_f.seek(0)
+                raise RuntimeError(f"SCP failed: {err_f.read().decode()}")
+    finally:
+        if os.path.exists(script_path):
+            os.remove(script_path)
+
+    if not validate_path_strict(remote_path):
+        raise ValueError("Invalid remote path")
 
     return remote_path
