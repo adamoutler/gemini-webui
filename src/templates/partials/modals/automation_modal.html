@@ -1,0 +1,151 @@
+<div id="automation-modal" class="modal">
+  <div class="modal-content">
+    <span data-onclick="closeAutomationDashboard()" class="auto-style-6c8878"
+      >&times;</span
+    >
+    <h2 class="auto-style-b8f7c9">Automation Dashboard</h2>
+    <div class="auto-style-0de1f9">
+      <div
+        id="automation-tabs"
+        style="
+          display: flex;
+          gap: 10px;
+          margin-bottom: 10px;
+          border-bottom: 1px solid #ccc;
+          padding-bottom: 5px;
+        "
+      >
+        <button
+          data-onclick="switchAutomationTab('schedules')"
+          id="tab-schedules"
+          class="active"
+          style="
+            padding: 5px 10px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+          "
+        >
+          Schedules
+        </button>
+        <button
+          data-onclick="switchAutomationTab('history')"
+          id="tab-history"
+          style="
+            padding: 5px 10px;
+            background: transparent;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+          "
+        >
+          History
+        </button>
+      </div>
+
+      <div id="automation-schedules-view">
+        <h3 style="margin-top: 0">Active Schedules</h3>
+        <div
+          id="automation-schedules-list"
+          style="
+            max-height: 150px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            padding: 5px;
+          "
+        >
+          <p>No active schedules.</p>
+        </div>
+
+        <h3>Add/Edit Schedule</h3>
+        <form
+          id="automation-schedule-form"
+          style="display: flex; flex-direction: column; gap: 10px"
+        >
+          <select id="automation-host-select">
+            <option value="">Select Target Host...</option>
+          </select>
+          <textarea
+            id="automation-prompt"
+            placeholder="Enter command/prompt here..."
+            rows="3"
+            style="resize: vertical"
+          ></textarea>
+          <div style="display: flex; gap: 10px; align-items: center">
+            <label>Start Time:</label>
+            <input type="datetime-local" id="automation-start-time" />
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center">
+            <label>Recurrence:</label>
+            <input
+              type="number"
+              id="automation-recurrence-freq"
+              value="1"
+              min="1"
+              style="width: 60px"
+            />
+            <select id="automation-recurrence-unit">
+              <option value="once">Once</option>
+              <option value="minutes">Minutes</option>
+              <option value="hours">Hours</option>
+              <option value="days">Days</option>
+              <option value="weeks">Weeks</option>
+            </select>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center">
+            <input type="checkbox" id="automation-wait-idle" checked />
+            <label for="automation-wait-idle">Wait for terminal idle</label>
+          </div>
+          <button
+            type="button"
+            data-onclick="saveAutomationSchedule()"
+            style="
+              padding: 5px;
+              background: #28a745;
+              color: white;
+              border: none;
+              border-radius: 4px;
+              cursor: pointer;
+            "
+          >
+            Save Schedule
+          </button>
+        </form>
+      </div>
+
+      <div id="automation-history-view" style="display: none">
+        <h3 style="margin-top: 0">Recent Executions</h3>
+        <div
+          id="automation-history-list"
+          style="
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 5px;
+            margin-bottom: 10px;
+          "
+        >
+          <p>No history available.</p>
+        </div>
+        <div
+          id="automation-log-viewer"
+          style="
+            display: none;
+            border: 1px solid #333;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+          "
+        >
+          <!-- Logs will appear here -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

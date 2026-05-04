@@ -436,8 +436,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const quickAddModal = document.getElementById("quick-add-key-modal");
   const shareModal = document.getElementById("share-modal");
   const previewModal = document.getElementById("preview-modal");
+  const automationModal = document.getElementById("automation-modal");
 
-  [settingsModal, quickAddModal, shareModal, previewModal].forEach((modal) => {
+  [
+    settingsModal,
+    quickAddModal,
+    shareModal,
+    previewModal,
+    automationModal,
+  ].forEach((modal) => {
     if (!modal) return;
     modal.addEventListener("mousedown", (e) => {
       modalMouseDownTarget = e.target;
@@ -460,6 +467,11 @@ document.addEventListener("DOMContentLoaded", () => {
           typeof globalThis.closePreviewModal === "function"
         )
           globalThis.closePreviewModal();
+        else if (
+          modal === automationModal &&
+          typeof globalThis.closeAutomationDashboard === "function"
+        )
+          globalThis.closeAutomationDashboard();
       }
       modalMouseDownTarget = null;
     });

@@ -167,6 +167,13 @@ import {
 } from "./js/core/session-manager.js";
 import { fetchWithCSRF } from "./js/core/api.js";
 
+import {
+  openAutomationDashboard,
+  closeAutomationDashboard,
+  switchAutomationTab,
+  saveAutomationSchedule,
+} from "./js/ui/automation.js";
+
 const Actions = {
   updateWakeLock,
   updateHostHealthIndicator:
@@ -254,6 +261,10 @@ const Actions = {
   closeTaskMonitor,
   refreshTaskMonitor,
   killTask,
+  openAutomationDashboard,
+  closeAutomationDashboard,
+  switchAutomationTab,
+  saveAutomationSchedule,
 };
 
 Object.keys(Actions).forEach((actionName) => {
