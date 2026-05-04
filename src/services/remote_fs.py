@@ -72,12 +72,13 @@ def upload_to_remote(  # NOSONAR
     verify_cmd = ssh_cmd_base + [
         "--",
         clean_target,
-        "ls",
-        "--",
-        shlex.quote(remote_path),
+        "sh",
     ]
+    verify_script = f"ls {shlex.quote(remote_path)}\n"
     # codeql[py/command-line-injection] False positive: Args are passed securely.
-    verify_res = subprocess.run(verify_cmd, capture_output=True, timeout=15)  # NOSONAR
+    verify_res = subprocess.run(
+        verify_cmd, input=verify_script, text=True, capture_output=True, timeout=15
+    )  # NOSONAR
     if verify_res.returncode != 0:
         raise RuntimeError(
             "SCP returned 0, but file verification failed on remote host."
@@ -86,13 +87,12 @@ def upload_to_remote(  # NOSONAR
     path_cmd = ssh_cmd_base + [
         "--",
         clean_target,
-        "realpath",
-        "--",
-        shlex.quote(remote_path),
+        "sh",
     ]
+    path_script = f"realpath {shlex.quote(remote_path)} 2>/dev/null || readlink -m {shlex.quote(remote_path)} 2>/dev/null || echo {shlex.quote(remote_path)}\n"
     # codeql[py/command-line-injection] False positive: Args are passed securely.
     path_res = subprocess.run(
-        path_cmd, capture_output=True, text=True, timeout=15
+        path_cmd, input=path_script, capture_output=True, text=True, timeout=15
     )  # NOSONAR
     if path_res.returncode == 0 and path_res.stdout.strip():
         return path_res.stdout.strip()
