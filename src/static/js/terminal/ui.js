@@ -41,8 +41,7 @@ export function startSession(
     return;
   }
 
-  if (resumeParam === false || resumeParam === "new") {
-    // NOSONAR
+  if (resumeParam === false || String(resumeParam) === "new") {
     // WARNING: Do NOT attempt to "predict" the session ID here (e.g. maxId + 1).
     // The gemini backend expects "new" to spawn a new session (-n flag).
     // If we pass an invalid predicted ID (like 58), the CLI will return "Invalid session identifier"

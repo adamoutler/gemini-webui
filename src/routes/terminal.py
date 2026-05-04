@@ -81,6 +81,13 @@ def list_active_sessions():
 @terminal_bp.route("/api/management/sessions/<tab_id>", methods=["DELETE"])
 @authenticated_only
 def terminate_session(tab_id):
+    if (
+        not isinstance(tab_id, str)
+        or len(tab_id) > 128
+        or not tab_id.replace("-", "").replace("_", "").isalnum()
+    ):
+        return jsonify({"error": "Invalid tab_id format"}), 400
+
     user_id = session.get("user_id") or (
         "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
@@ -88,18 +95,20 @@ def terminate_session(tab_id):
     old_session = session_manager.remove_session(tab_id, user_id)
 
     if not old_session:
-        logger.warning(f"Attempted to terminate non-existent session: {tab_id}")
+        logger.warning("Attempted to terminate non-existent session.")
         return jsonify({"error": "Session not found or already terminated"}), 404
 
     if old_session.pid is not None:
-        logger.info(f"Terminating process {old_session.pid} for tab {tab_id}")
+        logger.info(f"Terminating process {old_session.pid}")
         kill_and_reap(old_session.pid)
 
     if getattr(old_session, "fd", None) is not None:
         try:
             os.close(old_session.fd)
         except OSError as e:
-            logger.warning(f"Failed to close fd {old_session.fd} for tab {tab_id}: {e}")
+            logger.warning(
+                f"Failed to close fd {old_session.fd} for terminated session: {e}"
+            )
 
     if tab_id in ephemeral_sessions:
         ephemeral_sessions.pop(tab_id, None)
@@ -121,7 +130,7 @@ def search_files(session_id):
     session_obj = session_manager.get_session(session_id, user_id)
     if not session_obj:
         logger.warning(
-            f"search_files: Session {session_id} not found for user {user_id}. Available sessions: {list(session_manager.sessions.keys())}"
+            f"search_files: Session not found for user {user_id}. Available sessions: {list(session_manager.sessions.keys())}"
         )
         return jsonify({"error": "Session not found"}), 404
     matches = smart_file_search(session_obj.file_cache, q)

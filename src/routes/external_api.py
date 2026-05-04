@@ -130,26 +130,26 @@ class HostStateWait(MethodView):
                 {"status": "error", "message": f"Host '{host_id}' not found"}
             ), 404
 
-        # Parse wait_time (eg. 10s, 5m, 2h)
-        seconds = 0
-        if wait_time.endswith("s"):
-            seconds = int(wait_time[:-1])
-        elif wait_time.endswith("m"):
-            seconds = int(wait_time[:-1]) * 60
-        elif wait_time.endswith("h"):
-            seconds = int(wait_time[:-1]) * 3600
-        else:
-            try:
-                seconds = int(wait_time)
-            except ValueError:
-                return jsonify(
-                    {"status": "error", "message": "Invalid time format"}
-                ), 400
+        try:
+            seconds = int(wait_time)
+        except ValueError:
+            return jsonify(
+                {"status": "error", "message": "wait_time must be an integer"}
+            ), 400
+
+        if not (0 < seconds <= 300):
+            return jsonify(
+                {
+                    "status": "error",
+                    "message": "wait_time must be between 1 and 300 seconds",
+                }
+            ), 400
 
         from src.services.session_store import session_manager
 
+        max_wait_time = min(seconds, 300)
         start_time = time.time()
-        while time.time() - start_time < seconds:
+        while time.time() - start_time < max_wait_time:
             sessions = session_manager.get_all_sessions()
             all_ready = True
             for s in sessions:
