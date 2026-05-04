@@ -3,7 +3,7 @@ export class MobileModifierState {
 
   constructor() {
     if (MobileModifierState.instance) {
-      return MobileModifierState.instance; // NOSONAR
+      return MobileModifierState.instance;
     }
 
     this.ctrlActive = false;
@@ -70,7 +70,7 @@ export class MobileModifierState {
   }
 
   toggleCtrl(force) {
-    this.ctrlActive = force !== undefined ? force : !this.ctrlActive; // NOSONAR
+    this.ctrlActive = force !== undefined ? force : !this.ctrlActive;
     if (this.ctrlBtn) {
       if (this.ctrlActive) this.ctrlBtn.classList.add("active");
       else this.ctrlBtn.classList.remove("active");
@@ -78,7 +78,7 @@ export class MobileModifierState {
   }
 
   toggleAlt(force) {
-    this.altActive = force !== undefined ? force : !this.altActive; // NOSONAR
+    this.altActive = force !== undefined ? force : !this.altActive;
     if (this.altBtn) {
       if (this.altActive) this.altBtn.classList.add("active");
       else this.altBtn.classList.remove("active");
@@ -86,7 +86,7 @@ export class MobileModifierState {
   }
 
   toggleShift(force) {
-    this.shiftActive = force !== undefined ? force : !this.shiftActive; // NOSONAR
+    this.shiftActive = force !== undefined ? force : !this.shiftActive;
     if (this.shiftBtn) {
       if (this.shiftActive) this.shiftBtn.classList.add("active");
       else this.shiftBtn.classList.remove("active");
@@ -94,7 +94,7 @@ export class MobileModifierState {
   }
 
   toggleSuper(force) {
-    this.superActive = force !== undefined ? force : !this.superActive; // NOSONAR
+    this.superActive = force !== undefined ? force : !this.superActive;
     if (this.superBtn) {
       if (this.superActive) this.superBtn.classList.add("active");
       else this.superBtn.classList.remove("active");
@@ -102,7 +102,6 @@ export class MobileModifierState {
   }
 
   applyModifiers(data) {
-    // NOSONAR
     if (!data) return data;
     let input = data;
 

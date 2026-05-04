@@ -117,7 +117,7 @@ class HostStates(MethodView):
 class HostStateWait(MethodView):
     @external_api_bp.response(200, HostStateResponseSchema)
     @api_key_required
-    def get(self, host_id, wait_time):  # NOSONAR
+    def get(self, host_id, wait_time):
         """Wait for sessions of a given host to be ready."""
         import time
 

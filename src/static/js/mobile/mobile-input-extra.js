@@ -1,9 +1,9 @@
-import { EventBus } from "../core/event-bus.js"; // NOSONAR
+import { EventBus } from "../core/event-bus.js";
 
 export const checkMobile = () => {
   // Strictly target Android as requested
   const isAndroid = /Android/i.test(navigator.userAgent);
-  const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0; // NOSONAR
+  const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
   // Increase width threshold to 1024px to support Android tablets (Nexus 9/Pixel Tablet)
   const isNarrow = globalThis.innerWidth <= 1024;
@@ -26,7 +26,7 @@ debugLog(
   "Width:",
   globalThis.innerWidth,
   "Touch:",
-  "ontouchstart" in window || navigator.maxTouchPoints > 0, // NOSONAR
+  "ontouchstart" in window || navigator.maxTouchPoints > 0,
   ")",
 );
 
@@ -37,7 +37,6 @@ globalThis.addEventListener("popstate", (event) => {
   // Only hijack if we are currently in a terminal.
   // If we are already in launcher mode, let the back button work normally.
   if (activeTab && activeTab.state === "terminal") {
-    // NOSONAR
     addNewTab();
   }
 });
@@ -45,7 +44,7 @@ globalThis.addEventListener("popstate", (event) => {
 import { globalState } from "../core/state.js";
 import { fitTerminal } from "../terminal/ui.js";
 
-export let resizeObserverTimeout; // NOSONAR
+export let resizeObserverTimeout;
 const resizeObserver = new ResizeObserver(() => {
   clearTimeout(resizeObserverTimeout);
   resizeObserverTimeout = setTimeout(() => {
@@ -122,7 +121,6 @@ if (globalThis.appVisualViewport) {
         fitTerminal(tab);
         // Immediate alignment of proxy input after xterm resizes
         if (tab.mobileProxy && tab.mobileProxy.ui && tab.term) {
-          // NOSONAR
           tab.mobileProxy.ui.alignWithCursor(tab.term);
         }
       });
@@ -151,7 +149,7 @@ setTimeout(() => {
     container.id = id + "_instance";
     container.className = "tab-instance active";
     document.getElementById("terminal-container").appendChild(container);
-    activeTabId = id; // NOSONAR
+    activeTabId = id;
     renderTabs();
     startSession(id, "local", "", "", sessionId, "Test Session", true);
     if (!document.getElementById("friction-modal")) {
@@ -173,14 +171,13 @@ setTimeout(() => {
       document.getElementById("friction-modal").style.display = "none";
       const currentTab = tabs.find((t) => t.id === activeTabId);
       if (currentTab && currentTab.socket) {
-        // NOSONAR
         currentTab.socket.connect();
       }
     };
     globalThis.addEventListener("beforeunload", (e) => {
       document.getElementById("friction-modal").style.display = "flex";
       e.preventDefault();
-      e.returnValue = ""; // NOSONAR
+      e.returnValue = "";
     });
   } else if (deepHost || deepTarget) {
     // GEMWEBUI-311: Deep link handling
@@ -269,27 +266,23 @@ document.querySelectorAll(".control-btn.holdable").forEach((btn) => {
     const adjust = btn.dataset.funcAdjust;
     if (cmd) {
       // Unescape characters like \x1b and \t from the DOM attribute string
-      cmd = cmd.replace(
-        /\\x([0-9A-Fa-f]{2})/g,
-        (
-          match,
-          hex, // NOSONAR
-        ) => String.fromCodePoint(Number.parseInt(hex, 16)),
+      cmd = cmd.replace(/\\x([0-9A-Fa-f]{2})/g, (match, hex) =>
+        String.fromCodePoint(Number.parseInt(hex, 16)),
       );
-      cmd = cmd.replace(/\\t/g, "\t"); // NOSONAR
-      cmd = cmd.replace(/\\r/g, "\r"); // NOSONAR
-      cmd = cmd.replace(/\\n/g, "\n"); // NOSONAR
+      cmd = cmd.replace(/\\t/g, "\t");
+      cmd = cmd.replace(/\\r/g, "\r");
+      cmd = cmd.replace(/\\n/g, "\n");
 
       // Handle Shift modifier toggle from MobileModifierState for Tab key
       const isShift =
-        (e && e.shiftKey) || // NOSONAR
+        (e && e.shiftKey) ||
         (typeof MobileModifierState !== "undefined" &&
-          MobileModifierState.instance && // NOSONAR
+          MobileModifierState.instance &&
           MobileModifierState.instance.shiftActive);
       if (cmd === "\t" && isShift) {
         cmd = "\x1b[Z";
         if (
-          MobileModifierState.instance && // NOSONAR
+          MobileModifierState.instance &&
           MobileModifierState.instance.shiftActive
         ) {
           MobileModifierState.instance.toggleShift(false);
@@ -323,7 +316,7 @@ document.querySelectorAll(".control-btn.holdable").forEach((btn) => {
     }, 250);
   };
   const stopAction = (e) => {
-    if (e && e.type === "touchend") e.preventDefault(); // NOSONAR
+    if (e && e.type === "touchend") e.preventDefault();
     isActive = false;
     btn.style.opacity = "1";
     clearTimeout(timeoutId);
@@ -352,7 +345,6 @@ wsDownloadInput.addEventListener("input", () => {
     const q = wsDownloadInput.value;
     const tab = tabs.find((t) => t.id === activeTabId);
     if (!tab || tab.session.type !== "ssh" || !q) {
-      // NOSONAR
       return;
     }
     try {
@@ -400,26 +392,24 @@ dropZone.innerText = "Drop files here to upload";
 document.body.appendChild(dropZone);
 document.addEventListener("dragover", (e) => {
   const activeTab = tabs.find((t) => t.id === activeTabId);
-  if (!activeTab || activeTab.state !== "terminal") return; // NOSONAR
+  if (!activeTab || activeTab.state !== "terminal") return;
   e.preventDefault();
   dropZone.classList.add("active");
 });
 document.addEventListener("dragleave", (e) => {
   const activeTab = tabs.find((t) => t.id === activeTabId);
-  if (!activeTab || activeTab.state !== "terminal") return; // NOSONAR
+  if (!activeTab || activeTab.state !== "terminal") return;
   e.preventDefault();
   if (e.target === dropZone || e.relatedTarget === null) {
     dropZone.classList.remove("active");
   }
 });
 document.addEventListener("drop", async (e) => {
-  // NOSONAR
   const activeTab = tabs.find((t) => t.id === activeTabId);
-  if (!activeTab || activeTab.state !== "terminal") return; // NOSONAR
+  if (!activeTab || activeTab.state !== "terminal") return;
   e.preventDefault();
   dropZone.classList.remove("active");
   async function traverseFileTree(item, path = "") {
-    // NOSONAR
     return new Promise((resolve) => {
       if (item.isFile) {
         item.file((file) => {
@@ -435,7 +425,6 @@ document.addEventListener("drop", async (e) => {
         dirReader.readEntries(async (entries) => {
           let files = [];
           for (let i = 0; i < entries.length; i++) {
-            // NOSONAR
             const subFiles = await traverseFileTree(
               entries[i],
               path + item.name + "/",
@@ -453,7 +442,6 @@ document.addEventListener("drop", async (e) => {
   if (e.dataTransfer.items) {
     const promises = [];
     for (let i = 0; i < e.dataTransfer.items.length; i++) {
-      // NOSONAR
       const item = e.dataTransfer.items[i].webkitGetAsEntry();
       if (item) {
         promises.push(traverseFileTree(item));
@@ -463,7 +451,6 @@ document.addEventListener("drop", async (e) => {
     allFiles = results.flat();
   } else if (e.dataTransfer.files) {
     for (let i = 0; i < e.dataTransfer.files.length; i++) {
-      // NOSONAR
       allFiles.push({
         file: e.dataTransfer.files[i],
         path: e.dataTransfer.files[i].name,
@@ -483,7 +470,6 @@ document.addEventListener("drop", async (e) => {
       formData.append("file", file, finalPath);
       const tab = activeTab;
       if (tab && tab.session && tab.session.type === "ssh") {
-        // NOSONAR
         if (!tab.session.ssh_target) {
           alert(
             "SSH target is missing from session state! Upload cannot proceed.",
@@ -496,6 +482,10 @@ document.addEventListener("drop", async (e) => {
         }
       }
       try {
+        console.log(
+          "Sending fetch to /api/upload with ssh_target:",
+          tab?.session?.ssh_target,
+        );
         const response = await fetchWithCSRF("/api/upload", {
           method: "POST",
           headers: {
@@ -520,7 +510,6 @@ document.addEventListener("drop", async (e) => {
     if (successCount > 0) {
       const tab = tabs.find((t) => t.id === activeTabId);
       if (tab && tab.socket && tab.state === "terminal") {
-        // NOSONAR
         const msg =
           successCount > 1
             ? `> I uploaded multiple files to @${uploadPrefix}\r`
@@ -536,13 +525,12 @@ document.addEventListener("drop", async (e) => {
   }
 });
 document.addEventListener("keydown", (e) => {
-  // NOSONAR
   if (e.key === "Escape") {
     const fileTransferModal = document.getElementById("file-transfer-modal");
     const dropZone = document.querySelector(".drop-zone");
     if (
-      (fileTransferModal && fileTransferModal.style.display === "block") || // NOSONAR
-      (dropZone && dropZone.classList.contains("active")) // NOSONAR
+      (fileTransferModal && fileTransferModal.style.display === "block") ||
+      (dropZone && dropZone.classList.contains("active"))
     ) {
       if (fileTransferModal) closeFileTransfer();
       if (dropZone) dropZone.classList.remove("active");
@@ -550,13 +538,11 @@ document.addEventListener("keydown", (e) => {
     }
     const settingsModal = document.getElementById("settings-modal");
     if (settingsModal && settingsModal.style.display === "block") {
-      // NOSONAR
       closeSettings();
       return;
     }
     const activeTab = tabs.find((t) => t.id === activeTabId);
     if (activeTab && activeTab.state === "launcher" && tabs.length > 1) {
-      // NOSONAR
       const otherTab =
         tabs.find((t) => t.id !== activeTabId && t.state === "terminal") ||
         tabs.find((t) => t.id !== activeTabId);
@@ -567,7 +553,7 @@ document.addEventListener("keydown", (e) => {
     }
   }
 });
-export let desktopContextMenuInitialized = false; // NOSONAR
+export let desktopContextMenuInitialized = false;
 export function initDesktopContextMenu() {
   if (isMobile || desktopContextMenuInitialized) return;
   desktopContextMenuInitialized = true;
@@ -583,11 +569,10 @@ export function initDesktopContextMenu() {
     e.preventDefault();
     const tab = tabs.find((t) => t.id === activeTabId);
     if (tab && tab.term && tab.term.hasSelection()) {
-      // NOSONAR
       const selectedText = tab.term.getSelection();
       navigator.clipboard.writeText(filterTerminalFluff(selectedText));
     } else {
-      document.execCommand("copy"); // NOSONAR
+      document.execCommand("copy");
     }
     menu.style.display = "none";
   });
@@ -597,9 +582,8 @@ export function initDesktopContextMenu() {
       let text = await navigator.clipboard.readText();
       const tab = tabs.find((t) => t.id === activeTabId);
       if (tab && tab.socket) {
-        // NOSONAR
         const useBracketedPaste =
-          tab.term && tab.term.modes && tab.term.modes.bracketedPasteMode; // NOSONAR
+          tab.term && tab.term.modes && tab.term.modes.bracketedPasteMode;
         if (useBracketedPaste) {
           text = "\x1b[200~" + text + "\x1b[201~";
         }

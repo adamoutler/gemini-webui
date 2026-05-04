@@ -24,7 +24,7 @@ def get_char():
         return sys.stdin.read(1)
 
 
-def run_fake_gemini():  # NOSONAR
+def run_fake_gemini():
     parser = argparse.ArgumentParser(
         description="High-Fidelity Fake Gemini CLI Simulator"
     )

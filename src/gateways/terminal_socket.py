@@ -125,7 +125,7 @@ def handle_disconnect():
         session_manager.orphan_session(tab_id, sid)
 
     with active_fake_sockets_lock:
-        for t_id, active_sid in list(active_fake_sockets.items()):  # NOSONAR
+        for t_id, active_sid in list(active_fake_sockets.items()):
             if active_sid == sid:
                 logger.info(
                     f"Ephemeral session {t_id} disconnected, purging to prevent reuse."
@@ -146,7 +146,7 @@ def set_winsize(fd, row, col, xpix=0, ypix=0):
         logger.error(f"Failed to set winsize on fd {fd}: {e}")
 
 
-def session_output_reader(tab_id):  # NOSONAR
+def session_output_reader(tab_id):
     """Background task to read output from a specific session's PTY."""
     session_obj = session_manager.get_session(tab_id)
     if not session_obj:
@@ -233,7 +233,7 @@ def background_session_preloader():
 
 
 @socketio.on("join_room")
-def on_join_room(data):  # NOSONAR
+def on_join_room(data):
     from flask import request as socket_request
 
     sid = getattr(socket_request, "sid", None)
@@ -248,7 +248,7 @@ def on_join_room(data):  # NOSONAR
             "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
         )
         if user_id:
-            if session_manager.persistence:  # NOSONAR
+            if session_manager.persistence:
                 persisted = session_manager.persistence.load()
                 # ONLY sync if this tab is already known, or if we have other tabs.
                 # If this is a brand new tab, pty_restart will handle the sync.
@@ -287,7 +287,7 @@ def update_resume(data):
 
 
 @socketio.on("pty-input")
-def pty_input(data):  # NOSONAR
+def pty_input(data):
     from flask import request as socket_request
 
     sid = getattr(socket_request, "sid", None)
@@ -336,7 +336,7 @@ def pty_resize(data):
 
 
 @socketio.on("restart")
-def pty_restart(data):  # NOSONAR
+def pty_restart(data):
     from flask import request as socket_request
 
     sid = getattr(socket_request, "sid", None)
@@ -493,7 +493,7 @@ def pty_restart(data):  # NOSONAR
             or host.get("label", "").lower() == "local"
             or not host.get("target")
         ):
-            env_vars = host.get("env_vars") or {}  # NOSONAR
+            env_vars = host.get("env_vars") or {}
             break
 
     logger.info(f"ENV_VARS resolved to: {env_vars}")

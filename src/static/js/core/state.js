@@ -49,7 +49,6 @@ export async function loadPromptsFromServer() {
       globalState.customPrompts =
         JSON.parse(localStorage.getItem("custom_prompts")) || [];
     } catch (err) {
-      // NOSONAR
       globalState.customPrompts = [];
     }
   }
@@ -60,7 +59,6 @@ export function getCustomPrompts() {
 }
 
 if (typeof window !== "undefined") {
-  // NOSONAR
   globalThis.globalState = globalState;
   globalThis.DEFAULT_PROMPTS = DEFAULT_PROMPTS;
   globalThis.loadPromptsFromServer = loadPromptsFromServer;
@@ -68,70 +66,60 @@ if (typeof window !== "undefined") {
 
   // For backwards compatibility before full ESM conversion
   Object.defineProperty(window, "tabs", {
-    // NOSONAR
     get: () => globalState.tabs,
     set: (v) => {
       globalState.tabs = v;
     },
   });
   Object.defineProperty(window, "activeTabId", {
-    // NOSONAR
     get: () => globalState.activeTabId,
     set: (v) => {
       globalState.activeTabId = v;
     },
   });
   Object.defineProperty(window, "customPrompts", {
-    // NOSONAR
     get: () => globalState.customPrompts,
     set: (v) => {
       globalState.customPrompts = v;
     },
   });
   Object.defineProperty(window, "ctrlActive", {
-    // NOSONAR
     get: () => globalState.ctrlActive,
     set: (v) => {
       globalState.ctrlActive = v;
     },
   });
   Object.defineProperty(window, "altActive", {
-    // NOSONAR
     get: () => globalState.altActive,
     set: (v) => {
       globalState.altActive = v;
     },
   });
   Object.defineProperty(window, "currentEditPromptIndex", {
-    // NOSONAR
     get: () => globalState.currentEditPromptIndex,
     set: (v) => {
       globalState.currentEditPromptIndex = v;
     },
   });
   Object.defineProperty(window, "initialAutoResumeDone", {
-    // NOSONAR
     get: () => globalState.initialAutoResumeDone,
     set: (v) => {
       globalState.initialAutoResumeDone = v;
     },
   });
   Object.defineProperty(window, "launcherRefreshInterval", {
-    // NOSONAR
     get: () => globalState.launcherRefreshInterval,
     set: (v) => {
       globalState.launcherRefreshInterval = v;
     },
   });
   Object.defineProperty(window, "titleFlashInterval", {
-    // NOSONAR
     get: () => globalState.titleFlashInterval,
     set: (v) => {
       globalState.titleFlashInterval = v;
     },
   });
   Object.defineProperty(window, "originalPageTitle", {
-    // NOSONAR
     get: () => globalState.originalPageTitle,
     set: (v) => {
       globalState.originalPageTitle = v;
@@ -139,18 +127,15 @@ if (typeof window !== "undefined") {
   });
 
   // URL params mappings
-  Object.defineProperty(window, "mode", { get: () => globalState.mode }); // NOSONAR
+  Object.defineProperty(window, "mode", { get: () => globalState.mode });
   Object.defineProperty(window, "sessionId", {
-    // NOSONAR
     get: () => globalState.sessionId,
   });
   Object.defineProperty(window, "deepHost", {
-    // NOSONAR
     get: () => globalState.deepHost,
   });
   Object.defineProperty(window, "deepTarget", {
-    // NOSONAR
     get: () => globalState.deepTarget,
   });
-  Object.defineProperty(window, "deepDir", { get: () => globalState.deepDir }); // NOSONAR
+  Object.defineProperty(window, "deepDir", { get: () => globalState.deepDir });
 }

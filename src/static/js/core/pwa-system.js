@@ -6,7 +6,7 @@ import { globalState } from "./state.js";
 
 export async function updateWakeLock() {
   const needsWakeLock = globalState.tabs.some(
-    (t) => t.title && t.title.includes("Working"), // NOSONAR
+    (t) => t.title && t.title.includes("Working"),
   );
   if (needsWakeLock) {
     if (!wakeLock) {
@@ -21,7 +21,6 @@ export async function updateWakeLock() {
     }
   } else {
     if (wakeLock) {
-      // NOSONAR
       wakeLock.release().then(() => {
         wakeLock = null;
       });
@@ -38,13 +37,12 @@ document.addEventListener("visibilitychange", () => {
 export function updatePageTitle() {
   updateWakeLock();
   const hasActionRequired = globalState.tabs.some(
-    (t) => t.title && t.title.includes("✋"), // NOSONAR
+    (t) => t.title && t.title.includes("✋"),
   );
   const baseTitle = hasActionRequired
     ? "✋ Gemini WebUI"
     : globalState.originalPageTitle;
   if (!hasActionRequired) {
-    // NOSONAR
     if (globalState.titleFlashInterval) {
       clearInterval(globalState.titleFlashInterval);
       globalState.titleFlashInterval = null;
@@ -52,7 +50,6 @@ export function updatePageTitle() {
     document.title = baseTitle;
   } else {
     if (!document.hasFocus()) {
-      // NOSONAR
       if (!globalState.titleFlashInterval) {
         document.title = baseTitle;
         const tempTitle = "⚠️ Action Required! ✋";
@@ -75,7 +72,7 @@ globalThis.addEventListener("focus", () => {
     clearInterval(globalState.titleFlashInterval);
     globalState.titleFlashInterval = null;
     const hasActionRequired = globalState.tabs.some(
-      (t) => t.title && t.title.includes("✋"), // NOSONAR
+      (t) => t.title && t.title.includes("✋"),
     );
     document.title = hasActionRequired
       ? "✋ Gemini WebUI"
@@ -148,7 +145,6 @@ export function initDesktopContextMenu() {
     let allowMenu = false;
     while (el) {
       if (el.classList && el.classList.contains("xterm-cursor-layer")) {
-        // NOSONAR
         allowMenu = true;
         break;
       }

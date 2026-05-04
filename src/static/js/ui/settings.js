@@ -32,7 +32,7 @@ class EnvVarManager {
     removeBtn.className = "danger small";
     removeBtn.innerText = "X";
     removeBtn.onclick = () => {
-      this.container.removeChild(row); // NOSONAR
+      this.container.removeChild(row);
     };
     row.appendChild(keyInput);
     row.appendChild(valInput);
@@ -53,7 +53,6 @@ class EnvVarManager {
   get() {
     const envVars = {};
     for (let i = 0; i < this.container.children.length; i++) {
-      // NOSONAR
       const row = this.container.children[i];
       const key = row.children[0].value.trim();
       const value = row.children[1].value.trim();
@@ -65,7 +64,7 @@ class EnvVarManager {
   }
 }
 
-export let envVarManager = null; // NOSONAR
+export let envVarManager = null;
 document.addEventListener("DOMContentLoaded", () => {
   if (document.getElementById("env-vars-list")) {
     envVarManager = new EnvVarManager();
@@ -215,7 +214,7 @@ export async function rotateInstanceKey() {
       method: "POST",
     });
     if (response.ok) {
-      const data = await response.json(); // NOSONAR
+      const data = await response.json();
       alert("Instance key rotated successfully.");
       loadPublicKey(); // Refresh UI
     } else {
@@ -241,7 +240,7 @@ export async function loadHosts() {
       }</span><span class="js-style-c27a65">${host.target || "local"} ${
         host.dir || ""
       }</span></div>` +
-      (host.label !== "local" // NOSONAR
+      (host.label !== "local"
         ? `<button class="danger small" data-onclick="event.stopPropagation(); removeHost('${host.label}')">Delete</button>`
         : "");
     list.appendChild(item);
@@ -447,12 +446,10 @@ export async function uploadKeyFile() {
       let errorMessage = "Unknown error";
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
-        // NOSONAR
         try {
           const data = await response.json();
           errorMessage = data.error || data.message || errorMessage;
         } catch (e) {
-          // NOSONAR
           errorMessage = "Failed to parse error response.";
         }
       } else {

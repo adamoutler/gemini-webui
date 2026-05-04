@@ -82,4 +82,4 @@ def test_mock_gemini_cli_e2e_flow(page, server, playwright):
     print(f"Empirical Evidence: Saved friction modal screenshot to {modal_ss_path}")
 
     # Assert successful completion
-    assert True  # NOSONAR
+    assert True

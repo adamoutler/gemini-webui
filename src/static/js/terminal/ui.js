@@ -88,7 +88,6 @@ export function startSession(
         );
         if (desktopContextMenu) {
           if (tab.term && tab.term.hasSelection()) {
-            // NOSONAR
             desktopContextMenu.querySelector("#ctx-copy").style.display =
               "block";
           } else {
@@ -188,7 +187,7 @@ export function startSession(
     selectionOverlay.style.boxSizing = "border-box";
     selectionOverlay.style.color = "transparent";
     selectionOverlay.style.userSelect = "text";
-    selectionOverlay.style.webkitUserSelect = "text"; // NOSONAR
+    selectionOverlay.style.webkitUserSelect = "text";
     selectionOverlay.style.whiteSpace = "pre";
     selectionOverlay.style.zIndex = "5";
     selectionOverlay.style.overflow = "hidden";
@@ -264,7 +263,6 @@ export function startSession(
 
         // Blur xterm's hidden textarea so the keyboard doesn't pop up instead of the selection menu
         if (tab.term && tab.term.textarea) {
-          // NOSONAR
           tab.term.textarea.blur();
         }
 
@@ -275,7 +273,7 @@ export function startSession(
         let letterSpacingStr = "normal";
         try {
           if (
-            tab.term && // NOSONAR
+            tab.term &&
             tab.term._core &&
             tab.term._core._renderService &&
             tab.term._core._renderService.dimensions &&
@@ -284,7 +282,7 @@ export function startSession(
             cellHeight =
               tab.term._core._renderService.dimensions.css.cell.height;
           }
-        } catch (e) {} // NOSONAR
+        } catch (e) {}
 
         const termRows = termDiv.querySelector(".xterm-rows");
         if (termRows) {
@@ -366,7 +364,7 @@ export function startSession(
 
           if (underlying) {
             const eventInit = {
-              view: window, // NOSONAR
+              view: window,
               bubbles: true,
               cancelable: true,
               clientX: e.changedTouches[0].clientX,
@@ -381,7 +379,7 @@ export function startSession(
           setTimeout(() => {
             if (tab.term) {
               if (
-                tab.mobileProxy && // NOSONAR
+                tab.mobileProxy &&
                 tab.mobileProxy.ui &&
                 tab.mobileProxy.ui.proxyInput
               ) {
@@ -500,12 +498,10 @@ export function startSession(
     tab.mobileProxy = new MobileTerminalController(tab);
     // Handle image paste and text paste buffer clearing
     tab.term.textarea.addEventListener("paste", async (e) => {
-      // NOSONAR
       const items = (e.clipboardData || globalThis.clipboardData)?.items;
       if (!items) return;
       let hasImage = false;
       for (let i = 0; i < items.length; i++) {
-        // NOSONAR
         const item = items[i];
         if (item.type.startsWith("image/")) {
           hasImage = true;
@@ -623,7 +619,7 @@ export function startSession(
   }
 
   tab.socket.on("disconnect", (reason) => {
-    disconnectTime = Date.now(); // NOSONAR
+    disconnectTime = Date.now();
     tab.term.write(
       "\r\n\x1b[1;33m[Connection lost: " +
         reason +
@@ -696,7 +692,6 @@ export function startSession(
     // Set a slight delay before reconnecting to avoid spam loops
     setTimeout(() => {
       if (tab.socket && tab.socket.connected) {
-        // NOSONAR
         tab.shouldReclaim = false; // We know it's dead, force fresh restart
         fitTerminal(tab);
         tab.socket.emit("restart", {
@@ -777,7 +772,6 @@ export function startSession(
     // Trigger notification if action required (✋)
     if (title.includes("✋") && document.visibilityState !== "visible") {
       if ("Notification" in window && Notification.permission === "granted") {
-        // NOSONAR
         navigator.serviceWorker.ready.then((registration) => {
           registration.showNotification("Gemini Action Required", {
             body: title,
@@ -789,29 +783,26 @@ export function startSession(
       }
     } else if (!title.includes("✋")) {
       if ("Notification" in window && navigator.serviceWorker) {
-        // NOSONAR
         navigator.serviceWorker.ready.then((registration) => {
           registration
             .getNotifications({ tag: "gemini-action-" + tabId })
             .then((notifications) => {
-              notifications.forEach((notification) => notification.close()); // NOSONAR
+              notifications.forEach((notification) => notification.close());
             });
         });
       }
     }
   });
   tab.term.attachCustomKeyEventHandler((e) => {
-    // NOSONAR
     if (e.type === "keydown" && (e.ctrlKey || e.altKey) && e.key === "Enter") {
       if (tab.mobileProxy && tab.mobileProxy.ui) {
-        // NOSONAR
         tab.mobileProxy.ui.proxyInput.value += "\x1b\r";
         tab.mobileProxy.ui.proxyInput.dispatchEvent(
           new Event("input", { bubbles: true }),
         );
       } else {
         // Fallback for non-mobile if proxy isn't active
-        if (tab.socket) emitPtyInput(tab, "\x1b\r"); // NOSONAR
+        if (tab.socket) emitPtyInput(tab, "\x1b\r");
       }
       return false;
     }
@@ -840,7 +831,7 @@ export function startSession(
 }
 
 export function fitTerminal(tab) {
-  if (!tab || tab.state !== "terminal" || !tab.term || !tab.fitAddon) return; // NOSONAR
+  if (!tab || tab.state !== "terminal" || !tab.term || !tab.fitAddon) return;
   const oldCols = tab.term.cols;
   const oldRows = tab.term.rows;
   try {
@@ -849,17 +840,15 @@ export function fitTerminal(tab) {
         tab.fitAddon.fit();
         if (tab.term.cols !== oldCols || tab.term.rows !== oldRows) {
           if (tab.socket && tab.socket.connected) {
-            // NOSONAR
             tab.socket.emit("resize", {
               cols: tab.term.cols,
               rows: tab.term.rows,
             });
           }
         }
-      } catch (e) {} // NOSONAR
+      } catch (e) {}
     });
   } catch (e) {
-    // NOSONAR
     // Silently ignore fit errors during initialization (e.g. xterm-addon-fit dimensions getter throws)
   }
 }

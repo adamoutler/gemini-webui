@@ -84,7 +84,7 @@ class SessionManager:
         if data_dir:
             self.persistence = SessionPersistenceManager(data_dir)
 
-    def add_session(self, session, on_remove=None):  # NOSONAR
+    def add_session(self, session, on_remove=None):
         with self._lock:
             # If a session with the same tab_id already exists, kill it first
             old_same_tab = self.sessions.pop(session.tab_id, None)

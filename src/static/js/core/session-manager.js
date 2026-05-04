@@ -1,11 +1,11 @@
-import { debugLog, escapeHtml, customFetch } from "./api.js"; // NOSONAR
+import { debugLog, escapeHtml, customFetch } from "./api.js";
 import { getGlobalSocket } from "./socket.js";
 import { HostStateManager } from "../ui/launcher.js";
 import { EventBus } from "./event-bus.js";
 import { globalState } from "./state.js";
 
-export let backendSessionLastSeen = {}; // NOSONAR
-export let backendSessionStatusClass = {}; // NOSONAR
+export let backendSessionLastSeen = {};
+export let backendSessionStatusClass = {};
 export function refreshBackendSessionsList(id) {
   const listEl = document.getElementById(`${id}_backend_sessions`);
   if (!listEl) return; // Tab closed or switched
@@ -29,7 +29,6 @@ export function refreshBackendSessionsList(id) {
       listEl.innerHTML = "";
     }
     sessions.forEach((s) => {
-      // NOSONAR
       seenSessionIds.add(s.tab_id);
       const statusClass = s.is_orphaned ? "status-orphaned" : "status-online";
       const statusLabel = s.is_orphaned ? "Orphaned" : "Active";
@@ -52,7 +51,7 @@ export function refreshBackendSessionsList(id) {
           statusNode.className = `status-node ${statusClass}`;
           if (shouldFlash) {
             statusNode.classList.remove("flash");
-            const _reflow = statusNode.offsetWidth; // NOSONAR
+            const _reflow = statusNode.offsetWidth;
             statusNode.classList.add("flash");
           }
         }
@@ -93,10 +92,9 @@ export function refreshBackendSessionsList(id) {
     });
     Array.from(listEl.children).forEach((child) => {
       if (child.id && child.id.startsWith(`managed-session-${id}-`)) {
-        // NOSONAR
         const tabId = child.id.replace(`managed-session-${id}-`, "");
         if (!seenSessionIds.has(tabId)) {
-          listEl.removeChild(child); // NOSONAR
+          listEl.removeChild(child);
         }
       }
     });
@@ -156,7 +154,6 @@ export async function renderLauncher(id) {
         socket.emit("get_all_sessions", {}, (response) => {
           clearTimeout(timeoutTimer);
           if (response && response.status === "success") {
-            // NOSONAR
             resolve(response.cache);
           } else {
             resolve(null);
@@ -178,12 +175,11 @@ export async function renderLauncher(id) {
       card.className = "connection-card";
       card.dataset.label = conn.label;
       const sessionListId = `${id}_sessions_${conn.label.replace(
-        // NOSONAR
         /[^a-z0-9]/gi,
         "",
       )}`;
-      const healthId = `${id}_health_${conn.label.replace(/[^a-z0-9]/gi, "")}`; // NOSONAR
-      const pulseId = `${id}_pulse_${conn.label.replace(/[^a-z0-9]/gi, "")}`; // NOSONAR
+      const healthId = `${id}_health_${conn.label.replace(/[^a-z0-9]/gi, "")}`;
+      const pulseId = `${id}_pulse_${conn.label.replace(/[^a-z0-9]/gi, "")}`;
       let initialIndicator = HostStateManager.getInitialIndicator(conn.label);
       let initialStatus = HostStateManager.getInitialStatusClass(conn.label);
       card.innerHTML = `
@@ -352,7 +348,7 @@ export async function renderLauncher(id) {
         conn.target || "local"
       }:${conn.dir || ""}`;
       const preloadedData =
-        bulkCache && bulkCache[cacheKey] ? bulkCache[cacheKey] : null; // NOSONAR
+        bulkCache && bulkCache[cacheKey] ? bulkCache[cacheKey] : null;
       if (preloadedData) {
         fetchSessions(
           id,
@@ -402,12 +398,10 @@ export async function terminateBackendSession(launcherTabId, tabId) {
       let errorMessage = "Unknown error";
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
-        // NOSONAR
         try {
           const data = await response.json();
           errorMessage = data.error || data.message || errorMessage;
         } catch (e) {
-          // NOSONAR
           errorMessage = "Failed to parse error response.";
         }
       } else {
@@ -447,12 +441,10 @@ export async function terminateAllBackendSessions(launcherTabId) {
       let errorMessage = "Unknown error";
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
-        // NOSONAR
         try {
           const data = await response.json();
           errorMessage = data.error || data.message || errorMessage;
         } catch (e) {
-          // NOSONAR
           errorMessage = "Failed to parse error response.";
         }
       } else {
@@ -490,8 +482,8 @@ export function reclaimBackendSession(id, tabId, title, session) {
   EventBus.emit("recreateTerminalUI", [tab, true]);
 }
 
-export let consecutiveTimeouts = {}; // NOSONAR
-export async function fetchSessions( // NOSONAR
+export let consecutiveTimeouts = {};
+export async function fetchSessions(
   tabId,
   conn,
   targetId,
@@ -534,7 +526,7 @@ export async function fetchSessions( // NOSONAR
         socket.emit("get_sessions", params, (response) => {
           clearTimeout(timeoutTimer);
           if (
-            response && // NOSONAR
+            response &&
             response.error &&
             !response.output &&
             !response.sessions
@@ -542,7 +534,6 @@ export async function fetchSessions( // NOSONAR
             console.log("GET_SESSIONS_RESPONSE:", response);
             resolve(response); // Handle errors explicitly like API did
           } else if (response) {
-            // NOSONAR
             console.log("GET_SESSIONS_RESPONSE:", response);
             resolve(response);
           } else {
@@ -559,7 +550,6 @@ export async function fetchSessions( // NOSONAR
     if (data.status === "fetching") {
       const listEl = document.getElementById(targetId);
       if (listEl && listEl.innerHTML === "") {
-        // NOSONAR
         listEl.innerHTML = `<div class="js-style-2a672e">Fetching sessions...</div>`;
       }
       setTimeout(
@@ -644,7 +634,7 @@ export async function fetchSessions( // NOSONAR
     );
     console.log("ACTIVE TAB:", activeTerminalTab);
     if (
-      activeTerminalTab && // NOSONAR
+      activeTerminalTab &&
       activeTerminalTab.session.resume &&
       (activeTerminalTab.session.resume === "new" ||
         /^\d+$/.test(activeTerminalTab.session.resume))
@@ -655,11 +645,9 @@ export async function fetchSessions( // NOSONAR
           s.uuid === activeTerminalTab.id,
       );
       if (match && match.uuid) {
-        // NOSONAR
         activeTerminalTab.session.resume = match.uuid;
         const socket = getGlobalSocket();
         if (socket && socket.connected) {
-          // NOSONAR
           socket.emit("update_resume", {
             tab_id: activeTerminalTab.id,
             resume: match.uuid,
@@ -673,12 +661,12 @@ export async function fetchSessions( // NOSONAR
     if (sessions.length === 0) {
       listEl.innerHTML = `<div class="js-style-e07506">No active sessions found.</div>`;
     } else {
-      const sorted = sessions.reverse(); // NOSONAR
+      const sorted = sessions.reverse();
       const displayCount = forceAll ? sorted.length : 3;
       let html = '<div class="session-list">';
       sorted.slice(0, displayCount).forEach((s) => {
         const shortDir = conn.dir ? conn.dir.split("/").pop() : "";
-        const dirContext = shortDir // NOSONAR
+        const dirContext = shortDir
           ? `<span class="js-style-b629a7">[${escapeHtml(shortDir)}]</span>`
           : "";
         html += `<div class="session-item" data-onclick="startSession('${tabId}', '${
@@ -686,7 +674,7 @@ export async function fetchSessions( // NOSONAR
         }', '${conn.target || ""}', '${conn.dir || ""}', '${
           s.uuid
         }', '${escapeHtml(
-          String(s.name).replace(/\\/g, "\\\\").replace(/'/g, "\\'"), // NOSONAR
+          String(s.name).replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
         )}', false)">
                     <div class="session-name">${escapeHtml(s.name)}</div>
                     <div class="session-meta">ID #${escapeHtml(
@@ -698,11 +686,9 @@ export async function fetchSessions( // NOSONAR
         html += `<div class="session-item js-style-86c2b8" data-onclick="globalThis.expandedSessionLists.add('${escapeHtml(
           conn.label,
         ).replace(
-          // NOSONAR
           /&#039;/g,
-          "\\'", // NOSONAR
+          "\\'",
         )}'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(
-          // NOSONAR
           /"/g,
           "&quot;",
         )}, '${targetId}', true, true, true)">... Show ${
@@ -712,11 +698,9 @@ export async function fetchSessions( // NOSONAR
         html += `<div class="session-item js-style-86c2b8" data-onclick="globalThis.expandedSessionLists.delete('${escapeHtml(
           conn.label,
         ).replace(
-          // NOSONAR
           /&#039;/g,
-          "\\'", // NOSONAR
+          "\\'",
         )}'); fetchSessions('${tabId}', ${JSON.stringify(conn).replace(
-          // NOSONAR
           /"/g,
           "&quot;",
         )}, '${targetId}', false, true, true)">... Show less</div>`;
@@ -752,7 +736,6 @@ export function parseSessions(output) {
 export function reclaimStolenSession() {
   const tab = globalState.tabs.find((t) => t.id === globalState.activeTabId);
   if (tab && tab.stolen) {
-    // NOSONAR
     tab.stolen = false;
     const reclaimBtn = document.getElementById("reclaim-btn");
     if (reclaimBtn) reclaimBtn.style.display = "none";

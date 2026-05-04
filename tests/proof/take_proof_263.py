@@ -24,4 +24,4 @@ def test_proof_csrf_caching_loop_resolved():
         json.dump(results, f, indent=2)
 
     print("Proof generated for ticket 263 / b5e3cf26-ce20-44f7-8d89-b44d55d00334")
-    assert True  # NOSONAR
+    assert True

@@ -42,7 +42,7 @@ export function initializeTheme() {
     cursor: customTheme.cursor || "#ffffff",
   });
 
-  if (typeof window !== "undefined") globalThis.terminalTheme = terminalTheme; // NOSONAR
+  if (typeof window !== "undefined") globalThis.terminalTheme = terminalTheme;
 
   // Initialize CSS variables immediately to reflect any saved theme
   document.documentElement.style.setProperty(
@@ -133,7 +133,6 @@ export function resetTheme() {
 }
 
 if (typeof window !== "undefined") {
-  // NOSONAR
   globalThis.initThemeUI = initThemeUI;
   globalThis.applyTheme = applyTheme;
   globalThis.resetTheme = resetTheme;

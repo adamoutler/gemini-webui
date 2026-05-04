@@ -1,9 +1,9 @@
-import { debugLog, customFetch, escapeHtml } from "../core/api.js"; // NOSONAR
-import { EventBus } from "../core/event-bus.js"; // NOSONAR
-import { HostStateManager } from "./launcher.js"; // NOSONAR
+import { debugLog, customFetch, escapeHtml } from "../core/api.js";
+import { EventBus } from "../core/event-bus.js";
+import { HostStateManager } from "./launcher.js";
 
-export let currentQuickTabId = null; // NOSONAR
-export let currentQuickHost = null; // NOSONAR
+export let currentQuickTabId = null;
+export let currentQuickHost = null;
 export function parseQuickInput(val) {
   if (!val) return null;
   // Format: user@host[:port] [directory]
@@ -123,13 +123,13 @@ export function copyToClipboard(text) {
     textArea.focus();
     textArea.select();
     try {
-      document.execCommand("copy"); // NOSONAR
+      document.execCommand("copy");
       alert("Copied to clipboard (fallback mode)");
     } catch (err) {
       console.error("Fallback copy failed", err);
       alert("Copy failed. Please copy manually.");
     }
-    document.body.removeChild(textArea); // NOSONAR
+    document.body.removeChild(textArea);
   }
 }
 export function copyInstanceSnippet() {

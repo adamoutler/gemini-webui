@@ -24,7 +24,7 @@ class ShareManager:
             # But the app shouldn't crash during initialization.
             self.db_path = ":memory:"  # Fallback to in-memory DB if possible, but path matters for Path usage
             # Actually, just let it fail gracefully on operations, but keep it alive
-            pass  # NOSONAR
+            pass
 
     def _get_connection(self):
         # Using timeout to handle concurrent accesses gracefully

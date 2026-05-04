@@ -7,79 +7,79 @@ import hashlib
 
 class EnvConfig:
     @property
-    def SKIP_MONKEY_PATCH(self):  # NOSONAR
+    def SKIP_MONKEY_PATCH(self):
         return os.environ.get("SKIP_MONKEY_PATCH") == "true"
 
     @property
-    def GEMINI_BIN(self):  # NOSONAR
+    def GEMINI_BIN(self):
         return os.environ.get("GEMINI_BIN", "gemini")
 
     @property
-    def ADMIN_USER(self):  # NOSONAR
+    def ADMIN_USER(self):
         return os.environ.get("ADMIN_USER", "admin")
 
     @property
-    def ADMIN_PASS(self):  # NOSONAR
+    def ADMIN_PASS(self):
         return os.environ.get("ADMIN_PASS", "admin")
 
     @property
-    def LDAP_SERVER(self):  # NOSONAR
+    def LDAP_SERVER(self):
         return os.environ.get("LDAP_SERVER")
 
     @property
-    def LDAP_BASE_DN(self):  # NOSONAR
+    def LDAP_BASE_DN(self):
         return os.environ.get("LDAP_BASE_DN")
 
     @property
-    def LDAP_BIND_USER_DN(self):  # NOSONAR
+    def LDAP_BIND_USER_DN(self):
         return os.environ.get("LDAP_BIND_USER_DN")
 
     @property
-    def LDAP_BIND_PASS(self):  # NOSONAR
+    def LDAP_BIND_PASS(self):
         return os.environ.get("LDAP_BIND_PASS")
 
     @property
-    def LDAP_AUTHORIZED_GROUP(self):  # NOSONAR
+    def LDAP_AUTHORIZED_GROUP(self):
         return os.environ.get("LDAP_AUTHORIZED_GROUP")
 
     @property
-    def LDAP_FALLBACK_DOMAIN(self):  # NOSONAR
+    def LDAP_FALLBACK_DOMAIN(self):
         return os.environ.get("LDAP_FALLBACK_DOMAIN", "example.com")
 
     @property
-    def ALLOWED_ORIGINS_RAW(self):  # NOSONAR
+    def ALLOWED_ORIGINS_RAW(self):
         return os.environ.get("ALLOWED_ORIGINS")
 
     @property
-    def ALLOWED_ORIGINS(self):  # NOSONAR
+    def ALLOWED_ORIGINS(self):
         return os.environ.get("ALLOWED_ORIGINS", "*")
 
     @property
-    def BYPASS_AUTH_FOR_TESTING(self):  # NOSONAR
+    def BYPASS_AUTH_FOR_TESTING(self):
         return os.environ.get("BYPASS_AUTH_FOR_TESTING") == "true"
 
     @property
-    def DATA_DIR(self):  # NOSONAR
+    def DATA_DIR(self):
         return os.environ.get("DATA_DIR", "/data")
 
     @property
-    def SKIP_MULTIPLEXER(self):  # NOSONAR
+    def SKIP_MULTIPLEXER(self):
         return os.environ.get("SKIP_MULTIPLEXER") == "true"
 
     @property
-    def SKIP_PRELOADER(self):  # NOSONAR
+    def SKIP_PRELOADER(self):
         return os.environ.get("SKIP_PRELOADER") == "true"
 
     @property
-    def FLASK_DEBUG(self):  # NOSONAR
+    def FLASK_DEBUG(self):
         return os.environ.get("FLASK_DEBUG", "true").lower() == "true"
 
     @property
-    def FLASK_USE_RELOADER(self):  # NOSONAR
+    def FLASK_USE_RELOADER(self):
         return os.environ.get("FLASK_USE_RELOADER", "true").lower() == "true"
 
     @property
-    def ORPHANED_SESSION_TTL(self):  # NOSONAR
+    def ORPHANED_SESSION_TTL(self):
         val = os.environ.get("ORPHANED_SESSION_TTL")
         if val is not None:
             try:
@@ -89,19 +89,19 @@ class EnvConfig:
         return None
 
     @property
-    def PORT(self):  # NOSONAR
+    def PORT(self):
         return int(os.environ.get("PORT", 5000))
 
     @property
-    def UI_PORT(self):  # NOSONAR
+    def UI_PORT(self):
         return int(os.environ.get("UI_PORT", self.PORT))
 
     @property
-    def API_PORT(self):  # NOSONAR
+    def API_PORT(self):
         return int(os.environ.get("API_PORT", 5002))
 
     @property
-    def SECRET_KEY(self):  # NOSONAR
+    def SECRET_KEY(self):
         return os.environ.get("SECRET_KEY")
 
 
@@ -132,7 +132,7 @@ def get_config_paths(data_dir=None):
 
 
 def get_config(data_dir=None):
-    data_dir, config_file, ssh_dir = get_config_paths(data_dir)  # NOSONAR
+    data_dir, config_file, ssh_dir = get_config_paths(data_dir)
     conf = {
         "LDAP_SERVER": env_config.LDAP_SERVER,
         "LDAP_BASE_DN": env_config.LDAP_BASE_DN,
@@ -224,49 +224,49 @@ class AppConfigManager:
                 logger.error(f"Failed to persist config: {e}")
 
     @property
-    def ADMIN_USER(self):  # NOSONAR
+    def ADMIN_USER(self):
         return self.get("ADMIN_USER", env_config.ADMIN_USER)
 
     @property
-    def ADMIN_PASS(self):  # NOSONAR
+    def ADMIN_PASS(self):
         return self.get("ADMIN_PASS", env_config.ADMIN_PASS)
 
     @property
-    def LDAP_SERVER(self):  # NOSONAR
+    def LDAP_SERVER(self):
         return self.get("LDAP_SERVER", env_config.LDAP_SERVER)
 
     @property
-    def LDAP_BASE_DN(self):  # NOSONAR
+    def LDAP_BASE_DN(self):
         return self.get("LDAP_BASE_DN", env_config.LDAP_BASE_DN)
 
     @property
-    def LDAP_BIND_USER_DN(self):  # NOSONAR
+    def LDAP_BIND_USER_DN(self):
         return self.get("LDAP_BIND_USER_DN", env_config.LDAP_BIND_USER_DN)
 
     @property
-    def LDAP_BIND_PASS(self):  # NOSONAR
+    def LDAP_BIND_PASS(self):
         return self.get("LDAP_BIND_PASS", env_config.LDAP_BIND_PASS)
 
     @property
-    def LDAP_AUTHORIZED_GROUP(self):  # NOSONAR
+    def LDAP_AUTHORIZED_GROUP(self):
         return self.get("LDAP_AUTHORIZED_GROUP", env_config.LDAP_AUTHORIZED_GROUP)
 
     @property
-    def LDAP_FALLBACK_DOMAIN(self):  # NOSONAR
+    def LDAP_FALLBACK_DOMAIN(self):
         return self.get("LDAP_FALLBACK_DOMAIN", env_config.LDAP_FALLBACK_DOMAIN)
 
     @property
-    def SECRET_KEY(self):  # NOSONAR
+    def SECRET_KEY(self):
         return self.get("SECRET_KEY") or env_config.SECRET_KEY
 
     @property
-    def DATA_DIR(self):  # NOSONAR
+    def DATA_DIR(self):
         if not self._data_dir:
             self.init_config()
         return self._data_dir
 
     @property
-    def SSH_DIR(self):  # NOSONAR
+    def SSH_DIR(self):
         if not self._data_dir:
             self.init_config()
         _, _, ssh_dir = get_config_paths(self._data_dir)

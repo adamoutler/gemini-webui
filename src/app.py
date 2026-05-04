@@ -47,7 +47,7 @@ except Exception as e:
     APP_VERSION = "unknown"
 
 
-def create_app(test_config=None):  # NOSONAR
+def create_app(test_config=None):
     template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
     app = Flask(__name__, template_folder=template_dir)
 
@@ -100,8 +100,7 @@ def create_app(test_config=None):  # NOSONAR
         LDAP_BASE_DN=app.config.get("LDAP_BASE_DN") or env_config.LDAP_BASE_DN,
         LDAP_BIND_USER_DN=app.config.get("LDAP_BIND_USER_DN")
         or env_config.LDAP_BIND_USER_DN,
-        LDAP_BIND_PASS=app.config.get("LDAP_BIND_PASS")
-        or env_config.LDAP_BIND_PASS,  # NOSONAR - this is an environmental variable call
+        LDAP_BIND_PASS=app.config.get("LDAP_BIND_PASS") or env_config.LDAP_BIND_PASS,
         LDAP_AUTHORIZED_GROUP=app.config.get("LDAP_AUTHORIZED_GROUP")
         or env_config.LDAP_AUTHORIZED_GROUP,
         LDAP_FALLBACK_DOMAIN=app.config.get("LDAP_FALLBACK_DOMAIN")
@@ -112,10 +111,10 @@ def create_app(test_config=None):  # NOSONAR
     csrf.init_app(app)
 
     csp = {
-        "default-src": "'self'",  # NOSONAR
+        "default-src": "'self'",
         "script-src": [
             "'self'",
-            "https://cdn.jsdelivr.net",  # NOSONAR
+            "https://cdn.jsdelivr.net",
             "https://cdnjs.cloudflare.com",
             "https://unpkg.com",
         ],

@@ -3,22 +3,21 @@ import {
   DEFAULT_PROMPTS,
   getCustomPrompts,
 } from "../core/state.js";
-import { debugLog } from "../core/api.js"; // NOSONAR
+import { debugLog } from "../core/api.js";
 import {
   createTerminalContainer,
   recreateTerminalUI,
   fitTerminal,
 } from "../terminal/ui.js";
 import { updateStatus, updatePageTitle } from "./launcher.js";
-import { renderLauncher } from "../core/session-manager.js"; // NOSONAR
-import { fetchSessions } from "../core/session-manager.js"; // NOSONAR
-import { fetchWithCSRF } from "../core/api.js"; // NOSONAR
+import { renderLauncher } from "../core/session-manager.js";
+import { fetchSessions } from "../core/session-manager.js";
+import { fetchWithCSRF } from "../core/api.js";
 import { sendPromptToTab } from "../../main.js";
 import { isMobile } from "../mobile/mobile-input-extra.js";
 import { openAddPromptModal, openManagePromptsModal } from "./modals.js";
 
 export async function loadTabsFromServer() {
-  // NOSONAR
   try {
     const response = await fetch("/api/sessions/persisted");
     if (!response.ok) throw new Error("Failed to fetch sessions");
@@ -49,7 +48,6 @@ export async function loadTabsFromServer() {
 
     // Always add a launcher if none exist
     if (!globalState.tabs.find((t) => t.state === "launcher")) {
-      // NOSONAR
       const id = "tab_" + (Date.now() + Math.floor(Math.random() * 1000));
       globalState.tabs.push({
         id,
@@ -99,7 +97,6 @@ export async function loadTabsFromServer() {
           localStorage.removeItem("pinned_tabs");
         }
       } catch (e) {
-        // NOSONAR
         localStorage.removeItem("pinned_tabs");
       }
     }
@@ -185,27 +182,24 @@ export async function addNewTab(autoResume = false) {
   saveTabsToStorage();
 }
 export function switchTab(id) {
-  // NOSONAR
   globalState.activeTabId = id;
   globalThis.globalState.activeTabId = id;
   const tab = globalState.tabs.find((t) => t.id === id);
   if (!tab) return;
   if (launcherRefreshInterval) {
     clearInterval(launcherRefreshInterval);
-    launcherRefreshInterval = null; // NOSONAR
+    launcherRefreshInterval = null;
   }
   if (tab.state === "launcher") {
     // Trigger a refresh and restart polling when switching back to launcher
     // We don't re-render the whole launcher, just the dynamic parts if they exist
     const container = document.getElementById(id + "_instance");
     if (container && container.querySelector(".launcher")) {
-      // NOSONAR
       fetch("/api/hosts")
         .then((r) => r.json())
         .then((hosts) => {
           hosts.forEach((conn, index) => {
             const sessionListId = `${id}_sessions_${conn.label.replace(
-              // NOSONAR
               /[^a-z0-9]/gi,
               "",
             )}`;
@@ -254,7 +248,6 @@ export function switchTab(id) {
       }
       globalState.tabs.forEach((t) => {
         if (t.mobileProxy && t.mobileProxy.ui && t.term) {
-          // NOSONAR
           t.mobileProxy.ui.alignWithCursor(t.term);
         }
       });
@@ -268,7 +261,6 @@ export function switchTab(id) {
 export function restartActiveTab() {
   const tab = globalState.tabs.find((t) => t.id === globalState.activeTabId);
   if (tab && tab.state === "terminal") {
-    // NOSONAR
     const { ssh_target, ssh_dir, resume } = tab.session;
     tab.term.clear();
     fitTerminal(tab);
@@ -285,7 +277,6 @@ export function restartActiveTab() {
   }
 }
 export function closeTab(id, event, isLocalOnly = false) {
-  // NOSONAR
   if (event) event.stopPropagation();
   const index = globalState.tabs.findIndex((t) => t.id === id);
   if (index === -1) return;
@@ -298,7 +289,6 @@ export function closeTab(id, event, isLocalOnly = false) {
     }
     // 1. Emit targeted WebSocket termination event
     if (tab.socket && tab.socket.connected) {
-      // NOSONAR
       debugLog("Emitting terminate_session via WebSocket for tab: " + id);
       tab.socket.emit("terminate_session", {
         tab_id: id,
@@ -321,7 +311,7 @@ export function closeTab(id, event, isLocalOnly = false) {
   if (tab.webglAddon) {
     try {
       tab.webglAddon.dispose();
-    } catch (e) {} // NOSONAR
+    } catch (e) {}
   }
   if (tab.term) tab.term.dispose();
   const inst = document.getElementById(id + "_instance");

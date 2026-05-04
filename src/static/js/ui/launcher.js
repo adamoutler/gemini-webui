@@ -1,8 +1,8 @@
-import { debugLog, escapeHtml, customFetch } from "../core/api.js"; // NOSONAR
-import { getGlobalSocket } from "../core/socket.js"; // NOSONAR
-import { fetchSessions } from "../core/session-manager.js"; // NOSONAR
-import { globalState } from "../core/state.js"; // NOSONAR
-import { EventBus } from "../core/event-bus.js"; // NOSONAR
+import { debugLog, escapeHtml, customFetch } from "../core/api.js";
+import { getGlobalSocket } from "../core/socket.js";
+import { fetchSessions } from "../core/session-manager.js";
+import { globalState } from "../core/state.js";
+import { EventBus } from "../core/event-bus.js";
 
 export const HostStateManager = {
   states: {},
@@ -14,8 +14,7 @@ export const HostStateManager = {
     if (isSuccess) {
       this.states[label].failures = 0;
     } else {
-      if (this.states[label].failures < 0)
-        this.states[label].failures = 2; // NOSONAR
+      if (this.states[label].failures < 0) this.states[label].failures = 2;
       else this.states[label].failures++;
     }
     return this.states[label].failures;
@@ -33,7 +32,7 @@ export const HostStateManager = {
     return "error";
   },
   renderHealthUI: function (tabId, label, failures) {
-    const indicatorId = `${tabId}_health_${label.replace(/[^a-z0-9]/gi, "")}`; // NOSONAR
+    const indicatorId = `${tabId}_health_${label.replace(/[^a-z0-9]/gi, "")}`;
     const el = document.getElementById(indicatorId);
     if (el) {
       el.innerText = this.getIndicator(failures);
@@ -41,11 +40,11 @@ export const HostStateManager = {
     }
   },
   triggerPulse: function (tabId, label) {
-    const pulseId = `${tabId}_pulse_${label.replace(/[^a-z0-9]/gi, "")}`; // NOSONAR
+    const pulseId = `${tabId}_pulse_${label.replace(/[^a-z0-9]/gi, "")}`;
     const pulseEl = document.getElementById(pulseId);
     if (pulseEl) {
       pulseEl.classList.remove("pulsing", "superbright");
-      const _reflow = pulseEl.offsetWidth; // NOSONAR
+      const _reflow = pulseEl.offsetWidth;
       requestAnimationFrame(() => {
         pulseEl.classList.add("pulsing", "superbright");
       });

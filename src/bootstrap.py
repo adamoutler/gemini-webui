@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def setup_environment(data_dir: str, ssh_dir: str):  # NOSONAR
+def setup_environment(data_dir: str, ssh_dir: str):
     """
     Bootstraps the application environment:
     - Creates necessary directories

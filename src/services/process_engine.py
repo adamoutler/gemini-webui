@@ -114,13 +114,12 @@ class SSHConnectionManager:
             target_str,
         ]
         try:
-            # codeql[py/command-line-injection] False positive: Args are passed securely.
             result = subprocess.run(
                 check_cmd, capture_output=True, text=True, timeout=5
             )
             if result.returncode != 0:
-                raise Exception("Connection dead")  # NOSONAR
-        except (subprocess.TimeoutExpired, Exception):  # NOSONAR
+                raise Exception("Connection dead")
+        except (subprocess.TimeoutExpired, Exception):
             exit_cmd = [
                 "ssh",
                 "-O",
@@ -131,7 +130,6 @@ class SSHConnectionManager:
                 target_str,
             ]
             try:
-                # codeql[py/command-line-injection] False positive: Args are passed securely.
                 subprocess.run(exit_cmd, capture_output=True, timeout=5)
             except Exception:
                 pass
@@ -147,9 +145,7 @@ def validate_ssh_target(target):
     if not target:
         return False
     # Allow alphanumeric, dots, hyphens, optional user@, and optional :port
-    return bool(
-        re.match(r"^([a-zA-Z0-9.-]+@)?[a-zA-Z0-9.-]+(:[0-9]+)?$", target)
-    )  # NOSONAR
+    return bool(re.match(r"^([a-zA-Z0-9.-]+@)?[a-zA-Z0-9.-]+(:[0-9]+)?$", target))
 
 
 def build_ssh_args(ssh_target, ssh_dir_path, control_master="auto"):
@@ -178,7 +174,7 @@ def build_ssh_args(ssh_target, ssh_dir_path, control_master="auto"):
     return cmd
 
 
-def get_remote_command_prefix(ssh_dir, gemini_bin="gemini", env_vars=None):  # NOSONAR
+def get_remote_command_prefix(ssh_dir, gemini_bin="gemini", env_vars=None):
     """Builds a robust prefix for remote commands to ensure environment is loaded."""
     # Common color and path exports
     prefix = 'export PATH="$PATH:$HOME/.local/bin:$HOME/bin"; '
@@ -205,7 +201,7 @@ def get_remote_command_prefix(ssh_dir, gemini_bin="gemini", env_vars=None):  # N
     return prefix
 
 
-def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):  # NOSONAR
+def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
     """Internal helper to fetch sessions for a host config."""
     ssh_target = host.get("target")
     ssh_dir = host.get("dir")
@@ -385,7 +381,7 @@ def _wrap_with_multiplexer(cmd):
     return cmd
 
 
-def build_terminal_command(  # NOSONAR
+def build_terminal_command(
     ssh_target,
     ssh_dir,
     resume,
@@ -428,12 +424,12 @@ def build_terminal_command(  # NOSONAR
 
         if "-r" in gemini_base_cmd:
             remote_cmd += f"{gemini_base_cmd}; "
-            remote_cmd += "if [ $? -ne 0 ]; then "  # NOSONAR
+            remote_cmd += "if [ $? -ne 0 ]; then "
             remote_cmd += "clear; printf '\\r\\n\\033[1;33mResume failed, starting new session...\\033[0m\\r\\n'; "
             remote_cmd += f"{quoted_gemini}; "
             remote_cmd += "if [ $? -ne 0 ]; then "
-            remote_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "  # NOSONAR
-            remote_cmd += "exec ${SHELL:-/bin/sh}; "  # NOSONAR
+            remote_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "
+            remote_cmd += "exec ${SHELL:-/bin/sh}; "
             remote_cmd += "fi; "
             remote_cmd += "fi; "
         else:

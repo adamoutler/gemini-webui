@@ -10,15 +10,15 @@ import {
 import { MobileInputBuffer, MobileInputUI } from "./ui.js";
 
 export {
-  MobileModifierState, // NOSONAR
-  InputRule, // NOSONAR
-  ExtensionRuleParser, // NOSONAR
-  CursorPlacementRule, // NOSONAR
-  BackspaceRule, // NOSONAR
-  ModifierRule, // NOSONAR
-  WordBoundaryRule, // NOSONAR
-  MobileInputBuffer, // NOSONAR
-  MobileInputUI, // NOSONAR
+  MobileModifierState,
+  InputRule,
+  ExtensionRuleParser,
+  CursorPlacementRule,
+  BackspaceRule,
+  ModifierRule,
+  WordBoundaryRule,
+  MobileInputBuffer,
+  MobileInputUI,
 };
 
 export class MobileTerminalController {
@@ -70,12 +70,10 @@ export class MobileTerminalController {
     }
     // Handle paste directly on our proxy input since we disabled xterm's textarea
     this.ui.proxyInput.addEventListener("paste", async (e) => {
-      // NOSONAR
       const items = (e.clipboardData || globalThis.clipboardData)?.items;
       let hasImage = false;
       if (items) {
         for (let i = 0; i < items.length; i++) {
-          // NOSONAR
           const item = items[i];
           if (item.type.startsWith("image/")) {
             hasImage = true;
@@ -108,7 +106,7 @@ export class MobileTerminalController {
 
         // Use bracketed paste if enabled by terminal
         const useBracketedPaste =
-          this.tab.term && // NOSONAR
+          this.tab.term &&
           this.tab.term.modes &&
           this.tab.term.modes.bracketedPasteMode;
         if (useBracketedPaste) {
@@ -185,11 +183,11 @@ export class MobileTerminalController {
       : this.tab;
     const targetTab = activeTab || this.tab;
 
-    if (!targetTab || !targetTab.socket || data == null) return; // NOSONAR
+    if (!targetTab || !targetTab.socket || data == null) return;
     if (globalThis.emitPtyInput) {
       globalThis.emitPtyInput(targetTab, data);
     } else {
-      const strData = String(data).replace(/\n/g, "\r"); // NOSONAR
+      const strData = String(data).replace(/\n/g, "\r");
       targetTab.socket.emit("pty-input", { input: strData });
     }
   }
@@ -197,7 +195,6 @@ export class MobileTerminalController {
 
 // Global exposure to support traditional browser logic (like app.js) before a full ESM refactor:
 if (typeof window !== "undefined") {
-  // NOSONAR
   globalThis.MobileTerminalController = MobileTerminalController;
   globalThis.MobileModifierState = MobileModifierState;
   globalThis.MobileInputBuffer = MobileInputBuffer;

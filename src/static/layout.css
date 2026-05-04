@@ -54,7 +54,7 @@
   font-size: 14px;
   white-space: nowrap;
   padding: 8px 12px;
-  background: #2d2d2d; /* NOSONAR */
+  background: #2d2d2d;
   border-radius: 4px 0 0 4px;
   border: 1px solid #666;
   border-right: none;

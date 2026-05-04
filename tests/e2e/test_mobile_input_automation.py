@@ -47,7 +47,7 @@ def test_mobile_utils_webkit(android_page, playwright):
     simulateAutocorrect(android_page, "teh", "the")
     simulateSpacebarTrackpad(android_page, -1)
 
-    assert True  # NOSONAR
+    assert True
 
 
 @pytest.mark.timeout(60)
@@ -67,4 +67,4 @@ def test_mobile_utils_chromium(android_page, playwright):
     simulateAutocorrect(android_page, "teh", "the")
     simulateSpacebarTrackpad(android_page, -1)
 
-    assert True  # NOSONAR
+    assert True

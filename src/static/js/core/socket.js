@@ -31,7 +31,6 @@ export function getGlobalSocket() {
 
     globalSocket.on("connect_error", (error) => {
       if (error && error.message === "invalid_csrf") {
-        // NOSONAR
         EventBus.emit("SOCKET_CSRF_ERROR");
       }
     });
@@ -48,7 +47,6 @@ export function getGlobalSocket() {
     globalSocket.on("sessions_updated", (payload) => {
       console.log("Sessions updated payload:", payload);
       if (payload && payload.data && payload.data.output) {
-        // NOSONAR
         const sessions = [];
         const regex =
           /^\s*(\d+)\.\s+(.+?)\s+\(([^)]+)\)(?:\s+\[(.*?)\])?\s*$/gm;
@@ -70,15 +68,13 @@ export function getGlobalSocket() {
               (t.session.resume === "new" || /^\d+$/.test(t.session.resume))
             ) {
               const match = sessions.find(
-                (s) => s.uuid === t.id || s.id === t.session.resume, // NOSONAR
+                (s) => s.uuid === t.id || s.id === t.session.resume,
               );
               console.log("Found match for tab:", match);
               if (match && match.uuid) {
-                // NOSONAR
                 t.session.resume = match.uuid;
                 const socket = getGlobalSocket();
                 if (socket && socket.connected) {
-                  // NOSONAR
                   socket.emit("update_resume", {
                     tab_id: t.id,
                     resume: match.uuid,
@@ -95,17 +91,15 @@ export function getGlobalSocket() {
             (t) => t.id === globalState.activeTabId,
           );
           if (activeTab && activeTab.state === "launcher") {
-            // NOSONAR
             const id = activeTab.id;
             const container = document.getElementById(id + "_instance");
             if (
-              container && // NOSONAR
+              container &&
               container.querySelector(".launcher") &&
               payload.host
             ) {
               const conn = payload.host;
               const sessionListId = `${id}_sessions_${conn.label.replace(
-                // NOSONAR
                 /[^a-z0-9]/gi,
                 "",
               )}`;

@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class TerminalService:
     @staticmethod
-    def start_session(  # NOSONAR
+    def start_session(
         tab_id,
         user_id,
         ssh_target,

@@ -1,7 +1,7 @@
 import os
 
 
-def smart_file_search(cache, query):  # NOSONAR
+def smart_file_search(cache, query):
     """
     Search a list of file paths (cache) using a smart search algorithm.
     Prioritizes exact basename matches, then exact path matches,

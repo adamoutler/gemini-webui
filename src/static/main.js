@@ -1,4 +1,4 @@
-import { initializeTheme, terminalTheme } from "./js/ui/theme.js"; // NOSONAR
+import { initializeTheme, terminalTheme } from "./js/ui/theme.js";
 
 import {
   loadTabsFromServer,
@@ -63,33 +63,32 @@ import {
   startSession,
   fitTerminal,
 } from "./js/terminal/ui.js";
-export { createTerminalContainer, recreateTerminalUI, fitTerminal }; // NOSONAR
+export { createTerminalContainer, recreateTerminalUI, fitTerminal };
 import {
   emitPtyInput,
   sendToTerminal,
   adjustFontSize,
 } from "./js/terminal/pty.js";
-export { emitPtyInput }; // NOSONAR
+export { emitPtyInput };
 import {
   globalState,
-  DEFAULT_PROMPTS, // NOSONAR
-  loadPromptsFromServer, // NOSONAR
-  getCustomPrompts, // NOSONAR
+  DEFAULT_PROMPTS,
+  loadPromptsFromServer,
+  getCustomPrompts,
 } from "./js/core/state.js";
 import {
-  escapeHtml, // NOSONAR
-  filterTerminalFluff, // NOSONAR
-  setDebug, // NOSONAR
+  escapeHtml,
+  filterTerminalFluff,
+  setDebug,
   debugLog,
-  customFetch, // NOSONAR
-  originalFetch, // NOSONAR
-} from "./js/core/api.js"; // NOSONAR
+  customFetch,
+  originalFetch,
+} from "./js/core/api.js";
 
 // SendPromptToTab functionality needs global state access:
 export function sendPromptToTab(tabId, text) {
   const tab = globalState.tabs.find((t) => t.id === tabId);
   if (tab && tab.socket && tab.state === "terminal") {
-    // NOSONAR
     const input =
       text.endsWith("\n") || text.endsWith("\r") ? text : text + "\r";
     tab.socket.emit("pty-input", {
@@ -124,7 +123,6 @@ globalThis.addEventListener("appinstalled", (evt) => {
 
 // Request Notification Permission
 if ("Notification" in window && Notification.permission === "default") {
-  // NOSONAR
   document.addEventListener(
     "click",
     () => {
@@ -167,7 +165,7 @@ import {
   reclaimStolenSession,
   renderLauncher,
 } from "./js/core/session-manager.js";
-import { fetchWithCSRF } from "./js/core/api.js"; // NOSONAR
+import { fetchWithCSRF } from "./js/core/api.js";
 
 const Actions = {
   updateWakeLock,
@@ -272,7 +270,6 @@ Object.keys(Actions).forEach((actionName) => {
 });
 
 if (typeof window !== "undefined") {
-  // NOSONAR
   globalThis.appVisualViewport = globalThis.visualViewport;
   globalThis.EventBus = EventBus;
   globalThis.sendToTerminal = sendToTerminal;
@@ -292,7 +289,6 @@ if (typeof window !== "undefined") {
 
 // CSP Event Delegation
 function executeDataAction(code, event) {
-  // NOSONAR
   if (!code) return;
   if (code === "document.getElementById('import-settings-input').click()") {
     document.getElementById("import-settings-input").click();
@@ -340,7 +336,7 @@ function executeDataAction(code, event) {
       let b1 = m2[4] === "true";
       globalThis.fetchSessions(
         m2[1],
-        JSON.parse(m2[2].replace(/&quot;/g, '"')), // NOSONAR
+        JSON.parse(m2[2].replace(/&quot;/g, '"')),
         m2[3],
         b1,
         true,
@@ -349,7 +345,7 @@ function executeDataAction(code, event) {
     }
     return;
   }
-  let match = code.match(/^([a-zA-Z0-9_]+)\((.*)\)$/); // NOSONAR
+  let match = code.match(/^([a-zA-Z0-9_]+)\((.*)\)$/);
   if (match) {
     let funcName = match[1];
     let argsStr = match[2];
@@ -367,7 +363,6 @@ function executeDataAction(code, event) {
           currentArg += char;
         } else {
           if (char === "'" || char === '"') {
-            // NOSONAR
             inString = true;
             quoteChar = char;
             currentArg += char;
@@ -398,18 +393,18 @@ function executeDataAction(code, event) {
         if (s === "true") return true;
         if (s === "false") return false;
         if (s.startsWith("'") && s.endsWith("'"))
-          return s.slice(1, -1).replace(/\\'/g, "'").replace(/\\\\/g, "\\"); // NOSONAR
+          return s.slice(1, -1).replace(/\\'/g, "'").replace(/\\\\/g, "\\");
         if (s.startsWith('"') && s.endsWith('"'))
           return s
             .slice(1, -1)
-            .replace(/\\"/g, '"') // NOSONAR
-            .replace(/\\\\/g, "\\") // NOSONAR
-            .replace(/&quot;/g, '"'); // NOSONAR
+            .replace(/\\"/g, '"')
+            .replace(/\\\\/g, "\\")
+            .replace(/&quot;/g, '"');
         if (!Number.isNaN(s) && s !== "") return Number(s);
         if (s.startsWith("{") || s.startsWith("[")) {
           try {
-            return JSON.parse(s.replace(/&quot;/g, '"')); // NOSONAR
-          } catch (err) {} // NOSONAR
+            return JSON.parse(s.replace(/&quot;/g, '"'));
+          } catch (err) {}
         }
         return s;
       });
