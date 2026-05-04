@@ -116,9 +116,9 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
         assert "scp" in scp_call
         assert any("user@host" in arg for arg in scp_call)
         assert "ssh" in verify_call
-        assert any("ls" in arg for arg in verify_call)
+        assert "ls" in verify_call
         assert "ssh" in path_call
-        assert any("realpath" in arg for arg in path_call)
+        assert "realpath" in path_call
 
 
 @pytest.mark.timeout(60)
@@ -176,9 +176,9 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
         assert "scp" in scp_call
         assert any("user@host" in arg for arg in scp_call)
         assert "ssh" in verify_call
-        assert any("ls" in arg for arg in verify_call)
+        assert "ls" in verify_call
         assert "ssh" in path_call
-        assert any("realpath" in arg for arg in path_call)
+        assert "realpath" in path_call
 
 
 @pytest.mark.timeout(60)
@@ -277,7 +277,7 @@ def test_upload_file_ssh_proxy_verify_failure(client, test_data_dir):
     ):
 
         def run_side_effect(*args, **kwargs):
-            if args[0][0] == "ssh" and any("ls" in arg for arg in args[0]):
+            if args[0][0] == "ssh" and kwargs.get("input", "").startswith("ls"):
                 return MagicMock(returncode=1)
             return MagicMock(returncode=0)
 
