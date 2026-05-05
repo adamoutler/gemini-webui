@@ -2,8 +2,15 @@
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=bugs)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=coverage)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=ncloc)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=sqale_index)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
 [![Build and Publish](https://github.com/adamoutler/gemini-webui/actions/workflows/build-and-publish.yml/badge.svg)](https://github.com/adamoutler/gemini-webui/actions/workflows/build-and-publish.yml)
 
 **The ultimate management interface for your Gemini AI, built for mobility and persistence.**
