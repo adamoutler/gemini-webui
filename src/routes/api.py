@@ -41,8 +41,8 @@ api_bp = Blueprint("api", __name__)
 @authenticated_only
 def get_current_config():
     conf = get_config()
-    conf.pop("LDAP_BIND_PASS", None)
-    conf.pop("ADMIN_PASS", None)
+    conf.pop("LDAP_BIND_SECRET", None)
+    conf.pop("ADMIN_SECRET", None)
     conf.pop("API_KEYS", None)  # Don't leak hashes even to authenticated users
     return jsonify(conf)
 

@@ -8,7 +8,7 @@ import sys
 
 os.environ["DATA_DIR"] = "test_gemini_data"
 os.environ["AUTH_METHOD"] = "local"
-os.environ["LOCAL_ADMIN_PASS"] = "admin"
+os.environ["LOCAL_ADMIN_SECRET"] = "admin"
 os.environ["SECRET_KEY"] = "supersecret"
 os.environ["PORT"] = "5008"
 
@@ -47,7 +47,10 @@ async def main():
             browser = await p.chromium.launch()
             context = await browser.new_context(
                 viewport={"width": 400, "height": 800},
-                http_credentials={"username": "admin", "password": "admin"},
+                http_credentials={
+                    "username": os.environ.get("ADMIN_USER", "admin"),
+                    "password": os.environ.get("LOCAL_ADMIN_SECRET", "admin"),
+                },
             )
             page = await context.new_page()
 

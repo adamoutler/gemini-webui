@@ -53,11 +53,11 @@ def require_auth():
     LDAP_SERVER = current_app.config.get("LDAP_SERVER")
     LDAP_BASE_DN = current_app.config.get("LDAP_BASE_DN")
     LDAP_BIND_USER_DN = current_app.config.get("LDAP_BIND_USER_DN")
-    LDAP_BIND_PASS = current_app.config.get("LDAP_BIND_PASS")
+    LDAP_BIND_SECRET = current_app.config.get("LDAP_BIND_SECRET")
     LDAP_AUTHORIZED_GROUP = current_app.config.get("LDAP_AUTHORIZED_GROUP")
     LDAP_FALLBACK_DOMAIN = current_app.config.get("LDAP_FALLBACK_DOMAIN")
     ADMIN_USER = current_app.config.get("ADMIN_USER")
-    ADMIN_PASS = current_app.config.get("ADMIN_PASS")
+    ADMIN_SECRET = current_app.config.get("ADMIN_SECRET")
 
     # EXCLUSIVE AUTHENTICATION:
     # If LDAP is configured, it is the ONLY allowed method.
@@ -68,7 +68,7 @@ def require_auth():
             LDAP_SERVER,
             LDAP_BASE_DN,
             LDAP_BIND_USER_DN,
-            LDAP_BIND_PASS,
+            LDAP_BIND_SECRET,
             LDAP_AUTHORIZED_GROUP,
             LDAP_FALLBACK_DOMAIN,
         ):
@@ -77,7 +77,7 @@ def require_auth():
             return
     else:
         # Fall back to local admin credentials ONLY if LDAP is not configured.
-        if auth and auth.username == ADMIN_USER and auth.password == ADMIN_PASS:
+        if auth and auth.username == ADMIN_USER and auth.password == ADMIN_SECRET:
             session["authenticated"] = True
             session["user_id"] = ADMIN_USER
             return

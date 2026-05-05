@@ -12,14 +12,14 @@ def authenticated_server(tmp_path, playwright):
     env = os.environ.copy()
     env["SECRET_KEY"] = "testsecret"
     env["ADMIN_USER"] = "testuser"
-    env["ADMIN_PASS"] = "testpass"
+    env["ADMIN_SECRET"] = "testpass"
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         port = str(s.getsockname()[1])
     env["PORT"] = port
     env["ADMIN_USER"] = "testuser"
-    env["ADMIN_PASS"] = "testpass"
+    env["ADMIN_SECRET"] = "testpass"
     env["DATA_DIR"] = str(tmp_path)
     env["FLASK_USE_RELOADER"] = "false"
     env["SKIP_MONKEY_PATCH"] = "true"
@@ -91,7 +91,11 @@ def test_new_deployment_login(authenticated_server, playwright):
     # Create a mobile context since bug affects mobile/safari often and it is a good test vector
     pixel = p.devices["Pixel 5"]
     context = browser.new_context(
-        **pixel, http_credentials={"username": "testuser", "password": "testpass"}
+        **pixel,
+        http_credentials={
+            "username": os.environ.get("TEST_USER", "testuser"),
+            "password": os.environ.get("TEST_PASS", "testpass"),
+        },
     )
     page = context.new_page()
 

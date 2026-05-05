@@ -33,7 +33,7 @@ def test_index_route_with_auth(client):
             "TESTING": True,
             "BYPASS_AUTH_FOR_TESTING": "false",
             "ADMIN_USER": "admin",
-            "ADMIN_PASS": "admin",
+            "ADMIN_SECRET": "admin",
             "LDAP_SERVER": None,
             "SECRET_KEY": "test-secret",
         }

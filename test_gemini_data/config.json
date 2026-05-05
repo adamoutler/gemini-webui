@@ -15,5 +15,5 @@
     }
   ],
   "host_id": "d0c9",
-  "SECRET_KEY": "1e6fada0ad86b3548bac5630a892aed3d34dc4133ba171582f8e8317f3cc0646"
+  "SECRET_KEY": "dummy_test_key_not_a_real_secret"
 }

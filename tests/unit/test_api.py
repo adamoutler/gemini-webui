@@ -106,8 +106,8 @@ def test_api_config(client):
     assert isinstance(conf, dict)
     assert "HOSTS" in conf
     assert isinstance(conf["HOSTS"], list)
-    assert "LDAP_BIND_PASS" not in conf
-    assert "ADMIN_PASS" not in conf
+    assert "LDAP_BIND_SECRET" not in conf
+    assert "ADMIN_SECRET" not in conf
 
 
 @pytest.mark.timeout(60)

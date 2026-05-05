@@ -19,7 +19,7 @@ class EnvConfig:
         return os.environ.get("ADMIN_USER", "admin")
 
     @property
-    def ADMIN_PASS(self):
+    def ADMIN_SECRET(self):
         return os.environ.get("ADMIN_PASS", "admin")
 
     @property
@@ -35,7 +35,7 @@ class EnvConfig:
         return os.environ.get("LDAP_BIND_USER_DN")
 
     @property
-    def LDAP_BIND_PASS(self):
+    def LDAP_BIND_SECRET(self):
         return os.environ.get("LDAP_BIND_PASS")
 
     @property
@@ -137,7 +137,7 @@ def get_config(data_dir=None):
         "LDAP_SERVER": env_config.LDAP_SERVER,
         "LDAP_BASE_DN": env_config.LDAP_BASE_DN,
         "LDAP_BIND_USER_DN": env_config.LDAP_BIND_USER_DN,
-        "LDAP_BIND_PASS": env_config.LDAP_BIND_PASS,
+        "LDAP_BIND_SECRET": env_config.LDAP_BIND_SECRET,
         "LDAP_AUTHORIZED_GROUP": env_config.LDAP_AUTHORIZED_GROUP,
         "LDAP_FALLBACK_DOMAIN": env_config.LDAP_FALLBACK_DOMAIN,
         "ALLOWED_ORIGINS": env_config.ALLOWED_ORIGINS,
@@ -228,8 +228,8 @@ class AppConfigManager:
         return self.get("ADMIN_USER", env_config.ADMIN_USER)
 
     @property
-    def ADMIN_PASS(self):
-        return self.get("ADMIN_PASS", env_config.ADMIN_PASS)
+    def ADMIN_SECRET(self):
+        return self.get("ADMIN_SECRET", env_config.ADMIN_SECRET)
 
     @property
     def LDAP_SERVER(self):
@@ -244,8 +244,8 @@ class AppConfigManager:
         return self.get("LDAP_BIND_USER_DN", env_config.LDAP_BIND_USER_DN)
 
     @property
-    def LDAP_BIND_PASS(self):
-        return self.get("LDAP_BIND_PASS", env_config.LDAP_BIND_PASS)
+    def LDAP_BIND_SECRET(self):
+        return self.get("LDAP_BIND_SECRET", env_config.LDAP_BIND_SECRET)
 
     @property
     def LDAP_AUTHORIZED_GROUP(self):
