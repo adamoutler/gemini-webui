@@ -158,7 +158,7 @@ class TestReconnectionRegression:
         docker_server.start()
 
         # Give the server a moment to be fully ready
-        page.wait_for_timeout(10000)
+        page.wait_for_timeout(25000)
 
         # 7. Refresh browser (standard F5/page.reload(), no cache wipe)
         page.reload()
