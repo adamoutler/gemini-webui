@@ -194,8 +194,11 @@ export class WordBoundaryRule extends InputRule {
 
       const isDictation = event.inputType === "insertDictationResult";
       const isComposing = context.ui && context.ui.isComposing;
+      const isDeletion =
+        event.inputType === "deleteContentBackward" ||
+        event.inputType === "deleteWordBackward";
 
-      if (isDictation || isComposing) {
+      if (isDictation || isComposing || isDeletion) {
         return false;
       }
 
