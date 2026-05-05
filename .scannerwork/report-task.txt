@@ -3,5 +3,5 @@ projectKey=adamoutler_gemini-webui
 serverUrl=https://sonarcloud.io
 serverVersion=8.0.0.86588
 dashboardUrl=https://sonarcloud.io/dashboard?id=adamoutler_gemini-webui
-ceTaskId=AZ32P1ddmVBOWKbWmKh1
-ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZ32P1ddmVBOWKbWmKh1
+ceTaskId=AZ32SKZ5mVBOWKbWmKp7
+ceTaskUrl=https://sonarcloud.io/api/ce/task?id=AZ32SKZ5mVBOWKbWmKp7
