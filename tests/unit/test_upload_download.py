@@ -54,11 +54,12 @@ def test_upload_file_ssh_proxy(client, test_data_dir):
         "ssh_target": "user@host",
         "ssh_dir": "/remote/dir",
     }
-    with patch("src.services.remote_fs.subprocess.run") as mock_run, patch(
-        "src.services.remote_fs.validate_ssh_target", return_value=True
-    ), patch(
-        "src.config.get_config_paths",
-        return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
+    with (
+        patch("src.services.remote_fs.subprocess.run") as mock_run,
+        patch(
+            "src.config.get_config_paths",
+            return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
+        ),
     ):
         mock_run.return_value = MagicMock(
             pid=123, returncode=0, stdout="mock_path", stderr=""
@@ -87,11 +88,12 @@ def test_upload_file_ssh_proxy_home_dir(client, test_data_dir):
         "ssh_target": "user@host",
         "ssh_dir": "~",
     }
-    with patch("src.services.remote_fs.subprocess.run") as mock_run, patch(
-        "src.services.remote_fs.validate_ssh_target", return_value=True
-    ), patch(
-        "src.config.get_config_paths",
-        return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
+    with (
+        patch("src.services.remote_fs.subprocess.run") as mock_run,
+        patch(
+            "src.config.get_config_paths",
+            return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
+        ),
     ):
         mock_run.return_value = MagicMock(
             pid=123, returncode=0, stdout="mock_path", stderr=""
@@ -135,11 +137,12 @@ def test_upload_file_ssh_proxy_mkdir_failure(client, test_data_dir):
         "ssh_target": "user@host",
         "ssh_dir": "/remote/dir",
     }
-    with patch("src.services.remote_fs.subprocess.run") as mock_run, patch(
-        "src.services.remote_fs.validate_ssh_target", return_value=True
-    ), patch(
-        "src.config.get_config_paths",
-        return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
+    with (
+        patch("src.services.remote_fs.subprocess.run") as mock_run,
+        patch(
+            "src.config.get_config_paths",
+            return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
+        ),
     ):
         mock_run.return_value = MagicMock(
             pid=123, returncode=1, stdout="", stderr="Permission denied"
@@ -165,11 +168,12 @@ def test_upload_file_ssh_proxy_scp_failure(client, test_data_dir):
         "ssh_target": "user@host",
         "ssh_dir": "/remote/dir",
     }
-    with patch("src.services.remote_fs.subprocess.run") as mock_run, patch(
-        "src.services.remote_fs.validate_ssh_target", return_value=True
-    ), patch(
-        "src.config.get_config_paths",
-        return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
+    with (
+        patch("src.services.remote_fs.subprocess.run") as mock_run,
+        patch(
+            "src.config.get_config_paths",
+            return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
+        ),
     ):
 
         def run_side_effect(*args, **kwargs):
@@ -200,11 +204,12 @@ def test_upload_file_ssh_proxy_verify_failure(client, test_data_dir):
         "ssh_target": "user@host",
         "ssh_dir": "/remote/dir",
     }
-    with patch("src.services.remote_fs.subprocess.run") as mock_run, patch(
-        "src.services.remote_fs.validate_ssh_target", return_value=True
-    ), patch(
-        "src.config.get_config_paths",
-        return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
+    with (
+        patch("src.services.remote_fs.subprocess.run") as mock_run,
+        patch(
+            "src.config.get_config_paths",
+            return_value=("/tmp", "/tmp/config", "/tmp/ssh_dir"),
+        ),
     ):
 
         def run_side_effect(*args, **kwargs):
