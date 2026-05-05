@@ -7,79 +7,79 @@ import hashlib
 
 class EnvConfig:
     @property
-    def skip_monkey_patch(self):
+    def SKIP_MONKEY_PATCH(self):
         return os.environ.get("SKIP_MONKEY_PATCH") == "true"
 
     @property
-    def gemini_bin(self):
+    def GEMINI_BIN(self):
         return os.environ.get("GEMINI_BIN", "gemini")
 
     @property
-    def admin_user(self):
+    def ADMIN_USER(self):
         return os.environ.get("ADMIN_USER", "admin")
 
     @property
-    def admin_secret(self):
+    def ADMIN_SECRET(self):
         return os.environ.get("ADMIN_PASS", "admin")
 
     @property
-    def ldap_server(self):
+    def LDAP_SERVER(self):
         return os.environ.get("LDAP_SERVER")
 
     @property
-    def ldap_base_dn(self):
+    def LDAP_BASE_DN(self):
         return os.environ.get("LDAP_BASE_DN")
 
     @property
-    def ldap_bind_user_dn(self):
+    def LDAP_BIND_USER_DN(self):
         return os.environ.get("LDAP_BIND_USER_DN")
 
     @property
-    def ldap_bind_secret(self):
+    def LDAP_BIND_SECRET(self):
         return os.environ.get("LDAP_BIND_PASS")
 
     @property
-    def ldap_authorized_group(self):
+    def LDAP_AUTHORIZED_GROUP(self):
         return os.environ.get("LDAP_AUTHORIZED_GROUP")
 
     @property
-    def ldap_fallback_domain(self):
+    def LDAP_FALLBACK_DOMAIN(self):
         return os.environ.get("LDAP_FALLBACK_DOMAIN", "example.com")
 
     @property
-    def allowed_origins_raw(self):
+    def ALLOWED_ORIGINS_RAW(self):
         return os.environ.get("ALLOWED_ORIGINS")
 
     @property
-    def allowed_origins(self):
+    def ALLOWED_ORIGINS(self):
         return os.environ.get("ALLOWED_ORIGINS", "*")
 
     @property
-    def bypass_auth_for_testing(self):
+    def BYPASS_AUTH_FOR_TESTING(self):
         return os.environ.get("BYPASS_AUTH_FOR_TESTING") == "true"
 
     @property
-    def data_dir(self):
+    def DATA_DIR(self):
         return os.environ.get("DATA_DIR", "/data")
 
     @property
-    def skip_multiplexer(self):
+    def SKIP_MULTIPLEXER(self):
         return os.environ.get("SKIP_MULTIPLEXER") == "true"
 
     @property
-    def skip_preloader(self):
+    def SKIP_PRELOADER(self):
         return os.environ.get("SKIP_PRELOADER") == "true"
 
     @property
-    def flask_debug(self):
+    def FLASK_DEBUG(self):
         return os.environ.get("FLASK_DEBUG", "true").lower() == "true"
 
     @property
-    def flask_use_reloader(self):
+    def FLASK_USE_RELOADER(self):
         return os.environ.get("FLASK_USE_RELOADER", "true").lower() == "true"
 
     @property
-    def orphaned_session_ttl(self):
+    def ORPHANED_SESSION_TTL(self):
         val = os.environ.get("ORPHANED_SESSION_TTL")
         if val is not None:
             try:
@@ -89,19 +89,19 @@ class EnvConfig:
         return None
 
     @property
-    def port(self):
+    def PORT(self):
         return int(os.environ.get("PORT", 5000))
 
     @property
-    def ui_port(self):
-        return int(os.environ.get("UI_PORT", self.port))
+    def UI_PORT(self):
+        return int(os.environ.get("UI_PORT", self.PORT))
 
     @property
-    def api_port(self):
+    def API_PORT(self):
         return int(os.environ.get("API_PORT", 5002))
 
     @property
-    def secret_key(self):
+    def SECRET_KEY(self):
         return os.environ.get("SECRET_KEY")
 
 
@@ -111,7 +111,7 @@ logger = logging.getLogger(__name__)
 
 
 def get_config_paths(data_dir=None):
-    data_dir = data_dir or env_config.data_dir
+    data_dir = data_dir or env_config.DATA_DIR
     data_writable = os.access(
         data_dir if os.path.exists(data_dir) else os.path.dirname(data_dir.rstrip("/")),
         os.W_OK,
@@ -134,13 +134,13 @@ def get_config_paths(data_dir=None):
 def get_config(data_dir=None):
     data_dir, config_file, ssh_dir = get_config_paths(data_dir)
     conf = {
-        "LDAP_SERVER": env_config.ldap_server,
-        "LDAP_BASE_DN": env_config.ldap_base_dn,
-        "LDAP_BIND_USER_DN": env_config.ldap_bind_user_dn,
-        "LDAP_BIND_SECRET": env_config.ldap_bind_secret,
-        "LDAP_AUTHORIZED_GROUP": env_config.ldap_authorized_group,
-        "LDAP_FALLBACK_DOMAIN": env_config.ldap_fallback_domain,
-        "ALLOWED_ORIGINS": env_config.allowed_origins,
+        "LDAP_SERVER": env_config.LDAP_SERVER,
+        "LDAP_BASE_DN": env_config.LDAP_BASE_DN,
+        "LDAP_BIND_USER_DN": env_config.LDAP_BIND_USER_DN,
+        "LDAP_BIND_SECRET": env_config.LDAP_BIND_SECRET,
+        "LDAP_AUTHORIZED_GROUP": env_config.LDAP_AUTHORIZED_GROUP,
+        "LDAP_FALLBACK_DOMAIN": env_config.LDAP_FALLBACK_DOMAIN,
+        "ALLOWED_ORIGINS": env_config.ALLOWED_ORIGINS,
         "DATA_WRITABLE": os.access(os.path.dirname(config_file), os.W_OK)
         if os.path.exists(os.path.dirname(config_file))
         else False,
@@ -182,7 +182,7 @@ class AppConfigManager:
 
         import secrets
 
-        secret_key = self._config.get("SECRET_KEY") or env_config.secret_key
+        secret_key = self._config.get("SECRET_KEY") or env_config.SECRET_KEY
         if not secret_key:
             secret_key = secrets.token_hex(32)
             if self._config.get("DATA_WRITABLE"):
@@ -224,49 +224,49 @@ class AppConfigManager:
                 logger.error(f"Failed to persist config: {e}")
 
     @property
-    def admin_user(self):
-        return self.get("ADMIN_USER", env_config.admin_user)
+    def ADMIN_USER(self):
+        return self.get("ADMIN_USER", env_config.ADMIN_USER)
 
     @property
-    def admin_secret(self):
-        return self.get("ADMIN_SECRET", env_config.admin_secret)
+    def ADMIN_SECRET(self):
+        return self.get("ADMIN_SECRET", env_config.ADMIN_SECRET)
 
     @property
-    def ldap_server(self):
-        return self.get("LDAP_SERVER", env_config.ldap_server)
+    def LDAP_SERVER(self):
+        return self.get("LDAP_SERVER", env_config.LDAP_SERVER)
 
     @property
-    def ldap_base_dn(self):
-        return self.get("LDAP_BASE_DN", env_config.ldap_base_dn)
+    def LDAP_BASE_DN(self):
+        return self.get("LDAP_BASE_DN", env_config.LDAP_BASE_DN)
 
     @property
-    def ldap_bind_user_dn(self):
-        return self.get("LDAP_BIND_USER_DN", env_config.ldap_bind_user_dn)
+    def LDAP_BIND_USER_DN(self):
+        return self.get("LDAP_BIND_USER_DN", env_config.LDAP_BIND_USER_DN)
 
     @property
-    def ldap_bind_secret(self):
-        return self.get("LDAP_BIND_SECRET", env_config.ldap_bind_secret)
+    def LDAP_BIND_SECRET(self):
+        return self.get("LDAP_BIND_SECRET", env_config.LDAP_BIND_SECRET)
 
     @property
-    def ldap_authorized_group(self):
-        return self.get("LDAP_AUTHORIZED_GROUP", env_config.ldap_authorized_group)
+    def LDAP_AUTHORIZED_GROUP(self):
+        return self.get("LDAP_AUTHORIZED_GROUP", env_config.LDAP_AUTHORIZED_GROUP)
 
     @property
-    def ldap_fallback_domain(self):
-        return self.get("LDAP_FALLBACK_DOMAIN", env_config.ldap_fallback_domain)
+    def LDAP_FALLBACK_DOMAIN(self):
+        return self.get("LDAP_FALLBACK_DOMAIN", env_config.LDAP_FALLBACK_DOMAIN)
 
     @property
-    def secret_key(self):
-        return self.get("SECRET_KEY") or env_config.secret_key
+    def SECRET_KEY(self):
+        return self.get("SECRET_KEY") or env_config.SECRET_KEY
 
     @property
-    def data_dir(self):
+    def DATA_DIR(self):
         if not self._data_dir:
             self.init_config()
         return self._data_dir
 
     @property
-    def ssh_dir(self):
+    def SSH_DIR(self):
         if not self._data_dir:
             self.init_config()
         _, _, ssh_dir = get_config_paths(self._data_dir)

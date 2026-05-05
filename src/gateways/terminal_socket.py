@@ -29,7 +29,7 @@ from src.constants import IDENTIFICATION_REGEX
 from src.app import app
 
 logger = logging.getLogger(__name__)
-GEMINI_BIN = env_config.gemini_bin
+GEMINI_BIN = env_config.GEMINI_BIN
 
 
 @socketio.on("connect")
@@ -54,7 +54,7 @@ def handle_connect(auth=None):
         raise ConnectionRefusedError("invalid_csrf")
 
     user_id = session.get("user_id") or (
-        "admin" if env_config.bypass_auth_for_testing else None
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
     logger.debug(f"handle_connect: user_id={user_id}")
     if user_id and sid:
@@ -64,7 +64,7 @@ def handle_connect(auth=None):
         join_room(f"user_{user_id}")
         logger.debug(f"SID {sid} joined user room user_{user_id}")
 
-    if env_config.bypass_auth_for_testing:
+    if env_config.BYPASS_AUTH_FOR_TESTING:
         return True
 
     if not session.get("authenticated"):
@@ -79,7 +79,7 @@ def on_terminate_session(data):
 
     sid = getattr(socket_request, "sid", None)
     user_id = session.get("user_id") or (
-        "admin" if env_config.bypass_auth_for_testing else None
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
 
     tab_id = data.get("tab_id")
@@ -249,7 +249,7 @@ def on_join_room(data):
 
         # Trigger a global sync for this user to ensure they have the full tab list
         user_id = session.get("user_id") or (
-            "admin" if env_config.bypass_auth_for_testing else None
+            "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
         )
         if user_id:
             if session_manager.persistence:
@@ -269,7 +269,7 @@ def on_join_room(data):
 def update_title(data):
     sid = getattr(request, "sid", None)
     user_id = session.get("user_id") or (
-        "admin" if env_config.bypass_auth_for_testing else None
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
     tab_id = data.get("tab_id") or session_manager.sid_to_tabid.get(sid)
     title = data.get("title")
@@ -282,7 +282,7 @@ def update_title(data):
 def update_resume(data):
     sid = getattr(request, "sid", None)
     user_id = session.get("user_id") or (
-        "admin" if env_config.bypass_auth_for_testing else None
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
     tab_id = data.get("tab_id") or session_manager.sid_to_tabid.get(sid)
     resume = data.get("resume")
@@ -296,7 +296,7 @@ def pty_input(data):
 
     sid = getattr(socket_request, "sid", None)
     user_id = session.get("user_id") or (
-        "admin" if env_config.bypass_auth_for_testing else None
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
     # Get tab_id from the session mapping
     tab_id = session_manager.sid_to_tabid.get(sid)
@@ -328,7 +328,7 @@ def pty_input(data):
 def pty_resize(data):
     sid = getattr(request, "sid", None)
     user_id = session.get("user_id") or (
-        "admin" if env_config.bypass_auth_for_testing else None
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
     tab_id = session_manager.sid_to_tabid.get(sid)
     session_obj = session_manager.get_session(tab_id, user_id)
@@ -345,7 +345,7 @@ def pty_restart(data):
 
     sid = getattr(socket_request, "sid", None)
     user_id = session.get("user_id") or (
-        "admin" if env_config.bypass_auth_for_testing else None
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
     tab_id = data.get("tab_id")
     mode = data.get("mode")
@@ -570,10 +570,10 @@ def pty_restart(data):
 
 @socketio.on("get_management_sessions")
 def handle_get_management_sessions(*args):
-    if not env_config.bypass_auth_for_testing and not session.get("authenticated"):
+    if not env_config.BYPASS_AUTH_FOR_TESTING and not session.get("authenticated"):
         return {"error": "unauthenticated"}
     user_id = session.get("user_id") or (
-        "admin" if env_config.bypass_auth_for_testing else None
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
     )
 
     active = session_manager.list_sessions(user_id)
@@ -606,7 +606,7 @@ def handle_get_management_sessions(*args):
 
 @socketio.on("get_all_sessions")
 def handle_get_all_sessions(data=None):
-    if not env_config.bypass_auth_for_testing and not session.get("authenticated"):
+    if not env_config.BYPASS_AUTH_FOR_TESTING and not session.get("authenticated"):
         return {"error": "unauthenticated"}
     with session_results_cache_lock:
         return {"status": "success", "cache": dict(session_results_cache)}
@@ -614,7 +614,7 @@ def handle_get_all_sessions(data=None):
 
 @socketio.on("get_sessions")
 def handle_get_sessions(data):
-    if not env_config.bypass_auth_for_testing and not session.get("authenticated"):
+    if not env_config.BYPASS_AUTH_FOR_TESTING and not session.get("authenticated"):
         return {"error": "unauthenticated"}
 
     ssh_target = data.get("ssh_target")

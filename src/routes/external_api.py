@@ -10,7 +10,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-GEMINI_BIN = env_config.gemini_bin
+GEMINI_BIN = env_config.GEMINI_BIN
 
 external_api_bp = Blueprint(
     "external_api",

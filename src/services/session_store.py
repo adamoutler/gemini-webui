@@ -231,7 +231,7 @@ class SessionManager:
             cmd = build_ssh_args(session.ssh_target, ssh_dir_path)
             cmd.extend(["--", session.ssh_target, f"bash -c {shlex.quote(remote_cmd)}"])
         else:
-            data_dir = env_config.data_dir
+            data_dir = env_config.DATA_DIR
             work_dir = os.path.join(data_dir, "workspace")
             if os.path.exists(work_dir):
                 cmd = ["/bin/sh", "-c", f"cd {shlex.quote(work_dir)} && {find_cmd}"]
@@ -246,5 +246,5 @@ class SessionManager:
             pass
 
 
-data_dir = env_config.data_dir if "env_config" in globals() else None
+data_dir = env_config.DATA_DIR if "env_config" in globals() else None
 session_manager = SessionManager(data_dir=data_dir)

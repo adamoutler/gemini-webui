@@ -19,7 +19,7 @@ from src.config import env_config, get_config, get_config_paths
 from src.extensions import socketio, csrf, talisman
 from src.auth import require_auth
 
-if not env_config.skip_monkey_patch:
+if not env_config.SKIP_MONKEY_PATCH:
     try:
         from infrastructure.process_manager import apply_subprocess_monkey_patch
     except ImportError:
@@ -58,7 +58,7 @@ def create_app(test_config=None):
     if test_config:
         app.config.update(test_config)
 
-    data_dir = app.config.get("DATA_DIR") or env_config.data_dir
+    data_dir = app.config.get("DATA_DIR") or env_config.DATA_DIR
     data_dir, config_file, ssh_dir = get_config_paths(data_dir)
     logger.info(f"Initializing app with DATA_DIR: {data_dir}")
 
@@ -70,7 +70,7 @@ def create_app(test_config=None):
 
     import secrets
 
-    secret_key = config.get("SECRET_KEY") or env_config.secret_key
+    secret_key = config.get("SECRET_KEY") or env_config.SECRET_KEY
     if not secret_key:
         secret_key = secrets.token_hex(32)
         if config.get("DATA_WRITABLE"):
@@ -94,18 +94,18 @@ def create_app(test_config=None):
         SESSION_COOKIE_SAMESITE="Lax",
         DATA_DIR=data_dir,
         WTF_CSRF_ENABLED=csrf_enabled,
-        ADMIN_USER=app.config.get("ADMIN_USER") or env_config.admin_user,
-        ADMIN_SECRET=app.config.get("ADMIN_SECRET") or env_config.admin_secret,
-        LDAP_SERVER=app.config.get("LDAP_SERVER") or env_config.ldap_server,
-        LDAP_BASE_DN=app.config.get("LDAP_BASE_DN") or env_config.ldap_base_dn,
+        ADMIN_USER=app.config.get("ADMIN_USER") or env_config.ADMIN_USER,
+        ADMIN_SECRET=app.config.get("ADMIN_SECRET") or env_config.ADMIN_SECRET,
+        LDAP_SERVER=app.config.get("LDAP_SERVER") or env_config.LDAP_SERVER,
+        LDAP_BASE_DN=app.config.get("LDAP_BASE_DN") or env_config.LDAP_BASE_DN,
         LDAP_BIND_USER_DN=app.config.get("LDAP_BIND_USER_DN")
-        or env_config.ldap_bind_user_dn,
+        or env_config.LDAP_BIND_USER_DN,
         LDAP_BIND_SECRET=app.config.get("LDAP_BIND_SECRET")
-        or env_config.ldap_bind_secret,
+        or env_config.LDAP_BIND_SECRET,
         LDAP_AUTHORIZED_GROUP=app.config.get("LDAP_AUTHORIZED_GROUP")
-        or env_config.ldap_authorized_group,
+        or env_config.LDAP_AUTHORIZED_GROUP,
         LDAP_FALLBACK_DOMAIN=app.config.get("LDAP_FALLBACK_DOMAIN")
-        or env_config.ldap_fallback_domain,
+        or env_config.LDAP_FALLBACK_DOMAIN,
     )
 
     # Initialize extensions
@@ -141,10 +141,10 @@ def create_app(test_config=None):
 
     # Initialize socketio
     if getattr(socketio, "server", None) is None:
-        if env_config.bypass_auth_for_testing:
+        if env_config.BYPASS_AUTH_FOR_TESTING:
             socketio.init_app(app, cors_allowed_origins="*", async_mode="eventlet")
         else:
-            allowed_origins_raw = env_config.allowed_origins_raw
+            allowed_origins_raw = env_config.ALLOWED_ORIGINS_RAW
             if allowed_origins_raw:
                 allowed_origins = allowed_origins_raw.split(",")
             else:
@@ -195,7 +195,7 @@ if __name__ == "__main__":
 
         if (
             os.environ.get("WERKZEUG_RUN_MAIN") == "true"
-            or not env_config.flask_use_reloader
+            or not env_config.FLASK_USE_RELOADER
         ):
             from src.services.session_store import session_manager
 
@@ -207,19 +207,19 @@ if __name__ == "__main__":
             from src.services.session_poller import session_poller_manager
 
             session_poller_manager.start()
-            if not env_config.skip_preloader:
+            if not env_config.SKIP_PRELOADER:
                 import src.gateways.terminal_socket
 
                 socketio.start_background_task(
                     src.gateways.terminal_socket.background_session_preloader
                 )
 
-    debug_mode = env_config.flask_debug
-    use_reloader = env_config.flask_use_reloader
+    debug_mode = env_config.FLASK_DEBUG
+    use_reloader = env_config.FLASK_USE_RELOADER
     socketio.run(
         app,
         host="0.0.0.0",
-        port=env_config.port,
+        port=env_config.PORT,
         debug=debug_mode,
         use_reloader=use_reloader,
     )

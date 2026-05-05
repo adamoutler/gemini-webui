@@ -269,7 +269,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             cmd.extend(["--", clean_target, login_wrapped_cmd])
         else:
             # Use workspace for local session listing to match startSession
-            data_dir = env_config.data_dir
+            data_dir = env_config.DATA_DIR
             work_dir = os.path.join(data_dir, "workspace")
             # In fake/test mode, we don't cd to workspace because the mock bin is often a relative path
             if os.path.exists(work_dir) and not os.environ.get("GEMWEBUI_HARNESS"):
@@ -364,7 +364,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
 
 def _wrap_with_multiplexer(cmd):
     """Wraps the terminal command in a multiplexer (tmux or dtach) to prevent visual corruption on detach/re-attach."""
-    if env_config.skip_multiplexer:
+    if env_config.SKIP_MULTIPLEXER:
         return cmd
 
     import shutil
@@ -500,7 +500,7 @@ def build_terminal_command(
                 else:
                     env_exports += f"export {k}={shlex.quote(str(v))}; "
 
-        data_dir = env_config.data_dir
+        data_dir = env_config.DATA_DIR
         work_dir = os.path.join(data_dir, "workspace")
         quoted_work_dir = shlex.quote(work_dir)
         setup_cmd = f"mkdir -p {quoted_work_dir} 2>/dev/null || {{ "

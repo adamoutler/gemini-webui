@@ -231,7 +231,7 @@ def upload_file():
         if not filename:
             return jsonify({"status": "error", "message": "Invalid filename"}), 400
 
-        workspace_dir = os.path.join(env_config.data_dir, "workspace")
+        workspace_dir = os.path.join(env_config.DATA_DIR, "workspace")
         base_path = os.path.abspath(workspace_dir)
         save_path = os.path.abspath(os.path.join(base_path, filename))
 
@@ -268,7 +268,7 @@ def upload_file():
 @api_bp.route("/api/download/<path:filename>", methods=["GET"])
 @authenticated_only
 def download_file(filename):
-    workspace_dir = os.path.join(env_config.data_dir, "workspace")
+    workspace_dir = os.path.join(env_config.DATA_DIR, "workspace")
     try:
         base_path = os.path.abspath(workspace_dir)
         target_path = os.path.abspath(os.path.join(base_path, filename))
@@ -357,7 +357,7 @@ def list_tasks():
     from flask import session
 
     uid = str(session.get("user_id")) if session.get("user_id") else "unknown"
-    if env_config.bypass_auth_for_testing:
+    if env_config.BYPASS_AUTH_FOR_TESTING:
         uid = "admin"
 
     with active_monitors_lock:

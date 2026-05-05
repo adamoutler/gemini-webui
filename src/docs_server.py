@@ -65,7 +65,8 @@ def openapi():
 
 
 def run_docs_server():
-    app.run(host="127.0.0.1", port=env_config.DOCS_PORT, debug=False)
+    port = getattr(env_config, "DOCS_PORT", 8000)
+    app.run(host="127.0.0.1", port=port, debug=False)
 
 
 if __name__ == "__main__":
