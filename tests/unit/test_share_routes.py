@@ -22,7 +22,7 @@ def client():
 def test_create_share_unauthenticated(client):
     with patch.object(
         type(env_config),
-        "BYPASS_AUTH_FOR_TESTING",
+        "bypass_auth_for_testing",
         new_callable=PropertyMock,
         return_value=False,
     ):
@@ -37,7 +37,7 @@ def test_create_share_unauthenticated(client):
 def test_list_shares_unauthenticated(client):
     with patch.object(
         type(env_config),
-        "BYPASS_AUTH_FOR_TESTING",
+        "bypass_auth_for_testing",
         new_callable=PropertyMock,
         return_value=False,
     ):
@@ -49,7 +49,7 @@ def test_list_shares_unauthenticated(client):
 def test_delete_share_unauthenticated(client):
     with patch.object(
         type(env_config),
-        "BYPASS_AUTH_FOR_TESTING",
+        "bypass_auth_for_testing",
         new_callable=PropertyMock,
         return_value=False,
     ):
@@ -62,7 +62,7 @@ def test_share_lifecycle(client):
     # Authenticate for testing
     with patch.object(
         type(env_config),
-        "BYPASS_AUTH_FOR_TESTING",
+        "bypass_auth_for_testing",
         new_callable=PropertyMock,
         return_value=True,
     ):

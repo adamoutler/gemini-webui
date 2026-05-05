@@ -10,7 +10,7 @@ from src.config import env_config
 class PromptManager:
     def __init__(self, data_dir: Optional[str] = None):
         if data_dir is None:
-            self.base_dir = Path(env_config.DATA_DIR)
+            self.base_dir = Path(env_config.data_dir)
         else:
             self.base_dir = Path(data_dir)
 

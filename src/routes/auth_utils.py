@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 def authenticated_only(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
-        if not env_config.BYPASS_AUTH_FOR_TESTING:
+        if not env_config.bypass_auth_for_testing:
             if not session.get("authenticated"):
                 return {"error": "unauthenticated"}, 401
         return f(*args, **kwargs)

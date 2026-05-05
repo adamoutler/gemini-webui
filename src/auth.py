@@ -16,7 +16,7 @@ def authenticate():
 def authenticated_only(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
-        bypass = env_config.BYPASS_AUTH_FOR_TESTING
+        bypass = env_config.bypass_auth_for_testing
         is_auth = session.get("authenticated")
         if bypass or is_auth:
             return f(*args, **kwargs)
@@ -27,7 +27,7 @@ def authenticated_only(f):
 
 def require_auth():
     if (
-        env_config.BYPASS_AUTH_FOR_TESTING
+        env_config.bypass_auth_for_testing
         or current_app.config.get("BYPASS_AUTH_FOR_TESTING") == "true"
     ):
         session["authenticated"] = True

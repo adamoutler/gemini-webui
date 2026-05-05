@@ -74,13 +74,13 @@ def zombie_reaper_task(sleep_interval=2):
 
 def cleanup_orphaned_ptys(app, session_manager, env_config):
     """Cleanup orphaned sessions based on ORPHANED_SESSION_TTL."""
-    is_testing = app.config.get("TESTING") or env_config.BYPASS_AUTH_FOR_TESTING
+    is_testing = app.config.get("TESTING") or env_config.bypass_auth_for_testing
     while True:
         try:
             # Use config TTL if available, otherwise fallback to 2s in testing or None (disabled) in production
             ttl = app.config.get("ORPHANED_SESSION_TTL")
             if ttl is None:
-                ttl = env_config.ORPHANED_SESSION_TTL
+                ttl = env_config.orphaned_session_ttl
             if ttl is None:
                 ttl = 2 if is_testing else None
 

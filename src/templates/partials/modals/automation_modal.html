@@ -63,9 +63,15 @@
           id="automation-schedule-form"
           style="display: flex; flex-direction: column; gap: 10px"
         >
+          <label for="automation-host-select" class="visually-hidden"
+            >Target Host</label
+          >
           <select id="automation-host-select">
             <option value="">Select Target Host...</option>
           </select>
+          <label for="automation-prompt" class="visually-hidden"
+            >Command/Prompt</label
+          >
           <textarea
             id="automation-prompt"
             placeholder="Enter command/prompt here..."
@@ -73,11 +79,11 @@
             style="resize: vertical"
           ></textarea>
           <div style="display: flex; gap: 10px; align-items: center">
-            <label>Start Time:</label>
+            <label for="automation-start-time">Start Time:</label>
             <input type="datetime-local" id="automation-start-time" />
           </div>
           <div style="display: flex; gap: 10px; align-items: center">
-            <label>Recurrence:</label>
+            <label for="automation-recurrence-freq">Recurrence:</label>
             <input
               type="number"
               id="automation-recurrence-freq"

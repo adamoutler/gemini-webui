@@ -32,13 +32,13 @@ class TerminalService:
         """
         _, _, ssh_dir_path = get_config_paths()
 
-        gemini_bin_override = env_config.GEMINI_BIN
+        gemini_bin_override = env_config.gemini_bin
         if is_fake:
             env_vars = env_vars or {}
             env_vars["GEMINI_WEBUI_HARNESS_ID"] = tab_id
             ssh_target = None
         else:
-            if env_config.BYPASS_AUTH_FOR_TESTING:
+            if env_config.bypass_auth_for_testing:
                 env_vars = env_vars or {}
                 env_vars["GEMINI_WEBUI_HARNESS_ID"] = tab_id
 
@@ -75,7 +75,7 @@ class TerminalService:
                     else:
                         env[k] = str(v)
 
-            if is_fake or env_config.BYPASS_AUTH_FOR_TESTING:
+            if is_fake or env_config.bypass_auth_for_testing:
                 env["GEMINI_WEBUI_HARNESS_ID"] = tab_id
 
             try:
@@ -119,7 +119,7 @@ class TerminalService:
         )
 
         cmd = []
-        gemini_bin = env_config.GEMINI_BIN
+        gemini_bin = env_config.gemini_bin
 
         if ssh_target:
             import re
@@ -149,7 +149,7 @@ class TerminalService:
 
             cmd.extend(["--", clean_target, login_wrapped_cmd])
         else:
-            data_dir = env_config.DATA_DIR
+            data_dir = env_config.data_dir
             work_dir = os.path.join(data_dir, "workspace")
             if os.path.exists(work_dir):
                 cmd = [

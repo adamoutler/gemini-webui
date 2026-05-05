@@ -23,7 +23,7 @@ terminal_bp = Blueprint("sessions", __name__)
 @authenticated_only
 def list_persisted_sessions():
     user_id = session.get("user_id") or (
-        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+        "admin" if env_config.bypass_auth_for_testing else None
     )
     if not session_manager.persistence:
         return jsonify({})
@@ -39,7 +39,7 @@ def list_persisted_sessions():
 @authenticated_only
 def migrate_tabs():
     user_id = session.get("user_id") or (
-        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+        "admin" if env_config.bypass_auth_for_testing else None
     )
     data = request.json
     tabs = data.get("tabs", [])
@@ -73,7 +73,7 @@ def migrate_tabs():
 @authenticated_only
 def list_active_sessions():
     user_id = session.get("user_id") or (
-        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+        "admin" if env_config.bypass_auth_for_testing else None
     )
     return jsonify(session_manager.list_sessions(user_id))
 
@@ -89,7 +89,7 @@ def terminate_session(tab_id):
         return jsonify({"error": "Invalid tab_id format"}), 400
 
     user_id = session.get("user_id") or (
-        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+        "admin" if env_config.bypass_auth_for_testing else None
     )
 
     old_session = session_manager.remove_session(tab_id, user_id)
@@ -125,7 +125,7 @@ def terminate_session(tab_id):
 def search_files(session_id):
     q = request.args.get("q", "")
     user_id = session.get("user_id") or (
-        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+        "admin" if env_config.bypass_auth_for_testing else None
     )
     session_obj = session_manager.get_session(session_id, user_id)
     if not session_obj:
@@ -174,7 +174,7 @@ def inject_sess():
     from src.models.session import Session
 
     user_id = session.get("user_id") or (
-        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+        "admin" if env_config.bypass_auth_for_testing else None
     )
     s = Session("tab_backendtest123", 999, 9999, user_id=user_id)
     session_manager.add_session(s)
