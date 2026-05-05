@@ -12,14 +12,14 @@ def authenticated_server(tmp_path, playwright):
     env = os.environ.copy()
     env["SECRET_KEY"] = "testsecret"
     env["ADMIN_USER"] = "testuser"
-    env["ADMIN_SECRET"] = "testpass"
+    env["ADMIN_PASS"] = "testpass"
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         port = str(s.getsockname()[1])
     env["PORT"] = port
     env["ADMIN_USER"] = "testuser"
-    env["ADMIN_SECRET"] = "testpass"
+    env["ADMIN_PASS"] = "testpass"
     env["DATA_DIR"] = str(tmp_path)
     env["FLASK_USE_RELOADER"] = "false"
     env["SKIP_MONKEY_PATCH"] = "true"
