@@ -255,12 +255,14 @@ def upload_file():
             )
 
         return jsonify({"status": "success", "filename": filename})
-    except Exception as e:
+    except Exception:
         import traceback
 
         with open("/tmp/upload_err2.log", "w") as f:
             f.write(traceback.format_exc())
-        return jsonify({"status": "error", "message": str(e)}), 500
+        return jsonify(
+            {"status": "error", "message": "An internal error occurred during upload"}
+        ), 500
 
 
 @api_bp.route("/api/download/<path:filename>", methods=["GET"])

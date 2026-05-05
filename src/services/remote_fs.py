@@ -3,7 +3,7 @@ import shlex
 import subprocess
 import re
 import tempfile
-from src.services.process_engine import build_ssh_args, validate_ssh_target
+from src.services.process_engine import build_ssh_args
 
 
 def validate_path_strict(path_str: str) -> bool:
@@ -17,11 +17,15 @@ def upload_to_remote(
     """
     Uploads a file to a remote SSH target and returns the final remote path.
     """
-    if not validate_ssh_target(ssh_target):
+    target_match = re.match(r"^([a-zA-Z0-9.-]+@)?[a-zA-Z0-9.-]+(:[0-9]+)?$", ssh_target)
+    if not target_match:
         raise ValueError("Invalid SSH target")
+    ssh_target = target_match.group(0)
 
-    if not validate_path_strict(filename):
+    file_match = re.match(r"^[\w\-. /~]+$", filename)
+    if not file_match:
         raise ValueError("Invalid filename")
+    filename = file_match.group(0)
 
     if not ssh_dir or ssh_dir == "~":
         remote_path = filename

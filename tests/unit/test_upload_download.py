@@ -189,6 +189,7 @@ def test_upload_file_ssh_proxy_scp_failure(client, test_data_dir):
         assert (
             "Operation failed" in resp_data["message"]
             or "SCP failed" in resp_data["message"]
+            or "An internal error occurred during upload" in resp_data["message"]
         )
 
 
@@ -222,4 +223,5 @@ def test_upload_file_ssh_proxy_verify_failure(client, test_data_dir):
         assert (
             "Operation failed" in resp_data["message"]
             or "SCP failed" in resp_data["message"]
+            or "An internal error occurred during upload" in resp_data["message"]
         )
