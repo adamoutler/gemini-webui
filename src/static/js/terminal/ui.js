@@ -54,7 +54,13 @@ export function startSession(
   if (dir === "null" || dir === "undefined") dir = "";
 
   tab.state = "terminal";
-  tab.session = { type, ssh_target: target, ssh_dir: dir, resume: resumeParam };
+  tab.session = {
+    type,
+    mode: type,
+    ssh_target: target,
+    ssh_dir: dir,
+    resume: resumeParam,
+  };
   tab.shouldReclaim = shouldReclaim;
 
   // Back button hijacking: push state so "back" has something to pop

@@ -408,11 +408,11 @@ def build_terminal_command(
         quoted_gemini = shlex.quote(gemini_bin)
         gemini_base_cmd = quoted_gemini
         if resume is True or str(resume).lower() == "true":
-            gemini_base_cmd += " -r"
+            gemini_base_cmd += " --resume"
         elif str(resume).lower() == "new":
-            pass  # Start a fresh session with no -r flag; JS predicts the ID for future reconnects
+            pass  # Start a fresh session with no --resume flag; JS predicts the ID for future reconnects
         elif resume and str(resume).lower() != "false":
-            gemini_base_cmd += f" -r {shlex.quote(str(resume))}"
+            gemini_base_cmd += f" --resume {shlex.quote(str(resume))}"
 
         remote_prefix = get_remote_command_prefix(
             ssh_dir, gemini_bin, env_vars=env_vars
@@ -422,7 +422,7 @@ def build_terminal_command(
         remote_cmd = f"{remote_prefix} "
         remote_cmd += f"if command -v {quoted_gemini} >/dev/null 2>&1; then "
 
-        if "-r" in gemini_base_cmd:
+        if "--resume" in gemini_base_cmd:
             remote_cmd += f"{gemini_base_cmd}; "
             remote_cmd += "if [ $? -ne 0 ]; then "
             remote_cmd += "clear; printf '\\r\\n\\033[1;33mResume failed, starting new session...\\033[0m\\r\\n'; "
