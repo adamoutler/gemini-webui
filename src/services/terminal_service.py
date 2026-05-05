@@ -125,7 +125,7 @@ class TerminalService:
             import re
 
             target_match = re.match(
-                r"^([a-zA-Z0-9.-]+@)?[a-zA-Z0-9.-]+(:[0-9]+)?$", ssh_target
+                r"^([a-zA-Z\d.-]+@)?[a-zA-Z\d.-]+(:\d+)?$", ssh_target
             )
             if not target_match:
                 return {"status": "error", "message": "Invalid SSH target format"}, 400

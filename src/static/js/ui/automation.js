@@ -1,5 +1,3 @@
-import { fetchWithCSRF } from "../core/api.js";
-
 export function openAutomationDashboard() {
   document.getElementById("automation-modal").style.display = "block";
   loadAutomationHosts();

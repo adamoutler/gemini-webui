@@ -125,13 +125,17 @@ def handle_disconnect():
         session_manager.orphan_session(tab_id, sid)
 
     with active_fake_sockets_lock:
-        for t_id, active_sid in list(active_fake_sockets.items()):
-            if active_sid == sid:
-                logger.info(
-                    f"Ephemeral session {t_id} disconnected, purging to prevent reuse."
-                )
-                active_fake_sockets.pop(t_id, None)
-                ephemeral_sessions.pop(t_id, None)
+        to_remove = [
+            t_id
+            for t_id, active_sid in active_fake_sockets.items()
+            if active_sid == sid
+        ]
+        for t_id in to_remove:
+            logger.info(
+                f"Ephemeral session {t_id} disconnected, purging to prevent reuse."
+            )
+            active_fake_sockets.pop(t_id, None)
+            ephemeral_sessions.pop(t_id, None)
 
     if tab_id:
         session_manager.orphan_session(tab_id)
