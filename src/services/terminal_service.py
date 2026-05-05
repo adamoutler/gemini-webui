@@ -114,7 +114,6 @@ class TerminalService:
         """
         import subprocess
         from src.services.process_engine import (
-            validate_ssh_target,
             get_remote_command_prefix,
             build_ssh_args,
         )
@@ -123,8 +122,14 @@ class TerminalService:
         gemini_bin = env_config.GEMINI_BIN
 
         if ssh_target:
-            if not validate_ssh_target(ssh_target):
+            import re
+
+            target_match = re.match(
+                r"^([a-zA-Z0-9.-]+@)?[a-zA-Z0-9.-]+(:[0-9]+)?$", ssh_target
+            )
+            if not target_match:
                 return {"status": "error", "message": "Invalid SSH target format"}, 400
+            ssh_target = target_match.group(0)
 
             remote_prefix = get_remote_command_prefix(ssh_dir, gemini_bin)
             remote_cmd = (
