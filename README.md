@@ -1,5 +1,11 @@
 # Gemini WebUI
 
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=bugs)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
+[![Build and Publish](https://github.com/adamoutler/gemini-webui/actions/workflows/build-and-publish.yml/badge.svg)](https://github.com/adamoutler/gemini-webui/actions/workflows/build-and-publish.yml)
+
 **The ultimate management interface for your Gemini AI, built for mobility and persistence.**
 
 ![Gemini WebUI Address Bar and Interface](docs/images/addressBar-New-Settings-restart-files-tabs-actionrequiredtab-agenttext.png)
