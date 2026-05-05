@@ -24,7 +24,7 @@ def get_sessions():
     return [1]
 
 
-if "--list-sessions" in sys.argv:
+if "--list-sessions" in sys.argv or "ls" in sys.argv:
     sessions = get_sessions()
     print(f"Available sessions for this project ({len(sessions)}):")
     for sid in sessions:
