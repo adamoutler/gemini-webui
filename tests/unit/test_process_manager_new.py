@@ -70,7 +70,7 @@ def test_pty_restart_local_cmd(
     mock_execvpe.assert_called_once()
     cmd = mock_execvpe.call_args[0][1]
     assert cmd[0] == "/bin/sh"
-    assert "gemini -r" in cmd[2]
+    assert "gemini --resume" in cmd[2]
     assert "WARNING: Persistence volume not found" in cmd[2]
 
 
@@ -105,7 +105,7 @@ def test_pty_restart_ssh_cmd(
 
     remote_cmd = cmd[-1]
     assert "bash -ilc" in remote_cmd
-    assert "gemini -r" in remote_cmd
+    assert "gemini --resume" in remote_cmd
     assert "cd ~" in remote_cmd
     assert "dev/project" in remote_cmd
 
@@ -117,7 +117,7 @@ def test_build_terminal_command_resume_new():
     # Test local
     cmd = build_terminal_command(None, None, "new", "/tmp/.ssh")
     cmd_str = " ".join(cmd)
-    assert "gemini -r" not in cmd_str
+    assert "gemini --resume" not in cmd_str
 
     # Test SSH
     cmd_ssh = build_terminal_command("user@host", "~/dir", "new", "/tmp/.ssh")
@@ -132,12 +132,12 @@ def test_build_terminal_command_resume_id():
     # Test local
     cmd = build_terminal_command(None, None, "123", "/tmp/.ssh")
     cmd_str = " ".join(cmd)
-    assert "gemini -r 123" in cmd_str
+    assert "gemini --resume 123" in cmd_str
 
     # Test SSH
     cmd_ssh = build_terminal_command("user@host", "~/dir", "123", "/tmp/.ssh")
     remote_cmd = cmd_ssh[-1]
-    assert "gemini -r 123" in remote_cmd
+    assert "gemini --resume 123" in remote_cmd
 
 
 @pytest.mark.timeout(60)
@@ -147,13 +147,12 @@ def test_build_terminal_command_resume_true():
     # Test local
     cmd = build_terminal_command(None, None, True, "/tmp/.ssh")
     cmd_str = " ".join(cmd)
-    assert "gemini -r" in cmd_str
-    assert "gemini -r True" not in cmd_str
-    assert "gemini -r true" not in cmd_str
-
+    assert "gemini --resume" in cmd_str
+    assert "gemini --resume True" not in cmd_str
+    assert "gemini --resume true" not in cmd_str
     # Test SSH
     cmd_ssh = build_terminal_command("user@host", "~/dir", True, "/tmp/.ssh")
     remote_cmd = cmd_ssh[-1]
-    assert "gemini -r" in remote_cmd
-    assert "gemini -r True" not in remote_cmd
-    assert "gemini -r true" not in remote_cmd
+    assert "gemini --resume" in remote_cmd
+    assert "gemini --resume True" not in remote_cmd
+    assert "gemini --resume true" not in remote_cmd

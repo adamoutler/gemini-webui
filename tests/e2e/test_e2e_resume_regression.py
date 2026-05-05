@@ -263,8 +263,7 @@ def test_auto_resume_after_server_restart(custom_server, tmp_path, playwright):
 
     assert (
         "The TEST_VALUE is AUTO_RESUME_SUCCESS" in term_text
-    ), "Failed to auto-resume with -r after server restart"
-
+    ), "Failed to auto-resume with --resume after server restart"
     context.close()
     browser.close()
 

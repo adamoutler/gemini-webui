@@ -365,6 +365,10 @@ export async function renderLauncher(id) {
         }, index * 500);
       }
     });
+
+    if (globalThis.globalState && globalThis.globalState.activeTabId === id) {
+      globalThis.switchTab(id);
+    }
   } finally {
     delete container.dataset.rendering;
   }

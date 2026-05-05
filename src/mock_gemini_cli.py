@@ -34,7 +34,9 @@ def run_fake_gemini():
     parser.add_argument(
         "--list-sessions", action="store_true", help="List fake sessions and exit"
     )
-    parser.add_argument("-r", "--resume", type=int, help="Resume a specific session ID")
+    parser.add_argument(
+        "-r", "--resume", type=str, help="Resume a specific session ID or UUID"
+    )
     args = parser.parse_args()
 
     # Hardcoded fake session database (simulates real gemini's session list)
@@ -75,7 +77,10 @@ def run_fake_gemini():
             if os.path.exists(dynamic_sessions_file):
                 with open(dynamic_sessions_file, "r") as f:
                     for line in f:
-                        if line.startswith(f"{args.resume},"):
+                        if (
+                            line.strip().endswith(f",{args.resume}")
+                            or str(args.resume) in line
+                        ):
                             found_dynamic = True
                             break
 

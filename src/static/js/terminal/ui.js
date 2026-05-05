@@ -599,11 +599,18 @@ export function startSession(
     if (tab.shouldReclaim) {
       tab.term.clear();
     }
+    let actualResume = tab.session.resume;
+    const storedResume = globalThis.localStorage.getItem("geminiResume");
+    if (storedResume && storedResume !== "new" && actualResume === "new") {
+      actualResume = storedResume;
+      tab.session.resume = actualResume;
+    }
+
     tab.socket.emit("restart", {
       tab_id: tabId,
       reclaim: tab.shouldReclaim,
       sid: tab.socket.id,
-      resume: tab.session.resume,
+      resume: actualResume,
       cols: tab.term.cols,
       rows: tab.term.rows,
       ssh_target: target,

@@ -12,17 +12,16 @@ export function filterTerminalFluff(text) {
   if (!text) return "";
   let lines = text.split("\n");
   lines = lines.map((line) => {
-    if (line.includes("workspace (") && line.includes("branch:")) return null;
-    if (line.includes("Shift+Tab to accept edits")) return null;
+    if (line.includes("workspace (") && line.includes("branch:"))
+      return " ".repeat(line.length);
+    if (line.includes("Shift+Tab to accept edits"))
+      return " ".repeat(line.length);
     if (/^[\u2500-\u259F \t\r]+$/.test(line) && /[\u2500-\u259F]/.test(line)) {
-      return null;
+      return " ".repeat(line.length);
     }
-    let cleaned = line.replace(/[\u2500-\u259F]/g, "");
-    return cleaned.replace(/[ \t\r]+$/, "");
+    let cleaned = line.replace(/[\u2500-\u259F]/g, " ");
+    return cleaned;
   });
-  lines = lines.filter((line) => line !== null);
-  while (lines.length > 0 && lines[0] === "") lines.shift();
-  while (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
   return lines.join("\n");
 }
 

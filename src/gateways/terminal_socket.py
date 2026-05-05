@@ -471,12 +471,14 @@ def pty_restart(data):
         logger.info(f"Killing old session {tab_id} for fresh restart")
         kill_and_reap(old_session.pid)
 
-    resume = data.get("resume", True)
+    resume = data.get("resume")
     if isinstance(resume, str):
         if resume.lower() == "true":
             resume = True
         elif resume.lower() == "false":
             resume = False
+    elif resume is None:
+        resume = True
 
     cols = data.get("cols", 80)
     rows = data.get("rows", 24)

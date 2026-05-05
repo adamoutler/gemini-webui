@@ -72,7 +72,9 @@ export function getGlobalSocket() {
               );
               console.log("Found match for tab:", match);
               if (match && match.uuid) {
-                t.session.resume = match.uuid;
+                if (t.session) {
+                  t.session.resume = match.uuid;
+                }
                 const socket = getGlobalSocket();
                 if (socket && socket.connected) {
                   socket.emit("update_resume", {

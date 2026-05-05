@@ -39,10 +39,10 @@ if "--list-sessions" in sys.argv:
 
 session_id = "1"
 is_new_session = True
-if "-r" in sys.argv:
+if "--resume" in sys.argv:
     is_new_session = False
     try:
-        r_idx = sys.argv.index("-r")
+        r_idx = sys.argv.index("--resume")
         if r_idx + 1 < len(sys.argv):
             session_id = sys.argv[r_idx + 1]
     except ValueError:
@@ -73,10 +73,10 @@ print(
 )
 if is_new_session and "--list-sessions" not in sys.argv:
     sessions = get_sessions()
-    if "-r" in sys.argv and session_id != "1":
-        new_id = int(session_id)
+    if "--resume" in sys.argv and session_id != "1":
+        new_id = session_id
     else:
-        new_id = max(sessions) + 1 if sessions else 1
+        new_id = max([int(x) for x in sessions if str(x).isdigit()] or [0]) + 1
         session_id = str(new_id)
         STATE_FILE = os.path.join(work_dir, f"gemini_mock_state_{session_id}.json")
 
@@ -103,7 +103,7 @@ sys.stdout.flush()
 
 memory = {}
 
-if "-r" in sys.argv and not is_new_session:
+if "--resume" in sys.argv and not is_new_session:
     if os.path.exists(STATE_FILE):
         try:
             with open(STATE_FILE, "r") as f:

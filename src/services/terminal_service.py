@@ -42,6 +42,12 @@ class TerminalService:
                 env_vars = env_vars or {}
                 env_vars["GEMINI_WEBUI_HARNESS_ID"] = tab_id
 
+        if isinstance(resume, str):
+            if resume.lower() == "true":
+                resume = True
+            elif resume.lower() == "false":
+                resume = False
+
         cmd = build_terminal_command(
             ssh_target,
             ssh_dir,

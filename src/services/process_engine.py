@@ -407,10 +407,10 @@ def build_terminal_command(
 
         quoted_gemini = shlex.quote(gemini_bin)
         gemini_base_cmd = quoted_gemini
-        if resume is True or str(resume).lower() == "true":
-            gemini_base_cmd += " --resume"
-        elif str(resume).lower() == "new":
+        if str(resume).lower() == "new":
             pass  # Start a fresh session with no --resume flag; JS predicts the ID for future reconnects
+        elif resume is True or str(resume).lower() == "true":
+            gemini_base_cmd += " --resume"
         elif resume and str(resume).lower() != "false":
             gemini_base_cmd += f" --resume {shlex.quote(str(resume))}"
 
@@ -521,14 +521,14 @@ def build_terminal_command(
         gemini_cmd = f"{gemini_executable} {gemini_args}".strip()
 
         if resume is True or str(resume).lower() == "true":
-            gemini_cmd += " -r"
+            gemini_cmd += " --resume"
         elif str(resume).lower() == "new":
-            pass  # Start a fresh session with no -r flag; JS predicts the ID for future reconnects
+            pass  # Start a fresh session with no --resume flag; JS predicts the ID for future reconnects
         elif resume and str(resume).lower() != "false":
-            gemini_cmd += f" -r {shlex.quote(str(resume))}"
+            gemini_cmd += f" --resume {shlex.quote(str(resume))}"
 
         local_cmd = f"if command -v {gemini_executable} >/dev/null 2>&1; then "
-        if "-r" in gemini_cmd:
+        if "--resume" in gemini_cmd:
             local_cmd += f"{gemini_cmd}; "
             local_cmd += "if [ $? -ne 0 ]; then "
             local_cmd += "clear; printf '\\r\\n\\033[1;33mResume failed, starting new session...\\033[0m\\r\\n'; "
