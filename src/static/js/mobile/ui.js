@@ -159,86 +159,11 @@ export class MobileInputUI {
     let oldProxy = document.getElementById("terminal-input-mobile-" + tabId);
     if (oldProxy) oldProxy.remove();
 
-    this.proxyInput = document.createElement("div");
-    this.proxyInput.setAttribute("contenteditable", "true");
+    this.proxyInput = document.createElement("textarea");
     this.proxyInput.id = "terminal-input-mobile-" + tabId;
     this.proxyInput.className = "mobile-text-area";
     this.proxyInput.placeholder = "";
     this.proxyInput.setAttribute("inputmode", "text");
-
-    Object.defineProperty(this.proxyInput, "value", {
-      get: function () {
-        return this.innerText;
-      },
-      set: function (val) {
-        this.innerText = val;
-        // Setting innerText recreates the text node, so we must reposition the cursor to the end.
-        if (document.activeElement === this) {
-          this.setSelectionRange(val.length, val.length);
-        }
-      },
-    });
-
-    Object.defineProperty(this.proxyInput, "selectionStart", {
-      get: function () {
-        const sel = window.getSelection();
-        if (!sel.rangeCount) return 0;
-        const range = sel.getRangeAt(0);
-        const preCaretRange = range.cloneRange();
-        preCaretRange.selectNodeContents(this);
-        preCaretRange.setEnd(range.endContainer, range.endOffset);
-        return preCaretRange.toString().length;
-      },
-      set: function (val) {
-        this.setSelectionRange(val, val);
-      },
-    });
-
-    Object.defineProperty(this.proxyInput, "selectionEnd", {
-      get: function () {
-        return this.selectionStart;
-      },
-      set: function (val) {
-        this.setSelectionRange(this.selectionStart, val);
-      },
-    });
-
-    this.proxyInput.setSelectionRange = function (start, end) {
-      const range = document.createRange();
-      const sel = window.getSelection();
-      let charCount = 0,
-        startNode = this,
-        startOffset = 0;
-
-      const traverseNodes = (node) => {
-        if (node.nodeType === 3) {
-          const nextCharCount = charCount + node.length;
-          if (start <= nextCharCount && startNode === this) {
-            startNode = node;
-            startOffset = start - charCount;
-          }
-          charCount = nextCharCount;
-        } else {
-          for (let i = 0; i < node.childNodes.length; i++) {
-            traverseNodes(node.childNodes[i]);
-          }
-        }
-      };
-      traverseNodes(this);
-
-      if (startNode !== this) {
-        range.setStart(startNode, startOffset);
-        range.setEnd(startNode, startOffset);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      } else if (this.childNodes.length === 0) {
-        // If completely empty, we can just select the element itself
-        range.setStart(this, 0);
-        range.setEnd(this, 0);
-        sel.removeAllRanges();
-        sel.addRange(range);
-      }
-    };
 
     // Make it visible, transparent background, positioned at cursor
     this.proxyInput.style.position = "absolute";

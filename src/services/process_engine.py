@@ -8,10 +8,7 @@ except ImportError:
 import re
 import shlex
 
-try:
-    import eventlet.green.subprocess as subprocess
-except ImportError:
-    import subprocess
+import eventlet.green.subprocess as subprocess
 import time
 
 
