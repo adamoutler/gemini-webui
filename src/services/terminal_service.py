@@ -127,7 +127,6 @@ class TerminalService:
         cmd = []
         gemini_bin = env_config.GEMINI_BIN
 
-        cwd = None
         if ssh_target:
             import re
 
