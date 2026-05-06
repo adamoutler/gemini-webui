@@ -289,7 +289,7 @@ export function startSession(
             cellHeight =
               tab.term._core._renderService.dimensions.css.cell.height;
           }
-        } catch (e) {}
+        } catch (e) { console.debug("Ignored error:", e); }
 
         const termRows = termDiv.querySelector(".xterm-rows");
         if (termRows) {
@@ -371,7 +371,7 @@ export function startSession(
 
           if (underlying) {
             const eventInit = {
-              view: window,
+              view: globalThis.window,
               bubbles: true,
               cancelable: true,
               clientX: e.changedTouches[0].clientX,
@@ -593,7 +593,7 @@ export function startSession(
       console.error("Failed to refresh CSRF token:", e);
     }
 
-    // Fit terminal to window immediately before telling backend the size
+    // Fit terminal to globalThis.window immediately before telling backend the size
     fitTerminal(tab);
 
     tab.socket.emit("join_room", { tab_id: tabId });
@@ -779,7 +779,7 @@ export function startSession(
 
     // Trigger notification if action required (✋)
     if (title.includes("✋") && document.visibilityState !== "visible") {
-      if ("Notification" in window && Notification.permission === "granted") {
+      if ("Notification" in globalThis.window && Notification.permission === "granted") {
         navigator.serviceWorker.ready.then((registration) => {
           registration.showNotification("Gemini Action Required", {
             body: title,
@@ -790,7 +790,7 @@ export function startSession(
         });
       }
     } else if (!title.includes("✋")) {
-      if ("Notification" in window && navigator.serviceWorker) {
+      if ("Notification" in globalThis.window && navigator.serviceWorker) {
         navigator.serviceWorker.ready.then((registration) => {
           registration
             .getNotifications({ tag: "gemini-action-" + tabId })
@@ -854,9 +854,7 @@ export function fitTerminal(tab) {
             });
           }
         }
-      } catch (e) {}
+      } catch (e) { console.debug("Ignored error:", e); }
     });
-  } catch (e) {
-    // Silently ignore fit errors during initialization (e.g. xterm-addon-fit dimensions getter throws)
-  }
+  } catch (e) { console.warn("Handled exception:", e); }
 }

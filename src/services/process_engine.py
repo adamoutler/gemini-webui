@@ -1,3 +1,5 @@
+ERROR_CHECK_STR = "if [ $? -ne 0 ]; then "
+
 import os
 from pathlib import Path
 
@@ -425,17 +427,17 @@ def build_terminal_command(
 
         if "--resume" in gemini_base_cmd:
             remote_cmd += f"{gemini_base_cmd}; "
-            remote_cmd += "if [ $? -ne 0 ]; then "
+            remote_cmd += ERROR_CHECK_STR
             remote_cmd += "clear; printf '\\r\\n\\033[1;33mResume failed, starting new session...\\033[0m\\r\\n'; "
             remote_cmd += f"{quoted_gemini}; "
-            remote_cmd += "if [ $? -ne 0 ]; then "
+            remote_cmd += ERROR_CHECK_STR
             remote_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "
             remote_cmd += "exec ${SHELL:-/bin/sh}; "
             remote_cmd += "fi; "
             remote_cmd += "fi; "
         else:
             remote_cmd += f"{gemini_base_cmd}; "
-            remote_cmd += "if [ $? -ne 0 ]; then "
+            remote_cmd += ERROR_CHECK_STR
             remote_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "
             remote_cmd += "exec ${SHELL:-/bin/sh}; "
             remote_cmd += "fi; "
@@ -531,17 +533,17 @@ def build_terminal_command(
         local_cmd = f"if command -v {gemini_executable} >/dev/null 2>&1; then "
         if "--resume" in gemini_cmd:
             local_cmd += f"{gemini_cmd}; "
-            local_cmd += "if [ $? -ne 0 ]; then "
+            local_cmd += ERROR_CHECK_STR
             local_cmd += "clear; printf '\\r\\n\\033[1;33mResume failed, starting new session...\\033[0m\\r\\n'; "
             local_cmd += f"{gemini_executable} {gemini_args}; "
-            local_cmd += "if [ $? -ne 0 ]; then "
+            local_cmd += ERROR_CHECK_STR
             local_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "
             local_cmd += "exec ${SHELL:-/bin/sh}; "
             local_cmd += "fi; "
             local_cmd += "fi; "
         else:
             local_cmd += f"{gemini_cmd}; "
-            local_cmd += "if [ $? -ne 0 ]; then "
+            local_cmd += ERROR_CHECK_STR
             local_cmd += "printf '\\r\\n\\033[1;31mError: gemini failed, falling back to shell.\\033[0m\\r\\n'; "
             local_cmd += "exec ${SHELL:-/bin/sh}; "
             local_cmd += "fi; "

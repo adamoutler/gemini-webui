@@ -1,3 +1,4 @@
+INTERNAL_ERR_MSG = "An internal error occurred"
 import os
 import pty
 import fcntl
@@ -186,4 +187,4 @@ class TerminalService:
             return {"status": "error", "message": "Gemini command timed out"}, 504
         except Exception as e:
             logger.error(f"Error creating session: {e}")
-            return {"status": "error", "message": "An internal error occurred"}, 500
+            return {"status": "error", "message": INTERNAL_ERR_MSG}, 500

@@ -187,14 +187,14 @@ export class MobileTerminalController {
     if (globalThis.emitPtyInput) {
       globalThis.emitPtyInput(targetTab, data);
     } else {
-      const strData = String(data).replace(/\n/g, "\r");
+      const strData = String(data).replaceAll("\n", "\r");
       targetTab.socket.emit("pty-input", { input: strData });
     }
   }
 }
 
 // Global exposure to support traditional browser logic (like app.js) before a full ESM refactor:
-if (typeof window !== "undefined") {
+if (typeof globalThis.window !== "undefined") {
   globalThis.MobileTerminalController = MobileTerminalController;
   globalThis.MobileModifierState = MobileModifierState;
   globalThis.MobileInputBuffer = MobileInputBuffer;

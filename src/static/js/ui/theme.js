@@ -5,7 +5,7 @@ const getIsMobile = () =>
   document.documentElement.classList.contains("is-mobile");
 const getDefaultFontSize = () => (getIsMobile() ? 10 : 14);
 
-export const terminalTheme = {
+export let terminalTheme = {
   background: "#1e1e1e",
   foreground: "#d4d4d4",
   cursor: "#ffffff",
@@ -42,7 +42,7 @@ export function initializeTheme() {
     cursor: customTheme.cursor || "#ffffff",
   });
 
-  if (typeof window !== "undefined") globalThis.terminalTheme = terminalTheme;
+  if (typeof globalThis.window !== "undefined") globalThis.terminalTheme = terminalTheme;
 
   // Initialize CSS variables immediately to reflect any saved theme
   document.documentElement.style.setProperty(
@@ -132,7 +132,7 @@ export function resetTheme() {
   });
 }
 
-if (typeof window !== "undefined") {
+if (typeof globalThis.window !== "undefined") {
   globalThis.initThemeUI = initThemeUI;
   globalThis.applyTheme = applyTheme;
   globalThis.resetTheme = resetTheme;

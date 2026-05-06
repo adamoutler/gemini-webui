@@ -137,7 +137,7 @@ export class ModifierRule extends InputRule {
           if (event.altKey) {
             char = "\x1b" + char;
           }
-          if (input && input.value.length > 0) {
+          if (input?.value.length > 0) {
             context.emitToTerminal(input.value);
             input.value = "";
           }
@@ -167,7 +167,7 @@ export class ModifierRule extends InputRule {
       const char =
         event.data && event.data.length > 0
           ? event.data[event.data.length - 1]
-          : input && input.value
+          : input?.value
             ? input.value.slice(-1)
             : null;
       if (char) {

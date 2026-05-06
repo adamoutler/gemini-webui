@@ -445,7 +445,7 @@ export async function uploadKeyFile() {
     } else {
       let errorMessage = "Unknown error";
       const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
+      if (contentType?.includes("application/json")) {
         try {
           const data = await response.json();
           errorMessage = data.error || data.message || errorMessage;

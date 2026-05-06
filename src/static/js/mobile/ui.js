@@ -149,7 +149,7 @@ export class MobileInputUI {
       container.id = "mobile-input-container";
       container.className = "mobile-input-container";
       const mobileControls = document.getElementById("mobile-controls");
-      if (mobileControls && mobileControls.parentNode) {
+      if (mobileControls?.parentNode) {
         mobileControls.parentNode.insertBefore(container, mobileControls);
       } else {
         document.body.appendChild(container);
@@ -379,7 +379,7 @@ export class MobileInputUI {
           cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
           cellH = dims.css?.cell?.height || dims.actualCellHeight || 17;
         }
-      } catch (e) {}
+      } catch (e) { console.debug("Ignored error:", e); }
 
       if (foundCursor) {
         let proxyLeft = left + cellW;

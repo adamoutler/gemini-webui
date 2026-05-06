@@ -15,7 +15,7 @@ export function refreshBackendSessionsList(id) {
     const terminateAllBtn = document.getElementById(`${id}_terminate_all_btn`);
     if (terminateAllBtn) {
       terminateAllBtn.style.display =
-        sessions && sessions.length > 0 ? "block" : "none";
+        sessions?.length > 0 ? "block" : "none";
     }
     if (!sessions || sessions.length === 0) {
       listEl.innerHTML =
@@ -153,7 +153,7 @@ export async function renderLauncher(id) {
         const timeoutTimer = setTimeout(() => resolve(null), 5000);
         socket.emit("get_all_sessions", {}, (response) => {
           clearTimeout(timeoutTimer);
-          if (response && response.status === "success") {
+          if (response?.status === "success") {
             resolve(response.cache);
           } else {
             resolve(null);
@@ -401,7 +401,7 @@ export async function terminateBackendSession(launcherTabId, tabId) {
     } else {
       let errorMessage = "Unknown error";
       const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
+      if (contentType?.includes("application/json")) {
         try {
           const data = await response.json();
           errorMessage = data.error || data.message || errorMessage;
@@ -444,7 +444,7 @@ export async function terminateAllBackendSessions(launcherTabId) {
     } else {
       let errorMessage = "Unknown error";
       const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
+      if (contentType?.includes("application/json")) {
         try {
           const data = await response.json();
           errorMessage = data.error || data.message || errorMessage;
@@ -530,8 +530,7 @@ export async function fetchSessions(
         socket.emit("get_sessions", params, (response) => {
           clearTimeout(timeoutTimer);
           if (
-            response &&
-            response.error &&
+            response?.error &&
             !response.output &&
             !response.sessions
           ) {
@@ -553,7 +552,7 @@ export async function fetchSessions(
     }
     if (data.status === "fetching") {
       const listEl = document.getElementById(targetId);
-      if (listEl && listEl.innerHTML === "") {
+      if (listEl?.innerHTML === "") {
         listEl.innerHTML = `<div class="js-style-2a672e">Fetching sessions...</div>`;
       }
       setTimeout(
@@ -638,8 +637,7 @@ export async function fetchSessions(
     );
     console.log("ACTIVE TAB:", activeTerminalTab);
     if (
-      activeTerminalTab &&
-      activeTerminalTab.session.resume &&
+      activeTerminalTab?.session.resume &&
       (activeTerminalTab.session.resume === "new" ||
         /^\d+$/.test(activeTerminalTab.session.resume))
     ) {
@@ -648,10 +646,10 @@ export async function fetchSessions(
           s.id === activeTerminalTab.session.resume ||
           s.uuid === activeTerminalTab.id,
       );
-      if (match && match.uuid) {
+      if (match?.uuid) {
         activeTerminalTab.session.resume = match.uuid;
         const socket = getGlobalSocket();
-        if (socket && socket.connected) {
+        if (socket?.connected) {
           socket.emit("update_resume", {
             tab_id: activeTerminalTab.id,
             resume: match.uuid,
@@ -678,7 +676,7 @@ export async function fetchSessions(
         }', '${conn.target || ""}', '${conn.dir || ""}', '${
           s.uuid
         }', '${escapeHtml(
-          String(s.name).replace(/\\/g, "\\\\").replace(/'/g, "\\'"),
+          String(s.name).replaceAll("\\", "\\\\").replaceAll("'", "\\'"),
         )}', false)">
                     <div class="session-name">${escapeHtml(s.name)}</div>
                     <div class="session-meta">ID #${escapeHtml(
@@ -739,7 +737,7 @@ export function parseSessions(output) {
 
 export function reclaimStolenSession() {
   const tab = globalState.tabs.find((t) => t.id === globalState.activeTabId);
-  if (tab && tab.stolen) {
+  if (tab?.stolen) {
     tab.stolen = false;
     const reclaimBtn = document.getElementById("reclaim-btn");
     if (reclaimBtn) reclaimBtn.style.display = "none";

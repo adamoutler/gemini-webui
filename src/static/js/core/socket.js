@@ -30,7 +30,7 @@ export function getGlobalSocket() {
     });
 
     globalSocket.on("connect_error", async (error) => {
-      if (error && error.message === "invalid_csrf") {
+      if (error?.message === "invalid_csrf") {
         EventBus.emit("SOCKET_CSRF_ERROR");
         console.debug("Global socket CSRF token expired. Refreshing token...");
         try {
@@ -59,7 +59,7 @@ export function getGlobalSocket() {
 
     globalSocket.on("sessions_updated", (payload) => {
       console.log("Sessions updated payload:", payload);
-      if (payload && payload.data && payload.data.output) {
+      if (payload?.data && payload.data.output) {
         const sessions = [];
         const regex =
           /^\s*(\d+)\.\s+(.+?)\s+\(([^)]+)\)(?:\s+\[(.*?)\])?\s*$/gm;
@@ -84,12 +84,12 @@ export function getGlobalSocket() {
                 (s) => s.uuid === t.id || s.id === t.session.resume,
               );
               console.log("Found match for tab:", match);
-              if (match && match.uuid) {
+              if (match?.uuid) {
                 if (t.session) {
                   t.session.resume = match.uuid;
                 }
                 const socket = getGlobalSocket();
-                if (socket && socket.connected) {
+                if (socket?.connected) {
                   socket.emit("update_resume", {
                     tab_id: t.id,
                     resume: match.uuid,
@@ -105,12 +105,11 @@ export function getGlobalSocket() {
           const activeTab = globalState.tabs.find(
             (t) => t.id === globalState.activeTabId,
           );
-          if (activeTab && activeTab.state === "launcher") {
+          if (activeTab?.state === "launcher") {
             const id = activeTab.id;
             const container = document.getElementById(id + "_instance");
             if (
-              container &&
-              container.querySelector(".launcher") &&
+              container?.querySelector(".launcher") &&
               payload.host
             ) {
               const conn = payload.host;

@@ -1,4 +1,4 @@
-export const EventBus = {
+export let EventBus = {
   listeners: {},
   on(event, callback) {
     if (!this.listeners[event]) this.listeners[event] = [];

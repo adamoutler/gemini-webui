@@ -88,7 +88,7 @@ import {
 // SendPromptToTab functionality needs global state access:
 export function sendPromptToTab(tabId, text) {
   const tab = globalState.tabs.find((t) => t.id === tabId);
-  if (tab && tab.socket && tab.state === "terminal") {
+  if (tab?.socket && tab.state === "terminal") {
     const input =
       text.endsWith("\n") || text.endsWith("\r") ? text : text + "\r";
     tab.socket.emit("pty-input", {
@@ -122,7 +122,7 @@ globalThis.addEventListener("appinstalled", (evt) => {
 });
 
 // Request Notification Permission
-if ("Notification" in window && Notification.permission === "default") {
+if ("Notification" in globalThis.window && Notification.permission === "default") {
   document.addEventListener(
     "click",
     () => {
@@ -280,7 +280,7 @@ Object.keys(Actions).forEach((actionName) => {
   }
 });
 
-if (typeof window !== "undefined") {
+if (typeof globalThis.window !== "undefined") {
   globalThis.appVisualViewport = globalThis.visualViewport;
   globalThis.EventBus = EventBus;
   globalThis.sendToTerminal = sendToTerminal;
@@ -292,9 +292,9 @@ if (typeof window !== "undefined") {
   globalThis.tabs = globalState.tabs;
   globalThis.globalState = globalState;
   globalThis.executeDataAction = executeDataAction;
-  // Expose all Actions to window for E2E tests
+  // Expose all Actions to globalThis.window for E2E tests
   Object.keys(Actions).forEach((actionName) => {
-    window[actionName] = Actions[actionName];
+    globalThis.window[actionName] = Actions[actionName];
   });
 }
 
@@ -347,7 +347,7 @@ function executeDataAction(code, event) {
       let b1 = m2[4] === "true";
       globalThis.fetchSessions(
         m2[1],
-        JSON.parse(m2[2].replace(/&quot;/g, '"')),
+        JSON.parse(m2[2].replaceAll("&quot;", '"')),
         m2[3],
         b1,
         true,
@@ -404,26 +404,26 @@ function executeDataAction(code, event) {
         if (s === "true") return true;
         if (s === "false") return false;
         if (s.startsWith("'") && s.endsWith("'"))
-          return s.slice(1, -1).replace(/\\'/g, "'").replace(/\\\\/g, "\\");
+          return s.slice(1, -1).replaceAll("\\'", "'").replaceAll("\\\\", "\\");
         if (s.startsWith('"') && s.endsWith('"'))
           return s
             .slice(1, -1)
-            .replace(/\\"/g, '"')
-            .replace(/\\\\/g, "\\")
-            .replace(/&quot;/g, '"');
+            .replaceAll('\\"', '"')
+            .replaceAll("\\\\", "\\")
+            .replaceAll("&quot;", '"');
         if (!Number.isNaN(s) && s !== "") return Number(s);
         if (s.startsWith("{") || s.startsWith("[")) {
           try {
-            return JSON.parse(s.replace(/&quot;/g, '"'));
-          } catch (err) {}
+            return JSON.parse(s.replaceAll("&quot;", '"'));
+          } catch (err) { console.debug("Ignored error:", err); }
         }
         return s;
       });
     }
     if (EventBus.listeners[funcName]) {
       EventBus.emit(funcName, args);
-    } else if (typeof window[funcName] === "function") {
-      window[funcName].apply(null, args);
+    } else if (typeof globalThis.window[funcName] === "function") {
+      globalThis.window[funcName].apply(null, args);
     } else {
       console.error("Function not found: " + funcName);
     }

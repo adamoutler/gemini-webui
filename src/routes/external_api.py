@@ -41,7 +41,7 @@ class HostStateResponseSchema(Schema):
     message = fields.String()
 
 
-@external_api_bp.route("/v1/sessions/create")
+@external_api_bp.route("/v1/sessions/create", methods=["GET"])
 class SessionCreate(MethodView):
     @external_api_bp.arguments(SessionCreateSchema)
     @external_api_bp.response(200, SessionResponseSchema)
@@ -72,7 +72,7 @@ class SessionCreate(MethodView):
         return jsonify(result), status_code
 
 
-@external_api_bp.route("/v1/hosts/<host_id>/states")
+@external_api_bp.route("/v1/hosts/<host_id>/states", methods=["GET"])
 class HostStates(MethodView):
     @external_api_bp.response(200, HostStateResponseSchema)
     @api_key_required
@@ -113,7 +113,7 @@ class HostStates(MethodView):
         )
 
 
-@external_api_bp.route("/v1/hosts/<host_id>/states/wait/<wait_time>")
+@external_api_bp.route("/v1/hosts/<host_id>/states/wait/<wait_time>", methods=["GET"])
 class HostStateWait(MethodView):
     @external_api_bp.response(200, HostStateResponseSchema)
     @api_key_required

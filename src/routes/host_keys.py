@@ -1,3 +1,4 @@
+INTERNAL_ERR_MSG = "An internal error occurred"
 import os
 import json
 import shutil
@@ -185,7 +186,7 @@ def rotate_instance_key():
     except Exception as e:
         logger.error(f"Failed to rotate SSH key: {e}")
         return jsonify(
-            {"status": "error", "message": "An internal error occurred"}
+            {"status": "error", "message": INTERNAL_ERR_MSG}
         ), 500
 
 

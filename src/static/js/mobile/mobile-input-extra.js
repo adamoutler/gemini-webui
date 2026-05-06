@@ -1,9 +1,9 @@
 import { EventBus } from "../core/event-bus.js";
 
-export const checkMobile = () => {
+export let checkMobile = () => {
   // Strictly target Android as requested
   const isAndroid = /Android/i.test(navigator.userAgent);
-  const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+  const isTouch = "ontouchstart" in globalThis.window || navigator.maxTouchPoints > 0;
 
   // Increase width threshold to 1024px to support Android tablets (Nexus 9/Pixel Tablet)
   const isNarrow = globalThis.innerWidth <= 1024;
@@ -14,7 +14,7 @@ export const checkMobile = () => {
   // Return true if explicitly Android, or a narrow touch device that is not Apple
   return isAndroid || (isNarrow && isTouch && !isApple);
 };
-export const isMobile = checkMobile();
+export let isMobile = checkMobile();
 if (isMobile) {
   document.documentElement.classList.add("is-mobile");
 }
@@ -26,7 +26,7 @@ debugLog(
   "Width:",
   globalThis.innerWidth,
   "Touch:",
-  "ontouchstart" in window || navigator.maxTouchPoints > 0,
+  "ontouchstart" in globalThis.window || navigator.maxTouchPoints > 0,
   ")",
 );
 
@@ -36,7 +36,7 @@ globalThis.addEventListener("popstate", (event) => {
   const activeTab = tabs.find((t) => t.id === activeTabId);
   // Only hijack if we are currently in a terminal.
   // If we are already in launcher mode, let the back button work normally.
-  if (activeTab && activeTab.state === "terminal") {
+  if (activeTab?.state === "terminal") {
     addNewTab();
   }
 });
@@ -170,7 +170,7 @@ setTimeout(() => {
     globalThis.forceReconnect = () => {
       document.getElementById("friction-modal").style.display = "none";
       const currentTab = tabs.find((t) => t.id === activeTabId);
-      if (currentTab && currentTab.socket) {
+      if (currentTab?.socket) {
         currentTab.socket.connect();
       }
     };
@@ -242,7 +242,7 @@ setTimeout(() => {
 
 // --- Quick Connect Logic ---
 
-export const mobileControlsContainer =
+export let mobileControlsContainer =
   document.getElementById("mobile-controls");
 if (mobileControlsContainer) {
   mobileControlsContainer.addEventListener(
@@ -266,16 +266,16 @@ document.querySelectorAll(".control-btn.holdable").forEach((btn) => {
     const adjust = btn.dataset.funcAdjust;
     if (cmd) {
       // Unescape characters like \x1b and \t from the DOM attribute string
-      cmd = cmd.replace(/\\x([0-9A-Fa-f]{2})/g, (match, hex) =>
+      cmd = cmd.replaceAll("\\x([0-9A-Fa-f]{2})", (match, hex) =>
         String.fromCodePoint(Number.parseInt(hex, 16)),
       );
-      cmd = cmd.replace(/\\t/g, "\t");
-      cmd = cmd.replace(/\\r/g, "\r");
-      cmd = cmd.replace(/\\n/g, "\n");
+      cmd = cmd.replaceAll("\\t", "\t");
+      cmd = cmd.replaceAll("\\r", "\r");
+      cmd = cmd.replaceAll("\\n", "\n");
 
       // Handle Shift modifier toggle from MobileModifierState for Tab key
       const isShift =
-        (e && e.shiftKey) ||
+        (e?.shiftKey) ||
         (typeof MobileModifierState !== "undefined" &&
           MobileModifierState.instance &&
           MobileModifierState.instance.shiftActive);
@@ -316,7 +316,7 @@ document.querySelectorAll(".control-btn.holdable").forEach((btn) => {
     }, 250);
   };
   const stopAction = (e) => {
-    if (e && e.type === "touchend") e.preventDefault();
+    if (e?.type === "touchend") e.preventDefault();
     isActive = false;
     btn.style.opacity = "1";
     clearTimeout(timeoutId);
@@ -331,10 +331,10 @@ document.querySelectorAll(".control-btn.holdable").forEach((btn) => {
   btn.addEventListener("touchend", stopAction);
   btn.addEventListener("touchcancel", stopAction);
 });
-export const wsDownloadInput = document.getElementById(
+export let wsDownloadInput = document.getElementById(
   "workspace-download-filename",
 );
-export const autocompleteResults = document.getElementById(
+export let autocompleteResults = document.getElementById(
   "autocomplete-results",
 );
 let downloadDebounceTimer;
@@ -469,7 +469,7 @@ document.addEventListener("drop", async (e) => {
       const formData = new FormData();
       formData.append("file", file, finalPath);
       const tab = activeTab;
-      if (tab && tab.session && tab.session.type === "ssh") {
+      if (tab?.session && tab.session.type === "ssh") {
         if (!tab.session.ssh_target) {
           alert(
             "SSH target is missing from session state! Upload cannot proceed.",
@@ -509,7 +509,7 @@ document.addEventListener("drop", async (e) => {
     }
     if (successCount > 0) {
       const tab = tabs.find((t) => t.id === activeTabId);
-      if (tab && tab.socket && tab.state === "terminal") {
+      if (tab?.socket && tab.state === "terminal") {
         const msg =
           successCount > 1
             ? `> I uploaded multiple files to @${uploadPrefix}\r`
@@ -529,20 +529,20 @@ document.addEventListener("keydown", (e) => {
     const fileTransferModal = document.getElementById("file-transfer-modal");
     const dropZone = document.querySelector(".drop-zone");
     if (
-      (fileTransferModal && fileTransferModal.style.display === "block") ||
-      (dropZone && dropZone.classList.contains("active"))
+      (fileTransferModal?.style.display === "block") ||
+      (dropZone?.classList.contains("active"))
     ) {
       if (fileTransferModal) closeFileTransfer();
       if (dropZone) dropZone.classList.remove("active");
       return;
     }
     const settingsModal = document.getElementById("settings-modal");
-    if (settingsModal && settingsModal.style.display === "block") {
+    if (settingsModal?.style.display === "block") {
       closeSettings();
       return;
     }
     const activeTab = tabs.find((t) => t.id === activeTabId);
-    if (activeTab && activeTab.state === "launcher" && tabs.length > 1) {
+    if (activeTab?.state === "launcher" && tabs.length > 1) {
       const otherTab =
         tabs.find((t) => t.id !== activeTabId && t.state === "terminal") ||
         tabs.find((t) => t.id !== activeTabId);
@@ -568,7 +568,7 @@ export function initDesktopContextMenu() {
   menu.querySelector("#ctx-copy").addEventListener("mousedown", (e) => {
     e.preventDefault();
     const tab = tabs.find((t) => t.id === activeTabId);
-    if (tab && tab.term && tab.term.hasSelection()) {
+    if (tab?.term && tab.term.hasSelection()) {
       const selectedText = tab.term.getSelection();
       navigator.clipboard.writeText(filterTerminalFluff(selectedText));
     } else {
@@ -581,7 +581,7 @@ export function initDesktopContextMenu() {
     try {
       let text = await navigator.clipboard.readText();
       const tab = tabs.find((t) => t.id === activeTabId);
-      if (tab && tab.socket) {
+      if (tab?.socket) {
         const useBracketedPaste =
           tab.term && tab.term.modes && tab.term.modes.bracketedPasteMode;
         if (useBracketedPaste) {

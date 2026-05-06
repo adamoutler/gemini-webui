@@ -239,6 +239,17 @@ jobs:
           npm run lint
           npm run test --if-present
 
+      - name: Check SonarCloud Quality Gate
+        run: |
+          echo "Waiting for SonarCloud Analysis..."
+          sleep 20
+          STATUS=$(curl -s "https://sonarcloud.io/api/qualitygates/project_status?projectKey=adamoutler_gemini-webui" | grep -o '"status":"[^"]*"' | head -n1 | cut -d'"' -f4)
+          if [ "$STATUS" = "ERROR" ]; then
+            echo "Quality Gate failed."
+            exit 1
+          fi
+          echo "Quality Gate passed or pending (assuming success for now)."
+
       - name: Run pre-commit/lint
         run: |
           python3 -m venv .venv

@@ -194,7 +194,7 @@ export function switchTab(id) {
     // Trigger a refresh and restart polling when switching back to launcher
     // We don't re-render the whole launcher, just the dynamic parts if they exist
     const container = document.getElementById(id + "_instance");
-    if (container && container.querySelector(".launcher")) {
+    if (container?.querySelector(".launcher")) {
       fetch("/api/hosts")
         .then((r) => r.json())
         .then((hosts) => {
@@ -260,7 +260,7 @@ export function switchTab(id) {
 }
 export function restartActiveTab() {
   const tab = globalState.tabs.find((t) => t.id === globalState.activeTabId);
-  if (tab && tab.state === "terminal") {
+  if (tab?.state === "terminal") {
     const { ssh_target, ssh_dir, resume } = tab.session;
     tab.term.clear();
     fitTerminal(tab);
@@ -311,7 +311,7 @@ export function closeTab(id, event, isLocalOnly = false) {
   if (tab.webglAddon) {
     try {
       tab.webglAddon.dispose();
-    } catch (e) {}
+    } catch (e) { console.debug("Ignored error:", e); }
   }
   if (tab.term) tab.term.dispose();
   const inst = document.getElementById(id + "_instance");

@@ -1,4 +1,4 @@
-export const globalState = {
+export let globalState = {
   isMobile: false,
   tabs: [],
   customPrompts: [],
@@ -18,7 +18,7 @@ export const globalState = {
   deepDir: new URLSearchParams(globalThis.location.search).get("dir"),
 };
 
-export const DEFAULT_PROMPTS = [
+export let DEFAULT_PROMPTS = [
   {
     name: "Explain Code",
     text: "Please explain the code in the current context.",
@@ -58,68 +58,68 @@ export function getCustomPrompts() {
   return globalState.customPrompts;
 }
 
-if (typeof window !== "undefined") {
+if (typeof globalThis.window !== "undefined") {
   globalThis.globalState = globalState;
   globalThis.DEFAULT_PROMPTS = DEFAULT_PROMPTS;
   globalThis.loadPromptsFromServer = loadPromptsFromServer;
   globalThis.getCustomPrompts = getCustomPrompts;
 
   // For backwards compatibility before full ESM conversion
-  Object.defineProperty(window, "tabs", {
+  Object.defineProperty(globalThis.window, "tabs", {
     get: () => globalState.tabs,
     set: (v) => {
       globalState.tabs = v;
     },
   });
-  Object.defineProperty(window, "activeTabId", {
+  Object.defineProperty(globalThis.window, "activeTabId", {
     get: () => globalState.activeTabId,
     set: (v) => {
       globalState.activeTabId = v;
     },
   });
-  Object.defineProperty(window, "customPrompts", {
+  Object.defineProperty(globalThis.window, "customPrompts", {
     get: () => globalState.customPrompts,
     set: (v) => {
       globalState.customPrompts = v;
     },
   });
-  Object.defineProperty(window, "ctrlActive", {
+  Object.defineProperty(globalThis.window, "ctrlActive", {
     get: () => globalState.ctrlActive,
     set: (v) => {
       globalState.ctrlActive = v;
     },
   });
-  Object.defineProperty(window, "altActive", {
+  Object.defineProperty(globalThis.window, "altActive", {
     get: () => globalState.altActive,
     set: (v) => {
       globalState.altActive = v;
     },
   });
-  Object.defineProperty(window, "currentEditPromptIndex", {
+  Object.defineProperty(globalThis.window, "currentEditPromptIndex", {
     get: () => globalState.currentEditPromptIndex,
     set: (v) => {
       globalState.currentEditPromptIndex = v;
     },
   });
-  Object.defineProperty(window, "initialAutoResumeDone", {
+  Object.defineProperty(globalThis.window, "initialAutoResumeDone", {
     get: () => globalState.initialAutoResumeDone,
     set: (v) => {
       globalState.initialAutoResumeDone = v;
     },
   });
-  Object.defineProperty(window, "launcherRefreshInterval", {
+  Object.defineProperty(globalThis.window, "launcherRefreshInterval", {
     get: () => globalState.launcherRefreshInterval,
     set: (v) => {
       globalState.launcherRefreshInterval = v;
     },
   });
-  Object.defineProperty(window, "titleFlashInterval", {
+  Object.defineProperty(globalThis.window, "titleFlashInterval", {
     get: () => globalState.titleFlashInterval,
     set: (v) => {
       globalState.titleFlashInterval = v;
     },
   });
-  Object.defineProperty(window, "originalPageTitle", {
+  Object.defineProperty(globalThis.window, "originalPageTitle", {
     get: () => globalState.originalPageTitle,
     set: (v) => {
       globalState.originalPageTitle = v;
@@ -127,15 +127,15 @@ if (typeof window !== "undefined") {
   });
 
   // URL params mappings
-  Object.defineProperty(window, "mode", { get: () => globalState.mode });
-  Object.defineProperty(window, "sessionId", {
+  Object.defineProperty(globalThis.window, "mode", { get: () => globalState.mode });
+  Object.defineProperty(globalThis.window, "sessionId", {
     get: () => globalState.sessionId,
   });
-  Object.defineProperty(window, "deepHost", {
+  Object.defineProperty(globalThis.window, "deepHost", {
     get: () => globalState.deepHost,
   });
-  Object.defineProperty(window, "deepTarget", {
+  Object.defineProperty(globalThis.window, "deepTarget", {
     get: () => globalState.deepTarget,
   });
-  Object.defineProperty(window, "deepDir", { get: () => globalState.deepDir });
+  Object.defineProperty(globalThis.window, "deepDir", { get: () => globalState.deepDir });
 }

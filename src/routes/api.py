@@ -1,3 +1,4 @@
+INTERNAL_ERR_MSG = "An internal error occurred"
 import os
 import tempfile
 import uuid
@@ -138,7 +139,7 @@ def export_settings():
         )
     except Exception as e:
         logger.error(f"Failed to export settings: {e}")
-        return jsonify({"error": "An internal error occurred"}), 500
+        return jsonify({"error": INTERNAL_ERR_MSG}), 500
 
 
 @api_bp.route("/api/settings/import", methods=["POST"])
@@ -178,7 +179,7 @@ def import_settings():
         return jsonify({"error": "The uploaded file is not a valid zip archive"}), 400
     except Exception as e:
         logger.error(f"Failed to import settings: {e}")
-        return jsonify({"error": "An internal error occurred"}), 500
+        return jsonify({"error": INTERNAL_ERR_MSG}), 500
 
 
 @api_bp.route("/api/csrf-token", methods=["GET"])
@@ -291,11 +292,11 @@ def download_file(filename):
 
         traceback.print_exc()
         return jsonify(
-            {"status": "error", "message": "An internal error occurred"}
+            {"status": "error", "message": INTERNAL_ERR_MSG}
         ), 500
 
 
-@api_bp.route("/api/health")
+@api_bp.route("/api/health", methods=["GET"])
 def health_check():
     return jsonify({"status": "ok"})
 
