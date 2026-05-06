@@ -19,7 +19,7 @@ export function filterTerminalFluff(text) {
     if (/^[\u2500-\u259F \t\r]+$/.test(line) && /[\u2500-\u259F]/.test(line)) {
       return " ".repeat(line.length);
     }
-    let cleaned = line.replaceAll("[\u2500-\u259F]", " ");
+    let cleaned = line.replaceAll(/[\u2500-\u259F]/g, " ");
     return cleaned;
   });
   return lines.join("\n");

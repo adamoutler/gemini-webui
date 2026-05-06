@@ -266,7 +266,7 @@ document.querySelectorAll(".control-btn.holdable").forEach((btn) => {
     const adjust = btn.dataset.funcAdjust;
     if (cmd) {
       // Unescape characters like \x1b and \t from the DOM attribute string
-      cmd = cmd.replaceAll("\\x([0-9A-Fa-f]{2})", (match, hex) =>
+      cmd = cmd.replaceAll(/\\x([0-9A-Fa-f]{2})/g, (match, hex) =>
         String.fromCodePoint(Number.parseInt(hex, 16)),
       );
       cmd = cmd.replaceAll("\\t", "\t");
