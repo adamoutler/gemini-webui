@@ -202,3 +202,33 @@ def test_api_import_settings(client, test_data_dir):
     assert os.path.exists(extracted_file)
     with open(extracted_file, "r") as f:
         assert f.read() == "imported content"
+
+def test_api_config_post(client):
+    response = client.post("/api/config", json={"SOME_SETTING": "new_value"})
+    assert response.status_code == 200
+    assert response.json["status"] == "success"
+    
+    # Verify it updated config
+    resp2 = client.get("/api/config")
+    assert resp2.json["SOME_SETTING"] == "new_value"
+
+def test_api_management_api_keys(client):
+    # List initially
+    response = client.get("/api/management/api-keys")
+    assert response.status_code == 200
+    assert isinstance(response.json, list)
+    
+    # Create key
+    response = client.post("/api/management/api-keys", json={"note": "test key"})
+    assert response.status_code == 200
+    assert "key" in response.json
+    
+    # List again
+    response = client.get("/api/management/api-keys")
+    keys = response.json
+    assert len(keys) >= 1
+    
+    # Delete key
+    target_hash = keys[0]["hash"]
+    response = client.delete(f"/api/management/api-keys/{target_hash}")
+    assert response.status_code == 200
