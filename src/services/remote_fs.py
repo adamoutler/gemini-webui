@@ -17,7 +17,9 @@ def upload_to_remote(
     """
     Uploads a file to a remote SSH target and returns the final remote path.
     """
-    target_match = re.match(r"^([a-zA-Z\d][a-zA-Z\d.-]*@)?([a-zA-Z\d][a-zA-Z\d.-]*)(:\d+)?$", ssh_target)
+    target_match = re.match(
+        r"^([a-zA-Z\d][a-zA-Z\d.-]*@)?([a-zA-Z\d][a-zA-Z\d.-]*)(:\d+)?$", ssh_target
+    )
     if not target_match:
         raise ValueError("Invalid SSH target")
     user_part = target_match.group(1) or ""

@@ -149,7 +149,7 @@ def run_fake_gemini():
                         "\x1b[38;2;255;0;0mR\x1b[38;2;0;255;0mG\x1b[38;2;0;0;255;1mB\x1b[0m - TrueColor Test\r\n"
                     )
                     for i in range(0, 256, 16):
-                        sys.stdout.write(f"\x1b[48;2;{i};0;{255-i}m ")
+                        sys.stdout.write(f"\x1b[48;2;{i};0;{255 - i}m ")
                     sys.stdout.write("\x1b[0m\r\n")
 
                 elif "COMPLEX" in line:
@@ -163,7 +163,7 @@ def run_fake_gemini():
                 elif "BURST" in line:
                     for i in range(50):
                         sys.stdout.write(
-                            f"\x1b[1;3{i%7+1}mLine {i}: Bursting with high-fidelity output for xterm.js verification.\x1b[0m\r\n"
+                            f"\x1b[1;3{i % 7 + 1}mLine {i}: Bursting with high-fidelity output for xterm.js verification.\x1b[0m\r\n"
                         )
                         sys.stdout.flush()
                         time.sleep(0.01)

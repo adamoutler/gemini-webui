@@ -132,11 +132,12 @@ class TerminalService:
             import re
 
             target_match = re.match(
-                r"^([a-zA-Z\d][a-zA-Z\d.-]*@)?([a-zA-Z\d][a-zA-Z\d.-]*)(:\d+)?$", ssh_target
+                r"^([a-zA-Z\d][a-zA-Z\d.-]*@)?([a-zA-Z\d][a-zA-Z\d.-]*)(:\d+)?$",
+                ssh_target,
             )
             if not target_match:
                 return {"status": "error", "message": "Invalid SSH target format"}, 400
-            
+
             user_part = target_match.group(1) or ""
             host_part = target_match.group(2)
             port_part = target_match.group(3) or ""
