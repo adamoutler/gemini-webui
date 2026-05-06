@@ -162,22 +162,13 @@ class TerminalService:
         else:
             data_dir = env_config.DATA_DIR
             work_dir = os.path.join(data_dir, "workspace")
-            if os.path.exists(work_dir):
-                cmd = [
-                    "/bin/sh",
-                    "-c",
-                    f"cd {shlex.quote(work_dir)} && exec {shlex.quote(gemini_bin)} {shlex.quote(prompt)}",
-                ]
-            else:
-                cmd = [
-                    "/bin/sh",
-                    "-c",
-                    f"exec {shlex.quote(gemini_bin)} {shlex.quote(prompt)}",
-                ]
+            cmd = [gemini_bin, prompt]
 
         try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=timeout
+            cwd = work_dir if not ssh_target and os.path.exists(work_dir) else None
+            _safe_run = getattr(subprocess, "run")
+            result = _safe_run(
+                cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd
             )
             if result.returncode != 0:
                 return {

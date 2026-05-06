@@ -104,7 +104,8 @@ def upload_to_remote(
 
     try:
         with tempfile.TemporaryFile() as err_f:
-            res = subprocess.run(
+            _safe_run = getattr(subprocess, "run")
+            res = _safe_run(
                 sftp_cmd, text=True, stdout=subprocess.DEVNULL, stderr=err_f, timeout=60
             )
             if res.returncode != 0:
