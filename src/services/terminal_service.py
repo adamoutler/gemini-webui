@@ -162,7 +162,8 @@ class TerminalService:
         else:
             data_dir = env_config.DATA_DIR
             work_dir = os.path.join(data_dir, "workspace")
-            cmd = [gemini_bin, prompt]
+            import shlex
+            cmd = shlex.split(gemini_bin) + [prompt]
 
         try:
             cwd = work_dir if not ssh_target and os.path.exists(work_dir) else None
