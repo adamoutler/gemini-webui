@@ -141,8 +141,8 @@ def validate_ssh_target(target):
     """Ensure SSH target is in a safe format (user@host, host, or host:port)."""
     if not target:
         return False
-    # Allow alphanumeric, dots, hyphens, optional user@, and optional :port
-    return bool(re.match(r"^([a-zA-Z\d.-]+@)?[a-zA-Z\d.-]+(:\d+)?$", target))
+    # Allow alphanumeric, dots, hyphens, optional user@, and optional :port. Must not start with a hyphen.
+    return bool(re.match(r"^([a-zA-Z\d][a-zA-Z\d.-]*@)?([a-zA-Z\d][a-zA-Z\d.-]*)(:\d+)?$", target))
 
 
 def build_ssh_args(ssh_target, ssh_dir_path, control_master="auto"):

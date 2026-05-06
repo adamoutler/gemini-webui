@@ -487,7 +487,8 @@ def pty_restart(data):
 
     import sys
 
-    sys.stderr.write(f"HOSTS: {get_config().get('HOSTS', [])}\n")
+    safe_hosts = [{"label": h.get("label"), "target": "***"} for h in get_config().get("HOSTS", [])]
+    sys.stderr.write(f"HOSTS: {safe_hosts}\n")
     sys.stderr.flush()
     env_vars = {}
     for host in get_config().get("HOSTS", []):

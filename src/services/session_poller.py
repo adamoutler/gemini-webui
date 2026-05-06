@@ -60,14 +60,14 @@ class SessionPollerManager:
         for host in hosts:
             label = host.get("label", "local")
             if label not in self.greenlets:
-                logger.info(f"Starting poller greenlet for host: {label}")
+                logger.info("Starting poller greenlet for host")
                 self.greenlets[label] = eventlet.spawn(self._poll_host, host)
 
         # Stop greenlets for removed hosts
         labels_to_remove = []
         for label, g in self.greenlets.items():
             if label not in current_host_labels:
-                logger.info(f"Stopping poller greenlet for removed host: {label}")
+                logger.info("Stopping poller greenlet for removed host")
                 g.kill()
                 labels_to_remove.append(label)
 

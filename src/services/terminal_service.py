@@ -127,15 +127,20 @@ class TerminalService:
         cmd = []
         gemini_bin = env_config.GEMINI_BIN
 
+        cwd = None
         if ssh_target:
             import re
 
             target_match = re.match(
-                r"^([a-zA-Z\d.-]+@)?[a-zA-Z\d.-]+(:\d+)?$", ssh_target
+                r"^([a-zA-Z\d][a-zA-Z\d.-]*@)?([a-zA-Z\d][a-zA-Z\d.-]*)(:\d+)?$", ssh_target
             )
             if not target_match:
                 return {"status": "error", "message": "Invalid SSH target format"}, 400
-            ssh_target = target_match.group(0)
+            
+            user_part = target_match.group(1) or ""
+            host_part = target_match.group(2)
+            port_part = target_match.group(3) or ""
+            ssh_target = f"{user_part}{host_part}{port_part}"
 
             remote_prefix = get_remote_command_prefix(ssh_dir, gemini_bin)
             remote_cmd = (
@@ -157,26 +162,12 @@ class TerminalService:
         else:
             data_dir = env_config.DATA_DIR
             work_dir = os.path.join(data_dir, "workspace")
-            if os.path.exists(work_dir):
-                cmd = [
-                    "/bin/sh",
-                    "-c",
-                    f'cd {shlex.quote(work_dir)} && exec {shlex.quote(gemini_bin)} "$1"',
-                    "--",
-                    prompt,
-                ]
-            else:
-                cmd = [
-                    "/bin/sh",
-                    "-c",
-                    f'exec {shlex.quote(gemini_bin)} "$1"',
-                    "--",
-                    prompt,
-                ]
+            cmd = [gemini_bin, prompt]
+            cwd = work_dir if os.path.exists(work_dir) else None
 
         try:
             result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=timeout
+                cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd
             )
             if result.returncode != 0:
                 return {
