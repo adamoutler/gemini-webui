@@ -29,9 +29,22 @@ export function getGlobalSocket() {
       EventBus.emit("SOCKET_DISCONNECTED");
     });
 
-    globalSocket.on("connect_error", (error) => {
+    globalSocket.on("connect_error", async (error) => {
       if (error && error.message === "invalid_csrf") {
         EventBus.emit("SOCKET_CSRF_ERROR");
+        console.debug("Global socket CSRF token expired. Refreshing token...");
+        try {
+          const newToken = await refreshCsrfToken();
+          if (newToken) {
+            globalSocket.auth = {
+              csrf_token: newToken,
+            };
+            // Adding a small delay to avoid tight looping
+            setTimeout(() => globalSocket.connect(), 1000);
+          }
+        } catch (err) {
+          console.error("Failed to refresh CSRF on connect_error", err);
+        }
       }
     });
 

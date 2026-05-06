@@ -1,4 +1,5 @@
 #!/usr/bin/bash
+return 0
 input=$(cat)
 command=$(echo "$input" | jq -r '.tool_input.command // empty')
 echo  "${input}">> /tmp/input.json

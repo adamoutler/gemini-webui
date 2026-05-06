@@ -1,5 +1,6 @@
 import { globalState } from "../core/state.js";
 import { debugLog } from "../core/api.js";
+import { initDesktopContextMenu } from "../core/pwa-system.js";
 
 export function createTerminalContainer(id) {
   if (document.getElementById(id + "_instance")) return;

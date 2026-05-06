@@ -87,3 +87,26 @@ export function updatePageTitle(title) {
     document.title = title;
   }
 }
+
+EventBus.on("SOCKET_DISCONNECTED", () => {
+  if (globalState.activeTabId && HostStateManager && HostStateManager.states) {
+    Object.keys(HostStateManager.states).forEach((label) => {
+      HostStateManager.states[label].failures = 1; // 1 will be incremented to 2 (Red) in updateState
+      HostStateManager.updateHealth(
+        globalState.activeTabId,
+        label,
+        false,
+        false,
+      );
+    });
+  }
+});
+
+EventBus.on("SOCKET_CONNECTED", () => {
+  if (globalState.activeTabId) {
+    const tab = globalState.tabs.find((t) => t.id === globalState.activeTabId);
+    if (tab && tab.state === "terminal" && tab.session) {
+      updateStatus(tab.session.ssh_target || "local", tab.session.ssh_dir);
+    }
+  }
+});
