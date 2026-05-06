@@ -506,7 +506,7 @@ def pty_restart(data):
             env_vars = host.get("env_vars") or {}
             break
 
-    logger.info(f"ENV_VARS resolved to: {env_vars}")
+    logger.info("ENV_VARS resolved")
 
     if is_fake:
         env_vars["GEMINI_WEBUI_HARNESS_ID"] = tab_id

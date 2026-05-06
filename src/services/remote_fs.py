@@ -45,9 +45,9 @@ def upload_to_remote(
         raise ValueError("Invalid remote directory")
 
     port = None
-    clean_target = ssh_target
-    if ":" in ssh_target:
-        parts = ssh_target.rsplit(":", 1)
+    clean_target = "".join(c for c in ssh_target if c.isalnum() or c in "@.-_:")
+    if ":" in clean_target:
+        parts = clean_target.rsplit(":", 1)
         if parts[1].isdigit():
             clean_target = parts[0]
             port = parts[1]

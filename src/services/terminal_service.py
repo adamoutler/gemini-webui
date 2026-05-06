@@ -151,9 +151,9 @@ class TerminalService:
             _, _, ssh_dir_path = get_config_paths()
             cmd = build_ssh_args(ssh_target, ssh_dir_path, control_master="no")
 
-            clean_target = ssh_target
-            if ":" in ssh_target:
-                parts = ssh_target.rsplit(":", 1)
+            clean_target = "".join(c for c in ssh_target if c.isalnum() or c in "@.-_:")
+            if ":" in clean_target:
+                parts = clean_target.rsplit(":", 1)
                 if parts[1].isdigit():
                     clean_target = parts[0]
                     cmd.extend(["-p", parts[1]])
