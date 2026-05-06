@@ -1,3 +1,4 @@
+import subprocess
 from src.services.terminal_service import TerminalService
 
 
@@ -23,8 +24,6 @@ def test_execute_command_invalid():
     )
     assert status in (400, 404)
 
-from src.services.terminal_service import TerminalService
-import subprocess
 
 class MockResult:
     def __init__(self, returncode, stdout, stderr):
@@ -32,36 +31,54 @@ class MockResult:
         self.stdout = stdout
         self.stderr = stderr
 
+
 def test_execute_command_sync_local(monkeypatch):
     # Mock subprocess.run to avoid actually executing
-    monkeypatch.setattr("subprocess.run", lambda *args, **kwargs: MockResult(returncode=0, stdout="success", stderr=""))
+    monkeypatch.setattr(
+        "subprocess.run",
+        lambda *args, **kwargs: MockResult(returncode=0, stdout="success", stderr=""),
+    )
     res, code = TerminalService.execute_command_sync(None, None, "ls -la")
     assert code == 200
     assert res["status"] == "success"
     assert res["data"]["stdout"] == "success"
 
+
 def test_execute_command_sync_local_error(monkeypatch):
-    monkeypatch.setattr("subprocess.run", lambda *args, **kwargs: MockResult(returncode=1, stdout="", stderr="error"))
+    monkeypatch.setattr(
+        "subprocess.run",
+        lambda *args, **kwargs: MockResult(returncode=1, stdout="", stderr="error"),
+    )
     res, code = TerminalService.execute_command_sync(None, None, "ls -la")
     assert code == 500
     assert res["status"] == "error"
 
+
 def test_execute_command_sync_local_timeout(monkeypatch):
     def mock_timeout(*args, **kwargs):
         raise subprocess.TimeoutExpired(cmd="ls", timeout=60)
+
     monkeypatch.setattr("subprocess.run", mock_timeout)
     res, code = TerminalService.execute_command_sync(None, None, "ls -la")
     assert code == 504
 
+
 def test_execute_command_sync_ssh(monkeypatch):
-    monkeypatch.setattr("subprocess.run", lambda *args, **kwargs: MockResult(returncode=0, stdout="ssh success", stderr=""))
-    res, code = TerminalService.execute_command_sync("user@192.168.1.1:2222", "/dir", "ls -la")
+    monkeypatch.setattr(
+        "subprocess.run",
+        lambda *args, **kwargs: MockResult(
+            returncode=0, stdout="ssh success", stderr=""
+        ),
+    )
+    res, code = TerminalService.execute_command_sync(
+        "user@192.168.1.1:2222", "/dir", "ls -la"
+    )
     assert code == 200
     assert res["status"] == "success"
     assert res["data"]["stdout"] == "ssh success"
+
 
 def test_execute_command_sync_ssh_invalid():
     res, code = TerminalService.execute_command_sync("invalid_target", "/dir", "ls")
     assert code == 400
     assert res["status"] == "error"
-
