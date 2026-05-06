@@ -311,7 +311,9 @@ export function closeTab(id, event, isLocalOnly = false) {
   if (tab.webglAddon) {
     try {
       tab.webglAddon.dispose();
-    } catch (e) { console.debug("Ignored error:", e); }
+    } catch (e) {
+      console.debug("Ignored error:", e);
+    }
   }
   if (tab.term) tab.term.dispose();
   const inst = document.getElementById(id + "_instance");

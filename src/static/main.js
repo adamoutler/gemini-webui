@@ -122,7 +122,10 @@ globalThis.addEventListener("appinstalled", (evt) => {
 });
 
 // Request Notification Permission
-if ("Notification" in globalThis.window && Notification.permission === "default") {
+if (
+  "Notification" in globalThis.window &&
+  Notification.permission === "default"
+) {
   document.addEventListener(
     "click",
     () => {
@@ -415,7 +418,9 @@ function executeDataAction(code, event) {
         if (s.startsWith("{") || s.startsWith("[")) {
           try {
             return JSON.parse(s.replaceAll("&quot;", '"'));
-          } catch (err) { console.debug("Ignored error:", err); }
+          } catch (err) {
+            console.debug("Ignored error:", err);
+          }
         }
         return s;
       });

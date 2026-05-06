@@ -1,4 +1,3 @@
-INTERNAL_ERR_MSG = "An internal error occurred"
 import os
 import pty
 import fcntl
@@ -9,6 +8,8 @@ from src.models.session import Session
 from src.services.process_engine import build_terminal_command
 from src.config import get_config_paths, env_config
 from src.infrastructure.process_manager import kill_and_reap, add_managed_pty
+
+INTERNAL_ERR_MSG = "An internal error occurred"
 
 logger = logging.getLogger(__name__)
 

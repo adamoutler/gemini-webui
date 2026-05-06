@@ -379,7 +379,9 @@ export class MobileInputUI {
           cellW = dims.css?.cell?.width || dims.actualCellWidth || 9;
           cellH = dims.css?.cell?.height || dims.actualCellHeight || 17;
         }
-      } catch (e) { console.debug("Ignored error:", e); }
+      } catch (e) {
+        console.debug("Ignored error:", e);
+      }
 
       if (foundCursor) {
         let proxyLeft = left + cellW;

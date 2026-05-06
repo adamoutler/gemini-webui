@@ -289,7 +289,9 @@ export function startSession(
             cellHeight =
               tab.term._core._renderService.dimensions.css.cell.height;
           }
-        } catch (e) { console.debug("Ignored error:", e); }
+        } catch (e) {
+          console.debug("Ignored error:", e);
+        }
 
         const termRows = termDiv.querySelector(".xterm-rows");
         if (termRows) {
@@ -779,7 +781,10 @@ export function startSession(
 
     // Trigger notification if action required (✋)
     if (title.includes("✋") && document.visibilityState !== "visible") {
-      if ("Notification" in globalThis.window && Notification.permission === "granted") {
+      if (
+        "Notification" in globalThis.window &&
+        Notification.permission === "granted"
+      ) {
         navigator.serviceWorker.ready.then((registration) => {
           registration.showNotification("Gemini Action Required", {
             body: title,
@@ -854,7 +859,11 @@ export function fitTerminal(tab) {
             });
           }
         }
-      } catch (e) { console.debug("Ignored error:", e); }
+      } catch (e) {
+        console.debug("Ignored error:", e);
+      }
     });
-  } catch (e) { console.warn("Handled exception:", e); }
+  } catch (e) {
+    console.warn("Handled exception:", e);
+  }
 }

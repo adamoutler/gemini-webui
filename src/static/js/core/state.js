@@ -127,7 +127,9 @@ if (typeof globalThis.window !== "undefined") {
   });
 
   // URL params mappings
-  Object.defineProperty(globalThis.window, "mode", { get: () => globalState.mode });
+  Object.defineProperty(globalThis.window, "mode", {
+    get: () => globalState.mode,
+  });
   Object.defineProperty(globalThis.window, "sessionId", {
     get: () => globalState.sessionId,
   });
@@ -137,5 +139,7 @@ if (typeof globalThis.window !== "undefined") {
   Object.defineProperty(globalThis.window, "deepTarget", {
     get: () => globalState.deepTarget,
   });
-  Object.defineProperty(globalThis.window, "deepDir", { get: () => globalState.deepDir });
+  Object.defineProperty(globalThis.window, "deepDir", {
+    get: () => globalState.deepDir,
+  });
 }

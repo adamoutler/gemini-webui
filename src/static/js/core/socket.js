@@ -108,10 +108,7 @@ export function getGlobalSocket() {
           if (activeTab?.state === "launcher") {
             const id = activeTab.id;
             const container = document.getElementById(id + "_instance");
-            if (
-              container?.querySelector(".launcher") &&
-              payload.host
-            ) {
+            if (container?.querySelector(".launcher") && payload.host) {
               const conn = payload.host;
               const sessionListId = `${id}_sessions_${conn.label.replace(
                 /[^a-z0-9]/gi,

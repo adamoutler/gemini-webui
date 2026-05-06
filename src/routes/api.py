@@ -1,4 +1,3 @@
-INTERNAL_ERR_MSG = "An internal error occurred"
 import os
 import tempfile
 import uuid
@@ -14,13 +13,13 @@ from werkzeug.utils import secure_filename
 from flask_wtf.csrf import generate_csrf
 from src.services.session_store import session_manager
 from src.prompt_manager import prompt_manager
-
 from src.config import env_config
 from src.config import get_config, get_config_paths
 from src.routes.auth_utils import authenticated_only
-
 from marshmallow import Schema, fields
 from src.decorators.validation import validate_json_schema
+
+INTERNAL_ERR_MSG = "An internal error occurred"
 
 
 class PromptSchema(Schema):
@@ -291,9 +290,7 @@ def download_file(filename):
         import traceback
 
         traceback.print_exc()
-        return jsonify(
-            {"status": "error", "message": INTERNAL_ERR_MSG}
-        ), 500
+        return jsonify({"status": "error", "message": INTERNAL_ERR_MSG}), 500
 
 
 @api_bp.route("/api/health", methods=["GET"])

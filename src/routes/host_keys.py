@@ -1,4 +1,3 @@
-INTERNAL_ERR_MSG = "An internal error occurred"
 import os
 import json
 import shutil
@@ -9,9 +8,10 @@ import datetime
 import logging
 from flask import Blueprint, jsonify, request
 from werkzeug.utils import secure_filename
-
 from src.config import get_config, get_config_paths
 from src.routes.auth_utils import authenticated_only
+
+INTERNAL_ERR_MSG = "An internal error occurred"
 
 logger = logging.getLogger(__name__)
 
@@ -185,9 +185,7 @@ def rotate_instance_key():
             return jsonify({"status": "success", "key": f.read().strip()})
     except Exception as e:
         logger.error(f"Failed to rotate SSH key: {e}")
-        return jsonify(
-            {"status": "error", "message": INTERNAL_ERR_MSG}
-        ), 500
+        return jsonify({"status": "error", "message": INTERNAL_ERR_MSG}), 500
 
 
 @host_key_bp.route("/api/keys/text", methods=["POST"])

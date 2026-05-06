@@ -42,7 +42,8 @@ export function initializeTheme() {
     cursor: customTheme.cursor || "#ffffff",
   });
 
-  if (typeof globalThis.window !== "undefined") globalThis.terminalTheme = terminalTheme;
+  if (typeof globalThis.window !== "undefined")
+    globalThis.terminalTheme = terminalTheme;
 
   // Initialize CSS variables immediately to reflect any saved theme
   document.documentElement.style.setProperty(

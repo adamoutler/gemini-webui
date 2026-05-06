@@ -3,7 +3,8 @@ import { EventBus } from "../core/event-bus.js";
 export let checkMobile = () => {
   // Strictly target Android as requested
   const isAndroid = /Android/i.test(navigator.userAgent);
-  const isTouch = "ontouchstart" in globalThis.window || navigator.maxTouchPoints > 0;
+  const isTouch =
+    "ontouchstart" in globalThis.window || navigator.maxTouchPoints > 0;
 
   // Increase width threshold to 1024px to support Android tablets (Nexus 9/Pixel Tablet)
   const isNarrow = globalThis.innerWidth <= 1024;
@@ -242,8 +243,7 @@ setTimeout(() => {
 
 // --- Quick Connect Logic ---
 
-export let mobileControlsContainer =
-  document.getElementById("mobile-controls");
+export let mobileControlsContainer = document.getElementById("mobile-controls");
 if (mobileControlsContainer) {
   mobileControlsContainer.addEventListener(
     "touchmove",
@@ -275,7 +275,7 @@ document.querySelectorAll(".control-btn.holdable").forEach((btn) => {
 
       // Handle Shift modifier toggle from MobileModifierState for Tab key
       const isShift =
-        (e?.shiftKey) ||
+        e?.shiftKey ||
         (typeof MobileModifierState !== "undefined" &&
           MobileModifierState.instance &&
           MobileModifierState.instance.shiftActive);
@@ -529,8 +529,8 @@ document.addEventListener("keydown", (e) => {
     const fileTransferModal = document.getElementById("file-transfer-modal");
     const dropZone = document.querySelector(".drop-zone");
     if (
-      (fileTransferModal?.style.display === "block") ||
-      (dropZone?.classList.contains("active"))
+      fileTransferModal?.style.display === "block" ||
+      dropZone?.classList.contains("active")
     ) {
       if (fileTransferModal) closeFileTransfer();
       if (dropZone) dropZone.classList.remove("active");

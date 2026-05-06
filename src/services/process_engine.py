@@ -1,17 +1,16 @@
-ERROR_CHECK_STR = "if [ $? -ne 0 ]; then "
-
 import os
 from pathlib import Path
+import re
+import shlex
+import eventlet.green.subprocess as subprocess
+import time
+
+ERROR_CHECK_STR = "if [ $? -ne 0 ]; then "
 
 try:
     from config import env_config
 except ImportError:
     from src.config import env_config
-import re
-import shlex
-
-import eventlet.green.subprocess as subprocess
-import time
 
 
 def _get_ssh_socket_dir():

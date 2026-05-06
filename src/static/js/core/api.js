@@ -28,7 +28,9 @@ export function filterTerminalFluff(text) {
 let ENABLE_DEBUG = false;
 try {
   ENABLE_DEBUG = localStorage.getItem("GEMINI_DEBUG") === "true";
-} catch (e) { console.debug("Ignored error:", e); }
+} catch (e) {
+  console.debug("Ignored error:", e);
+}
 
 export function setDebug(enabled) {
   ENABLE_DEBUG = !!enabled;
@@ -39,7 +41,8 @@ export function setDebug(enabled) {
     localStorage.removeItem("GEMINI_DEBUG");
     console.log("Verbose debugging disabled. To enable, run: setDebug(true)");
   }
-  if (typeof globalThis.window !== "undefined") globalThis.ENABLE_DEBUG = ENABLE_DEBUG;
+  if (typeof globalThis.window !== "undefined")
+    globalThis.ENABLE_DEBUG = ENABLE_DEBUG;
 }
 
 export function debugLog(...args) {
@@ -131,7 +134,9 @@ export async function customFetch() {
         injectToken(newToken, config);
         response = await originalFetch(resource, config);
       }
-    } catch (e) { console.debug("Ignored error:", e); }
+    } catch (e) {
+      console.debug("Ignored error:", e);
+    }
   }
   return response;
 }

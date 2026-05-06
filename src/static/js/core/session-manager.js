@@ -14,8 +14,7 @@ export function refreshBackendSessionsList(id) {
   socket.emit("get_management_sessions", (sessions) => {
     const terminateAllBtn = document.getElementById(`${id}_terminate_all_btn`);
     if (terminateAllBtn) {
-      terminateAllBtn.style.display =
-        sessions?.length > 0 ? "block" : "none";
+      terminateAllBtn.style.display = sessions?.length > 0 ? "block" : "none";
     }
     if (!sessions || sessions.length === 0) {
       listEl.innerHTML =
@@ -529,11 +528,7 @@ export async function fetchSessions(
         }, 5000);
         socket.emit("get_sessions", params, (response) => {
           clearTimeout(timeoutTimer);
-          if (
-            response?.error &&
-            !response.output &&
-            !response.sessions
-          ) {
+          if (response?.error && !response.output && !response.sessions) {
             console.log("GET_SESSIONS_RESPONSE:", response);
             resolve(response); // Handle errors explicitly like API did
           } else if (response) {
