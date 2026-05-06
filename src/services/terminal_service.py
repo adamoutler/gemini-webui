@@ -163,12 +163,22 @@ class TerminalService:
         else:
             data_dir = env_config.DATA_DIR
             work_dir = os.path.join(data_dir, "workspace")
-            cmd = [gemini_bin, prompt]
-            cwd = work_dir if os.path.exists(work_dir) else None
+            if os.path.exists(work_dir):
+                cmd = [
+                    "/bin/sh",
+                    "-c",
+                    f"cd {shlex.quote(work_dir)} && exec {shlex.quote(gemini_bin)} {shlex.quote(prompt)}",
+                ]
+            else:
+                cmd = [
+                    "/bin/sh",
+                    "-c",
+                    f"exec {shlex.quote(gemini_bin)} {shlex.quote(prompt)}",
+                ]
 
         try:
             result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd
+                cmd, capture_output=True, text=True, timeout=timeout
             )
             if result.returncode != 0:
                 return {
