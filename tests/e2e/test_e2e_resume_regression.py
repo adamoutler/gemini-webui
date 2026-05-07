@@ -166,9 +166,9 @@ def test_new_session_no_resume(custom_server, tmp_path, playwright):
             break
         time.sleep(0.5)
 
-    assert (
-        "I don't know the TEST_VALUE" in term_text
-    ), "Start New incorrectly used -r, causing it to load previous state"
+    assert "I don't know the TEST_VALUE" in term_text, (
+        "Start New incorrectly used -r, causing it to load previous state"
+    )
     assert "The TEST_VALUE is REGRESSION_FAIL" not in term_text
 
     context.close()
@@ -261,9 +261,9 @@ def test_auto_resume_after_server_restart(custom_server, tmp_path, playwright):
             break
         time.sleep(0.5)
 
-    assert (
-        "The TEST_VALUE is AUTO_RESUME_SUCCESS" in term_text
-    ), "Failed to auto-resume with --resume after server restart"
+    assert "The TEST_VALUE is AUTO_RESUME_SUCCESS" in term_text, (
+        "Failed to auto-resume with --resume after server restart"
+    )
     context.close()
     browser.close()
 
@@ -407,9 +407,9 @@ def test_clear_command_preservation_on_reconnect(custom_server, tmp_path, playwr
             break
         time.sleep(0.5)
 
-    assert (
-        "Initial History Line" in term_text
-    ), "History was erased by replayed clear sequences"
+    assert "Initial History Line" in term_text, (
+        "History was erased by replayed clear sequences"
+    )
 
     context.close()
     browser.close()

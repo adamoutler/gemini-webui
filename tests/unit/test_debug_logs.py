@@ -40,9 +40,9 @@ def test_debug_logging(page, server, playwright):
 
     # Check if debug logs increased significantly
     enabled_log_count = len(logs)
-    assert (
-        enabled_log_count > initial_log_count
-    ), "No debug logs appeared after enabling"
+    assert enabled_log_count > initial_log_count, (
+        "No debug logs appeared after enabling"
+    )
 
     # Disable debug logging
     page.evaluate("window.setDebug(false)")

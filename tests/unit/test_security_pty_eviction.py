@@ -44,9 +44,14 @@ def test_lru_pty_eviction():
 def test_lru_eviction_multiple_users():
     manager = SessionManager()
 
-    with patch("os.close"), patch("os.kill"), patch("os.killpg"), patch(
-        "os.getpgid", return_value=os.getpgrp()
-    ), patch("os.waitpid"), patch("fcntl.fcntl"):
+    with (
+        patch("os.close"),
+        patch("os.kill"),
+        patch("os.killpg"),
+        patch("os.getpgid", return_value=os.getpgrp()),
+        patch("os.waitpid"),
+        patch("fcntl.fcntl"),
+    ):
         # Add 49 sessions for user1
         for i in range(49):
             session = Session(

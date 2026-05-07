@@ -40,8 +40,8 @@ def test_check_auth_ad_success(mock_connection, mock_server):
     # Entry behaves like a dict for attributes
     mock_entry = MagicMock()
     mock_entry.entry_dn = "cn=user,dc=test"
-    mock_entry.__getitem__.side_effect = (
-        lambda x: ["CN=allowed,OU=Groups,dc=test"] if x == "memberOf" else []
+    mock_entry.__getitem__.side_effect = lambda x: (
+        ["CN=allowed,OU=Groups,dc=test"] if x == "memberOf" else []
     )
     mock_entry.__contains__.side_effect = lambda x: x == "memberOf"
 
@@ -89,8 +89,8 @@ def test_check_auth_ad_group_mismatch(mock_connection, mock_server):
 
     mock_entry = MagicMock()
     mock_entry.entry_dn = "cn=user,dc=test"
-    mock_entry.__getitem__.side_effect = (
-        lambda x: ["CN=wrong,OU=Groups,dc=test"] if x == "memberOf" else []
+    mock_entry.__getitem__.side_effect = lambda x: (
+        ["CN=wrong,OU=Groups,dc=test"] if x == "memberOf" else []
     )
     mock_entry.__contains__.side_effect = lambda x: x == "memberOf"
     mock_conn_instance.entries = [mock_entry]

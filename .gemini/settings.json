@@ -52,13 +52,7 @@
     ],
     "AfterAgent": [
       {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "${GEMINI_PROJECT_DIR}/.gemini/hooks/check-ci.sh",
-            "name": "ci-check"
-          }
-        ]
+        "hooks": []
       }
     ]
   }

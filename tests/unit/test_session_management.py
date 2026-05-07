@@ -104,12 +104,16 @@ def test_buffer_chunking_ansi_preservation():
 
     try:
         with app.test_request_context():
-            with patch("flask.request") as mock_req, patch(
-                "src.gateways.terminal_socket.session_manager.reclaim_session",
-                return_value=mock_session,
-            ), patch("src.gateways.terminal_socket.set_winsize"), patch(
-                "src.gateways.terminal_socket.session", {"user_id": "admin"}
-            ), patch("src.gateways.terminal_socket.join_room"):
+            with (
+                patch("flask.request") as mock_req,
+                patch(
+                    "src.gateways.terminal_socket.session_manager.reclaim_session",
+                    return_value=mock_session,
+                ),
+                patch("src.gateways.terminal_socket.set_winsize"),
+                patch("src.gateways.terminal_socket.session", {"user_id": "admin"}),
+                patch("src.gateways.terminal_socket.join_room"),
+            ):
                 mock_req.sid = "test_sid"
                 pty_restart({"tab_id": "test_tab", "reclaim": True, "mode": "local"})
 

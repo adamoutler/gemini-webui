@@ -83,9 +83,9 @@ def test_staggered_initial_load(staggered_page, playwright):
     # Wait for the stagger to complete (3 requests * 500ms = ~1500ms)
     staggered_page.wait_for_timeout(3000)
 
-    assert (
-        len(staggered_page.session_requests) >= 3
-    ), f"Expected at least 3 session requests, got {len(staggered_page.session_requests)}"
+    assert len(staggered_page.session_requests) >= 3, (
+        f"Expected at least 3 session requests, got {len(staggered_page.session_requests)}"
+    )
 
     # Calculate intervals between the first 3 requests
     intervals = []

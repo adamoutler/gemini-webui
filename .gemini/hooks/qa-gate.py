@@ -35,8 +35,12 @@ BYPASS_CI = False
 # Core Utility Functions
 # =============================================================================
 
+
 def timeout_handler(signum, frame):
-    deny_transition("GATE DENIED: QA Evaluation exceeded the maximum allowed time (20 minutes).")
+    deny_transition(
+        "GATE DENIED: QA Evaluation exceeded the maximum allowed time (20 minutes)."
+    )
+
 
 def allow_transition(message=""):
     """Outputs an allow decision to MCP and terminates execution."""
@@ -46,15 +50,20 @@ def allow_transition(message=""):
     print(json.dumps(resp))
     sys.exit(0)
 
+
 def deny_transition(reason):
     """Outputs a deny decision with the specified reason to MCP and terminates."""
     print(json.dumps({"decision": "deny", "reason": reason}))
     sys.exit(0)
 
+
 def api_request(endpoint, method="GET", data=None):
     """Executes an authenticated HTTP request against the Kanban API."""
     url = f"{SERVER}{endpoint}"
-    headers = {"x-api-key": os.environ["KANBAN_API_KEY"], "Content-Type": "application/json"}
+    headers = {
+        "x-api-key": os.environ["KANBAN_API_KEY"],
+        "Content-Type": "application/json",
+    }
     req_data = json.dumps(data).encode() if data else None
     req = urllib.request.Request(url, data=req_data, headers=headers, method=method)
     try:
@@ -65,18 +74,20 @@ def api_request(endpoint, method="GET", data=None):
     except Exception:
         return None
 
+
 def dash_api_request(url):
     """Executes a GET request against the Dash API."""
-    req = urllib.request.Request(url, headers={'accept': 'application/json'})
+    req = urllib.request.Request(url, headers={"accept": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=30) as res:
             return json.loads(res.read().decode())
     except Exception:
         return None
 
+
 def acquire_lock():
     """Implements a non-blocking POSIX file lock to prevent concurrent QA evaluations."""
-    f = open("/tmp/qa-gate.lock", 'a+')
+    f = open("/tmp/qa-gate.lock", "a+")
     try:
         fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
         f.seek(0)
@@ -91,42 +102,66 @@ def acquire_lock():
             try_again = time.strftime("%H:%M:%S", time.localtime(lock_time + 300))
         except Exception:
             try_again = "in 5-20 minutes"
-        deny_transition(f"Another QA assessment is currently in progress. Please try again {try_again}.")
+        deny_transition(
+            f"Another QA assessment is currently in progress. Please try again {try_again}."
+        )
+
 
 # =============================================================================
 # Validation Functions (Steps 3-7)
 # =============================================================================
+
 
 def verify_kanban_key():
     """3. Ensures the required API token is present in the environment."""
     if "KANBAN_API_KEY" not in os.environ:
         deny_transition("GATE DENIED: KANBAN_API_KEY is not set in the environment.")
 
+
 def verify_git_clean():
     """4. Validates the local git working tree has no uncommitted changes."""
     if BYPASS_UNCOMMITTED:
         return
-    status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True).stdout.strip()
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], capture_output=True, text=True
+    ).stdout.strip()
     if status:
-        deny_transition("Please commit all project files and delete non-project files - if there are any uncommitted files.")
+        deny_transition(
+            "Please commit all project files and delete non-project files - if there are any uncommitted files."
+        )
+
 
 def verify_git_pushed():
     """5. Validates that the local branch is not ahead of its remote tracking counterpart."""
     if BYPASS_PUSHED:
         return
-    status = subprocess.run(["git", "status", "-sb"], capture_output=True, text=True).stdout
+    status = subprocess.run(
+        ["git", "status", "-sb"], capture_output=True, text=True
+    ).stdout
     if not status or "..." not in status.splitlines()[0]:
-        deny_transition("Git branch has no upstream tracking branch. Please push changes before QA to ensure we match the main repo.")
+        deny_transition(
+            "Git branch has no upstream tracking branch. Please push changes before QA to ensure we match the main repo."
+        )
     if "ahead" in status:
-        deny_transition("Git repository has unpushed commits. Please push changes before QA to ensure we match the main repo.")
+        deny_transition(
+            "Git repository has unpushed commits. Please push changes before QA to ensure we match the main repo."
+        )
+
 
 def verify_ci_integrity():
     """Validates that CI workflow configuration files have not been maliciously modified."""
     if BYPASS_CI:
         return
-    status = subprocess.run(["git", "diff", "--name-only", "origin/main...HEAD", ".github/workflows/"], capture_output=True, text=True).stdout.strip()
+    status = subprocess.run(
+        ["git", "diff", "--name-only", "origin/main...HEAD", ".github/workflows/"],
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
     if status:
-        deny_transition(f"GATE DENIED: Unauthorized modifications to .github/workflows/ detected.\nCI Pipeline integrity is compromised. Please revert changes to workflow files.\nModified:\n{status}")
+        deny_transition(
+            f"GATE DENIED: Unauthorized modifications to .github/workflows/ detected.\nCI Pipeline integrity is compromised. Please revert changes to workflow files.\nModified:\n{status}"
+        )
+
 
 def verify_dash_ci():
     """6. Queries the Dash API for the build status matching the DASH environment string."""
@@ -134,11 +169,15 @@ def verify_dash_ci():
         return None
 
     if not DASH:
-        deny_transition("GATE DENIED: DASH configuration variable is not set (e.g., github/adamoutler/repo/Workflow).")
+        deny_transition(
+            "GATE DENIED: DASH configuration variable is not set (e.g., github/adamoutler/repo/Workflow)."
+        )
 
-    parts = DASH.split('/', 3)
+    parts = DASH.split("/", 3)
     if len(parts) < 4:
-        deny_transition(f"GATE DENIED: Invalid DASH format '{DASH}'. Expected provider/owner/repo/workflow_name.")
+        deny_transition(
+            f"GATE DENIED: Invalid DASH format '{DASH}'. Expected provider/owner/repo/workflow_name."
+        )
 
     provider, owner, repo, workflow_name = parts[0], parts[1], parts[2], parts[3]
 
@@ -148,10 +187,12 @@ def verify_dash_ci():
 
     target_job = None
     for job in status_data:
-        if (job.get("provider") == provider and
-            job.get("owner") == owner and
-            job.get("repo") == repo and
-            job.get("workflow_name") == workflow_name):
+        if (
+            job.get("provider") == provider
+            and job.get("owner") == owner
+            and job.get("repo") == repo
+            and job.get("workflow_name") == workflow_name
+        ):
             target_job = job
             break
 
@@ -159,13 +200,17 @@ def verify_dash_ci():
         deny_transition(f"GATE DENIED: No CI job found matching '{DASH}' in Dash.")
 
     if target_job.get("status") != "success":
-        deny_transition(f"CI job '{DASH}' did not succeed (status: {target_job.get('status')}). Please fix the build.")
+        deny_transition(
+            f"CI job '{DASH}' did not succeed (status: {target_job.get('status')}). Please fix the build."
+        )
 
     return target_job
+
 
 # =============================================================================
 # Kanban API Helpers (Step 7)
 # =============================================================================
+
 
 def fetch_project_id(workspace, prefix):
     data = api_request(f"/api/v1/workspaces/{workspace}/projects/")
@@ -176,14 +221,18 @@ def fetch_project_id(workspace, prefix):
             return str(p.get("id"))
     return None
 
+
 def fetch_work_item(workspace, project_id, ticket_id, seq):
-    data = api_request(f"/api/v1/workspaces/{workspace}/projects/{project_id}/issues/?search={ticket_id}")
+    data = api_request(
+        f"/api/v1/workspaces/{workspace}/projects/{project_id}/issues/?search={ticket_id}"
+    )
     if not data:
         return None
     for w in data.get("results", []):
         if str(w.get("sequence_id")) == str(seq):
             return str(w.get("id"))
     return None
+
 
 def fetch_done_state(workspace, project_id):
     data = api_request(f"/api/v1/workspaces/{workspace}/projects/{project_id}/states/")
@@ -194,14 +243,24 @@ def fetch_done_state(workspace, project_id):
             return str(s.get("id"))
     return None
 
-def build_ticket_context(workspace, project_id, work_item_id, commit, ci_job, current_comment):
+
+def build_ticket_context(
+    workspace, project_id, work_item_id, commit, ci_job, current_comment
+):
     """7. Prepares payload for AI QA gate using the dash apis."""
-    ticket = api_request(f"/api/v1/workspaces/{workspace}/projects/{project_id}/issues/{work_item_id}/")
-    comments = api_request(f"/api/v1/workspaces/{workspace}/projects/{project_id}/issues/{work_item_id}/comments/")
+    ticket = api_request(
+        f"/api/v1/workspaces/{workspace}/projects/{project_id}/issues/{work_item_id}/"
+    )
+    comments = api_request(
+        f"/api/v1/workspaces/{workspace}/projects/{project_id}/issues/{work_item_id}/comments/"
+    )
 
     name = ticket.get("name", "Unknown Ticket") if ticket else "Unknown Ticket"
 
-    rc_path = os.path.join(os.environ.get("GEMINI_PROJECT_DIR", os.getcwd()), ".gemini/agents/reality-checker.md")
+    rc_path = os.path.join(
+        os.environ.get("GEMINI_PROJECT_DIR", os.getcwd()),
+        ".gemini/agents/reality-checker.md",
+    )
     rc_content = ""
     try:
         with open(rc_path, "r") as f:
@@ -219,12 +278,14 @@ def build_ticket_context(workspace, project_id, work_item_id, commit, ci_job, cu
         md += f"\n---\nname: transition comment\ndescription: comment provided with this transition:\n---\n{current_comment}\n\n"
 
     if ci_job and ci_job.get("workflow_id"):
-        query = urllib.parse.urlencode({
-            'provider': ci_job.get('provider'),
-            'owner': ci_job.get('owner'),
-            'repo': ci_job.get('repo'),
-            'workflow_id': ci_job.get('workflow_id')
-        })
+        query = urllib.parse.urlencode(
+            {
+                "provider": ci_job.get("provider"),
+                "owner": ci_job.get("owner"),
+                "repo": ci_job.get("repo"),
+                "workflow_id": ci_job.get("workflow_id"),
+            }
+        )
         log_url = f"https://dash.hackedyour.info/api/logs?{query}"
         log_data = dash_api_request(log_url)
 
@@ -236,15 +297,19 @@ def build_ticket_context(workspace, project_id, work_item_id, commit, ci_job, cu
         else:
             dash_view = "No logs returned from Dash."
     else:
-        dash_view = "No build details available (CI check bypassed or missing workflow_id)."
+        dash_view = (
+            "No build details available (CI check bypassed or missing workflow_id)."
+        )
 
     md += f"---\nname: Dash Build Receipt\ndescription: The final 200 lines of the build results from Dash CI for commit {commit} to save context space. This can be viewed in entirety with the Dash MCP. Contains code-gnerated content.\n---\n{dash_view}\n\n ---\nEND OF QA CONTEXT\n---\n\n"
 
     return md
 
+
 # =============================================================================
 # Reality Checker Execution (Step 8)
 # =============================================================================
+
 
 def run_reality_checker(ticket_md):
     """8. Checks with reality-checker AI to verify it's done with strict isolation."""
@@ -277,11 +342,21 @@ CRITICAL DIRECTIVES:
     time.sleep(20)
 
     try:
-        proc = subprocess.run(["gemini", "-y", "-p", prompt, "--output-format=json"], input=secure_payload, text=True, capture_output=True, timeout=1050)
+        proc = subprocess.run(
+            ["gemini", "-y", "-p", prompt, "--output-format=json"],
+            input=secure_payload,
+            text=True,
+            capture_output=True,
+            timeout=1050,
+        )
         if proc.returncode != 0:
-            deny_transition(f"No quality control available. Gemini command exited with {proc.returncode}. Stderr: {proc.stderr}")
+            deny_transition(
+                f"No quality control available. Gemini command exited with {proc.returncode}. Stderr: {proc.stderr}"
+            )
     except subprocess.TimeoutExpired:
-        deny_transition("The QA Gate took too long to respond (timeout during gemini execution). Please try again now.")
+        deny_transition(
+            "The QA Gate took too long to respond (timeout during gemini execution). Please try again now."
+        )
 
     try:
         stdout_str = proc.stdout.strip()
@@ -289,19 +364,27 @@ CRITICAL DIRECTIVES:
             start_idx = stdout_str.find("{")
             end_idx = stdout_str.rfind("}")
             if start_idx != -1 and end_idx != -1:
-                stdout_str = stdout_str[start_idx:end_idx+1]
+                stdout_str = stdout_str[start_idx : end_idx + 1]
         res_data = json.loads(stdout_str)
         result = res_data.get("response", "")
     except json.JSONDecodeError:
         result = ""
 
     if len(result) < 200:
-        deny_transition(f"Reality Checker response too short ({len(result)} chars). Expected verbose report (>200 chars). Stderr: {proc.stderr}")
+        deny_transition(
+            f"Reality Checker response too short ({len(result)} chars). Expected verbose report (>200 chars). Stderr: {proc.stderr}"
+        )
 
     return result
 
+
 def post_kanban_comment(workspace, project_id, work_item_id, html):
-    api_request(f"/api/v1/workspaces/{workspace}/projects/{project_id}/issues/{work_item_id}/comments/", method="POST", data={"comment_html": html})
+    api_request(
+        f"/api/v1/workspaces/{workspace}/projects/{project_id}/issues/{work_item_id}/comments/",
+        method="POST",
+        data={"comment_html": html},
+    )
+
 
 # =============================================================================
 # Main Execution Flow
@@ -331,7 +414,9 @@ if __name__ == "__main__":
     verify_kanban_key()
 
     if not ticket_id or "-" not in ticket_id:
-        deny_transition("GATE DENIED: Missing or invalid ticket ID format. Expected PREFIX-NUMBER.")
+        deny_transition(
+            "GATE DENIED: Missing or invalid ticket ID format. Expected PREFIX-NUMBER."
+        )
 
     prefix, number = ticket_id.split("-", 1)
     if not number.isdigit() or prefix == number:
@@ -339,13 +424,17 @@ if __name__ == "__main__":
 
     project_id = fetch_project_id(WORKSPACE, prefix)
     if not project_id:
-        deny_transition(f"GATE DENIED: Could not find project '{prefix}' in workspace '{WORKSPACE}'")
+        deny_transition(
+            f"GATE DENIED: Could not find project '{prefix}' in workspace '{WORKSPACE}'"
+        )
 
     done_state_id = fetch_done_state(WORKSPACE, project_id)
 
     # 2. Substring matching for dynamic MCP names, validating against the Done state or the macro
     is_completing_work = "_complete_work" in tool_name
-    is_transition_to_done = "_transition_ticket" in tool_name and (state == "done" or state == str(done_state_id))
+    is_transition_to_done = "_transition_ticket" in tool_name and (
+        state == "done" or state == str(done_state_id)
+    )
 
     if not (is_completing_work or is_transition_to_done):
         allow_transition()
@@ -353,7 +442,9 @@ if __name__ == "__main__":
     if not work_item_id:
         work_item_id = fetch_work_item(WORKSPACE, project_id, ticket_id, number)
     if not work_item_id:
-        deny_transition(f"GATE DENIED: Could not find issue {ticket_id} in project '{project_id}'")
+        deny_transition(
+            f"GATE DENIED: Could not find issue {ticket_id} in project '{project_id}'"
+        )
 
     lock_file = acquire_lock()
 
@@ -370,9 +461,18 @@ if __name__ == "__main__":
         # 7. CI/CD results are showing passed via Dash
         ci_job = verify_dash_ci()
 
-       # 8. Prepare payload for AI QA gate using the dash apis
-        commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
-        ticket_md = build_ticket_context(WORKSPACE, project_id, work_item_id, commit, ci_job, tool_input.get("comment"))
+        # 8. Prepare payload for AI QA gate using the dash apis
+        commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True
+        ).stdout.strip()
+        ticket_md = build_ticket_context(
+            WORKSPACE,
+            project_id,
+            work_item_id,
+            commit,
+            ci_job,
+            tool_input.get("comment"),
+        )
 
         # 9. Check with reality-checker AI to verify it's done
         if BYPASS_REALITY:
@@ -389,6 +489,8 @@ if __name__ == "__main__":
             # We explicitly return the reality checker's message so the agent receives it
             allow_transition(f"QA Gate Passed. Reality Checker Report:\n{result_text}")
         else:
-            deny_transition(f"Reality Checker determined the work is not ready. Feedback: {result_text}")
+            deny_transition(
+                f"Reality Checker determined the work is not ready. Feedback: {result_text}"
+            )
     finally:
         lock_file.close()

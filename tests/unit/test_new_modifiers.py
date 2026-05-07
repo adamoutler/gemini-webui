@@ -73,9 +73,9 @@ def test_super_z_undo(mobile_page):
 
     # 3. Verify sequence (should be \x1b z)
     last_data = mobile_page.evaluate("window.lastSentData")
-    assert (
-        last_data == "\x1bz"
-    ), f"Expected Alt+Z sequence (\\x1bz), got {repr(last_data)}"
+    assert last_data == "\x1bz", (
+        f"Expected Alt+Z sequence (\\x1bz), got {repr(last_data)}"
+    )
 
     # 4. Verify Super toggle is cleared
     expect(super_btn).not_to_have_class("active")
@@ -106,9 +106,9 @@ def test_shift_tab_toggle(mobile_page):
 
     # 3. Verify sequence
     last_data = mobile_page.evaluate("window.lastSentData")
-    assert (
-        last_data == "\x1b[Z"
-    ), f"Expected Shift+Tab sequence (\\x1b[Z), got {repr(last_data)}"
+    assert last_data == "\x1b[Z", (
+        f"Expected Shift+Tab sequence (\\x1b[Z), got {repr(last_data)}"
+    )
 
     # 4. Release Shift key
     mobile_page.keyboard.up("Shift")

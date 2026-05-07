@@ -103,6 +103,6 @@ def test_terminal_burst_scroll(desktop_page, playwright):
     assert viewport_y > 0, "Terminal viewport reset to 0 (top of buffer)!"
 
     # It should be at the bottom (viewportY == baseY)
-    assert (
-        viewport_y == base_y
-    ), f"Terminal did not stay at the bottom. viewportY={viewport_y}, baseY={base_y}"
+    assert viewport_y == base_y, (
+        f"Terminal did not stay at the bottom. viewportY={viewport_y}, baseY={base_y}"
+    )

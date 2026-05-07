@@ -52,9 +52,9 @@ def test_modifier_keyboard_focus(mobile_page, playwright):
         return [activeElement === textarea, activeElement ? activeElement.id || activeElement.tagName : "none"];
     }""")
 
-    assert (
-        is_textarea_focused is True
-    ), f"The terminal hidden textarea was not immediately focused upon tapping a modifier button. Instead focused: {active_id}"
+    assert is_textarea_focused is True, (
+        f"The terminal hidden textarea was not immediately focused upon tapping a modifier button. Instead focused: {active_id}"
+    )
 
     # Let's test Alt as well
     alt_btn = mobile_page.locator("#alt-toggle")
@@ -67,9 +67,9 @@ def test_modifier_keyboard_focus(mobile_page, playwright):
         return activeElement === textarea;
     }""")
 
-    assert (
-        is_textarea_focused_alt is True
-    ), "The terminal hidden textarea was not immediately focused upon tapping Alt."
+    assert is_textarea_focused_alt is True, (
+        "The terminal hidden textarea was not immediately focused upon tapping Alt."
+    )
 
     screenshot_path = f"/tmp/gemwe-182_{os.environ.get('BUILD_NUMBER', 'local')}.png"
     mobile_page.screenshot(path=screenshot_path)

@@ -182,7 +182,9 @@ def safe_killpg_fixture(request):
     Prevents tests from accidentally killing real processes on the host.
     Any call to os.killpg will be ignored unless explicitly tested.
     """
-    with unittest.mock.patch("os.killpg"), unittest.mock.patch(
-        "os.kill"
-    ), unittest.mock.patch("os.getpgid", return_value=123456789):
+    with (
+        unittest.mock.patch("os.killpg"),
+        unittest.mock.patch("os.kill"),
+        unittest.mock.patch("os.getpgid", return_value=123456789),
+    ):
         yield

@@ -92,9 +92,9 @@ def test_csrf_upload_over_ssh(csrf_enabled_server, tmp_path, playwright):
     upload_requests = []
     page.on(
         "request",
-        lambda request: upload_requests.append(request)
-        if "/api/upload" in request.url
-        else None,
+        lambda request: (
+            upload_requests.append(request) if "/api/upload" in request.url else None
+        ),
     )
 
     # Capture console messages
@@ -163,9 +163,9 @@ def test_csrf_drag_drop_upload_over_ssh(csrf_enabled_server, tmp_path, playwrigh
     upload_requests = []
     page.on(
         "request",
-        lambda request: upload_requests.append(request)
-        if "/api/upload" in request.url
-        else None,
+        lambda request: (
+            upload_requests.append(request) if "/api/upload" in request.url else None
+        ),
     )
 
     # Capture console messages

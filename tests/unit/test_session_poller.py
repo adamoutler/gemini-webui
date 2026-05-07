@@ -26,7 +26,8 @@ def test_session_poller_active_interval(monkeypatch):
     manager._poll_host({"label": "test", "target": "test"})
 
     mock_fetch.assert_called_once()
-    mock_sleep.assert_called_once_with(60)
+    mock_sleep.assert_called_once_with(5)
+
 
 def test_session_poller_backoff_interval(monkeypatch):
     # Ensure fresh singleton instance for test

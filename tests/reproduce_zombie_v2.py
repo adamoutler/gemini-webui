@@ -131,7 +131,7 @@ def main(playwright):
         # Reproduction Path 3: Rapid-fire "+ New"
         log("Path 3: Testing Rapid-fire '+ New' -> 'Start New'")
         for i in range(5):
-            log(f"Rapid-fire attempt {i+1}")
+            log(f"Rapid-fire attempt {i + 1}")
             # Click "+ New"
             page.click("#new-tab-btn")
             page.wait_for_selector("button:has-text('Start New')")

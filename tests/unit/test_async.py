@@ -46,8 +46,10 @@ def test_cleanup_orphaned_ptys(mock_socketio):
     new_orphan.orphaned_at = time.time() - 10  # 10s ago
     session_manager.add_session(new_orphan)
 
-    with patch("os.killpg") as mock_kill, patch("os.waitpid"), patch(
-        "os.getpgid", side_effect=lambda x: x
+    with (
+        patch("os.killpg") as mock_kill,
+        patch("os.waitpid"),
+        patch("os.getpgid", side_effect=lambda x: x),
     ):  # Mock ORPHANED_SESSION_TTL to 60 for testing
         from src.app import app
         from src.config import env_config
@@ -71,10 +73,9 @@ def test_cleanup_orphaned_ptys(mock_socketio):
 def test_background_session_preloader(mock_get_config):
     mock_get_config.return_value = {"HOSTS": [{"label": "local", "type": "local"}]}
 
-    with patch(
-        "src.gateways.terminal_socket.fetch_sessions_for_host"
-    ) as mock_fetch, patch(
-        "src.app.socketio.sleep", side_effect=[None, Exception("Stop loop")]
+    with (
+        patch("src.gateways.terminal_socket.fetch_sessions_for_host") as mock_fetch,
+        patch("src.app.socketio.sleep", side_effect=[None, Exception("Stop loop")]),
     ):
         mock_fetch.return_value = {"output": "some sessions", "error": None}
 
@@ -99,16 +100,23 @@ def test_pty_restart_basic(mock_socketio, mock_pty):
         mock_request = MagicMock()
         mock_request.sid = "test-sid"
         # Patch where it's USED in src.app
-        with patch("src.gateways.terminal_socket.request", mock_request), patch(
-            "src.config.get_config_paths"
-        ) as mock_paths, patch("src.config.get_config") as mock_get_config, patch(
-            "shutil.which", return_value=None
-        ), patch("os.chdir"), patch("os.execv"), patch("os.closerange"), patch(
-            "os.execvp"
-        ), patch("os._exit"), patch(
-            "src.services.terminal_service.build_terminal_command",
-            return_value=["bash"],
-        ), patch("src.gateways.terminal_socket.set_winsize"), patch("fcntl.fcntl"):
+        with (
+            patch("src.gateways.terminal_socket.request", mock_request),
+            patch("src.config.get_config_paths") as mock_paths,
+            patch("src.config.get_config") as mock_get_config,
+            patch("shutil.which", return_value=None),
+            patch("os.chdir"),
+            patch("os.execv"),
+            patch("os.closerange"),
+            patch("os.execvp"),
+            patch("os._exit"),
+            patch(
+                "src.services.terminal_service.build_terminal_command",
+                return_value=["bash"],
+            ),
+            patch("src.gateways.terminal_socket.set_winsize"),
+            patch("fcntl.fcntl"),
+        ):
             mock_paths.return_value = ("/data", "/data/config.json", "/data/.ssh")
             mock_get_config.return_value = {
                 "HOSTS": [{"target": "test@host", "env_vars": {"MY_VAR": "123"}}]
@@ -157,9 +165,12 @@ def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
     from src.app import app
 
     with app.test_request_context("/"):
-        with patch("os.killpg") as mock_killpg, patch(
-            "os.getpgid", side_effect=lambda x: x
-        ), patch("src.gateways.terminal_socket.set_winsize"), patch("fcntl.fcntl"):
+        with (
+            patch("os.killpg") as mock_killpg,
+            patch("os.getpgid", side_effect=lambda x: x),
+            patch("src.gateways.terminal_socket.set_winsize"),
+            patch("fcntl.fcntl"),
+        ):
             # Attempt to start the 51st session
             # pty_restart now automatically joins room and reclaim if needed
             from unittest.mock import MagicMock

@@ -63,20 +63,20 @@ def run_test_with_viewport(server, width, height, expect_visible, playwright):
     if expect_visible:
         expect(textarea).to_be_visible()
         assert box["height"] > 16, f"Textarea height did not expand: {box['height']}"
-        assert (
-            box["width"] <= viewport["width"]
-        ), f"Textarea exceeds viewport width: {box['width']} > {viewport['width']}"
-        assert (
-            box["height"] <= viewport["height"]
-        ), f"Textarea exceeds viewport height: {box['height']} > {viewport['height']}"
+        assert box["width"] <= viewport["width"], (
+            f"Textarea exceeds viewport width: {box['width']} > {viewport['width']}"
+        )
+        assert box["height"] <= viewport["height"], (
+            f"Textarea exceeds viewport height: {box['height']} > {viewport['height']}"
+        )
     else:
         expect(textarea).not_to_be_visible()
-        assert (
-            box["height"] == 0
-        ), f"Textarea height should be 0 on desktop, but got: {box['height']}"
-        assert (
-            box["width"] == 0
-        ), f"Textarea width should be 0 on desktop, but got: {box['width']}"
+        assert box["height"] == 0, (
+            f"Textarea height should be 0 on desktop, but got: {box['height']}"
+        )
+        assert box["width"] == 0, (
+            f"Textarea width should be 0 on desktop, but got: {box['width']}"
+        )
 
     # Now try to submit (press enter)
     page.keyboard.press("Enter")

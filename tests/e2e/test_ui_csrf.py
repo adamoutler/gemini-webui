@@ -159,9 +159,9 @@ def test_csrf_fail_deadly_reload(custom_server, tmp_path, playwright):
             break
         time.sleep(0.5)
 
-    assert (
-        "BEFORE_RELOAD_STATE" in term_text
-    ), "Failed to reclaim PTY buffer after CSRF reload"
+    assert "BEFORE_RELOAD_STATE" in term_text, (
+        "Failed to reclaim PTY buffer after CSRF reload"
+    )
 
     # Verify App Background/Resume Resilience (network drop reclaim)
     page.evaluate("tabs.find(t => t.id === activeTabId).socket.io.engine.close()")

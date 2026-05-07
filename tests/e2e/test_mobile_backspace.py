@@ -102,6 +102,8 @@ def test_mobile_backspace_removes_characters(mobile_page, playwright):
 
     print("FULL TERMINAL TEXT:", repr(terminal_text))
 
-    assert found_hell, f"Expected 'You said: hell' without 'You said: hello' in terminal output. Got: {terminal_text}"
+    assert found_hell, (
+        f"Expected 'You said: hell' without 'You said: hello' in terminal output. Got: {terminal_text}"
+    )
 
     print("Test done")

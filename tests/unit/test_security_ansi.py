@@ -42,8 +42,10 @@ def test_ansi_injection(payload):
     session_manager.add_session(session)
     session_manager.reclaim_session("tab_ansi", "sid_ansi", "admin")
 
-    with patch("select.select") as mock_select, patch("os.read") as mock_read, patch(
-        "src.gateways.terminal_socket.socketio"
+    with (
+        patch("select.select") as mock_select,
+        patch("os.read") as mock_read,
+        patch("src.gateways.terminal_socket.socketio"),
     ):
         mock_select.return_value = ([None], [], [])
 
@@ -76,8 +78,10 @@ def test_ansi_injection_mixed_chunks():
         massive_payload[i : i + 1024] for i in range(0, len(massive_payload), 1024)
     ]
 
-    with patch("select.select") as mock_select, patch("os.read") as mock_read, patch(
-        "src.gateways.terminal_socket.socketio"
+    with (
+        patch("select.select") as mock_select,
+        patch("os.read") as mock_read,
+        patch("src.gateways.terminal_socket.socketio"),
     ):
         mock_select.return_value = ([None], [], [])
 

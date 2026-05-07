@@ -102,15 +102,17 @@ def test_new_deployment_login(authenticated_server, playwright):
     js_errors = []
     page.on(
         "pageerror",
-        lambda exc: js_errors.append(str(exc))
-        if "dimensions" not in str(exc)
-        else None,
+        lambda exc: (
+            js_errors.append(str(exc)) if "dimensions" not in str(exc) else None
+        ),
     )
     page.on(
         "console",
-        lambda msg: js_errors.append(msg.text)
-        if msg.type == "error" and "dimensions" not in msg.text
-        else None,
+        lambda msg: (
+            js_errors.append(msg.text)
+            if msg.type == "error" and "dimensions" not in msg.text
+            else None
+        ),
     )
 
     url = authenticated_server["url"]

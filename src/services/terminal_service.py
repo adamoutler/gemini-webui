@@ -167,6 +167,20 @@ class TerminalService:
             cmd = shlex.split(gemini_bin) + [prompt]
 
         try:
+            # CodeQL Mitigation: validate the executable to prevent arbitrary command execution
+            if cmd and os.path.basename(cmd[0]) not in [
+                "ssh",
+                "gemini",
+                "gemini-cli",
+                "mock_gemini_cli.py",
+                "python3",
+                "python",
+            ]:
+                return {
+                    "status": "error",
+                    "message": "Disallowed command execution",
+                }, 403
+
             cwd = work_dir if not ssh_target and os.path.exists(work_dir) else None
             _safe_run = getattr(subprocess, "run")
             result = _safe_run(

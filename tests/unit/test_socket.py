@@ -30,8 +30,9 @@ def setup_teardown():
 @pytest.mark.timeout(60)
 def test_pty_input_handling():
     with app.test_request_context("/"):
-        with patch("src.gateways.terminal_socket.request") as mock_req, patch(
-            "os.write"
+        with (
+            patch("src.gateways.terminal_socket.request") as mock_req,
+            patch("os.write"),
         ):
             mock_req.sid = "sid1"
             session = Session("tab1", None, 123, "admin")
@@ -52,9 +53,10 @@ def test_pty_input_handling():
 @pytest.mark.timeout(60)
 def test_pty_resize_handling():
     with app.test_request_context("/"):
-        with patch("src.gateways.terminal_socket.request") as mock_req, patch(
-            "src.gateways.terminal_socket.set_winsize"
-        ) as mock_resize:
+        with (
+            patch("src.gateways.terminal_socket.request") as mock_req,
+            patch("src.gateways.terminal_socket.set_winsize") as mock_resize,
+        ):
             mock_req.sid = "sid1"
             session = Session("tab1", None, 123, "admin")
             session_manager.add_session(session)
