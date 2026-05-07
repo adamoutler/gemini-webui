@@ -73,9 +73,9 @@ def test_full_color_logo(page, server, playwright):
     # We expect multiple different colors because the Gemini logo is colorful
     colored_spans = new_page.locator('span[style*="color"]')
     count = colored_spans.count()
-    assert count > 0, (
-        "No explicitly colored spans found. The Full Color theme is not preserving colors."
-    )
+    assert (
+        count > 0
+    ), "No explicitly colored spans found. The Full Color theme is not preserving colors."
 
     colors_found = set()
     for i in range(count):
@@ -94,8 +94,8 @@ def test_full_color_logo(page, server, playwright):
 
     print(f"Colors found: {colors_found}")
     # The logo uses at least 3 distinct colors usually, plus our TRUECOLOR #ff5733, #33ff57, #5733ff, etc.
-    assert any(c.startswith("#") for c in colors_found), (
-        "No hex codes (with # symbol) found in the serialized HTML output."
-    )
+    assert any(
+        c.startswith("#") for c in colors_found
+    ), "No hex codes (with # symbol) found in the serialized HTML output."
 
     new_page.close()

@@ -20,6 +20,6 @@ def test_manifest_short_name_and_comment():
     with open(manifest_path, "r") as f:
         manifest_data = json.load(f)
 
-    assert manifest_data.get("short_name") == "Gemini WebUI", (
-        "short_name must be 'Gemini WebUI'"
-    )
+    assert (
+        manifest_data.get("short_name") == "Gemini WebUI"
+    ), "short_name must be 'Gemini WebUI'"

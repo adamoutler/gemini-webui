@@ -58,6 +58,6 @@ def test_tab_close_terminates_process(page: Page, server):
     except subprocess.CalledProcessError:
         sleep_procs_after = []
 
-    assert len(sleep_procs_after) < max(1, len(sleep_procs_before)), (
-        "Sleep process should be terminated"
-    )
+    assert len(sleep_procs_after) < max(
+        1, len(sleep_procs_before)
+    ), "Sleep process should be terminated"

@@ -180,9 +180,9 @@ def test_folder_drag_and_drop_upload(page, test_data_dir, playwright):
         return "";
     }""")
 
-    assert "> I uploaded multiple files to @upload-" in content, (
-        f"Expected indication of multiple files uploaded to an upload- timestamped folder, got terminal content: {content}"
-    )
+    assert (
+        "> I uploaded multiple files to @upload-" in content
+    ), f"Expected indication of multiple files uploaded to an upload- timestamped folder, got terminal content: {content}"
 
     # Check if files actually exist in test_data_dir within a timestamped upload folder
     import glob
@@ -242,9 +242,9 @@ def test_workspace_file_upload_button_injection(page, test_data_dir, playwright)
         return "";
     }""")
 
-    assert "test_upload_file2.txt" in content, (
-        "Uploaded file name not found in terminal output"
-    )
+    assert (
+        "test_upload_file2.txt" in content
+    ), "Uploaded file name not found in terminal output"
 
 
 @pytest.mark.prone_to_timeout
@@ -301,6 +301,6 @@ def test_drag_and_drop_disabled_on_launcher(page, playwright):
     )
 
     # Ensure no upload API requests were triggered
-    assert len(upload_requests) == 0, (
-        "Upload API requests should not be made on the launcher screen"
-    )
+    assert (
+        len(upload_requests) == 0
+    ), "Upload API requests should not be made on the launcher screen"

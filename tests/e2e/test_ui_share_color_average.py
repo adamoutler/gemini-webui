@@ -96,11 +96,11 @@ def test_share_color_averages(page, server, playwright):
     full_lum = get_luminance(full_color)
     print(f"Full mode average color: {full_color}, luminance: {full_lum}")
 
-    assert not full_has_inline, (
-        "Full mode should have explicit inline background-color styles stripped."
-    )
+    assert (
+        not full_has_inline
+    ), "Full mode should have explicit inline background-color styles stripped."
 
     # full mode behaves like the terminal's theme, which has a dark global background.
-    assert full_lum < 100, (
-        f"Full mode luminance ({full_lum}) should be relatively low (reflecting global dark terminal background)"
-    )
+    assert (
+        full_lum < 100
+    ), f"Full mode luminance ({full_lum}) should be relatively low (reflecting global dark terminal background)"

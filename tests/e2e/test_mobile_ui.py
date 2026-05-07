@@ -217,9 +217,9 @@ def test_pull_to_refresh_styles(mobile_page):
     tabbar_touch = mobile_page.evaluate(
         "window.getComputedStyle(document.getElementById('tab-bar')).getPropertyValue('touch-action')"
     )
-    assert "pan-x pan-y" in tabbar_touch, (
-        f"tab-bar has incorrect touch-action: {tabbar_touch}"
-    )
+    assert (
+        "pan-x pan-y" in tabbar_touch
+    ), f"tab-bar has incorrect touch-action: {tabbar_touch}"
 
     # Toolbar might still have it if we decided to block it there, but user said NO difference.
     # toolbar_overscroll = mobile_page.evaluate("window.getComputedStyle(document.getElementById('toolbar')).getPropertyValue('overscroll-behavior')")
@@ -342,9 +342,9 @@ def test_mobile_link_tapping(page, server):
     page.screenshot(path="docs/qa-images/test_mobile_link_tapping_after.png")
 
     opened_url = page.evaluate("window.openedUrl")
-    assert opened_url == "https://google.com", (
-        f"Expected URL https://google.com but got {opened_url}"
-    )
+    assert (
+        opened_url == "https://google.com"
+    ), f"Expected URL https://google.com but got {opened_url}"
 
 
 @pytest.mark.timeout(30)
@@ -384,9 +384,9 @@ def test_mobile_pinch_zoom_no_resize(mobile_page):
     new_height = mobile_page.evaluate("document.body.style.height")
 
     # Because scale is 2.0 (> 1.05), it should return early and NOT change body height
-    assert new_height == initial_height, (
-        f"Height unexpectedly changed from {initial_height} to {new_height} despite zoom"
-    )
+    assert (
+        new_height == initial_height
+    ), f"Height unexpectedly changed from {initial_height} to {new_height} despite zoom"
 
     # Now let's test what happens when scale is 1.0 (no zoom) to ensure our test works
     mobile_page.evaluate("""() => {
@@ -405,6 +405,6 @@ def test_mobile_pinch_zoom_no_resize(mobile_page):
 
     final_height = mobile_page.evaluate("document.body.style.height")
     # This time it should have updated the height
-    assert final_height != initial_height, (
-        "Height should have changed when scale is 1.0"
-    )
+    assert (
+        final_height != initial_height
+    ), "Height should have changed when scale is 1.0"

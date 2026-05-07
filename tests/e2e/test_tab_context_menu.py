@@ -66,12 +66,12 @@ def main(playwright):
         # 3. Verify Default Prompts
         print("Verifying Default Prompts...")
         try:
-            assert page.locator("text='Gemini Audit'").is_visible(), (
-                "Default prompt 'Gemini Audit' should be visible"
-            )
-            assert page.locator("text='Explain Code'").is_visible(), (
-                "Default prompt 'Explain Code' should be visible"
-            )
+            assert page.locator(
+                "text='Gemini Audit'"
+            ).is_visible(), "Default prompt 'Gemini Audit' should be visible"
+            assert page.locator(
+                "text='Explain Code'"
+            ).is_visible(), "Default prompt 'Explain Code' should be visible"
         except Exception as e:
             page.screenshot(path="public/qa-screenshots/error_prompts_not_visible.png")
             # Also print the innerHTML of the context menu
@@ -83,9 +83,9 @@ def main(playwright):
         print("Verifying Add Prompt Modal...")
         page.locator(".context-menu-item:has-text('Add Prompt')").click()
         time.sleep(1)
-        assert page.locator("#add-prompt-modal").is_visible(), (
-            "Add Prompt modal should be visible"
-        )
+        assert page.locator(
+            "#add-prompt-modal"
+        ).is_visible(), "Add Prompt modal should be visible"
 
         # Fill out the modal
         page.locator("#new-prompt-name").fill("Custom Test Prompt")
@@ -99,9 +99,9 @@ def main(playwright):
         time.sleep(0.5)
         page.locator(".context-menu-item:has-text('Manage Prompts')").click()
         time.sleep(1)
-        assert page.locator("#manage-prompts-modal").is_visible(), (
-            "Manage Prompts modal should be visible"
-        )
+        assert page.locator(
+            "#manage-prompts-modal"
+        ).is_visible(), "Manage Prompts modal should be visible"
         assert page.locator(
             "#manage-prompts-modal >> text='Custom Test Prompt'"
         ).is_visible(), "Custom Test Prompt should be in management list"

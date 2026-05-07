@@ -65,9 +65,9 @@ def test_wake_lock(page, playwright):
 
     # Check that wake lock was requested
     active = page.evaluate("window.mockWakeLockState.active")
-    assert active is True, (
-        "Wake Lock should be active when tab title contains 'Working'"
-    )
+    assert (
+        active is True
+    ), "Wake Lock should be active when tab title contains 'Working'"
 
     # Now change to Ready
     page.evaluate("""() => {

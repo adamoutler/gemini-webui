@@ -88,25 +88,26 @@ def test_input_overlay_colors(page, playwright):
     print(evidence)
 
     # We must definitively prevent a regression to black (rgb(0, 0, 0)) and white (rgb(255, 255, 255)).
-    assert css_colors["bg"] != "rgb(0, 0, 0)", (
-        "Regression detected: Overlay background is stark black."
-    )
-    assert css_colors["fg"] in [
-        "rgb(212, 212, 212)",
-        "rgb(255, 255, 255)",
-        "#d4d4d4",
-        "#ffffff",
-    ], (
-        "Regression detected: Overlay text is not the expected terminal foreground color."
-    )
+    assert (
+        css_colors["bg"] != "rgb(0, 0, 0)"
+    ), "Regression detected: Overlay background is stark black."
+    assert (
+        css_colors["fg"]
+        in [
+            "rgb(212, 212, 212)",
+            "rgb(255, 255, 255)",
+            "#d4d4d4",
+            "#ffffff",
+        ]
+    ), "Regression detected: Overlay text is not the expected terminal foreground color."
     # Ensure it uses transparent background and matches the terminal's theme foreground
     assert css_colors["bg"] in [
         "rgba(0, 0, 0, 0)",
         "transparent",
     ], f"Expected transparent background, got {css_colors['bg']}"
-    assert css_colors["fg"] in [term_style["fg"], "rgb(255, 255, 255)"], (
-        f"Expected terminal foreground {term_style['fg']} or white, got {css_colors['fg']}"
-    )
+    assert (
+        css_colors["fg"] in [term_style["fg"], "rgb(255, 255, 255)"]
+    ), f"Expected terminal foreground {term_style['fg']} or white, got {css_colors['fg']}"
     # Now verify dynamic theme change to Light mode
     page.evaluate("""() => {
         document.documentElement.style.setProperty('--terminal-bg', '#ffffff');
@@ -120,6 +121,6 @@ def test_input_overlay_colors(page, playwright):
         return { fg: style.color };
     }""")
 
-    assert light_css_colors["fg"] == "rgb(51, 51, 51)", (
-        f"Expected light theme text rgb(51, 51, 51) (#333333), got {light_css_colors['fg']}"
-    )
+    assert (
+        light_css_colors["fg"] == "rgb(51, 51, 51)"
+    ), f"Expected light theme text rgb(51, 51, 51) (#333333), got {light_css_colors['fg']}"

@@ -26,9 +26,9 @@ def test_version_files_consistency(client):
     import re
 
     html_clean = re.sub(r"\s+", "", html_content)
-    assert f"v{version}</div>" in html_clean, (
-        f"Version {version} not found in UI response footer"
-    )
+    assert (
+        f"v{version}</div>" in html_clean
+    ), f"Version {version} not found in UI response footer"
     # 3. Check manifest.json
     manifest_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -41,9 +41,9 @@ def test_version_files_consistency(client):
     with open(manifest_path, "r") as f:
         manifest_data = json.load(f)
 
-    assert manifest_data.get("version") == version, (
-        f"manifest.json version {manifest_data.get('version')} does not match VERSION file {version}"
-    )
+    assert (
+        manifest_data.get("version") == version
+    ), f"manifest.json version {manifest_data.get('version')} does not match VERSION file {version}"
 
     # 4. Check sw.js
     sw_path = os.path.join(

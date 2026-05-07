@@ -63,12 +63,12 @@ def test_scroll_debounce(mobile_page, playwright):
     }
     """
     result = mobile_page.evaluate(scroll_script)
-    assert result.get("initial") == 50000, (
-        f"Expected 50000, got {result.get('initial')}"
-    )
-    assert result.get("intermediate") == 50016, (
-        f"Expected 50016, got {result.get('intermediate')}"
-    )
+    assert (
+        result.get("initial") == 50000
+    ), f"Expected 50000, got {result.get('initial')}"
+    assert (
+        result.get("intermediate") == 50016
+    ), f"Expected 50016, got {result.get('intermediate')}"
     assert result.get("final") == 50000, f"Expected 50000, got {result.get('final')}"
 
 

@@ -116,6 +116,6 @@ def test_ctrl_enter_aliases_to_alt_enter(page):
         return "";
     }""")
 
-    assert "ALT_ENTER_RECEIVED" in content, (
-        f"Did not find ALT_ENTER_RECEIVED in terminal output: {content}"
-    )
+    assert (
+        "ALT_ENTER_RECEIVED" in content
+    ), f"Did not find ALT_ENTER_RECEIVED in terminal output: {content}"

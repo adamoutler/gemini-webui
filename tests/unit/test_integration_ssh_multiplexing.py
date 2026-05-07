@@ -69,6 +69,6 @@ def test_real_ssh_multiplexing():
     # After exit, check_and_recover should realize it's dead, and delete the socket
     if os.path.exists(socket_path):
         SSHConnectionManager.check_and_recover_connection(user, "localhost", 22)
-        assert not os.path.exists(socket_path), (
-            "Socket should have been removed after detecting dead connection"
-        )
+        assert not os.path.exists(
+            socket_path
+        ), "Socket should have been removed after detecting dead connection"

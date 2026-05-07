@@ -71,6 +71,6 @@ def test_physical_keyboard_combinations(page, playwright):
     is_composing = page.evaluate(
         "document.activeElement.classList.contains('is-composing')"
     )
-    assert not is_composing, (
-        "The auto-correct STT overlay should not be active when pressing modifier keys."
-    )
+    assert (
+        not is_composing
+    ), "The auto-correct STT overlay should not be active when pressing modifier keys."

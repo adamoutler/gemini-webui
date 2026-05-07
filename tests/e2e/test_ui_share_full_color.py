@@ -80,6 +80,6 @@ def test_share_full_color(page, playwright):
     )
 
     # Since the logo "GEMINI" is printed with 6 different distinct ANSI colors, there should be many colorful pixels
-    assert colorful_pixel_count > 5, (
-        f"Expected colorful pixels for the logo, found only {colorful_pixel_count}"
-    )
+    assert (
+        colorful_pixel_count > 5
+    ), f"Expected colorful pixels for the logo, found only {colorful_pixel_count}"
