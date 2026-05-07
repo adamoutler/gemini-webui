@@ -1,4 +1,5 @@
 pytest==9.0.3
+pytest-cov
 playwright
 pytest-playwright==0.7.2
 Pillow
