@@ -244,14 +244,17 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             if not validate_ssh_target(ssh_target):
                 return {"error": "Invalid SSH target format", "timestamp": time.time()}
 
-            quoted_gemini = shlex.quote(gemini_bin)
+            quoted_gemini = " ".join(shlex.quote(p) for p in shlex.split(gemini_bin))
+            gemini_exe = (
+                shlex.quote(shlex.split(gemini_bin)[0]) if gemini_bin else "gemini"
+            )
             gemini_list_cmd = f"{quoted_gemini} --list-sessions"
             remote_prefix = get_remote_command_prefix(
                 ssh_dir, gemini_bin, env_vars=env_vars
             )
 
             # Check for gemini before running list-sessions to avoid ugly bash errors
-            remote_cmd = f"{remote_prefix} if command -v {quoted_gemini} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then exec timeout 15 {gemini_list_cmd}; else exec {gemini_list_cmd}; fi; else exit 0; fi"
+            remote_cmd = f"{remote_prefix} if command -v {gemini_exe} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then exec timeout 15 {gemini_list_cmd}; else exec {gemini_list_cmd}; fi; else exit 0; fi"
 
             # Use bash -ilc (interactive login shell) so gemini's PATH is fully loaded
             # (handles NVM, npm globals, etc.) and gemini outputs session text instead
@@ -273,15 +276,16 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             # Use workspace for local session listing to match startSession
             data_dir = env_config.DATA_DIR
             work_dir = os.path.join(data_dir, "workspace")
+            quoted_gemini = " ".join(shlex.quote(p) for p in shlex.split(gemini_bin))
             # In fake/test mode, we don't cd to workspace because the mock bin is often a relative path
             if os.path.exists(work_dir) and not os.environ.get("GEMWEBUI_HARNESS"):
                 cmd = [
                     "/bin/sh",
                     "-c",
-                    f"cd {shlex.quote(work_dir)} && exec {shlex.quote(gemini_bin)} --list-sessions",
+                    f"cd {shlex.quote(work_dir)} && exec {quoted_gemini} --list-sessions",
                 ]
             else:
-                cmd = [gemini_bin, "--list-sessions"]
+                cmd = shlex.split(gemini_bin) + ["--list-sessions"]
 
         import uuid
         from src.shared_state import active_monitors, active_monitors_lock
@@ -407,7 +411,8 @@ def build_terminal_command(
         user, host, port = SSHConnectionManager.parse_target(ssh_target)
         SSHConnectionManager.check_and_recover_connection(user, host, port)
 
-        quoted_gemini = shlex.quote(gemini_bin)
+        quoted_gemini = " ".join(shlex.quote(p) for p in shlex.split(gemini_bin))
+        gemini_exe = shlex.quote(shlex.split(gemini_bin)[0]) if gemini_bin else "gemini"
         gemini_base_cmd = quoted_gemini
         if str(resume).lower() == "new":
             pass  # Start a fresh session with no --resume flag; JS predicts the ID for future reconnects
@@ -422,7 +427,7 @@ def build_terminal_command(
 
         # Smart command construction: check for gemini, drop to shell if missing
         remote_cmd = f"{remote_prefix} "
-        remote_cmd += f"if command -v {quoted_gemini} >/dev/null 2>&1; then "
+        remote_cmd += f"if command -v {gemini_exe} >/dev/null 2>&1; then "
 
         if "--resume" in gemini_base_cmd:
             remote_cmd += f"{gemini_base_cmd}; "
