@@ -38,13 +38,16 @@ def favicon():
 
 @ui_bp.route("/manifest.json", methods=["GET"])
 def manifest():
-    return current_app.send_static_file("manifest.json")
+    response = current_app.send_static_file("manifest.json")
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+    return response
 
 
 @ui_bp.route("/sw.js", methods=["GET"])
 def service_worker():
     response = current_app.send_static_file("sw.js")
     response.headers["Service-Worker-Allowed"] = "/"
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
     return response
 
 
