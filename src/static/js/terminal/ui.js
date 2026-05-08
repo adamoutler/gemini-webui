@@ -2,6 +2,19 @@ import { globalState } from "../core/state.js";
 import { debugLog } from "../core/api.js";
 import { initDesktopContextMenu } from "../core/pwa-system.js";
 
+// Telemetry: Main Thread Block Detector
+let lastFrameTime = performance.now();
+const monitorFrames = () => {
+  const now = performance.now();
+  const delta = now - lastFrameTime;
+  if (delta > 200) {
+    console.warn(`[PERF_ALERT] Main thread blocked for ${Math.round(delta)}ms`);
+  }
+  lastFrameTime = now;
+  requestAnimationFrame(monitorFrames);
+};
+requestAnimationFrame(monitorFrames);
+
 export function createTerminalContainer(id) {
   if (document.getElementById(id + "_instance")) return;
   const container = document.createElement("div");
@@ -561,12 +574,12 @@ export function startSession(
       }
     });
   }
-
   tab.socket = io.connect(globalThis.location.origin, {
     auth: {
       csrf_token: document
         .querySelector('meta[name="csrf-token"]')
-        ?.getAttribute("content"),
+        .getAttribute("content"),
+      tab_id: tabId,
     },
     transports: ["websocket", "polling"],
     reconnection: true,
@@ -574,6 +587,17 @@ export function startSession(
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
+  });
+
+  // Telemetry: Socket Flap Tracker
+  let socketFlapCount = 0;
+  tab.socket.on("disconnect", (reason) => {
+    if (reason !== "io client disconnect") {
+      socketFlapCount++;
+      console.error(
+        `[SOCKET_FLAP] Connection dropped (${reason}). Reconnect count: ${socketFlapCount}`,
+      );
+    }
   });
 
   let disconnectTime = null;
@@ -588,20 +612,13 @@ export function startSession(
     console.log("Calling globalThis.updateStatus for tab " + tabId);
     globalThis.updateStatus(tab.session.ssh_target, tab.session.ssh_dir); // Restore correct status
 
-    // Refresh CSRF token on reconnect in case server restarted
-    try {
-      await refreshCsrfToken();
-    } catch (e) {
-      console.error("Failed to refresh CSRF token:", e);
-    }
-
     // Fit terminal to globalThis.window immediately before telling backend the size
     fitTerminal(tab);
 
     tab.socket.emit("join_room", { tab_id: tabId });
-    if (tab.shouldReclaim) {
-      tab.term.clear();
-    }
+    // if (tab.shouldReclaim) {
+    //   tab.term.clear(); // Removed to prevent double-clearing during bursts
+    // }
 
     tab.socket.emit("restart", {
       tab_id: tabId,
@@ -853,7 +870,7 @@ export function fitTerminal(tab) {
         tab.fitAddon.fit();
         if (tab.term.cols !== oldCols || tab.term.rows !== oldRows) {
           if (tab.socket && tab.socket.connected) {
-            tab.socket.emit("resize", {
+            tab.socket.emit("pty-resize", {
               cols: tab.term.cols,
               rows: tab.term.rows,
             });

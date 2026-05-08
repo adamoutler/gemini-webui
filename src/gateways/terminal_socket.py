@@ -190,6 +190,11 @@ def session_output_reader(tab_id):
                             socketio.emit(
                                 "pty-output", {"output": filtered_output}, room=tab_id
                             )
+                            # Yield to event loop to prevent starvation during large bursts
+                            socketio.sleep(0.001)
+                            logger.debug(
+                                "[THROTTLE] Yielding to event loop after emitting PTY chunk"
+                            )
                 else:
                     # No data ready, yield to the hub
                     socketio.sleep(0.01)

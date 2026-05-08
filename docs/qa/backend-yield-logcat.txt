@@ -1,0 +1,22 @@
+Generating public/private ed25519 key pair.
+Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-13/data0/.ssh/id_ed25519
+Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-13/data0/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:aXFGpZyKKxtyPlw2Wbm/uRcYF4btXUGvNOKcvTRIlnk gemini-webui-inferrence1-20260508
+The key's randomart image is:
++--[ED25519 256]--+
+|          .+. .o.|
+|         o.o+o  o|
+|        ..*o*oE..|
+|       .o*.=oB.o |
+|      .oS. += =  |
+|      =o. . .. o |
+|  ..+o.. .   ..  |
+|   +o+    ...    |
+|    o.    ++     |
++----[SHA256]-----+
+[THROTTLE] Yielding to event loop after emitting PTY chunk
+[THROTTLE] Yielding to event loop after emitting PTY chunk
+[THROTTLE] Yielding to event loop after emitting PTY chunk
+[THROTTLE] Yielding to event loop after emitting PTY chunk
+[THROTTLE] Yielding to event loop after emitting PTY chunk
