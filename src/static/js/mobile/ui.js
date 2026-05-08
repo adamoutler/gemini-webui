@@ -391,7 +391,14 @@ export class MobileInputUI {
         const remainingWidth = Math.max(globalThis.innerWidth - proxyLeft, 10);
 
         this.proxyInput.style.left = `${proxyLeft}px`;
-        this.proxyInput.style.top = `${top - cellH / 3}px`;
+        let proxyTop = top - cellH / 3;
+        const maxTop =
+          (globalThis.visualViewport
+            ? globalThis.visualViewport.height
+            : globalThis.innerHeight) -
+          cellH * 1.5;
+        if (proxyTop > maxTop) proxyTop = maxTop;
+        this.proxyInput.style.top = `${proxyTop}px`;
         this.proxyInput.style.width = `${remainingWidth}px`;
 
         // Match terminal font metrics if possible

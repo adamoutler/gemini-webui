@@ -750,12 +750,8 @@ export function startSession(
       const buffer = tab.term.buffer.active;
       // If the user is at the bottom (or within 2 lines of it), we should ensure they stay at the bottom
       const isAtBottom = buffer.viewportY >= buffer.baseY - 2;
-      tab.term.write(data.output, () => {
-        // After writing, if they were at the bottom but xterm failed to keep them there, force it
-        if (isAtBottom && buffer.viewportY < buffer.baseY) {
-          tab.term.scrollToBottom();
-        }
-      });
+      tab.term.options.scrollOnData = isAtBottom;
+      tab.term.write(data.output);
     }
   });
   tab.socket.on("session-stolen", (data) => {
