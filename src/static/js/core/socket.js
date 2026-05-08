@@ -40,7 +40,10 @@ export function getGlobalSocket() {
               csrf_token: newToken,
             };
             // Adding a small delay to avoid tight looping
-            setTimeout(() => globalSocket.connect(), 1000);
+            setTimeout(() => {
+              globalSocket.disconnect();
+              globalSocket.connect();
+            }, 1000);
           }
         } catch (err) {
           console.error("Failed to refresh CSRF on connect_error", err);
