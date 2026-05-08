@@ -66,6 +66,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Inject Version
+        run: |
+          BASE_VERSION=$(cat VERSION)
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          NEW_VERSION="${BASE_VERSION}.${COMMIT_COUNT}"
+          echo "$NEW_VERSION" > VERSION
+          sed -i "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" src/static/manifest.json
+          sed -i "s/const CACHE_NAME = .*/const CACHE_NAME = \"gemini-webui-v$NEW_VERSION\";/" src/static/sw.js
+
       - name: Build Native Docker image
         uses: docker/build-push-action@v5
         with:
@@ -103,6 +112,15 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Inject Version
+        run: |
+          BASE_VERSION=$(cat VERSION)
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          NEW_VERSION="${BASE_VERSION}.${COMMIT_COUNT}"
+          echo "$NEW_VERSION" > VERSION
+          sed -i "s/\"version\": \".*\"/\"version\": \"$NEW_VERSION\"/" src/static/manifest.json
+          sed -i "s/const CACHE_NAME = .*/const CACHE_NAME = \"gemini-webui-v$NEW_VERSION\";/" src/static/sw.js
 
       - name: Build Cross Docker image
         uses: docker/build-push-action@v5
