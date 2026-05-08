@@ -251,7 +251,19 @@ export function startSession(
               emitPtyInput(tab, seq);
             }
           } else {
+            const preY = tab.term.buffer.active.viewportY;
             tab.term.scrollLines(deltaLines);
+            const postY = tab.term.buffer.active.viewportY;
+
+            // Hard stop: if we tried to scroll but the terminal didn't move, we've hit a boundary.
+            if (preY === postY) {
+              isSyncing = true;
+              proxy.scrollTop = lastScrollTop;
+              setTimeout(() => {
+                isSyncing = false;
+              }, 10);
+              return;
+            }
           }
           lastScrollTop += deltaLines * rowHeight;
           selectionOverlay.style.top = proxy.scrollTop + "px";
