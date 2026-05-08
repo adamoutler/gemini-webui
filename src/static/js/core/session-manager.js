@@ -540,7 +540,7 @@ export async function fetchSessions(
         });
       });
     }
-    debugLog("FETCH SESSIONS DATA: ", JSON.stringify(data));
+    debugLog("FETCH SESSIONS DATA: ", data);
     if (data.error === "Fetch in progress") {
       data.status = "fetching";
       data.error = null;
@@ -624,12 +624,7 @@ export async function fetchSessions(
         (t.session.ssh_target || "") === (conn.target || "") &&
         (t.session.ssh_dir || "") === (conn.dir || ""),
     );
-    console.log(
-      "TABS: ",
-      JSON.stringify(globalState.tabs),
-      "CONN:",
-      JSON.stringify(conn),
-    );
+    console.log("TABS: ", globalState.tabs, "CONN:", conn);
     console.log("ACTIVE TAB:", activeTerminalTab);
     if (
       activeTerminalTab?.session.resume &&
