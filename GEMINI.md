@@ -27,6 +27,9 @@ When performing refactors for legibility:
 - **Unit Tests**: Located in `tests/unit/`. Focus on isolated logic in `session_manager.py`, `utils.py`, and `routes/`.
 - **E2E Tests**: Located in `tests/e2e/`. Uses Playwright to verify full user flows, including mobile viewport simulations and SSH multiplexing.
 - **Mocks**: Use `src/mock_gemini_cli.py` for high-fidelity simulation of the terminal environment without requiring a real Gemini CLI installation.
+- **SonarQube / Code Quality**:
+  - To run Sonar checks locally for JavaScript, use `npm run lint`, which utilizes `eslint-plugin-sonarjs`.
+  - For full project analysis (Python and JS), rely on the GitHub Actions pipeline (`Check SonarCloud Quality Gate`) which processes the rules defined in `sonar-project.properties`.
 
 ## 🛡️ Security & Integrity Mandates
 
