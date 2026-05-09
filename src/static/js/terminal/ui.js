@@ -289,6 +289,19 @@ export function startSession(
               const deltaLines = Math.round(deltaScroll / rowHeight);
 
               if (deltaLines !== 0) {
+                // Heuristic: On mobile, a single frame scroll jump of > 2 visible screens is impossible via touch drag.
+                // It is a browser layout artifact (e.g. caret auto-scroll abruptly setting scrollTop = 0).
+                const maxExpectedJump = tab.term.rows * 2;
+                if (Math.abs(deltaLines) > maxExpectedJump) {
+                  console.debug(
+                    `[QA:SCROLL_JUMP] Ignoring massive scroll jump of ${deltaLines} lines. Browser artifact?`,
+                  );
+                  proxy.scrollTop = lastRenderedY;
+                  pendingScrollY = null;
+                  isRendering = false;
+                  return;
+                }
+
                 if (tab.term.buffer.active.type === "alternate") {
                   // In alternate buffer, send arrow keys to the terminal
                   const seq = deltaLines < 0 ? "\x1b[A" : "\x1b[B";

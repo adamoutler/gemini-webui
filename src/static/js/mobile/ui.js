@@ -169,9 +169,11 @@ export class MobileInputUI {
     this.proxyInput.style.position = "absolute";
     this.proxyInput.style.opacity = "1";
     this.proxyInput.style.zIndex = "100";
-    this.proxyInput.style.height = "2em"; // Enough for one line
-    this.proxyInput.style.whiteSpace = "nowrap"; // Prevent wrapping and vertical growth
-    this.proxyInput.style.overflow = "hidden"; // Prevent browser auto-scrolling inside textarea
+    this.proxyInput.style.minHeight = "2em";
+    this.proxyInput.style.whiteSpace = "pre-wrap"; // Allow wrapping for multi-line dictation
+    this.proxyInput.style.wordBreak = "break-word";
+    this.proxyInput.style.overflowY = "auto"; // Prevent browser auto-scrolling by allowing internal scroll
+    this.proxyInput.style.overflowX = "hidden";
     this.proxyInput.style.resize = "none";
     this.proxyInput.style.background = "transparent";
     this.proxyInput.style.color = "inherit";
@@ -397,33 +399,57 @@ export class MobileInputUI {
 
         this.proxyInput.style.left = `${proxyLeft}px`;
         let proxyTop = top - cellH / 3;
-        const maxTop =
-          (globalThis.visualViewport
-            ? globalThis.visualViewport.height
-            : globalThis.innerHeight) -
-          cellH * 1.5;
+        const vh = globalThis.visualViewport
+          ? globalThis.visualViewport.height
+          : globalThis.innerHeight;
+        const maxTop = vh - cellH * 1.5;
         if (proxyTop > maxTop) proxyTop = maxTop;
+
         this.proxyInput.style.top = `${proxyTop}px`;
         this.proxyInput.style.width = `${remainingWidth}px`;
+
+        // Auto-grow height without pushing layout viewport
+        // Only shrink when empty to avoid resetting textarea scroll position on every frame
+        const maxHeight = Math.max(cellH * 2, vh - proxyTop - 5);
+        this.proxyInput.style.maxHeight = `${maxHeight}px`;
+
+        if (this.proxyInput.value === "") {
+          this.proxyInput.style.height = "auto";
+        } else if (
+          this.proxyInput.scrollHeight > this.proxyInput.clientHeight
+        ) {
+          this.proxyInput.style.height = `${this.proxyInput.scrollHeight}px`;
+        }
 
         // Match terminal font metrics if possible
         const termEl = term.element.querySelector(".xterm-rows");
         if (termEl) {
           const style = globalThis.getComputedStyle(termEl);
-          this.proxyInput.style.fontFamily = style.fontFamily;
+
+          if (this.proxyInput.style.fontFamily !== style.fontFamily) {
+            this.proxyInput.style.fontFamily = style.fontFamily;
+          }
 
           // Browsers inflate textarea font sizes sometimes. We explicitly set it exactly.
           const fontSizeStr = style.fontSize;
-          this.proxyInput.style.setProperty(
-            "font-size",
-            fontSizeStr,
-            "important",
-          );
+          if (this.proxyInput.style.fontSize !== fontSizeStr) {
+            this.proxyInput.style.setProperty(
+              "font-size",
+              fontSizeStr,
+              "important",
+            );
+          }
 
-          this.proxyInput.style.lineHeight = style.lineHeight;
-          this.proxyInput.style.letterSpacing = style.letterSpacing;
-          this.proxyInput.style.color = style.color; // Explicitly inherit color
-          this.proxyInput.style.caretColor = style.color;
+          if (this.proxyInput.style.lineHeight !== style.lineHeight) {
+            this.proxyInput.style.lineHeight = style.lineHeight;
+          }
+          if (this.proxyInput.style.letterSpacing !== style.letterSpacing) {
+            this.proxyInput.style.letterSpacing = style.letterSpacing;
+          }
+          if (this.proxyInput.style.color !== style.color) {
+            this.proxyInput.style.color = style.color; // Explicitly inherit color
+            this.proxyInput.style.caretColor = style.color;
+          }
 
           // Find background color to cover the underlying xterm cursor
           const bgStyle = globalThis.getComputedStyle(
@@ -434,12 +460,20 @@ export class MobileInputUI {
               ? bgStyle.backgroundColor
               : "var(--bg-primary, #1e1e1e)";
 
-          this.proxyInput.style.backgroundColor = termBg;
+          if (this.proxyInput.style.backgroundColor !== termBg) {
+            this.proxyInput.style.backgroundColor = termBg;
+          }
 
           // Create a fake block cursor (bottom 25% of the first character cell)
-          this.proxyInput.style.backgroundImage = `linear-gradient(to bottom, transparent 75%, #414141 75%)`;
-          this.proxyInput.style.backgroundSize = `${cellW}px 100%`;
-          this.proxyInput.style.backgroundRepeat = "no-repeat";
+          const bgImage = `linear-gradient(to bottom, transparent 75%, #414141 75%)`;
+          if (this.proxyInput.style.backgroundImage !== bgImage) {
+            this.proxyInput.style.backgroundImage = bgImage;
+          }
+          const bgSize = `${cellW}px 100%`;
+          if (this.proxyInput.style.backgroundSize !== bgSize) {
+            this.proxyInput.style.backgroundSize = bgSize;
+            this.proxyInput.style.backgroundRepeat = "no-repeat";
+          }
         }
       }
     });
