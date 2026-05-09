@@ -236,10 +236,13 @@ export function startSession(
       content.style.height = `${totalRows * rowHeight}px`;
 
       const expectedScrollTop = tab.term.buffer.active.viewportY * rowHeight;
-      if (Math.abs(proxy.scrollTop - expectedScrollTop) > rowHeight && !isRendering) {
-         proxy.scrollTop = expectedScrollTop;
-         selectionOverlay.style.top = proxy.scrollTop + "px";
-         lastRenderedY = proxy.scrollTop;
+      if (
+        Math.abs(proxy.scrollTop - expectedScrollTop) > rowHeight &&
+        !isRendering
+      ) {
+        proxy.scrollTop = expectedScrollTop;
+        selectionOverlay.style.top = proxy.scrollTop + "px";
+        lastRenderedY = proxy.scrollTop;
       }
     });
 
@@ -250,24 +253,26 @@ export function startSession(
         const now = performance.now();
         scrollEventCount++;
         if (now - lastScrollEventTime > 1000) {
-            const isStable = scrollEventCount <= 60;
-            console.debug(`[QA:SCROLL_LOOP] trigger="scroll" adjustment_iterations=${scrollEventCount} stability_reached=${isStable}`);
-            scrollEventCount = 0;
-            lastScrollEventTime = now;
+          const isStable = scrollEventCount <= 60;
+          console.debug(
+            `[QA:SCROLL_LOOP] trigger="scroll" adjustment_iterations=${scrollEventCount} stability_reached=${isStable}`,
+          );
+          scrollEventCount = 0;
+          lastScrollEventTime = now;
         }
 
         pendingScrollY = proxy.scrollTop;
         if (!isRendering) {
           isRendering = true;
           const scheduleTime = performance.now();
-          
+
           requestAnimationFrame((frameTime) => {
             const rafStartTime = performance.now();
-            
+
             if (pendingScrollY !== null) {
               const deltaScroll = pendingScrollY - lastRenderedY;
               const deltaLines = Math.round(deltaScroll / rowHeight);
-              
+
               if (deltaLines !== 0) {
                 if (tab.term.buffer.active.type === "alternate") {
                   // In alternate buffer, send arrow keys to the terminal
@@ -277,7 +282,10 @@ export function startSession(
                     if (globalThis.emitPtyInput) {
                       globalThis.emitPtyInput(tab, seq);
                     } else if (tab.socket) {
-                      tab.socket.emit("pty-input", { tabId: tab.id, input: seq });
+                      tab.socket.emit("pty-input", {
+                        tabId: tab.id,
+                        input: seq,
+                      });
                     }
                   }
                   // Force proxy scroll back since alternate screen doesn't scroll natively
@@ -285,25 +293,33 @@ export function startSession(
                   thrashingViolations++;
                 } else {
                   tab.term.scrollLines(deltaLines);
-                  
+
                   // Read the actual viewport after scrolling (in case we hit a boundary)
                   const actualY = tab.term.buffer.active.viewportY * rowHeight;
                   lastRenderedY = actualY;
-                  
+
                   if (Math.abs(pendingScrollY - actualY) > rowHeight) {
-                      proxy.scrollTop = actualY; // Correct proxy to boundary
-                      thrashingViolations++;
+                    proxy.scrollTop = actualY; // Correct proxy to boundary
+                    thrashingViolations++;
                   }
                   selectionOverlay.style.top = lastRenderedY + "px";
                 }
               }
               pendingScrollY = null;
             }
-            
+
             const rafEndTime = performance.now();
             const writeDuration = rafStartTime - scheduleTime;
             const readDuration = rafEndTime - rafStartTime;
-            console.debug(`[QA:LAYOUT_BATCHING] frame_id=${Math.floor(frameTime)} phase="COMPLETED" read_duration=${readDuration.toFixed(2)} write_duration=${writeDuration.toFixed(2)} thrashing_violations=${thrashingViolations}`);
+            console.debug(
+              `[QA:LAYOUT_BATCHING] frame_id=${Math.floor(
+                frameTime,
+              )} phase="COMPLETED" read_duration=${readDuration.toFixed(
+                2,
+              )} write_duration=${writeDuration.toFixed(
+                2,
+              )} thrashing_violations=${thrashingViolations}`,
+            );
             thrashingViolations = 0;
             isRendering = false;
           });

@@ -59,9 +59,7 @@ def test_scroll_debounce(mobile_page, playwright):
     assert (
         result.get("anchor") == "none"
     ), f"Expected anchor to be 'none', got {result.get('anchor')}"
-    assert (
-        result.get("initial") == 0
-    ), f"Expected 0, got {result.get('initial')}"
+    assert result.get("initial") == 0, f"Expected 0, got {result.get('initial')}"
     assert (
         result.get("intermediate") == 0
     ), f"Expected 0 (reset by rAF), got {result.get('intermediate')}"
