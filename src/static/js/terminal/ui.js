@@ -217,67 +217,96 @@ export function startSession(
     proxy.appendChild(selectionOverlay);
     termDiv.appendChild(proxy);
 
-    let isSyncing = false;
     const rowHeight = 16;
-    let lastScrollTop = 50000;
+    proxy.style.overflowAnchor = "none"; // Disable browser scroll anchoring
+
+    // Double Buffer & Sync State
+    let pendingScrollY = null;
+    let isRendering = false;
+    let lastRenderedY = 0;
+
+    // Telemetry State
+    let scrollEventCount = 0;
+    let lastScrollEventTime = performance.now();
+    let thrashingViolations = 0;
+
+    // Sync: Terminal -> Ghost (Active Render Mapping)
+    tab.term.onRender(() => {
+      const totalRows = tab.term.buffer.active.length;
+      content.style.height = `${totalRows * rowHeight}px`;
+
+      const expectedScrollTop = tab.term.buffer.active.viewportY * rowHeight;
+      if (Math.abs(proxy.scrollTop - expectedScrollTop) > rowHeight && !isRendering) {
+         proxy.scrollTop = expectedScrollTop;
+         selectionOverlay.style.top = proxy.scrollTop + "px";
+         lastRenderedY = proxy.scrollTop;
+      }
+    });
 
     // Sync: Ghost -> Terminal (Passive & Momentum-Safe)
     proxy.addEventListener(
       "scroll",
       () => {
-        if (isSyncing) return;
-
-        const deltaScroll = proxy.scrollTop - lastScrollTop;
-        const deltaLines = Math.round(deltaScroll / rowHeight);
-
-        // If the browser resets scrollTop abruptly (e.g., backgrounding PWA), recenter without scrolling
-        if (Math.abs(deltaScroll) > 10000) {
-          isSyncing = true;
-          proxy.scrollTop = 50000;
-          lastScrollTop = 50000;
-          selectionOverlay.style.top = proxy.scrollTop + "px";
-          setTimeout(() => {
-            isSyncing = false;
-          }, 10);
-          return;
+        const now = performance.now();
+        scrollEventCount++;
+        if (now - lastScrollEventTime > 1000) {
+            const isStable = scrollEventCount <= 60;
+            console.debug(`[QA:SCROLL_LOOP] trigger="scroll" adjustment_iterations=${scrollEventCount} stability_reached=${isStable}`);
+            scrollEventCount = 0;
+            lastScrollEventTime = now;
         }
 
-        if (deltaLines !== 0) {
-          if (tab.term.buffer.active.type === "alternate") {
-            // In alternate buffer, send arrow keys to the terminal
-            const seq = deltaLines < 0 ? "\x1b[A" : "\x1b[B";
-            const count = Math.abs(deltaLines);
-            for (let i = 0; i < count; i++) {
-              emitPtyInput(tab, seq);
+        pendingScrollY = proxy.scrollTop;
+        if (!isRendering) {
+          isRendering = true;
+          const scheduleTime = performance.now();
+          
+          requestAnimationFrame((frameTime) => {
+            const rafStartTime = performance.now();
+            
+            if (pendingScrollY !== null) {
+              const deltaScroll = pendingScrollY - lastRenderedY;
+              const deltaLines = Math.round(deltaScroll / rowHeight);
+              
+              if (deltaLines !== 0) {
+                if (tab.term.buffer.active.type === "alternate") {
+                  // In alternate buffer, send arrow keys to the terminal
+                  const seq = deltaLines < 0 ? "\x1b[A" : "\x1b[B";
+                  const count = Math.abs(deltaLines);
+                  for (let i = 0; i < count; i++) {
+                    if (globalThis.emitPtyInput) {
+                      globalThis.emitPtyInput(tab, seq);
+                    } else if (tab.socket) {
+                      tab.socket.emit("pty-input", { tabId: tab.id, input: seq });
+                    }
+                  }
+                  // Force proxy scroll back since alternate screen doesn't scroll natively
+                  proxy.scrollTop = lastRenderedY;
+                  thrashingViolations++;
+                } else {
+                  tab.term.scrollLines(deltaLines);
+                  
+                  // Read the actual viewport after scrolling (in case we hit a boundary)
+                  const actualY = tab.term.buffer.active.viewportY * rowHeight;
+                  lastRenderedY = actualY;
+                  
+                  if (Math.abs(pendingScrollY - actualY) > rowHeight) {
+                      proxy.scrollTop = actualY; // Correct proxy to boundary
+                      thrashingViolations++;
+                  }
+                  selectionOverlay.style.top = lastRenderedY + "px";
+                }
+              }
+              pendingScrollY = null;
             }
-          } else {
-            const preY = tab.term.buffer.active.viewportY;
-            tab.term.scrollLines(deltaLines);
-            const postY = tab.term.buffer.active.viewportY;
-
-            // Hard stop: if we tried to scroll but the terminal didn't move, we've hit a boundary.
-            if (preY === postY) {
-              isSyncing = true;
-              proxy.scrollTop = lastScrollTop;
-              setTimeout(() => {
-                isSyncing = false;
-              }, 10);
-              return;
-            }
-          }
-          lastScrollTop += deltaLines * rowHeight;
-          selectionOverlay.style.top = proxy.scrollTop + "px";
-
-          // Recenter periodically to prevent hitting bounds
-          if (Math.abs(proxy.scrollTop - 50000) > 40000) {
-            isSyncing = true;
-            proxy.scrollTop = 50000;
-            lastScrollTop = 50000;
-            selectionOverlay.style.top = proxy.scrollTop + "px";
-            setTimeout(() => {
-              isSyncing = false;
-            }, 10);
-          }
+            
+            const rafEndTime = performance.now();
+            const writeDuration = rafStartTime - scheduleTime;
+            const readDuration = rafEndTime - rafStartTime;
+            console.debug(`[QA:LAYOUT_BATCHING] frame_id=${Math.floor(frameTime)} phase="COMPLETED" read_duration=${readDuration.toFixed(2)} write_duration=${writeDuration.toFixed(2)} thrashing_violations=${thrashingViolations}`);
+            thrashingViolations = 0;
+            isRendering = false;
+          });
         }
       },
       { passive: true },
