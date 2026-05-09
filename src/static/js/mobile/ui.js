@@ -170,8 +170,9 @@ export class MobileInputUI {
     this.proxyInput.style.opacity = "1";
     this.proxyInput.style.zIndex = "100";
     this.proxyInput.style.height = "2em"; // Enough for one line
-    this.proxyInput.style.whiteSpace = "pre-wrap";
-    this.proxyInput.style.wordBreak = "break-word";
+    this.proxyInput.style.whiteSpace = "nowrap"; // Prevent wrapping and vertical growth
+    this.proxyInput.style.overflow = "hidden"; // Prevent browser auto-scrolling inside textarea
+    this.proxyInput.style.resize = "none";
     this.proxyInput.style.background = "transparent";
     this.proxyInput.style.color = "inherit";
 
@@ -323,7 +324,11 @@ export class MobileInputUI {
     }
     this.proxyInput.style.display = "block";
 
-    requestAnimationFrame(() => {
+    if (this._alignRaf) {
+      cancelAnimationFrame(this._alignRaf);
+    }
+
+    this._alignRaf = requestAnimationFrame(() => {
       let left = 0;
       let top = 0;
       let foundCursor = false;

@@ -677,9 +677,6 @@ export function startSession(
   const handleConnect = async () => {
     console.log("handleConnect called for tab " + tabId);
     disconnectTime = null;
-    if (tab.term) {
-      tab.term.clear();
-    }
     tab.term.write("\r\n\x1b[2m[Connected to server]\x1b[0m\r\n");
     console.log("Calling globalThis.updateStatus for tab " + tabId);
     globalThis.updateStatus(tab.session.ssh_target, tab.session.ssh_dir); // Restore correct status
