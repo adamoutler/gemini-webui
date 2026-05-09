@@ -217,7 +217,19 @@ export function startSession(
     proxy.appendChild(selectionOverlay);
     termDiv.appendChild(proxy);
 
-    const rowHeight = 16;
+    const getRowHeight = () => {
+      try {
+        if (
+          tab.term._core &&
+          tab.term._core._renderService &&
+          tab.term._core._renderService.dimensions
+        ) {
+          const dims = tab.term._core._renderService.dimensions;
+          return dims.css?.cell?.height || dims.actualCellHeight || 16;
+        }
+      } catch (e) {}
+      return 16;
+    };
     proxy.style.overflowAnchor = "none"; // Disable browser scroll anchoring
 
     // Double Buffer & Sync State
@@ -232,8 +244,10 @@ export function startSession(
 
     // Sync: Terminal -> Ghost (Active Render Mapping)
     tab.term.onRender(() => {
+      const rowHeight = getRowHeight();
       const totalRows = tab.term.buffer.active.length;
       content.style.height = `${totalRows * rowHeight}px`;
+      proxy.style.height = `${tab.term.rows * rowHeight}px`; // Prevent clientHeight discrepancy clamping
 
       const expectedScrollTop = tab.term.buffer.active.viewportY * rowHeight;
       if (
@@ -250,6 +264,7 @@ export function startSession(
     proxy.addEventListener(
       "scroll",
       () => {
+        const rowHeight = getRowHeight();
         const now = performance.now();
         scrollEventCount++;
         if (now - lastScrollEventTime > 1000) {
