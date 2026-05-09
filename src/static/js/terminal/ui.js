@@ -833,7 +833,34 @@ export function startSession(
       // If the user is at the bottom (or within 2 lines of it), we should ensure they stay at the bottom
       const isAtBottom = buffer.viewportY >= buffer.baseY - 2;
       tab.term.options.scrollOnData = isAtBottom;
+
       tab.term.write(data.output);
+
+      // Throttle the manual scrollToBottom on mobile proxy to 4x/second
+      if (isAtBottom && tab.mobileProxy) {
+        const now = Date.now();
+        const alignCursor = () => {
+          if (
+            tab.mobileProxy.ui &&
+            typeof tab.mobileProxy.ui.alignWithCursor === "function"
+          ) {
+            tab.mobileProxy.ui.alignWithCursor(tab.term);
+          } else if (tab.mobileProxy.proxy) {
+            tab.mobileProxy.proxy.scrollTop = 50000;
+          }
+        };
+
+        if (!tab._lastAutoScroll || now - tab._lastAutoScroll > 250) {
+          tab._lastAutoScroll = now;
+          alignCursor();
+        }
+
+        if (tab._autoScrollTimeout) clearTimeout(tab._autoScrollTimeout);
+        tab._autoScrollTimeout = setTimeout(() => {
+          tab._lastAutoScroll = Date.now();
+          alignCursor();
+        }, 300);
+      }
     }
   });
   tab.socket.on("session-stolen", (data) => {
