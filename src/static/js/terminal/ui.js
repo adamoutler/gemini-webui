@@ -93,6 +93,29 @@ export function startSession(
   termDiv.setAttribute("aria-relevant", "additions");
   container.appendChild(termDiv);
 
+  // GEMWEBUI-362: Terminal Locking Overlay
+  const lockOverlay = document.createElement("div");
+  lockOverlay.className = "terminal-lock-overlay hidden";
+  lockOverlay.id = "lock-overlay-" + tabId;
+  lockOverlay.innerHTML = `
+    <div class="lock-content" role="dialog" aria-modal="true" aria-labelledby="lock-title">
+      <div class="lock-spinner" aria-hidden="true"></div>
+      <h3 class="lock-title" id="lock-title">Automation in Progress</h3>
+      <p class="lock-job-name" id="lock-job-${tabId}">Running...</p>
+      <button class="btn-emergency-stop" id="unlock-btn-${tabId}" aria-label="Emergency Stop and Unlock Terminal">
+        ⚠️ Emergency Stop / Unlock
+      </button>
+    </div>
+  `;
+  container.appendChild(lockOverlay);
+
+  const unlockBtn = document.getElementById("unlock-btn-" + tabId);
+  unlockBtn.addEventListener("click", () => {
+    if (tab.socket) {
+      tab.socket.emit("unlock_request", { tab_id: tabId });
+    }
+  });
+
   globalThis.switchTab(tabId);
 
   if (!document.documentElement.classList.contains("is-mobile")) {
@@ -873,6 +896,25 @@ export function startSession(
         });
       }
     }, 1500);
+  });
+
+  tab.socket.on("lock_state_changed", (data) => {
+    const overlay = document.getElementById("lock-overlay-" + tab.id);
+    const termDiv = document.getElementById("rolling-log-" + tab.id);
+    if (!overlay || !termDiv) return;
+
+    if (data.locked) {
+      tab.isLocked = true;
+      document.getElementById("lock-job-" + tab.id).innerText =
+        "Running: " + (data.job_name || "Automation");
+      overlay.classList.remove("hidden");
+      termDiv.style.filter = "blur(4px)";
+    } else {
+      tab.isLocked = false;
+      overlay.classList.add("hidden");
+      termDiv.style.filter = "";
+      if (tab.term) tab.term.focus();
+    }
   });
 
   tab.socket.on("pty-output", (data) => {

@@ -3,6 +3,10 @@ import { fitTerminal } from "./ui.js";
 
 export function emitPtyInput(tab, data) {
   if (!tab || !tab.socket || data == null) return;
+  if (tab.isLocked) {
+    console.warn("Input blocked: Terminal is currently locked for automation.");
+    return;
+  }
   // Convert \n to \r so that bash processes STT newlines and multiline pastes as command submissions
   const strData = String(data).replaceAll("\n", "\r");
   tab.socket.emit("pty-input", { input: strData });
