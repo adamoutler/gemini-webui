@@ -31,7 +31,12 @@ class SessionPersistenceManager:
             if os.path.exists(self.file_path):
                 try:
                     with open(self.file_path, "r") as f:
-                        return json.load(f)
+                        data = json.load(f)
+                        for tid, s in data.items():
+                            resume_val = s.get("resume")
+                            if str(resume_val).isdigit():
+                                s["resume"] = "new"
+                        return data
                 except Exception:
                     return {}
             return {}
