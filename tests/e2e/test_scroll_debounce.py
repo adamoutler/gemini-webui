@@ -41,9 +41,9 @@ def test_scroll_debounce(mobile_page, playwright):
             const anchor = proxy.style.overflowAnchor;
 
             // Trigger scroll within bounds
-            proxy.scrollTop = 16;
+            // Use actual rowHeight or at least 50 to guarantee deltaLines >= 1
+            proxy.scrollTop = 50;
             proxy.dispatchEvent(new Event('scroll'));
-
             setTimeout(() => {
                 const intermediateScroll = proxy.scrollTop; // Should be reset to 0 by rAF
                 resolve({
