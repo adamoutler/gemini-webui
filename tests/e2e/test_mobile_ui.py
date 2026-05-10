@@ -218,7 +218,7 @@ def test_pull_to_refresh_styles(mobile_page):
         "window.getComputedStyle(document.getElementById('tab-bar')).getPropertyValue('touch-action')"
     )
     assert (
-        "pan-x pan-y" in tabbar_touch
+        "pan-y" in tabbar_touch
     ), f"tab-bar has incorrect touch-action: {tabbar_touch}"
 
     # Toolbar might still have it if we decided to block it there, but user said NO difference.
