@@ -41,8 +41,8 @@ def test_new_connection_clean_startup(page, server):
     terminal_text = page.locator(".xterm-rows").inner_text()
 
     # Take a screenshot for visual proof required by QA gate
-    os.makedirs("public/qa-screenshots", exist_ok=True)
-    screenshot_path = "public/qa-screenshots/clean_new_connection_proof.png"
+    os.makedirs("docs/qa-images", exist_ok=True)
+    screenshot_path = "docs/qa-images/clean_new_connection_proof.png"
     page.screenshot(path=screenshot_path)
 
     # Assert there are no errors in the output
