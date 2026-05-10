@@ -79,9 +79,7 @@ def test_terminal_service_command_injection_mitigation(mock_run):
 
 
 @patch("subprocess.run")
-@patch("src.services.remote_fs.tempfile.mkstemp")
-def test_remote_fs_get_file_command_injection_mitigation(mock_mkstemp, mock_run):
-    mock_mkstemp.return_value = (1, "/tmp/local_file")
+def test_remote_fs_get_file_command_injection_mitigation(mock_run):
     mock_run.return_value = MagicMock(returncode=0)
 
     download_from_remote(
