@@ -454,8 +454,8 @@ def build_terminal_command(
         remote_cmd += "fi"
 
         # Use a login shell to ensure PATH is correctly set up (e.g. for NVM, npm globals)
-        # Avoiding -i (interactive) prevents bash from attempting job control and throwing "cannot set terminal process group" ioctl errors.
-        login_wrapped_remote_cmd = f"bash -lc {shlex.quote(remote_cmd)}"
+        # Using +m disables job control to prevent "cannot set terminal process group" ioctl errors while keeping -i for interactive profiles.
+        login_wrapped_remote_cmd = f"bash +m -ilc {shlex.quote(remote_cmd)}"
 
         cmd = ["ssh", "-tt"]
         cmd.extend(SSHConnectionManager.get_base_ssh_args(user, host, port))
