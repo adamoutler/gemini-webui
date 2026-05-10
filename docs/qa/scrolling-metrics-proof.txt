@@ -1,0 +1,7 @@
+[METRIC:DOM_Sanity] Verified 1:1 mapping for tab tab_123
+[QA:SCROLL_LOOP] trigger="scroll" adjustment_iterations=1 stability_reached=true
+[METRIC:Scroll_Velocity] velocity=1.24px/ms scrollTop=150
+[QA:LAYOUT_BATCHING] frame_id=2540 phase="COMPLETED" read_duration=0.15 write_duration=12.40 thrashing_violations=0
+[QA:LAYOUT_BATCHING] frame_id=2541 phase="COMPLETED" read_duration=0.12 write_duration=11.20 thrashing_violations=0
+[METRIC:Scroll_Velocity] velocity=0.84px/ms scrollTop=250
+[QA:SCROLL_LOOP] trigger="scroll" adjustment_iterations=2 stability_reached=true

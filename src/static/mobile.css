@@ -76,12 +76,15 @@
   -webkit-overflow-scrolling: touch;
   background: transparent;
   touch-action: pan-y;
+  overflow-anchor: none; /* Prevent browser from fighting JS scroll sync */
+  overscroll-behavior-y: none; /* Prevent iOS rubber-banding/double box ghosting */
+  contain: strict; /* Isolate layout recalculations */
 }
 
 .mobile-scroll-content {
   width: 1px;
-  height: 100000px; /* Large stable height for inertia */
   background: transparent;
+  contain: strict; /* Prevent height changes from thrashing parent layouts */
 }
 
 .is-mobile .mobile-scroll-proxy {

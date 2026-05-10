@@ -225,6 +225,22 @@ export function startSession(
     proxy.appendChild(selectionOverlay);
     termDiv.appendChild(proxy);
 
+    // DOM Sanity Check
+    const checkSanity = () => {
+      const proxies = termDiv.querySelectorAll(".mobile-scroll-proxy");
+      if (proxies.length !== 1) {
+        console.error(
+          `[METRIC:DOM_Sanity_Alert] Tab ${tabId} state invalid. Proxies: ${proxies.length}.`,
+        );
+      } else {
+        console.debug(
+          `[METRIC:DOM_Sanity] Verified 1:1 mapping for tab ${tabId}`,
+        );
+      }
+    };
+    checkSanity();
+    setInterval(checkSanity, 10000);
+
     const getRowHeight = () => {
       try {
         if (
@@ -241,39 +257,67 @@ export function startSession(
     proxy.style.overflowAnchor = "none"; // Disable browser scroll anchoring
 
     // Double Buffer & Sync State
-    let pendingScrollY = null;
     let isRendering = false;
-    let lastRenderedY = 0;
+    let pendingScrollTop = null;
 
     // Telemetry State
+    let lastScrollY = 0;
+    let lastScrollTime = performance.now();
     let scrollEventCount = 0;
     let lastScrollEventTime = performance.now();
     let thrashingViolations = 0;
 
     // Sync: Terminal -> Ghost (Active Render Mapping)
     tab.term.onRender(() => {
+      if (isRendering) return;
+
+      // READ PHASE (Immediate)
       const rowHeight = getRowHeight();
       const totalRows = tab.term.buffer.active.length;
-      content.style.height = `${totalRows * rowHeight}px`;
-      proxy.style.height = `${tab.term.rows * rowHeight}px`; // Prevent clientHeight discrepancy clamping
+      const expectedViewportY = tab.term.buffer.active.viewportY;
+      const expectedScrollTop = expectedViewportY * rowHeight;
+      const targetHeight = `${totalRows * rowHeight}px`;
+      const targetProxyHeight = `${tab.term.rows * rowHeight}px`;
 
-      const expectedScrollTop = tab.term.buffer.active.viewportY * rowHeight;
-      if (
-        Math.abs(proxy.scrollTop - expectedScrollTop) > rowHeight &&
-        !isRendering
-      ) {
-        proxy.scrollTop = expectedScrollTop;
-        selectionOverlay.style.top = proxy.scrollTop + "px";
-        lastRenderedY = proxy.scrollTop;
-      }
+      isRendering = true;
+
+      // WRITE PHASE (Deferred to rAF)
+      requestAnimationFrame((frameTime) => {
+        content.style.height = targetHeight;
+        proxy.style.height = targetProxyHeight; // Prevent clientHeight discrepancy
+
+        // Only update if we are out of sync by more than 1 row to prevent jitter
+        if (Math.abs(proxy.scrollTop - expectedScrollTop) > rowHeight) {
+          proxy.scrollTop = expectedScrollTop;
+          selectionOverlay.style.top = proxy.scrollTop + "px";
+        }
+        isRendering = false;
+      });
     });
 
-    // Sync: Ghost -> Terminal (Passive & Momentum-Safe)
+    // Sync: Ghost -> Terminal (Passive Momentum Scroll)
     proxy.addEventListener(
       "scroll",
       () => {
-        const rowHeight = getRowHeight();
+        // READ PHASE (Immediate during event)
+        pendingScrollTop = proxy.scrollTop;
+
+        // QA Telemetry: Scroll Velocity
         const now = performance.now();
+        const dt = now - lastScrollTime;
+        const dy = pendingScrollTop - lastScrollY;
+
+        if (dt > 0) {
+          const velocity = Math.abs(dy / dt);
+          if (velocity > 0.1) {
+            console.debug(
+              `[METRIC:Scroll_Velocity] velocity=${velocity.toFixed(
+                2,
+              )}px/ms scrollTop=${pendingScrollTop}`,
+            );
+          }
+        }
+
         scrollEventCount++;
         if (now - lastScrollEventTime > 1000) {
           const isStable = scrollEventCount <= 60;
@@ -284,99 +328,83 @@ export function startSession(
           lastScrollEventTime = now;
         }
 
-        pendingScrollY = proxy.scrollTop;
-        if (!isRendering) {
-          isRendering = true;
-          const scheduleTime = performance.now();
+        lastScrollTime = now;
+        lastScrollY = pendingScrollTop;
 
-          requestAnimationFrame((frameTime) => {
-            const rafStartTime = performance.now();
+        if (isRendering) return;
+        isRendering = true;
+        const scheduleTime = performance.now();
 
-            if (pendingScrollY !== null) {
-              const deltaScroll = pendingScrollY - lastRenderedY;
-              const deltaLines = Math.round(deltaScroll / rowHeight);
+        // WRITE PHASE (Deferred to rAF)
+        requestAnimationFrame((frameTime) => {
+          const rafStartTime = performance.now();
 
-              if (deltaLines !== 0) {
-                // Heuristic: On mobile, a single frame scroll jump of > 2 visible screens is impossible via touch drag.
-                // It is a browser layout artifact (e.g. caret auto-scroll abruptly setting scrollTop = 0).
-                const maxExpectedJump = tab.term.rows * 2;
+          if (pendingScrollTop === null) {
+            isRendering = false;
+            return;
+          }
 
-                // Reject sudden jumps to exactly 0 if we were previously at the bottom (keyboard focus artifact)
-                // GEMWEBUI-407, 408, 409: Prevents sliding-from-top artifacts during mass data chunking/bursts
-                if (
-                  pendingScrollY === 0 &&
-                  deltaLines < -1 &&
-                  tab.term.options.scrollOnData
-                ) {
-                  console.debug(
-                    `[QA:SCROLL_JUMP] Ignoring artifact jump to 0 (keyboard focus)`,
-                  );
-                  proxy.scrollTop = lastRenderedY;
-                  pendingScrollY = null;
-                  isRendering = false;
-                  return;
-                }
+          const rowHeight = getRowHeight();
+          const expectedViewportY = Math.round(pendingScrollTop / rowHeight);
+          const currentViewportY = tab.term.buffer.active.viewportY;
+          const deltaLines = expectedViewportY - currentViewportY;
 
-                if (Math.abs(deltaLines) > maxExpectedJump) {
-                  console.debug(
-                    `[QA:SCROLL_JUMP] Ignoring massive scroll jump of ${deltaLines} lines. Browser artifact?`,
-                  );
-                  proxy.scrollTop = lastRenderedY;
-                  pendingScrollY = null;
-                  isRendering = false;
-                  return;
-                }
+          pendingScrollTop = null;
 
-                if (tab.term.buffer.active.type === "alternate") {
-                  // In alternate buffer, send arrow keys to the terminal
-                  const seq = deltaLines < 0 ? "\x1b[A" : "\x1b[B";
-                  const count = Math.abs(deltaLines);
-                  for (let i = 0; i < count; i++) {
-                    if (globalThis.emitPtyInput) {
-                      globalThis.emitPtyInput(tab, seq);
-                    } else if (tab.socket) {
-                      tab.socket.emit("pty-input", {
-                        tabId: tab.id,
-                        input: seq,
-                      });
-                    }
-                  }
-                  // Force proxy scroll back since alternate screen doesn't scroll natively
-                  proxy.scrollTop = lastRenderedY;
-                  thrashingViolations++;
-                } else {
-                  tab.term.scrollLines(deltaLines);
-
-                  // Read the actual viewport after scrolling (in case we hit a boundary)
-                  const actualY = tab.term.buffer.active.viewportY * rowHeight;
-                  lastRenderedY = actualY;
-
-                  if (Math.abs(pendingScrollY - actualY) > rowHeight) {
-                    proxy.scrollTop = actualY; // Correct proxy to boundary
-                    thrashingViolations++;
-                  }
-                  selectionOverlay.style.top = lastRenderedY + "px";
-                }
-              }
-              pendingScrollY = null;
+          if (deltaLines !== 0) {
+            // Reject sudden jumps to exactly 0 (keyboard focus artifacts)
+            if (
+              lastScrollY === 0 &&
+              deltaLines < -1 &&
+              tab.term.options.scrollOnData
+            ) {
+              console.debug(
+                `[QA:SCROLL_JUMP] Ignoring artifact jump to 0 (keyboard focus)`,
+              );
+              proxy.scrollTop = currentViewportY * rowHeight;
+              isRendering = false;
+              return;
             }
 
-            const rafEndTime = performance.now();
-            const writeDuration = rafStartTime - scheduleTime;
-            const readDuration = rafEndTime - rafStartTime;
-            console.debug(
-              `[QA:LAYOUT_BATCHING] frame_id=${Math.floor(
-                frameTime,
-              )} phase="COMPLETED" read_duration=${readDuration.toFixed(
-                2,
-              )} write_duration=${writeDuration.toFixed(
-                2,
-              )} thrashing_violations=${thrashingViolations}`,
-            );
-            thrashingViolations = 0;
-            isRendering = false;
-          });
-        }
+            if (tab.term.buffer.active.type === "alternate") {
+              const seq = deltaLines < 0 ? "\x1b[A" : "\x1b[B";
+              const count = Math.abs(deltaLines);
+              for (let i = 0; i < count; i++) {
+                if (globalThis.emitPtyInput) {
+                  globalThis.emitPtyInput(tab, seq);
+                } else if (tab.socket) {
+                  tab.socket.emit("pty-input", { tabId: tab.id, input: seq });
+                }
+              }
+              proxy.scrollTop = currentViewportY * rowHeight;
+              thrashingViolations++;
+            } else {
+              tab.term.scrollLines(deltaLines);
+
+              const actualY = tab.term.buffer.active.viewportY * rowHeight;
+              if (Math.abs(lastScrollY - actualY) > rowHeight) {
+                proxy.scrollTop = actualY;
+                thrashingViolations++;
+              }
+              selectionOverlay.style.top = actualY + "px";
+            }
+          }
+
+          const rafEndTime = performance.now();
+          const writeDuration = rafStartTime - scheduleTime;
+          const readDuration = rafEndTime - rafStartTime;
+          console.debug(
+            `[QA:LAYOUT_BATCHING] frame_id=${Math.floor(
+              frameTime,
+            )} phase="COMPLETED" read_duration=${readDuration.toFixed(
+              2,
+            )} write_duration=${writeDuration.toFixed(
+              2,
+            )} thrashing_violations=${thrashingViolations}`,
+          );
+          thrashingViolations = 0;
+          isRendering = false;
+        });
       },
       { passive: true },
     );
@@ -544,9 +572,6 @@ export function startSession(
         proxy.style.pointerEvents = "all";
       }
     });
-
-    // Set initial position
-    proxy.scrollTop = 50000;
   }
 
   // Passive touch listener to ensure the browser doesn't wait for JS
@@ -904,8 +929,6 @@ export function startSession(
               typeof tab.mobileProxy.ui.alignWithCursor === "function"
             ) {
               tab.mobileProxy.ui.alignWithCursor(tab.term);
-            } else if (tab.mobileProxy.proxy) {
-              tab.mobileProxy.proxy.scrollTop = 50000;
             }
           };
 
