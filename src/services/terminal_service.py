@@ -67,9 +67,14 @@ class TerminalService:
         child_pid, fd = pty.fork()
         if child_pid == 0:
             try:
-                os.setsid()
-            except OSError:
+                import signal
+
+                signal.signal(signal.SIGTTOU, signal.SIG_IGN)
+                os.setpgid(0, 0)
+                os.tcsetpgrp(0, os.getpid())
+            except Exception:
                 pass
+
             os.closerange(3, 65536)
             env = os.environ.copy()
             env["TERM"] = "xterm-256color"

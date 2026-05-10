@@ -36,7 +36,7 @@ def test_build_terminal_command_resume_injection_ssh():
     assert "123; echo 'vulnerable'" not in remote_cmd
     assert "123;" in remote_cmd
     assert "vulnerable" in remote_cmd
-    assert "bash -ilc" in remote_cmd
+    assert "bash -lc" in remote_cmd
 
 
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})
@@ -50,7 +50,7 @@ def test_build_terminal_command_ssh_dir_injection_ssh():
     remote_cmd = cmd[-1]
     assert "my_dir;" in remote_cmd
     assert "rm -rf /" in remote_cmd
-    assert "bash -ilc" in remote_cmd
+    assert "bash -lc" in remote_cmd
 
 
 @patch.dict(os.environ, {"SKIP_MULTIPLEXER": "true"})

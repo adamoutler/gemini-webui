@@ -1,4 +1,8 @@
-import { getCustomPrompts, loadPromptsFromServer } from "../core/state.js";
+import {
+  globalState,
+  getCustomPrompts,
+  loadPromptsFromServer,
+} from "../core/state.js";
 import { escapeHtml } from "../core/api.js";
 import { fetchWithCSRF } from "../core/api.js";
 import { emitPtyInput } from "../terminal/pty.js";
@@ -14,7 +18,7 @@ export function closeFileTransfer() {
   document.getElementById("file-transfer-modal").style.display = "none";
 }
 export function shareSession() {
-  const tab = tabs.find((t) => t.id === activeTabId);
+  const tab = globalState.tabs.find((t) => t.id === globalState.activeTabId);
   if (!tab || tab.state !== "terminal")
     return alert("No active terminal to share.");
   document.getElementById("share-result").style.display = "none";
@@ -25,7 +29,7 @@ export function closeShareModal() {
   document.getElementById("share-modal").style.display = "none";
 }
 export async function confirmShareSession() {
-  const tab = tabs.find((t) => t.id === activeTabId);
+  const tab = globalState.tabs.find((t) => t.id === globalState.activeTabId);
   if (!tab || !tab.term) return;
   document.getElementById("confirm-share-btn").style.display = "none";
   let serializeAddon;
@@ -163,7 +167,7 @@ export async function uploadWorkspaceFile() {
   if (!fileInput.files.length) return alert("Please select a file to upload");
   const formData = new FormData();
   formData.append("file", fileInput.files[0]);
-  const tab = tabs.find((t) => t.id === activeTabId);
+  const tab = globalState.tabs.find((t) => t.id === globalState.activeTabId);
   if (tab?.session && tab.session.type === "ssh") {
     if (!tab.session.ssh_target) {
       alert("SSH target is missing from session state! Upload cannot proceed.");
@@ -187,7 +191,9 @@ export async function uploadWorkspaceFile() {
     });
     const result = await response.json();
     if (result.status === "success") {
-      const tab = tabs.find((t) => t.id === activeTabId);
+      const tab = globalState.tabs.find(
+        (t) => t.id === globalState.activeTabId,
+      );
       if (tab?.socket && tab.state === "terminal") {
         emitPtyInput(tab, `> I uploaded @${result.filename}\r`);
         tab.term.focus();
@@ -207,7 +213,23 @@ export function downloadWorkspaceFile() {
   const filenameInput = document.getElementById("workspace-download-filename");
   const filename = filenameInput.value.trim();
   if (!filename) return alert("Please enter a filename");
-  globalThis.location.href = `/api/download/${encodeURIComponent(filename)}`;
+
+  let url = `/api/download/${encodeURIComponent(filename)}`;
+  const tab = globalState.tabs.find((t) => t.id === globalState.activeTabId);
+  if (tab?.session && tab.session.type === "ssh") {
+    if (!tab.session.ssh_target) {
+      alert(
+        "SSH target is missing from session state! Download cannot proceed.",
+      );
+      return;
+    }
+    url += `?ssh_target=${encodeURIComponent(tab.session.ssh_target)}`;
+    if (tab.session.ssh_dir) {
+      url += `&ssh_dir=${encodeURIComponent(tab.session.ssh_dir)}`;
+    }
+  }
+
+  globalThis.location.href = url;
   closeFileTransfer();
   filenameInput.value = "";
 }

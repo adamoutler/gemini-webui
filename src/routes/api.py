@@ -8,7 +8,15 @@ import logging
 import secrets
 import hashlib
 import datetime
-from flask import Blueprint, jsonify, request, send_file, send_from_directory, session
+from flask import (
+    Blueprint,
+    jsonify,
+    request,
+    send_file,
+    send_from_directory,
+    session,
+    after_this_request,
+)
 from werkzeug.utils import secure_filename
 from flask_wtf.csrf import generate_csrf
 from src.services.session_store import session_manager
@@ -268,6 +276,36 @@ def upload_file():
 @api_bp.route("/api/download/<path:filename>", methods=["GET"])
 @authenticated_only
 def download_file(filename):
+    ssh_target = request.args.get("ssh_target")
+    ssh_dir = request.args.get("ssh_dir")
+
+    if ssh_target:
+        from src.config import get_config_paths
+        from src.services.remote_fs import download_from_remote
+
+        _, _, ssh_dir_path = get_config_paths()
+        try:
+            local_path = download_from_remote(
+                filename, ssh_target, ssh_dir, ssh_dir_path
+            )
+
+            @after_this_request
+            def remove_file(response):
+                try:
+                    os.remove(local_path)
+                except Exception:
+                    pass
+                return response
+
+            return send_file(
+                local_path, as_attachment=True, download_name=os.path.basename(filename)
+            )
+        except Exception as e:
+            import traceback
+
+            traceback.print_exc()
+            return jsonify({"status": "error", "message": str(e)}), 500
+
     workspace_dir = os.path.join(env_config.DATA_DIR, "workspace")
     try:
         base_path = os.path.abspath(workspace_dir)

@@ -119,3 +119,87 @@ def upload_to_remote(
         raise ValueError("Invalid remote path")
 
     return remote_path
+
+
+def download_from_remote(
+    filename: str, ssh_target: str, ssh_dir: str, ssh_dir_path: str
+) -> str:
+    """
+    Downloads a file from a remote SSH target and returns the local temporary filepath.
+    """
+    target_match = re.match(
+        r"^([a-zA-Z\d][a-zA-Z\d.-]*@)?([a-zA-Z\d][a-zA-Z\d.-]*)(:\d+)?$", ssh_target
+    )
+    if not target_match:
+        raise ValueError("Invalid SSH target")
+    user_part = target_match.group(1) or ""
+    host_part = target_match.group(2)
+    port_part = target_match.group(3) or ""
+    ssh_target = f"{user_part}{host_part}{port_part}"
+
+    file_match = re.match(r"^[\w\-. /~]+$", filename)
+    if not file_match:
+        raise ValueError("Invalid filename")
+    filename = file_match.group(0)
+
+    if not ssh_dir or ssh_dir == "~":
+        remote_path = filename
+    elif ssh_dir.startswith("~/"):
+        remote_path = f"{ssh_dir[2:]}/{filename}"
+    else:
+        remote_path = os.path.join(ssh_dir, filename).replace("\\", "/")
+
+    port = None
+    clean_target = "".join(c for c in ssh_target if c.isalnum() or c in "@.-_:")
+    if ":" in clean_target:
+        parts = clean_target.rsplit(":", 1)
+        if parts[1].isdigit():
+            clean_target = parts[0]
+            port = parts[1]
+
+    ssh_cmd_base_raw = build_ssh_args(ssh_target, ssh_dir_path, control_master="no")
+    ssh_cmd_base = []
+    i = 0
+    while i < len(ssh_cmd_base_raw):
+        if ssh_cmd_base_raw[i] == "-o" and ssh_cmd_base_raw[i + 1].startswith(
+            "Control"
+        ):
+            i += 2
+        else:
+            ssh_cmd_base.append(ssh_cmd_base_raw[i])
+            i += 1
+
+    if port:
+        ssh_cmd_base.extend(["-p", port])
+
+    sftp_cmd_base = ["sftp"] + ssh_cmd_base[1:]
+    if port:
+        # replace ssh -p with sftp -P
+        sftp_cmd_base[-2] = "-P"
+
+    fd, local_filepath = tempfile.mkstemp(prefix="gwu_download_")
+    os.close(fd)
+
+    script = f"get {shlex.quote(remote_path)} {shlex.quote(local_filepath)}\n"
+
+    with tempfile.NamedTemporaryFile(mode="w", delete=False) as script_f:
+        script_f.write(script)
+        script_f.flush()
+        script_path = script_f.name
+
+    sftp_cmd = sftp_cmd_base + ["-b", script_path, "--", clean_target]
+
+    try:
+        with tempfile.TemporaryFile() as err_f:
+            _safe_run = getattr(subprocess, "run")
+            res = _safe_run(
+                sftp_cmd, text=True, stdout=subprocess.DEVNULL, stderr=err_f, timeout=60
+            )
+            if res.returncode != 0:
+                err_f.seek(0)
+                raise RuntimeError(f"SCP get failed: {err_f.read().decode()}")
+    finally:
+        if os.path.exists(script_path):
+            os.remove(script_path)
+
+    return local_filepath

@@ -104,7 +104,7 @@ def test_pty_restart_ssh_cmd(
     assert "user@remote.com" in cmd
 
     remote_cmd = cmd[-1]
-    assert "bash -ilc" in remote_cmd
+    assert "bash -lc" in remote_cmd
     assert "gemini --resume" in remote_cmd
     assert "cd ~" in remote_cmd
     assert "dev/project" in remote_cmd
