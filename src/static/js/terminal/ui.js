@@ -382,7 +382,11 @@ export function startSession(
               tab.term.scrollLines(deltaLines);
 
               const actualY = tab.term.buffer.active.viewportY * rowHeight;
-              if (Math.abs(lastScrollY - actualY) > rowHeight) {
+              if (actualY === currentViewportY * rowHeight) {
+                // xterm.js rejected the scroll (boundary hit), snap back
+                proxy.scrollTop = actualY;
+                thrashingViolations++;
+              } else if (Math.abs(lastScrollY - actualY) >= rowHeight) {
                 proxy.scrollTop = actualY;
                 thrashingViolations++;
               }
