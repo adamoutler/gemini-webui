@@ -187,6 +187,7 @@ class TerminalService:
                 }, 403
 
             cwd = work_dir if not ssh_target and os.path.exists(work_dir) else None
+            # codeql[py/command-line-injection] : Mitigated by strict allowlist validation of cmd[0] and shell=False
             result = subprocess.run(
                 cmd,
                 capture_output=True,
