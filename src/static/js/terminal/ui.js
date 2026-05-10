@@ -144,7 +144,7 @@ export function startSession(
     cursorBlink: true,
     cursorStyle: "block",
     macOptionIsMeta: true,
-    scrollback: 10000,
+    scrollback: 100000,
     fontSize: globalState.currentFontSize,
     fontFamily: 'Menlo, Monaco, "Courier New", monospace',
     allowProposedApi: true,
@@ -782,6 +782,7 @@ export function startSession(
   }
 
   tab.socket.on("disconnect", (reason) => {
+    tab._bursting = false;
     disconnectTime = Date.now();
     tab.term.write(
       "\r\n\x1b[1;33m[Connection lost: " +

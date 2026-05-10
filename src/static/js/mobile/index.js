@@ -137,7 +137,7 @@ export class MobileTerminalController {
       // Do not steal focus if they clicked a button, link, or another input
       const target = e.target;
       const isInteractive = target.closest(
-        "button, a, input, select, .control-btn, .header-icon",
+        "button, a, input, select, textarea, .control-btn, .header-icon",
       );
       if (!isInteractive && globalThis.activeTabId === this.tab.id) {
         this.ui.proxyInput.focus();
