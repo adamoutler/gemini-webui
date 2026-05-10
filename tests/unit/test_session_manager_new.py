@@ -12,7 +12,7 @@ except ImportError:
 @pytest.mark.timeout(60)
 def test_add_and_get_session():
     manager = SessionManager()
-    session = Session("tab-1", None, 1000, "user1", "Local")
+    session = Session("tab-1", None, 999999, "user1", "Local")
     manager.add_session(session)
 
     # Should be retrievable
@@ -30,7 +30,7 @@ def test_add_and_get_session():
 @pytest.mark.timeout(60)
 def test_remove_session():
     manager = SessionManager()
-    session = Session("tab-1", None, 1000, "user1")
+    session = Session("tab-1", None, 999999, "user1")
     manager.add_session(session)
     manager.sid_to_tabid["sid-1"] = "tab-1"
     manager.tabid_to_sids["tab-1"] = {"sid-1"}
@@ -44,7 +44,7 @@ def test_remove_session():
 @pytest.mark.timeout(60)
 def test_orphan_session():
     manager = SessionManager()
-    session = Session("tab-1", None, 1000, "user1")
+    session = Session("tab-1", None, 999999, "user1")
     manager.add_session(session)
     manager.orphan_session("tab-1")
     assert session.orphaned_at is not None
@@ -60,7 +60,7 @@ def test_reclaim_session(mock_emit):
     # After refactoring, it should use an on_steal callback.
     # To support both, we can inject a mock on_steal if it accepts it.
 
-    session = Session("tab-1", None, 1000, "user1")
+    session = Session("tab-1", None, 999999, "user1")
     manager.add_session(session)
 
     # First claim
@@ -88,7 +88,7 @@ def test_reclaim_session(mock_emit):
 @pytest.mark.timeout(60)
 def test_list_sessions():
     manager = SessionManager()
-    s1 = Session("tab-1", None, 1000, "user1")
+    s1 = Session("tab-1", None, 999999, "user1")
     s2 = Session("tab-2", None, 1001, "user1")
     s3 = Session("tab-3", None, 1002, "user2")
     manager.add_session(s1)
@@ -106,7 +106,7 @@ def test_list_sessions():
 @pytest.mark.timeout(60)
 def test_update_title():
     manager = SessionManager()
-    session = Session("tab-1", None, 1000, "user1", "Local")
+    session = Session("tab-1", None, 999999, "user1", "Local")
     manager.add_session(session)
 
     assert session.title == "Local"

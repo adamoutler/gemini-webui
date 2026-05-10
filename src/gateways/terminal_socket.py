@@ -436,7 +436,7 @@ def pty_restart(data):
                     if current_size + line_len > chunk_size and current_chunk:
                         socketio.emit(
                             "pty-output",
-                            {"output": "".join(current_chunk)},
+                            {"output": "".join(current_chunk), "is_burst": True},
                             room=sid,
                         )
                         socketio.sleep(0.01)
@@ -449,7 +449,11 @@ def pty_restart(data):
                 if current_chunk:
                     socketio.emit(
                         "pty-output",
-                        {"output": "".join(current_chunk)},
+                        {
+                            "output": "".join(current_chunk),
+                            "is_burst": True,
+                            "burst_end": True,
+                        },
                         room=sid,
                     )
                     socketio.sleep(0.01)

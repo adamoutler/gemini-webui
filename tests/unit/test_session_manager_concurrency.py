@@ -16,7 +16,7 @@ def test_session_manager_concurrency():
         tab_id = f"tab_{i}"
         sid = f"sid_{i}"
         user_id = "user1"
-        session = Session(tab_id, None, 1000 + i, user_id)
+        session = Session(tab_id, None, 999999 + i, user_id)
 
         # Add session
         manager.add_session(session)
@@ -48,7 +48,7 @@ def test_session_manager_concurrency():
 @pytest.mark.timeout(60)
 def test_session_manager_mapping_integrity():
     manager = SessionManager()
-    s1 = Session("tab1", None, 1000, "user1")
+    s1 = Session("tab1", None, 999999, "user1")
     manager.add_session(s1)
 
     # 1. Normal claim

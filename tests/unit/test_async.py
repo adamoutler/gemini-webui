@@ -156,8 +156,8 @@ def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
     now = time.time()
     for i in range(50):
         tab_id = f"tab_{i}"
-        s = Session(tab_id, None, 1000 + i, "admin")
-        s.last_seen = now - (1000 - i)  # tab_0 is oldest
+        s = Session(tab_id, None, 999999 + i, "admin")
+        s.last_seen = now - (999999 - i)  # tab_0 is oldest
         session_manager.add_session(s)
         # Ensure it has 0 SIDs so it's eligible for eviction
         session_manager.tabid_to_sids[tab_id] = set()
@@ -180,9 +180,9 @@ def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
             with patch("src.gateways.terminal_socket.request", mock_request):
                 pty_restart({"tab_id": "tab_new"})
 
-            # Verify LRU: tab_0 (PID 1000) should have been killed via its PGID
+            # Verify LRU: tab_0 (PID 999999) should have been killed via its PGID
             # Our SessionManager now uses killpg
-            mock_killpg.assert_any_call(1000, signal.SIGKILL)
+            mock_killpg.assert_any_call(999999, signal.SIGKILL)
 
             # Verify tab_0 was removed
             assert session_manager.get_session("tab_0") is None

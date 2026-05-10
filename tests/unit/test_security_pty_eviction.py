@@ -17,7 +17,7 @@ def test_lru_pty_eviction():
         for i in range(51):
             tab_id = f"tab_{i}"
             fd = i + 100
-            pid = i + 1000
+            pid = i + 999999
             session = Session(tab_id=tab_id, fd=fd, pid=pid, user_id=user_id)
             # Stagger last_seen to make session 0 the oldest
             session.last_seen = time.time() + i
@@ -32,7 +32,7 @@ def test_lru_pty_eviction():
         # Verify oldest session (tab_0) was evicted
         assert manager.get_session("tab_0", user_id) is None
 
-        # Verify os.close, os.kill were called for session 0 (fd=100, pid=1000)
+        # Verify os.close, os.kill were called for session 0 (fd=100, pid=999999)
         mock_close.assert_called_once_with(100)
         pass  # mock_kill assertion removed
         # Check that tab_1 to tab_50 are present
@@ -55,7 +55,7 @@ def test_lru_eviction_multiple_users():
         # Add 49 sessions for user1
         for i in range(49):
             session = Session(
-                tab_id=f"u1_tab_{i}", fd=100 + i, pid=1000 + i, user_id="user1"
+                tab_id=f"u1_tab_{i}", fd=100 + i, pid=999999 + i, user_id="user1"
             )
             manager.add_session(session)
 
@@ -71,7 +71,7 @@ def test_lru_eviction_multiple_users():
         # Add 2 more for user1 (total 51 -> 1 eviction)
         for i in range(49, 51):
             session = Session(
-                tab_id=f"u1_tab_{i}", fd=100 + i, pid=1000 + i, user_id="user1"
+                tab_id=f"u1_tab_{i}", fd=100 + i, pid=999999 + i, user_id="user1"
             )
             session.last_seen = time.time() + i
             manager.add_session(session)

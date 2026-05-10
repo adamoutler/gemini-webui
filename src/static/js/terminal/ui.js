@@ -155,6 +155,13 @@ export function startSession(
   tab.fitAddon = new FitAddon.FitAddon();
   tab.term.loadAddon(tab.fitAddon);
 
+  tab.term.onScroll((newViewportY) => {
+    if (tab.term && tab.term.buffer.active) {
+      const isAtBottom = newViewportY >= tab.term.buffer.active.baseY - 2;
+      tab.term.options.scrollOnData = isAtBottom;
+    }
+  });
+
   // WebLinksAddon is disabled in favor of the custom LinkProvider for wrapped lines
   // if (typeof WebLinksAddon !== "undefined") {
   //   tab.term.loadAddon(new WebLinksAddon.WebLinksAddon());
@@ -292,6 +299,22 @@ export function startSession(
                 // Heuristic: On mobile, a single frame scroll jump of > 2 visible screens is impossible via touch drag.
                 // It is a browser layout artifact (e.g. caret auto-scroll abruptly setting scrollTop = 0).
                 const maxExpectedJump = tab.term.rows * 2;
+
+                // Reject sudden jumps to exactly 0 if we were previously at the bottom (keyboard focus artifact)
+                if (
+                  pendingScrollY === 0 &&
+                  deltaLines < -1 &&
+                  tab.term.options.scrollOnData
+                ) {
+                  console.debug(
+                    `[QA:SCROLL_JUMP] Ignoring artifact jump to 0 (keyboard focus)`,
+                  );
+                  proxy.scrollTop = lastRenderedY;
+                  pendingScrollY = null;
+                  isRendering = false;
+                  return;
+                }
+
                 if (Math.abs(deltaLines) > maxExpectedJump) {
                   console.debug(
                     `[QA:SCROLL_JUMP] Ignoring massive scroll jump of ${deltaLines} lines. Browser artifact?`,
@@ -829,37 +852,70 @@ export function startSession(
             globalThis.saveTabsToStorage();
         }
       }
-      const buffer = tab.term.buffer.active;
-      // If the user is at the bottom (or within 2 lines of it), we should ensure they stay at the bottom
-      const isAtBottom = buffer.viewportY >= buffer.baseY - 2;
-      tab.term.options.scrollOnData = isAtBottom;
+      if (data.is_burst) {
+        if (!tab._bursting) {
+          tab._bursting = true;
+          // Clear only once at the start of a reconnect burst to prevent history duplication
+          tab.term.clear();
+          if (
+            tab.mobileProxy &&
+            tab.mobileProxy.ui &&
+            tab.mobileProxy.ui.proxyInput
+          ) {
+            tab.mobileProxy.ui.proxyInput.style.display = "none";
+          }
+        }
+        tab.term.write(data.output, () => {
+          // Force scroll to bottom after every chunk during burst to prevent slide-up effect
+          tab.term.scrollToBottom();
+          if (data.burst_end) {
+            tab._bursting = false;
+            if (
+              tab.mobileProxy &&
+              tab.mobileProxy.ui &&
+              tab.mobileProxy.ui.proxyInput
+            ) {
+              tab.mobileProxy.ui.proxyInput.style.display = "block";
+              tab.mobileProxy.ui.alignWithCursor(tab.term);
+            }
+          }
+        });
+        return;
+      }
+
+      const shouldAutoScroll = tab.term.options.scrollOnData;
 
       tab.term.write(data.output);
 
-      // Throttle the manual scrollToBottom on mobile proxy to 4x/second
-      if (isAtBottom && tab.mobileProxy) {
-        const now = Date.now();
-        const alignCursor = () => {
-          if (
-            tab.mobileProxy.ui &&
-            typeof tab.mobileProxy.ui.alignWithCursor === "function"
-          ) {
-            tab.mobileProxy.ui.alignWithCursor(tab.term);
-          } else if (tab.mobileProxy.proxy) {
-            tab.mobileProxy.proxy.scrollTop = 50000;
-          }
-        };
-
-        if (!tab._lastAutoScroll || now - tab._lastAutoScroll > 250) {
-          tab._lastAutoScroll = now;
-          alignCursor();
+      // Debounce the manual scrollToBottom on mobile proxy
+      if (shouldAutoScroll && tab.mobileProxy) {
+        if (tab._alignCursorRaf) {
+          cancelAnimationFrame(tab._alignCursorRaf);
         }
+        tab._alignCursorRaf = requestAnimationFrame(() => {
+          const now = Date.now();
+          const alignCursor = () => {
+            if (
+              tab.mobileProxy.ui &&
+              typeof tab.mobileProxy.ui.alignWithCursor === "function"
+            ) {
+              tab.mobileProxy.ui.alignWithCursor(tab.term);
+            } else if (tab.mobileProxy.proxy) {
+              tab.mobileProxy.proxy.scrollTop = 50000;
+            }
+          };
 
-        if (tab._autoScrollTimeout) clearTimeout(tab._autoScrollTimeout);
-        tab._autoScrollTimeout = setTimeout(() => {
-          tab._lastAutoScroll = Date.now();
-          alignCursor();
-        }, 300);
+          if (!tab._lastAutoScroll || now - tab._lastAutoScroll > 250) {
+            tab._lastAutoScroll = now;
+            alignCursor();
+          }
+
+          if (tab._autoScrollTimeout) clearTimeout(tab._autoScrollTimeout);
+          tab._autoScrollTimeout = setTimeout(() => {
+            tab._lastAutoScroll = Date.now();
+            alignCursor();
+          }, 300);
+        });
       }
     }
   });
