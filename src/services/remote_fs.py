@@ -104,9 +104,13 @@ def upload_to_remote(
 
     try:
         with tempfile.TemporaryFile() as err_f:
-            _safe_run = getattr(subprocess, "run")
-            res = _safe_run(
-                sftp_cmd, text=True, stdout=subprocess.DEVNULL, stderr=err_f, timeout=60
+            res = subprocess.run(
+                sftp_cmd,
+                text=True,
+                stdout=subprocess.DEVNULL,
+                stderr=err_f,
+                timeout=60,
+                shell=False,
             )
             if res.returncode != 0:
                 err_f.seek(0)
@@ -191,9 +195,13 @@ def download_from_remote(
 
     try:
         with tempfile.TemporaryFile() as err_f:
-            _safe_run = getattr(subprocess, "run")
-            res = _safe_run(
-                sftp_cmd, text=True, stdout=subprocess.DEVNULL, stderr=err_f, timeout=60
+            res = subprocess.run(
+                sftp_cmd,
+                text=True,
+                stdout=subprocess.DEVNULL,
+                stderr=err_f,
+                timeout=60,
+                shell=False,
             )
             if res.returncode != 0:
                 err_f.seek(0)

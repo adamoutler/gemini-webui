@@ -577,6 +577,12 @@ def kill_descendant_process(target_pid):
         try:
             os.kill(target_pid, signal.SIGKILL)
         except OSError as e:
-            return jsonify({"error": str(e)}), 500
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error killing process {target_pid}: {e}")
+            return jsonify(
+                {"error": "Failed to kill process due to an internal error."}
+            ), 500
 
     return jsonify({"success": True, "pid": target_pid})

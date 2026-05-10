@@ -187,9 +187,13 @@ class TerminalService:
                 }, 403
 
             cwd = work_dir if not ssh_target and os.path.exists(work_dir) else None
-            _safe_run = getattr(subprocess, "run")
-            result = _safe_run(
-                cmd, capture_output=True, text=True, timeout=timeout, cwd=cwd
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                cwd=cwd,
+                shell=False,
             )
             if result.returncode != 0:
                 return {
