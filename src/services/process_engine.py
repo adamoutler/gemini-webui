@@ -427,7 +427,7 @@ def build_terminal_command(
 
         # Smart command construction: check for gemini, drop to shell if missing
         remote_cmd = f"{remote_prefix} "
-        remote_cmd += "export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring; "
+        remote_cmd += "export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring; export GEMINI_CLI_NO_RELAUNCH=true; "
         remote_cmd += f"if command -v {gemini_exe} >/dev/null 2>&1; then "
 
         if "--resume" in gemini_base_cmd:
@@ -499,7 +499,7 @@ def build_terminal_command(
         return _wrap_with_multiplexer(cmd)
     else:
         # Workspace initialization with failover guidance
-        env_exports = "unset DBUS_SESSION_BUS_ADDRESS; unset SSH_ASKPASS; export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring; "
+        env_exports = "unset DBUS_SESSION_BUS_ADDRESS; unset SSH_ASKPASS; export PYTHON_KEYRING_BACKEND=keyring.backends.null.Keyring; export GEMINI_CLI_NO_RELAUNCH=true; "
         if env_vars:
             for k, v in env_vars.items():
                 if k == "PATH":
