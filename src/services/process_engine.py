@@ -254,7 +254,7 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
             )
 
             # Check for gemini before running list-sessions to avoid ugly bash errors
-            remote_cmd = f"{remote_prefix} if command -v {gemini_exe} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then exec timeout 15 {gemini_list_cmd}; else exec {gemini_list_cmd}; fi; else exit 0; fi"
+            remote_cmd = f"{remote_prefix} export GEMINI_CLI_NO_RELAUNCH=true; if command -v {gemini_exe} >/dev/null 2>&1; then if command -v timeout >/dev/null 2>&1; then exec timeout 15 {gemini_list_cmd}; else exec {gemini_list_cmd}; fi; else exit 0; fi"
 
             # Use bash -ilc (interactive login shell) so gemini's PATH is fully loaded
             # (handles NVM, npm globals, etc.) and gemini outputs session text instead
@@ -282,10 +282,14 @@ def fetch_sessions_for_host(host, ssh_dir_path, gemini_bin="gemini"):
                 cmd = [
                     "/bin/sh",
                     "-c",
-                    f"cd {shlex.quote(work_dir)} && exec {quoted_gemini} --list-sessions",
+                    f"cd {shlex.quote(work_dir)} && export GEMINI_CLI_NO_RELAUNCH=true && exec {quoted_gemini} --list-sessions",
                 ]
             else:
-                cmd = shlex.split(gemini_bin) + ["--list-sessions"]
+                cmd = [
+                    "/bin/sh",
+                    "-c",
+                    f"export GEMINI_CLI_NO_RELAUNCH=true && exec {quoted_gemini} --list-sessions",
+                ]
 
         import uuid
         from src.shared_state import active_monitors, active_monitors_lock
