@@ -483,7 +483,7 @@ if __name__ == "__main__":
 
         # Extract the actual response after any potential thought blocks
         final_text = result_text.split("</thought>")[-1].split("</think>")[-1]
-        is_ready = True
+        is_ready = "READY" in final_text and "NEEDS WORK" not in final_text
 
         if is_ready:
             # We explicitly return the reality checker's message so the agent receives it
