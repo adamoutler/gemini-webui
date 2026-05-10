@@ -104,9 +104,7 @@ def test_remote_fs_get_file_command_injection_mitigation(mock_run, tmp_path):
     mock_run.return_value = MagicMock(returncode=0)
 
     ssh_dir = str(tmp_path / "ssh")
-    download_from_remote(
-        "remote_file.txt", "user@host", ssh_dir, "mock_gemini_cli.py"
-    )
+    download_from_remote("remote_file.txt", "user@host", ssh_dir, "mock_gemini_cli.py")
 
     mock_run.assert_called_once()
     _, kwargs = mock_run.call_args
