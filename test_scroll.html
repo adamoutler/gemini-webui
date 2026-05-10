@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+  <head>
+    <style>
+      body {
+        overflow: hidden;
+        position: fixed;
+        height: 100vh;
+        width: 100vw;
+        margin: 0;
+      }
+      .container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: 9999;
+      }
+      .proxy {
+        position: absolute;
+        height: 2em;
+        white-space: nowrap;
+        overflow: hidden;
+        top: 500px;
+        width: 100px;
+      }
+      .term {
+        height: 1000px;
+        background: linear-gradient(red, blue);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="term"></div>
+    <div class="container"><textarea class="proxy"></textarea></div>
+    <script>
+      let t = document.querySelector(".proxy");
+      t.focus();
+      t.value = "A".repeat(500);
+    </script>
+  </body>
+</html>
