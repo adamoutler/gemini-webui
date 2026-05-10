@@ -181,7 +181,9 @@ export function startSession(
 
   try {
     const webglDisabled =
-      urlParams.get("webgl") === "false" || navigator.webdriver;
+      urlParams.get("webgl") === "false" ||
+      navigator.webdriver ||
+      document.documentElement.classList.contains("is-mobile");
     if (typeof WebglAddon !== "undefined" && !webglDisabled) {
       tab.webglAddon = new WebglAddon.WebglAddon();
       tab.term.loadAddon(tab.webglAddon);
