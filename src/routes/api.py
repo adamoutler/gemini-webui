@@ -466,3 +466,79 @@ def kill_task():
                 session_manager.persistence.remove(tab_id)
             return jsonify({"status": "success"})
         return jsonify({"error": "Session not found"}), 404
+
+
+def get_descendant_processes():
+    """Reads /proc to find all children of the current process without needing psutil."""
+    children = []
+    import os
+
+    my_pid = os.getpid()
+
+    try:
+        for pdir in os.listdir("/proc"):
+            if not pdir.isdigit():
+                continue
+            try:
+                stat_file = f"/proc/{pdir}/stat"
+                if not os.path.exists(stat_file):
+                    continue
+
+                with open(stat_file, "r") as f:
+                    stat_data = f.read().split()
+
+                # stat_data[0] = pid, stat_data[1] = (comm), stat_data[2] = state, stat_data[3] = ppid
+                ppid = int(stat_data[3])
+                state = stat_data[2]
+
+                # Check if it belongs to our application
+                if ppid == my_pid:
+                    with open(f"/proc/{pdir}/cmdline", "r") as cmd_f:
+                        cmd = cmd_f.read().replace("\x00", " ").strip()
+
+                    rss_pages = 0
+                    with open(f"/proc/{pdir}/statm", "r") as m_f:
+                        rss_pages = int(m_f.read().split()[1])
+
+                    children.append(
+                        {
+                            "pid": int(pdir),
+                            "state": state,
+                            "command": cmd or stat_data[1].strip("()"),
+                            "rss_memory_kb": rss_pages * 4,
+                        }
+                    )
+            except (IOError, IndexError, ValueError):
+                continue
+    except OSError:
+        pass
+
+    return children
+
+
+@api_bp.route("/api/processes", methods=["GET"])
+@authenticated_only
+def get_processes():
+    return jsonify({"processes": get_descendant_processes()})
+
+
+@api_bp.route("/api/processes/<int:target_pid>", methods=["DELETE"])
+@authenticated_only
+def kill_descendant_process(target_pid):
+    import signal
+
+    children = [p["pid"] for p in get_descendant_processes()]
+    if target_pid not in children:
+        return jsonify(
+            {"error": "Permission denied. Process is not a child of this application."}
+        ), 403
+
+    try:
+        os.killpg(target_pid, signal.SIGKILL)
+    except OSError:
+        try:
+            os.kill(target_pid, signal.SIGKILL)
+        except OSError as e:
+            return jsonify({"error": str(e)}), 500
+
+    return jsonify({"success": True, "pid": target_pid})

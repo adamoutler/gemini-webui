@@ -47,29 +47,51 @@ def kill_and_reap(pid):
         pass
 
 
-def zombie_reaper_task(sleep_interval=2):
-    """Periodically reaps any managed PTY processes that have exited to prevent zombies."""
+reaper_event = eventlet.Event()
+
+
+def sigchld_handler(signum, frame):
+    if not reaper_event.ready():
+        reaper_event.send()
+
+
+def zombie_reaper_task(sleep_interval=5.0):
+    """Event-driven, non-blocking global reaper for all dead children."""
+    global reaper_event
+    try:
+        signal.signal(signal.SIGCHLD, sigchld_handler)
+    except Exception as e:
+        logger.warning(f"Could not register SIGCHLD handler: {e}")
+
     while True:
         try:
+            # Block efficiently until SIGCHLD sets the event (or timeout as fallback)
+            reaper_event.wait(timeout=sleep_interval)
+            reaper_event.reset()
+
             while True:
                 try:
-                    # Reap any exited child process globally
+                    # -1 means any child process. WNOHANG makes it non-blocking.
                     pid, status = os.waitpid(-1, os.WNOHANG)
                     if pid == 0:
-                        break  # No more exited children
+                        break  # No more exited children waiting to be reaped
 
-                    # Clean up tracked sets if the reaped pid was in them
+                    logger.debug(f"Reaped zombie PID {pid} with status {status}")
+
+                    # Remove from tracking sets if applicable
                     with managed_ptys_lock:
                         managed_ptys.discard(pid)
                     with abandoned_pids_lock:
                         abandoned_pids.discard(pid)
+
                 except ChildProcessError:
-                    break  # No child processes exist
-                except OSError:
+                    break  # ECHILD: No child processes exist at all
+                except OSError as e:
+                    logger.error(f"OSError in reaper loop: {e}")
                     break
         except Exception as e:
-            logger.error(f"Error in zombie reaper: {e}")
-        eventlet.sleep(sleep_interval)
+            logger.error(f"Fatal error in global reaper: {e}")
+            eventlet.sleep(1)  # Backoff on fatal error
 
 
 def cleanup_orphaned_ptys(app, session_manager, env_config):

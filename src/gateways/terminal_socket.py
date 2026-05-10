@@ -72,10 +72,48 @@ def handle_connect(auth=None):
     return True
 
 
+def graceful_termination_flow(pid):
+    """Attempts SIGTERM, waits, then escalates to SIGKILL."""
+    import eventlet
+    import signal
+
+    try:
+        os.killpg(pid, signal.SIGTERM)
+    except OSError:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except OSError:
+            return  # Process is likely already dead
+
+    # Wait briefly (non-blocking) for graceful exit
+    for _ in range(5):  # 1.0s grace period
+        try:
+            res = os.waitpid(pid, os.WNOHANG)
+            if isinstance(res, tuple) and res[0] == pid:
+                return
+            elif isinstance(res, int) and res == pid:
+                return
+        except OSError:
+            return  # ECHILD: already reaped by the global SIGCHLD reaper
+
+        eventlet.sleep(0.2)
+
+    # Process hung. Escalate to brutal termination.
+    logger.warning(f"PID {pid} did not respond to SIGTERM. Escalating to SIGKILL.")
+    try:
+        os.killpg(pid, signal.SIGKILL)
+    except OSError:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except OSError:
+            pass
+
+
 @socketio.on("terminate_session")
 def on_terminate_session(data):
     from flask import request as socket_request
     import os
+    import eventlet
 
     sid = getattr(socket_request, "sid", None)
     user_id = session.get("user_id") or (
@@ -93,7 +131,7 @@ def on_terminate_session(data):
         logger.info(f"Socket request to terminate session {tab_id} by user {user_id}")
 
         if old_session.pid is not None:
-            kill_and_reap(old_session.pid)
+            eventlet.spawn(graceful_termination_flow, old_session.pid)
 
         if getattr(old_session, "fd", None) is not None:
             try:

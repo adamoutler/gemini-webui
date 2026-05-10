@@ -208,6 +208,40 @@
 
     <hr class="auto-style-29c73b" />
     <div class="auto-style-0de1f9">
+      <h3 class="auto-style-d88b67">Process Manager</h3>
+      <div class="auto-style-a71f31" style="flex-direction: column">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <span style="color: #ccc; font-size: 13px"
+            >Manage orphaned or active backend processes</span
+          >
+          <button
+            class="small primary"
+            id="refresh-processes-btn"
+            data-onclick="refreshProcessList()"
+          >
+            Refresh
+          </button>
+        </div>
+        <div
+          id="process-manager-list"
+          class="session-list-container"
+          style="max-height: 300px; overflow-y: auto"
+        >
+          <div style="padding: 10px; color: #888; text-align: center">
+            Click Refresh to load processes...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr class="auto-style-29c73b" />
+    <div class="auto-style-0de1f9">
       <h3 class="auto-style-d88b67">Data Management</h3>
       <div class="auto-style-a71f31">
         <button

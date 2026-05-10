@@ -47,14 +47,15 @@ def test_rest_api_terminate_session(mock_os_close, mock_kill_reap, mock_fcntl, c
 
 
 @patch("src.models.session.fcntl.fcntl")
-@patch("src.gateways.terminal_socket.kill_and_reap")
+@patch("eventlet.spawn")
 @patch("src.gateways.terminal_socket.os.close")
 @patch("src.gateways.terminal_socket.socketio.emit")
 @pytest.mark.timeout(60)
 def test_socket_terminate_session(
-    mock_emit, mock_os_close, mock_kill_reap, mock_fcntl, client
+    mock_emit, mock_os_close, mock_spawn, mock_fcntl, client
 ):
     from src.services.session_store import session_manager
+    from src.gateways.terminal_socket import graceful_termination_flow
 
     test_session = Session("test_tab_socket", 7777, 6666, user_id="test_user")
     session_manager.add_session(test_session)
@@ -70,7 +71,7 @@ def test_socket_terminate_session(
             mock_req.sid = "test_sid_123"
             on_terminate_session({"tab_id": "test_tab_socket"})
 
-    mock_kill_reap.assert_called_once_with(6666)
+    mock_spawn.assert_called_once_with(graceful_termination_flow, 6666)
     mock_os_close.assert_called_once_with(7777)
 
     assert session_manager.get_session("test_tab_socket", "test_user") is None

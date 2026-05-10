@@ -467,6 +467,77 @@ export async function uploadKeyFile() {
 
 // Prevent iOS/Android pull-to-refresh or page slide when swiping on controls
 
+export async function refreshProcessList() {
+  const list = document.getElementById("process-manager-list");
+  if (!list) return;
+  list.innerHTML =
+    '<div style="padding: 10px; color: #888; text-align: center;">Loading...</div>';
+  try {
+    const response = await fetch("/api/processes");
+    if (response.ok) {
+      const data = await response.json();
+      const processes = data.processes || [];
+      list.innerHTML = "";
+      if (processes.length === 0) {
+        list.innerHTML =
+          '<div style="padding: 10px; color: #888; text-align: center;">No processes found.</div>';
+        return;
+      }
+      processes.forEach((proc) => {
+        const row = document.createElement("div");
+        row.className = "session-item";
+        row.style.display = "flex";
+        row.style.justifyContent = "space-between";
+        row.style.alignItems = "center";
+        row.style.borderBottom = "1px solid #444";
+        row.style.padding = "10px";
+        row.innerHTML = `
+            <div class="session-info">
+                <div class="session-name" style="font-family: monospace;">${proc.command}</div>
+                <div style="font-size: 11px; color: #aaa;">PID: ${proc.pid} | State: ${proc.state} | Mem: ${proc.rss_memory_kb}KB</div>
+            </div>
+            <button class="small danger" data-onclick="killProcess(${proc.pid})">Kill</button>
+        `;
+        list.appendChild(row);
+      });
+    } else {
+      list.innerHTML =
+        '<div style="padding: 10px; color: red; text-align: center;">Failed to load processes.</div>';
+    }
+  } catch (e) {
+    console.error(e);
+    list.innerHTML =
+      '<div style="padding: 10px; color: red; text-align: center;">Error loading processes.</div>';
+  }
+}
+
+export async function killProcess(pid) {
+  if (!confirm("Are you sure you want to forcibly kill process " + pid + "?"))
+    return;
+  try {
+    const response = await fetchWithCSRF("/api/processes/" + pid, {
+      method: "DELETE",
+      headers: {
+        "X-CSRFToken":
+          document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content") || "",
+      },
+    });
+    if (response.ok) {
+      refreshProcessList();
+    } else {
+      const data = await response.json();
+      alert("Failed to kill: " + (data.error || "Unknown error"));
+    }
+  } catch (e) {
+    console.error("Kill failed", e);
+    alert("Error killing process.");
+  }
+}
+
+globalThis.refreshProcessList = refreshProcessList;
+globalThis.killProcess = killProcess;
 globalThis.openSettings = openSettings;
 globalThis.closeSettings = closeSettings;
 globalThis.loadSharedSessions = loadSharedSessions;
