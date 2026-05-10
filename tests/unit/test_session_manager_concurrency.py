@@ -16,6 +16,7 @@ def test_session_manager_concurrency():
         tab_id = f"tab_{i}"
         sid = f"sid_{i}"
         user_id = "user1"
+        # GEMWEBUI-407, 408, 409: Use high mock PIDs to avoid host process interference
         session = Session(tab_id, None, 999999 + i, user_id)
 
         # Add session

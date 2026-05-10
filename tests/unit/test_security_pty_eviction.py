@@ -17,6 +17,7 @@ def test_lru_pty_eviction():
         for i in range(51):
             tab_id = f"tab_{i}"
             fd = i + 100
+            # GEMWEBUI-407, 408, 409: High mock PIDs prevent accidental host process kills
             pid = i + 999999
             session = Session(tab_id=tab_id, fd=fd, pid=pid, user_id=user_id)
             # Stagger last_seen to make session 0 the oldest

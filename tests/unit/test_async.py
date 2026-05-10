@@ -156,6 +156,8 @@ def test_pty_restart_lru_eviction(mock_socketio, mock_pty):
     now = time.time()
     for i in range(50):
         tab_id = f"tab_{i}"
+        # GEMWEBUI-407, 408, 409: Using 999999+ instead of 1000 to avoid accidentally
+        # killing real host processes (like containerd) if test isolation fails.
         s = Session(tab_id, None, 999999 + i, "admin")
         s.last_seen = now - (999999 - i)  # tab_0 is oldest
         session_manager.add_session(s)

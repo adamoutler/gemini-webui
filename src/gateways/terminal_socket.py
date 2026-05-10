@@ -434,6 +434,8 @@ def pty_restart(data):
                     line_len = len(line_with_suffix)
 
                     if current_size + line_len > chunk_size and current_chunk:
+                        # GEMWEBUI-407, 408, 409: is_burst flag informs frontend of mass data chunks
+                        # to debounce rendering and avoid sliding-from-top artifacts.
                         socketio.emit(
                             "pty-output",
                             {"output": "".join(current_chunk), "is_burst": True},
@@ -447,6 +449,7 @@ def pty_restart(data):
                     current_size += line_len
 
                 if current_chunk:
+                    # GEMWEBUI-407, 408, 409: burst_end signals the end of the chunk burst.
                     socketio.emit(
                         "pty-output",
                         {

@@ -156,6 +156,7 @@ export function startSession(
   tab.term.loadAddon(tab.fitAddon);
 
   tab.term.onScroll((newViewportY) => {
+    // GEMWEBUI-407, 408, 409: Track if user scrolled away from the bottom to toggle auto-scroll
     if (tab.term && tab.term.buffer.active) {
       const isAtBottom = newViewportY >= tab.term.buffer.active.baseY - 2;
       tab.term.options.scrollOnData = isAtBottom;
@@ -301,6 +302,7 @@ export function startSession(
                 const maxExpectedJump = tab.term.rows * 2;
 
                 // Reject sudden jumps to exactly 0 if we were previously at the bottom (keyboard focus artifact)
+                // GEMWEBUI-407, 408, 409: Prevents sliding-from-top artifacts during mass data chunking/bursts
                 if (
                   pendingScrollY === 0 &&
                   deltaLines < -1 &&
@@ -852,6 +854,7 @@ export function startSession(
             globalThis.saveTabsToStorage();
         }
       }
+      // GEMWEBUI-407, 408, 409: Handle mass data chunks (bursts) to avoid UI lockups and scroll artifacts
       if (data.is_burst) {
         if (!tab._bursting) {
           tab._bursting = true;
@@ -888,6 +891,7 @@ export function startSession(
       tab.term.write(data.output);
 
       // Debounce the manual scrollToBottom on mobile proxy
+      // GEMWEBUI-407, 408, 409: Debounce mobile proxy alignWithCursor in requestAnimationFrame to fix race condition
       if (shouldAutoScroll && tab.mobileProxy) {
         if (tab._alignCursorRaf) {
           cancelAnimationFrame(tab._alignCursorRaf);
