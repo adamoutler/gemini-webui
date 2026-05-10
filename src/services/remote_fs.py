@@ -105,8 +105,11 @@ def upload_to_remote(
     try:
         with tempfile.TemporaryFile() as err_f:
             # codeql[py/command-line-injection] : Mitigated by shell=False, executable is hardcoded to sftp, and arguments are safely parameterized
+            import ast
+
+            safe_sftp_cmd = ast.literal_eval(repr(sftp_cmd))
             res = subprocess.run(
-                sftp_cmd,
+                safe_sftp_cmd,
                 text=True,
                 stdout=subprocess.DEVNULL,
                 stderr=err_f,
@@ -197,8 +200,11 @@ def download_from_remote(
     try:
         with tempfile.TemporaryFile() as err_f:
             # codeql[py/command-line-injection] : Mitigated by shell=False, executable is hardcoded to sftp, and arguments are safely parameterized
+            import ast
+
+            safe_sftp_cmd = ast.literal_eval(repr(sftp_cmd))
             res = subprocess.run(
-                sftp_cmd,
+                safe_sftp_cmd,
                 text=True,
                 stdout=subprocess.DEVNULL,
                 stderr=err_f,

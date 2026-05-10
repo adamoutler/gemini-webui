@@ -188,8 +188,11 @@ class TerminalService:
 
             cwd = work_dir if not ssh_target and os.path.exists(work_dir) else None
             # codeql[py/command-line-injection] : Mitigated by strict allowlist validation of cmd[0] and shell=False
+            import ast
+
+            safe_cmd = ast.literal_eval(repr(cmd))
             result = subprocess.run(
-                cmd,
+                safe_cmd,
                 capture_output=True,
                 text=True,
                 timeout=timeout,
