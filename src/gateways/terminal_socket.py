@@ -367,6 +367,13 @@ def pty_input(data):
                 break  # e.g. EIO if pty is closed
 
 
+@socketio.on("unlock_request")
+def unlock_request(data):
+    tab_id = data.get("tab_id")
+    if tab_id:
+        socketio.emit("lock_state_changed", {"locked": False}, room=tab_id)
+
+
 @socketio.on("pty-resize")
 def pty_resize(data):
     sid = getattr(request, "sid", None)
