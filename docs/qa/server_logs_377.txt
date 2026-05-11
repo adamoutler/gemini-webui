@@ -1,0 +1,165 @@
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.6.0 -- /home/adamoutler/gemini-webui/.venv/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/adamoutler/gemini-webui
+configfile: pytest.ini
+plugins: split-0.11.0, playwright-0.7.2, cov-7.1.0, timeout-2.4.0, base-url-2.1.0
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+[1mcollecting ... [0mcollected 4 items
+
+tests/e2e/test_e2e_resume_regression.py::test_new_session_no_resume Generating public/private ed25519 key pair.
+Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_new_session_no_resume0/.ssh/id_ed25519
+Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_new_session_no_resume0/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:Nn1oQR1/Gp7YBIhEwerl9tTmrs4BTPeJrvDeUQdz4j4 gemini-webui-inferrence1-20260510
+The key's randomart image is:
++--[ED25519 256]--+
+|       ++o.oo.   |
+|        o.. .o   |
+|       .. o + = .|
+|      .o.o * @ = |
+|     . oS =.B *  |
+|      ..o=.+o.   |
+|      .. o+oE    |
+|       o +.o..   |
+|       .+.=o.    |
++----[SHA256]-----+
+CONSOLE: SESSIONS:  [mock-uuid-1]
+CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+CONSOLE: ACTIVE TAB: undefined
+CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
+  1. Mock Session (Just now) [mock-uuid-1]
+, error: null, timestamp: 1778461376.815567}
+CONSOLE: SESSIONS:  [mock-uuid-1]
+CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+CONSOLE: ACTIVE TAB: undefined
+CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
+  1. Mock Session (Just now) [mock-uuid-1]
+, error: null, timestamp: 1778461376.815567}
+CONSOLE: SESSIONS:  [mock-uuid-1]
+CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+CONSOLE: ACTIVE TAB: undefined
+CONSOLE: ACTION EXECUTED: startSession [tab_1778461377933, local, , , new]
+CONSOLE: handleConnect called for tab tab_1778461377933
+CONSOLE: Calling globalThis.updateStatus for tab tab_1778461377933
+CONSOLE: ACTION EXECUTED: syncTabs [Object]
+[32mPASSED[0m
+tests/e2e/test_e2e_resume_regression.py::test_auto_resume_after_server_restart Generating public/private ed25519 key pair.
+Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_auto_resume_after_server_0/.ssh/id_ed25519
+Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_auto_resume_after_server_0/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:QAhUfnsFU4ukANSz22IaZpgK8RbQb02ZAf/27gyXyds gemini-webui-inferrence1-20260510
+The key's randomart image is:
++--[ED25519 256]--+
+| +==+oo++..      |
+|. ..+++o + .     |
+| . ..== . o      |
+|. . +..+ .       |
+| = o o. S        |
+|+ * + .o o o     |
+|o+ + .  . *      |
+|. .      = o     |
+|         .= E    |
++----[SHA256]-----+
+Reclaim failed for session tab_1778461384423. Creating a fresh session.
+CONSOLE: SESSIONS:  [mock-uuid-1]
+CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+CONSOLE: ACTIVE TAB: undefined
+CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
+  1. Mock Session (Just now) [mock-uuid-1]
+, error: null, timestamp: 1778461382.5518785}
+CONSOLE: SESSIONS:  [mock-uuid-1]
+CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+CONSOLE: ACTIVE TAB: undefined
+CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
+  1. Mock Session (Just now) [mock-uuid-1]
+, error: null, timestamp: 1778461382.5518785}
+CONSOLE: SESSIONS:  [mock-uuid-1]
+CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+CONSOLE: ACTIVE TAB: undefined
+CONSOLE: ACTION EXECUTED: startSession [tab_1778461384423, local, , , new]
+CONSOLE: handleConnect called for tab tab_1778461384423
+CONSOLE: Calling globalThis.updateStatus for tab tab_1778461384423
+CONSOLE: ACTION EXECUTED: syncTabs [Object]
+CONSOLE: Sessions updated payload: {host: Object, cache_key: local:local:, data: Object}
+CONSOLE: Checking tab: tab_1778461384423 terminal {type: local, mode: local, ssh_target: , ssh_dir: , resume: new}
+CONSOLE: Found match for tab: {id: 2, name: Mock Session, meta: Just now, uuid: tab_1778461384423}
+CONSOLE: ACTION EXECUTED: saveTabsToStorage []
+CONSOLE: Set geminiResume to: tab_1778461384423
+CONSOLE: [SOCKET_FLAP] Connection dropped (transport close). Reconnect count: 1
+CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
+CONSOLE: handleConnect called for tab tab_1778461384423
+CONSOLE: Calling globalThis.updateStatus for tab tab_1778461384423
+[32mPASSED[0m
+tests/e2e/test_e2e_resume_regression.py::test_no_terminal_clear_on_stolen_session Generating public/private ed25519 key pair.
+Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_no_terminal_clear_on_stol0/.ssh/id_ed25519
+Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_no_terminal_clear_on_stol0/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:+Xo5mV2STbBzou7/OmmhCy+yWzysXG14wAzQuooeLIw gemini-webui-inferrence1-20260510
+The key's randomart image is:
++--[ED25519 256]--+
+|    ..           |
+|     ..     .    |
+|     ..      o   |
+|    .  + .  + o  |
+|     .  S  . B   |
+|+   .  o =. + o  |
+|E= .    O.=* =   |
+|o o  ..+.BO =    |
+|..    =+.++=o+.  |
++----[SHA256]-----+
+[32mPASSED[0m
+tests/e2e/test_e2e_resume_regression.py::test_clear_command_preservation_on_reconnect Generating public/private ed25519 key pair.
+Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_clear_command_preservatio0/.ssh/id_ed25519
+Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_clear_command_preservatio0/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:VTUjuL2A1K7WsLcfxmgqLPdX5EcCy8sFon3UO0MCzEI gemini-webui-inferrence1-20260510
+The key's randomart image is:
++--[ED25519 256]--+
+|     .Eo.o oo.+  |
+|      . = B.o. o |
+|       = *.O .   |
+|      . +.B O .  |
+|        SB * *   |
+|        + =o+ .  |
+|     . . .oo+.   |
+|    . +  oo. .   |
+|     o oo. ..    |
++----[SHA256]-----+
+CONSOLE: SESSIONS:  [mock-uuid-1]
+CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+CONSOLE: ACTIVE TAB: undefined
+CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
+  1. Mock Session (Just now) [mock-uuid-1]
+, error: null, timestamp: 1778461414.4253893}
+CONSOLE: SESSIONS:  [mock-uuid-1]
+CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+CONSOLE: ACTIVE TAB: undefined
+CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
+  1. Mock Session (Just now) [mock-uuid-1]
+, error: null, timestamp: 1778461414.4253893}
+CONSOLE: SESSIONS:  [mock-uuid-1]
+CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+CONSOLE: ACTIVE TAB: undefined
+CONSOLE: ACTION EXECUTED: startSession [tab_1778461415736, local, , , new]
+CONSOLE: handleConnect called for tab tab_1778461415736
+CONSOLE: Calling globalThis.updateStatus for tab tab_1778461415736
+CONSOLE: ACTION EXECUTED: syncTabs [Object]
+CONSOLE: handleConnect called for tab tab_1778461415736
+CONSOLE: Calling globalThis.updateStatus for tab tab_1778461415736
+CONSOLE: ACTION EXECUTED: syncTabs [Object]
+CONSOLE: Sessions updated payload: {host: Object, cache_key: local:local:, data: Object}
+CONSOLE: Checking tab: tab_1778461415736 terminal {type: local, mode: local, ssh_target: , ssh_dir: , resume: new}
+CONSOLE: Found match for tab: {id: 2, name: Mock Session, meta: Just now, uuid: tab_1778461415736}
+CONSOLE: ACTION EXECUTED: saveTabsToStorage []
+CONSOLE: Set geminiResume to: tab_1778461415736
+[32mPASSED[0m
+
+[32m============================== [32m[1m4 passed[0m[32m in 49.89s[0m[32m ==============================[0m

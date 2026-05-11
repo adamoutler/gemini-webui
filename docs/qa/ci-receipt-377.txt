@@ -1,0 +1,5 @@
+status: ✅  Pass
+repo: adamoutler/gemini-webui
+started: 2026-05-11T00:40:48Z 462s
+commit: Merge pull request #20 from adamoutler/security-remediation-patch
+log: http://dash.hackedyour.info/api/logs?provider=github&owner=adamoutler&repo=gemini-webui&workflow_id=247584841
