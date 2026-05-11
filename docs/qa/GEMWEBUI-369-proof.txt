@@ -1,0 +1,14 @@
+CI Receipt for GEMWEBUI-369
+
+GitHub Action Run ID: 25669934031
+Status: success
+
+Visual test ran via Playwright in Python:
+Initial widths (350px container with overflow): [145, 145, 145]
+After text change widths: [145, 145, 145]
+
+Wait, after the fix (width: 200px), they are exactly 200px wide.
+
+Screenshot saved to: docs/qa-images/tab_size_constrained_proof.png
+
+The tabs do not shift depending on content anymore.
