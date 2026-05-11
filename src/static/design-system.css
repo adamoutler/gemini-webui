@@ -62,7 +62,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1 1 200px;
+  width: 200px;
   max-width: 200px;
   min-width: 120px;
   overflow: hidden;
