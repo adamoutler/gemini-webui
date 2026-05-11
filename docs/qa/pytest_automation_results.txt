@@ -1,0 +1,72 @@
+[1m============================= test session starts ==============================[0m
+platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.6.0
+rootdir: /home/adamoutler/gemini-webui
+configfile: pytest.ini
+plugins: split-0.11.0, playwright-0.7.2, cov-7.1.0, timeout-2.4.0, base-url-2.1.0
+timeout: 60.0s
+timeout method: signal
+timeout func_only: False
+collected 211 items
+
+tests/unit/test_api.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                         [  4%][0m
+tests/unit/test_api_csrf.py [32m.[0m[32m                                            [  4%][0m
+tests/unit/test_api_env_vars.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                  [  8%][0m
+tests/unit/test_api_search.py [32m.[0m[32m.[0m[32m.[0m[32m                                        [  9%][0m
+tests/unit/test_async.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                            [ 11%][0m
+tests/unit/test_auth_ldap.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                      [ 14%][0m
+tests/unit/test_cli_detection.py [32m.[0m[32m.[0m[32m                                      [ 15%][0m
+tests/unit/test_config_coverage.py [32m.[0m[32m.[0m[32m                                    [ 16%][0m
+tests/unit/test_controls.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                        [ 18%][0m
+tests/unit/test_csrf_upload_api.py [32m.[0m[32m                                     [ 18%][0m
+tests/unit/test_css_extraction_new.py [32m.[0m[32m                                  [ 19%][0m
+tests/unit/test_debug_logs.py [32m.[0m[32m                                          [ 19%][0m
+tests/unit/test_docs_server.py [32m.[0m[32m.[0m[32m                                        [ 20%][0m
+tests/unit/test_file_cache.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                       [ 22%][0m
+tests/unit/test_integration_ssh_multiplexing.py [32m.[0m[32m                        [ 23%][0m
+tests/unit/test_io.py [32m.[0m[32m.[0m[32m.[0m[32m                                                [ 24%][0m
+tests/unit/test_logic.py [32m.[0m[32m.[0m[32m.[0m[32m                                             [ 26%][0m
+tests/unit/test_manifest.py [32m.[0m[32m                                            [ 26%][0m
+tests/unit/test_mock_gemini_cli.py [32m.[0m[32m                                     [ 27%][0m
+tests/unit/test_mock_gemini_cli_ephemeral.py [32m.[0m[32m                           [ 27%][0m
+tests/unit/test_new_modifiers.py [32m.[0m[32m.[0m[32m.[0m[32m                                     [ 28%][0m
+tests/unit/test_process_engine_coverage.py [32m.[0m[32m                             [ 29%][0m
+tests/unit/test_process_manager_injection.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                    [ 33%][0m
+tests/unit/test_process_manager_new.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                          [ 36%][0m
+tests/unit/test_process_manager_ssh_multiplexing.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                 [ 38%][0m
+tests/unit/test_pty_overflow.py [32m.[0m[32m                                        [ 39%][0m
+tests/unit/test_pty_write.py [32m.[0m[32m                                           [ 39%][0m
+tests/unit/test_remote.py [32m.[0m[32m.[0m[32m                                             [ 40%][0m
+tests/unit/test_remote_fs_coverage.py [32m.[0m[32m                                  [ 41%][0m
+tests/unit/test_security.py [32m.[0m[32m.[0m[32m                                           [ 42%][0m
+tests/unit/test_security_ansi.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                        [ 49%][0m
+tests/unit/test_security_bola.py [32m.[0m[32m.[0m[32m                                      [ 50%][0m
+tests/unit/test_security_csrf.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                  [ 53%][0m
+tests/unit/test_security_payloads.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                            [ 57%][0m
+tests/unit/test_security_pty_eviction.py [32m.[0m[32m.[0m[32m                              [ 58%][0m
+tests/unit/test_security_remediation.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                            [ 60%][0m
+tests/unit/test_session_latching.py [32m.[0m[32m.[0m[32m                                   [ 61%][0m
+tests/unit/test_session_management.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                               [ 63%][0m
+tests/unit/test_session_manager_concurrency.py [32m.[0m[32m.[0m[32m                        [ 64%][0m
+tests/unit/test_session_manager_new.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                            [ 67%][0m
+tests/unit/test_session_poller.py [32m.[0m[32m.[0m[32m                                     [ 68%][0m
+tests/unit/test_session_results_cache_race.py [32m.[0m[32m                          [ 68%][0m
+tests/unit/test_share_full_color.py [32m.[0m[32m                                    [ 69%][0m
+tests/unit/test_share_manager.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                   [ 71%][0m
+tests/unit/test_share_routes.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                    [ 73%][0m
+tests/unit/test_socket.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                          [ 76%][0m
+tests/unit/test_storage.py [32m.[0m[32m.[0m[32m.[0m[32m                                           [ 77%][0m
+tests/unit/test_stt_color.py [32m.[0m[32m                                           [ 78%][0m
+tests/unit/test_stt_multiline.py [32m.[0m[32m.[0m[32m                                      [ 79%][0m
+tests/unit/test_subdirs.py [32m.[0m[32m.[0m[32m                                            [ 80%][0m
+tests/unit/test_sw_logic.py [32m.[0m[32m                                            [ 80%][0m
+tests/unit/test_tab_close_termination.py [32m.[0m[32m.[0m[32m                              [ 81%][0m
+tests/unit/test_terminal_burst.py [32m.[0m[32m                                      [ 81%][0m
+tests/unit/test_terminal_service_coverage.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                     [ 85%][0m
+tests/unit/test_theory.py [32m.[0m[32m                                              [ 85%][0m
+tests/unit/test_ui.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                            [ 89%][0m
+tests/unit/test_upload_download.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                              [ 92%][0m
+tests/unit/test_utils.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                    [ 98%][0m
+tests/unit/test_versioning.py [32m.[0m[32m                                          [ 99%][0m
+tests/unit/test_zombie_fix.py [32m.[0m[32m.[0m[32m                                         [100%][0m
+
+[32m======================== [32m[1m211 passed[0m[32m in 90.70s (0:01:30)[0m[32m ========================[0m
