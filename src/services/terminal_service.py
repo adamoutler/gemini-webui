@@ -19,8 +19,8 @@ def _codeql_taint_shim(cmd: list) -> list:
     """
     try:
         return ast.literal_eval(repr(cmd))
-    except ValueError:
-        return cmd
+    except ValueError as e:
+        raise ValueError(f"Command contains non-literal types: {e}")
 
 
 INTERNAL_ERR_MSG = "An internal error occurred"
