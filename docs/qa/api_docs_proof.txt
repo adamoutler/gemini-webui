@@ -12,4 +12,4 @@ timeout func_only: False
 tests/e2e/test_api_contract.py::test_api_contract_terminate_all [32mPASSED[0m[32m   [ 50%][0m
 tests/e2e/test_api_contract.py::test_api_contract_external_v1 [32mPASSED[0m[32m     [100%][0m
 
-[32m============================== [32m[1m2 passed[0m[32m in 5.93s[0m[32m ===============================[0m
+[32m============================== [32m[1m2 passed[0m[32m in 3.87s[0m[32m ===============================[0m

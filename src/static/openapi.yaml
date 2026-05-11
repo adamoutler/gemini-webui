@@ -170,3 +170,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /hosts/{host_id}/states/wait/{wait_time}:
+    get:
+      summary: Poll host states and wait
+      description: Retrieves the current status and waits for changes up to the wait_time.
+      tags:
+        - Automation
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: host_id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: wait_time
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Host states response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HostStatesResponse"

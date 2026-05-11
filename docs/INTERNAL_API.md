@@ -10,6 +10,8 @@ All internal REST APIs are prefixed with `/api/` and require a valid session (an
 
 - **`GET /api/config`**: Retrieves the current application configuration.
 - **`POST /api/config`**: Updates the application configuration.
+- **`GET /api/settings/export`**: Exports user settings as JSON.
+- **`POST /api/settings/import`**: Imports user settings from JSON payload.
 
 ### API Keys Management
 
@@ -25,17 +27,14 @@ All internal REST APIs are prefixed with `/api/` and require a valid session (an
 - **`DELETE /api/management/sessions/<pid>`**: Force-terminates a specific active process.
 - **`POST /api/sessions/terminate_all`**: Force-terminates all active backend sessions for the user and removes them from memory.
 - **`GET /api/sessions`**: Lists available Gemini sessions (via `gemini -l`).
+- **`GET /api/sessions/<session_id>/search_files`**: Searches the active session's tracked files.
 
----
+### Process Management & Tasks
 
-## 2. External APIs (Programmatic /v1)
-
-These APIs are intended for external integrators. They use API Key authentication (`X-API-Key` header) rather than cookie-based sessions.
-
-- **`POST /v1/sessions/create`**: Creates a new session with a prompt and returns the terminal output. (Expects JSON: `{ "host_id": "...", "prompt": "..." }`)
-- **`GET /v1/hosts/states`**: Retrieves the health status and current states of all configured hosts.
-
----
+- **`GET /api/processes`**: Lists active OS processes for process management.
+- **`DELETE /api/processes/<pid>`**: Force kills a specific OS process.
+- **`GET /api/tasks`**: Lists running asynchronous tasks.
+- **`POST /api/tasks/kill`**: Kills a specific background task.
 
 ### Hosts & SSH Keys
 
@@ -44,9 +43,11 @@ These APIs are intended for external integrators. They use API Key authenticatio
 - **`DELETE /api/hosts/<host_id>`**: Removes an SSH host.
 - **`POST /api/hosts/reorder`**: Updates the display order of hosts.
 - **`GET /api/keys`**: Lists available SSH private/public keys.
-- **`POST /api/keys`**: Uploads a new SSH key pair.
+- **`GET /api/keys/public`**: Retrieves the public key material.
+- **`POST /api/keys/upload`**: Uploads a new SSH key pair.
+- **`POST /api/keys/text`**: Submits a new SSH key pair via direct text input.
 - **`DELETE /api/keys/<key_name>`**: Deletes a specific SSH key.
-- **`POST /api/keys/<key_name>/rotate`**: Rotates the specified instance key.
+- **`POST /api/keys/rotate`**: Rotates the specified instance key.
 
 ### File Operations
 
@@ -62,21 +63,28 @@ These APIs are intended for external integrators. They use API Key authenticatio
 ### Shares (Terminal Snapshots)
 
 - **`GET /api/shares`**: Lists all created terminal snapshots.
-- **`POST /api/shares`**: Creates a new snapshot from the current terminal state.
+- **`POST /api/shares/create`**: Creates a new snapshot from the current terminal state.
 - **`DELETE /api/shares/<share_id>`**: Deletes a snapshot.
 - **`GET /s/<share_id>`**: (UI Route) Renders the read-only snapshot viewer.
 
 ### Utilities
 
-- **`GET /api/csrf-token`**: Retrieves a CSRF token required for `POST`/`DELETE` requests.
+- **`GET /api/csrf-token`**: Retrieves a CSRF token required for POST/DELETE requests.
+- **`GET /api/csrf`**: Alias or alternative endpoint for fetching CSRF configurations.
 - **`GET /api/health`**: Simple health check endpoint.
-- **`GET /api/tasks`**: Lists running asynchronous tasks.
-- **`POST /api/settings/export`**: Exports user settings as JSON.
-- **`POST /api/settings/import`**: Imports user settings from JSON payload.
 
 ---
 
-## 2. WebSocket Events (Socket.IO)
+## 2. External APIs (Programmatic /v1)
+
+These APIs are intended for external integrators. They use API Key authentication (`X-API-Key` header) rather than cookie-based sessions.
+
+- **`POST /v1/sessions/create`**: Creates a new session with a prompt and returns the terminal output. (Expects JSON: `{ "host_id": "...", "prompt": "..." }`)
+- **`GET /v1/hosts/states`**: Retrieves the health status and current states of all configured hosts.
+
+---
+
+## 3. WebSocket Events (Socket.IO)
 
 The core terminal interaction is driven by bidirectional WebSocket events via Socket.IO.
 
