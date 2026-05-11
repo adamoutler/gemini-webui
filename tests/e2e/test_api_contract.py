@@ -1,3 +1,4 @@
+import os
 import requests
 
 
@@ -15,11 +16,14 @@ def test_api_contract_terminate_all(server, playwright):
     page.click("text=Start New", force=True)
     page.wait_for_selector(".xterm-screen", timeout=15000)
     page.wait_for_timeout(1000)
+    os.makedirs("docs/qa-images", exist_ok=True)
+    page.screenshot(path="docs/qa-images/api-contract-tab1.png")
 
     # 2. Open another tab
     page.click("#new-tab-btn")
     page.click("text=Start New", force=True)
     page.wait_for_timeout(1000)
+    page.screenshot(path="docs/qa-images/api-contract-tab2.png")
 
     # 3. Call GET /api/management/sessions to verify multiple sessions exist
     # To bypass Auth for API, we can just use requests since BYPASS_AUTH_FOR_TESTING is true
