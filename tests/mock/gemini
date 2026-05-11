@@ -146,6 +146,10 @@ while True:
         print("\x1b[2J\x1b[3J")
         print("Screen cleared.")
         sys.stdout.flush()
+    elif "SPAM_ME" in line:
+        for i in range(500):
+            print("X" * 400 + f" Line {i:03d}")
+        sys.stdout.flush()
     else:
         print(f"You said: {line}")
         sys.stdout.flush()

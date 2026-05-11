@@ -29,23 +29,14 @@ def test_mobile_lifecycle_restore(server, mobile_context):
     page.wait_for_selector(".xterm-rows", timeout=15000)
     page.wait_for_timeout(1000)
 
-    # Focus terminal
-    page.locator(".mobile-scroll-proxy").first.click()
-
     # Fast output to fill the buffer (256KB)
     page.evaluate("""() => {
-        for (let i = 0; i < 500; i++) {
-            let pattern = 'X'.repeat(400) + ' Line ' + i.toString().padStart(3, '0') + '\\n';
-            tabs.find(t => t.id === activeTabId).socket.emit('pty-input', { input: pattern });
-        }
+        tabs.find(t => t.id === activeTabId).socket.emit('pty-input', { input: "SPAM_ME\\n" });
     }""")
 
     # Wait for it to finish and settle
-    page.wait_for_timeout(5000)
-
-    # Verify the last lines are visible
-    expect(page.locator(".xterm-rows")).to_contain_text("Line 499")
-
+    expect(page.locator(".xterm-rows")).to_contain_text("Line 499", timeout=30000)
+    page.wait_for_timeout(2000)
     # Screenshot 1
     os.makedirs("public/qa-screenshots", exist_ok=True)
     page.screenshot(path="public/qa-screenshots/mobile-buffer-01-before-background.png")
