@@ -172,6 +172,7 @@ def create_app(test_config=None):
     from src.routes.terminal import terminal_bp
     from src.routes.shares import shares_bp
     from src.routes.external_api import external_api_bp
+    from src.routes.automation import automation_bp
 
     app.register_blueprint(host_key_bp)
     app.register_blueprint(ui_bp)
@@ -179,6 +180,7 @@ def create_app(test_config=None):
     app.register_blueprint(terminal_bp)
     app.register_blueprint(shares_bp)
     app.register_blueprint(external_api_bp)
+    app.register_blueprint(automation_bp)
 
     return app
 
