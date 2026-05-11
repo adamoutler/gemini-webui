@@ -262,7 +262,9 @@ def upload_file():
                 save_path, filename, ssh_target, ssh_dir, ssh_dir_path
             )
 
-        return jsonify({"status": "success", "filename": filename})
+        return jsonify(
+            {"status": "success", "filename": filename, "filepath": save_path}
+        )
     except Exception:
         import traceback
 

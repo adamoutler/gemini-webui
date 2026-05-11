@@ -126,6 +126,8 @@ export function dismissInstallBanner() {
   localStorage.setItem("install_banner_dismissed", "true");
 }
 
+let desktopContextMenuInitialized = false;
+
 export function initDesktopContextMenu() {
   if (
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
@@ -133,6 +135,75 @@ export function initDesktopContextMenu() {
     )
   )
     return;
+
+  if (!desktopContextMenuInitialized) {
+    desktopContextMenuInitialized = true;
+    const menu = document.createElement("div");
+    menu.id = "desktop-context-menu";
+    menu.className = "desktop-context-menu";
+    menu.innerHTML = `
+      <div class="menu-item" id="ctx-copy">Copy</div>
+      <div class="menu-item" id="ctx-paste">Paste</div>
+    `;
+    document.body.appendChild(menu);
+
+    menu.querySelector("#ctx-copy").addEventListener("mousedown", (e) => {
+      e.preventDefault();
+      const tab = globalState.tabs.find(
+        (t) => t.id === globalState.activeTabId,
+      );
+      if (tab?.term && tab.term.hasSelection()) {
+        const selectedText = tab.term.getSelection();
+        navigator.clipboard.writeText(
+          globalThis.filterTerminalFluff
+            ? globalThis.filterTerminalFluff(selectedText)
+            : selectedText,
+        );
+      } else {
+        document.execCommand("copy");
+      }
+      menu.style.display = "none";
+    });
+
+    menu
+      .querySelector("#ctx-paste")
+      .addEventListener("mousedown", async (e) => {
+        e.preventDefault();
+        try {
+          let text = await navigator.clipboard.readText();
+          const tab = globalState.tabs.find(
+            (t) => t.id === globalState.activeTabId,
+          );
+          if (tab?.socket) {
+            const useBracketedPaste =
+              tab.term && tab.term.modes && tab.term.modes.bracketedPasteMode;
+            if (useBracketedPaste) {
+              text = "\x1b[200~" + text + "\x1b[201~";
+            }
+            if (globalThis.emitPtyInput) {
+              globalThis.emitPtyInput(tab, text);
+            } else {
+              tab.socket.emit("pty-input", {
+                input: text,
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Paste failed", err);
+        }
+        menu.style.display = "none";
+      });
+
+    document.addEventListener("mousedown", (e) => {
+      if (
+        menu.style.display === "block" &&
+        !e.target.closest("#desktop-context-menu")
+      ) {
+        menu.style.display = "none";
+      }
+    });
+  }
+
   document.addEventListener("contextmenu", (e) => {
     const isTextSelected = globalThis.getSelection().toString().length > 0;
     const isInput =

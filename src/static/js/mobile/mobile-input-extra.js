@@ -460,6 +460,7 @@ document.addEventListener("drop", async (e) => {
   if (allFiles.length > 0) {
     let successCount = 0;
     let lastFilename = "";
+    let lastFilepath = "";
     let uploadPrefix = "";
     if (allFiles.length > 1) {
       uploadPrefix = `upload-${Math.floor(Date.now() / 1000)}/`;
@@ -500,6 +501,7 @@ document.addEventListener("drop", async (e) => {
         if (result.status === "success") {
           successCount++;
           lastFilename = result.filename;
+          lastFilepath = result.filepath;
         } else {
           alert(`Upload failed for ${finalPath}: ` + result.message);
         }
@@ -510,10 +512,20 @@ document.addEventListener("drop", async (e) => {
     if (successCount > 0) {
       const tab = tabs.find((t) => t.id === activeTabId);
       if (tab?.socket && tab.state === "terminal") {
-        const msg =
-          successCount > 1
-            ? `> I uploaded multiple files to @${uploadPrefix}\r`
-            : `> I uploaded @${lastFilename}\r`;
+        const isLocal = tab.session && tab.session.type !== "ssh";
+        let msg = "";
+        if (successCount > 1) {
+          if (isLocal && lastFilepath) {
+            const prefixRef = lastFilepath.replace(lastFilename, uploadPrefix);
+            msg = `> I uploaded multiple files to @${prefixRef}\r`;
+          } else {
+            msg = `> I uploaded multiple files to @${uploadPrefix}\r`;
+          }
+        } else {
+          msg = `> I uploaded @${
+            isLocal && lastFilepath ? lastFilepath : lastFilename
+          }\r`;
+        }
         emitPtyInput(tab, msg);
         tab.term.focus();
       } else if (successCount === 1) {
@@ -553,62 +565,6 @@ document.addEventListener("keydown", (e) => {
     }
   }
 });
-export let desktopContextMenuInitialized = false;
-export function initDesktopContextMenu() {
-  if (isMobile || desktopContextMenuInitialized) return;
-  desktopContextMenuInitialized = true;
-  const menu = document.createElement("div");
-  menu.id = "desktop-context-menu";
-  menu.className = "desktop-context-menu";
-  menu.innerHTML = `
-    <div class="menu-item" id="ctx-copy">Copy</div>
-    <div class="menu-item" id="ctx-paste">Paste</div>
-  `;
-  document.body.appendChild(menu);
-  menu.querySelector("#ctx-copy").addEventListener("mousedown", (e) => {
-    e.preventDefault();
-    const tab = tabs.find((t) => t.id === activeTabId);
-    if (tab?.term && tab.term.hasSelection()) {
-      const selectedText = tab.term.getSelection();
-      navigator.clipboard.writeText(filterTerminalFluff(selectedText));
-    } else {
-      document.execCommand("copy");
-    }
-    menu.style.display = "none";
-  });
-  menu.querySelector("#ctx-paste").addEventListener("mousedown", async (e) => {
-    e.preventDefault();
-    try {
-      let text = await navigator.clipboard.readText();
-      const tab = tabs.find((t) => t.id === activeTabId);
-      if (tab?.socket) {
-        const useBracketedPaste =
-          tab.term && tab.term.modes && tab.term.modes.bracketedPasteMode;
-        if (useBracketedPaste) {
-          text = "\x1b[200~" + text + "\x1b[201~";
-        }
-        if (globalThis.emitPtyInput) {
-          globalThis.emitPtyInput(tab, text);
-        } else {
-          tab.socket.emit("pty-input", {
-            input: text,
-          });
-        }
-      }
-    } catch (err) {
-      console.error("Paste failed", err);
-    }
-    menu.style.display = "none";
-  });
-  document.addEventListener("mousedown", (e) => {
-    if (
-      menu.style.display === "block" &&
-      !e.target.closest("#desktop-context-menu")
-    ) {
-      menu.style.display = "none";
-    }
-  });
-}
 
 // --- Installation Recommendation Banner ---
 function checkInstallationStatus() {

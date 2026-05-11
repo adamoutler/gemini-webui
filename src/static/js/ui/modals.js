@@ -154,7 +154,9 @@ export async function uploadPastedImage(file, tab, terminalEmitCallback) {
     });
     if (!response.ok) throw new Error("Upload failed: " + response.statusText);
     const data = await response.json();
-    terminalEmitCallback(`> I pasted @${data.filename}\r`);
+    const isLocal = tab && tab.session && tab.session.type !== "ssh";
+    const fileRef = isLocal && data.filepath ? data.filepath : data.filename;
+    terminalEmitCallback(`> I pasted @${fileRef}\r`);
   } catch (error) {
     console.error("Paste upload error:", error);
     terminalEmitCallback(
@@ -195,7 +197,10 @@ export async function uploadWorkspaceFile() {
         (t) => t.id === globalState.activeTabId,
       );
       if (tab?.socket && tab.state === "terminal") {
-        emitPtyInput(tab, `> I uploaded @${result.filename}\r`);
+        const isLocal = tab.session && tab.session.type !== "ssh";
+        const fileRef =
+          isLocal && result.filepath ? result.filepath : result.filename;
+        emitPtyInput(tab, `> I uploaded @${fileRef}\r`);
         tab.term.focus();
       } else {
         alert("File uploaded successfully");

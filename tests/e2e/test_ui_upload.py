@@ -181,9 +181,8 @@ def test_folder_drag_and_drop_upload(page, test_data_dir, playwright):
     }""")
 
     assert (
-        "> I uploaded multiple files to @upload-" in content
+        "> I uploaded multiple files to @" in content and "upload-" in content
     ), f"Expected indication of multiple files uploaded to an upload- timestamped folder, got terminal content: {content}"
-
     # Check if files actually exist in test_data_dir within a timestamped upload folder
     import glob
 

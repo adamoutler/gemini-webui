@@ -717,7 +717,10 @@ export function startSession(
             if (!response.ok)
               throw new Error("Upload failed: " + response.statusText);
             const data = await response.json();
-            sendToTerminal(`> I uploaded @${data.filename}\r`);
+            const isLocal = tab && tab.session && tab.session.type !== "ssh";
+            const fileRef =
+              isLocal && data.filepath ? data.filepath : data.filename;
+            sendToTerminal(`> I uploaded @${fileRef}\r`);
           } catch (error) {
             console.error("Paste upload error:", error);
             if (tab.term) {
@@ -1069,8 +1072,64 @@ export function startSession(
         );
       } else {
         // Fallback for non-mobile if proxy isn't active
-        if (tab.socket) emitPtyInput(tab, "\x1b\r");
+        if (tab.socket) {
+          if (globalThis.emitPtyInput) {
+            globalThis.emitPtyInput(tab, "\x1b\r");
+          } else {
+            tab.socket.emit("pty-input", { input: "\x1b\r" });
+          }
+        }
       }
+      return false;
+    }
+
+    if (
+      e.type === "keydown" &&
+      e.ctrlKey &&
+      e.shiftKey &&
+      (e.key === "c" || e.key === "C" || e.code === "KeyC")
+    ) {
+      const selection = tab.term.getSelection();
+      if (selection) {
+        navigator.clipboard.writeText(
+          globalThis.filterTerminalFluff
+            ? globalThis.filterTerminalFluff(selection)
+            : selection,
+        );
+      } else {
+        document.execCommand("copy");
+      }
+      return false;
+    }
+
+    if (
+      e.type === "keydown" &&
+      e.ctrlKey &&
+      e.shiftKey &&
+      (e.key === "v" || e.key === "V" || e.code === "KeyV")
+    ) {
+      navigator.clipboard
+        .readText()
+        .then((text) => {
+          if (text) {
+            const useBracketedPaste =
+              tab.term && tab.term.modes && tab.term.modes.bracketedPasteMode;
+            if (useBracketedPaste) {
+              text = "\x1b[200~" + text + "\x1b[201~";
+            }
+            if (tab.mobileProxy && tab.mobileProxy.ui) {
+              tab.mobileProxy.ui.proxyInput.value += text;
+              tab.mobileProxy.ui.proxyInput.dispatchEvent(
+                new Event("input", { bubbles: true }),
+              );
+            } else if (globalThis.emitPtyInput) {
+              globalThis.emitPtyInput(tab, text);
+            } else if (tab.socket) {
+              tab.socket.emit("pty-input", { input: text });
+            }
+          }
+        })
+        .catch((err) => console.error("Paste error", err));
       return false;
     }
 
