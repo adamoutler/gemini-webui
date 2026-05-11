@@ -41,7 +41,7 @@ class HostStateResponseSchema(Schema):
     message = fields.String()
 
 
-@external_api_bp.route("/v1/sessions/create", methods=["GET"])
+@external_api_bp.route("/v1/sessions/create")
 class SessionCreate(MethodView):
     @external_api_bp.arguments(SessionCreateSchema)
     @external_api_bp.response(200, SessionResponseSchema)

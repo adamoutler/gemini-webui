@@ -23,7 +23,19 @@ All internal REST APIs are prefixed with `/api/` and require a valid session (an
 - **`POST /api/migrate-tabs`**: Updates the order or state of persisted tabs.
 - **`GET /api/management/sessions`**: Lists all active processes managed by the backend.
 - **`DELETE /api/management/sessions/<pid>`**: Force-terminates a specific active process.
+- **`POST /api/sessions/terminate_all`**: Force-terminates all active backend sessions for the user and removes them from memory.
 - **`GET /api/sessions`**: Lists available Gemini sessions (via `gemini -l`).
+
+---
+
+## 2. External APIs (Programmatic /v1)
+
+These APIs are intended for external integrators. They use API Key authentication (`X-API-Key` header) rather than cookie-based sessions.
+
+- **`POST /v1/sessions/create`**: Creates a new session with a prompt and returns the terminal output. (Expects JSON: `{ "host_id": "...", "prompt": "..." }`)
+- **`GET /v1/hosts/states`**: Retrieves the health status and current states of all configured hosts.
+
+---
 
 ### Hosts & SSH Keys
 

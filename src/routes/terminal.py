@@ -179,3 +179,31 @@ def inject_sess():
     s = Session("tab_backendtest123", 999, 9999, user_id=user_id)
     session_manager.add_session(s)
     return jsonify({"status": "injected"})
+
+
+@terminal_bp.route("/api/sessions/terminate_all", methods=["POST"])
+@authenticated_only
+def terminate_all_sessions():
+    user_id = session.get("user_id") or (
+        "admin" if env_config.BYPASS_AUTH_FOR_TESTING else None
+    )
+    active_sessions = session_manager.list_sessions(user_id)
+    terminated_count = 0
+    for sess in active_sessions:
+        tab_id = sess.get("tab_id")
+        if tab_id:
+            old_session = session_manager.remove_session(tab_id, user_id)
+            if old_session:
+                if old_session.pid is not None:
+                    kill_and_reap(old_session.pid)
+                if getattr(old_session, "fd", None) is not None:
+                    try:
+                        os.close(old_session.fd)
+                    except OSError:
+                        pass
+                if tab_id in ephemeral_sessions:
+                    ephemeral_sessions.pop(tab_id, None)
+                socketio.emit("session-terminated", {"tab_id": tab_id}, room=tab_id)
+                terminated_count += 1
+
+    return jsonify({"status": "success", "terminated": terminated_count}), 200
