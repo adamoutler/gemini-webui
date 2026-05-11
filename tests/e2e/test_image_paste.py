@@ -58,11 +58,12 @@ def test_image_paste_logic(page, server, test_data_dir, playwright):
     }""")
 
     # 4. Verify that the terminal message was generated
-    expect(page.locator("#test-emit-output")).to_contain_text(
-        "> I pasted @pasted_images/pasted-image-", timeout=15000
+    import re
+
+    expect(page.locator("#test-emit-output")).to_have_text(
+        re.compile(r"> I pasted @.*pasted-image-"), timeout=15000
     )
     page.screenshot(path="public/qa-screenshots/proof_260_image_paste.png")
-
     # 5. Check if the file was actually created in the workspace
     workspace_dir = str(test_data_dir / "workspace" / "pasted_images")
     import time

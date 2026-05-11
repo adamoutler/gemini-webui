@@ -1,6 +1,8 @@
 import { globalState } from "../core/state.js";
 import { debugLog } from "../core/api.js";
 import { initDesktopContextMenu } from "../core/pwa-system.js";
+import { CopyPlugin } from "./plugins/CopyPlugin.js";
+import { PastePlugin } from "./plugins/PastePlugin.js";
 
 // Telemetry: Main Thread Block Detector
 let lastFrameTime = performance.now();
@@ -1080,56 +1082,6 @@ export function startSession(
           }
         }
       }
-      return false;
-    }
-
-    if (
-      e.type === "keydown" &&
-      e.ctrlKey &&
-      e.shiftKey &&
-      (e.key === "c" || e.key === "C" || e.code === "KeyC")
-    ) {
-      const selection = tab.term.getSelection();
-      if (selection) {
-        navigator.clipboard.writeText(
-          globalThis.filterTerminalFluff
-            ? globalThis.filterTerminalFluff(selection)
-            : selection,
-        );
-      } else {
-        document.execCommand("copy");
-      }
-      return false;
-    }
-
-    if (
-      e.type === "keydown" &&
-      e.ctrlKey &&
-      e.shiftKey &&
-      (e.key === "v" || e.key === "V" || e.code === "KeyV")
-    ) {
-      navigator.clipboard
-        .readText()
-        .then((text) => {
-          if (text) {
-            const useBracketedPaste =
-              tab.term && tab.term.modes && tab.term.modes.bracketedPasteMode;
-            if (useBracketedPaste) {
-              text = "\x1b[200~" + text + "\x1b[201~";
-            }
-            if (tab.mobileProxy && tab.mobileProxy.ui) {
-              tab.mobileProxy.ui.proxyInput.value += text;
-              tab.mobileProxy.ui.proxyInput.dispatchEvent(
-                new Event("input", { bubbles: true }),
-              );
-            } else if (globalThis.emitPtyInput) {
-              globalThis.emitPtyInput(tab, text);
-            } else if (tab.socket) {
-              tab.socket.emit("pty-input", { input: text });
-            }
-          }
-        })
-        .catch((err) => console.error("Paste error", err));
       return false;
     }
 

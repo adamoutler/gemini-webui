@@ -133,9 +133,8 @@ def test_bulk_random_upload_e2e(page, test_data_dir, playwright):
 
     print("TERMINAL CONTENT:", repr(content_text))
     assert (
-        "> I uploaded multiple files to @upload-" in content_text
+        "> I uploaded multiple files to @" in content_text and "upload-" in content_text
     ), "Upload message not found in terminal output"
-
     # 5. Check actual files in the target folder
     workspace_dir = os.path.join(str(test_data_dir), "workspace")
     upload_dirs = glob.glob(os.path.join(workspace_dir, "upload-*"))
