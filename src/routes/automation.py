@@ -53,6 +53,18 @@ def delete_schedule(schedule_id):
     return jsonify({"error": "Not found"}), 404
 
 
+@automation_bp.route("/history", methods=["GET"])
+def list_history():
+    jobs = schedule_manager.list_jobs()
+    return jsonify(jobs)
+
+
+@automation_bp.route("/<schedule_id>/history", methods=["GET"])
+def list_schedule_history(schedule_id):
+    jobs = schedule_manager.list_jobs(schedule_id)
+    return jsonify(jobs)
+
+
 @automation_bp.route("/<schedule_id>/execute", methods=["POST"])
 def execute_schedule(schedule_id):
     sched = schedule_manager.get_schedule(schedule_id)

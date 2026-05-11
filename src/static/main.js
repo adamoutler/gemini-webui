@@ -175,6 +175,8 @@ import {
   closeAutomationDashboard,
   switchAutomationTab,
   saveAutomationSchedule,
+  deleteAutomationSchedule,
+  executeAutomationSchedule,
 } from "./js/ui/automation.js";
 
 const Actions = {
@@ -268,6 +270,8 @@ const Actions = {
   closeAutomationDashboard,
   switchAutomationTab,
   saveAutomationSchedule,
+  deleteAutomationSchedule,
+  executeAutomationSchedule,
 };
 
 Object.keys(Actions).forEach((actionName) => {
