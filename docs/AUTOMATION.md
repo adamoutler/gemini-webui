@@ -42,20 +42,22 @@ The execution engine scans the PTY stream for these exact string markers. It cap
 
 ## REST API Documentation (v1)
 
-### Queue an Ad-Hoc Job
+### Create a Session and Execute Command
 
-Queues a command to be executed on a specific terminal session. The backend will wait until the session is idle before injecting the command.
+Creates a new terminal session, executes a command, and returns the resulting output.
 
-**Endpoint:** `POST /api/v1/automation/queue`
+**Endpoint:** `POST /v1/sessions/create`
+
+**Headers:**
+
+- `X-API-Key: <your_api_key>`
 
 **Request Body (JSON):**
 
 ```json
 {
-  "tab_id": "string",
-  "prompt": "string",
-  "mode": "strict|heuristic",
-  "timeout": 300
+  "host_id": "string",
+  "prompt": "string"
 }
 ```
 
@@ -63,26 +65,34 @@ Queues a command to be executed on a specific terminal session. The backend will
 
 ```json
 {
-  "job_id": "string",
-  "status": "queued"
+  "status": "success",
+  "data": {
+    "output": "..."
+  },
+  "message": "..."
 }
 ```
 
-### Poll Job Status and Output
+### Poll Host States
 
-Retrieves the current status, output, and exit code (if applicable) for a queued or completed job.
+Retrieves the current status and health of all configured hosts.
 
-**Endpoint:** `GET /api/v1/automation/jobs/{job_id}`
+**Endpoint:** `GET /v1/hosts/states`
+
+**Headers:**
+
+- `X-API-Key: <your_api_key>`
 
 **Response (200 OK):**
 
 ```json
 {
-  "job_id": "string",
-  "status": "completed",
-  "output": "...",
-  "exit_code": 0,
-  "timestamp": "2024-10-27T10:00:00Z"
+  "status": "success",
+  "data": {
+    "host_id_1": { "state": "online", "latency": 15 },
+    "host_id_2": { "state": "offline", "latency": null }
+  },
+  "message": "..."
 }
 ```
 

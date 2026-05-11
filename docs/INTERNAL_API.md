@@ -70,6 +70,9 @@ These APIs are intended for external integrators. They use API Key authenticatio
 
 - **`GET /api/csrf-token`**: Retrieves a CSRF token required for `POST`/`DELETE` requests.
 - **`GET /api/health`**: Simple health check endpoint.
+- **`GET /api/tasks`**: Lists running asynchronous tasks.
+- **`POST /api/settings/export`**: Exports user settings as JSON.
+- **`POST /api/settings/import`**: Imports user settings from JSON payload.
 
 ---
 
@@ -93,6 +96,9 @@ These events are emitted by `src/static/app.js`:
 - **`terminate_session`**
   - **Payload**: `{ session_id: "<tab_id>" }`
   - **Purpose**: Force-kills the underlying process associated with the tab.
+- **`restart`**
+  - **Payload**: `{ session_id: "<tab_id>" }`
+  - **Purpose**: Triggers a backend PTY restart and reconnect logic.
 
 ### Server-to-Client (Backend -> Frontend)
 
