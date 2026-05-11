@@ -33,6 +33,7 @@ class ScheduleManager:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS schedules (
                     id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
                     target_host_id TEXT NOT NULL,
                     prompt_context TEXT NOT NULL,
                     task_prompt TEXT NOT NULL,
@@ -43,6 +44,16 @@ class ScheduleManager:
                     is_active INTEGER DEFAULT 1,
                     created_at REAL NOT NULL,
                     updated_at REAL NOT NULL
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS automation_jobs (
+                    id TEXT PRIMARY KEY,
+                    schedule_id TEXT,
+                    status TEXT NOT NULL,
+                    output TEXT,
+                    exit_code INTEGER,
+                    timestamp REAL NOT NULL
                 )
             """)
             conn.commit()
@@ -62,6 +73,7 @@ class ScheduleManager:
 
     def add_schedule(
         self,
+        name: str,
         target_host_id: str,
         task_prompt: str,
         cron_expr: str,
@@ -78,12 +90,13 @@ class ScheduleManager:
             conn.execute(
                 """
                 INSERT INTO schedules (
-                    id, target_host_id, prompt_context, task_prompt, cron_expr, wait_for_idle,
+                    id, name, target_host_id, prompt_context, task_prompt, cron_expr, wait_for_idle,
                     last_run_at, next_run_at, is_active, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, NULL, ?, 1, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, 1, ?, ?)
                 """,
                 (
                     schedule_id,
+                    name,
                     target_host_id,
                     prompt_context,
                     task_prompt,
@@ -113,6 +126,39 @@ class ScheduleManager:
             cursor = conn.execute("DELETE FROM schedules WHERE id = ?", (schedule_id,))
             conn.commit()
             return cursor.rowcount > 0
+
+    def add_job(
+        self,
+        schedule_id: Optional[str],
+        status: str,
+        output: str = "",
+        exit_code: Optional[int] = None,
+    ) -> str:
+        job_id = str(uuid.uuid4())
+        now = time.time()
+        with self._get_connection() as conn:
+            conn.execute(
+                """
+                INSERT INTO automation_jobs (id, schedule_id, status, output, exit_code, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (job_id, schedule_id, status, output, exit_code, now),
+            )
+            conn.commit()
+        return job_id
+
+    def list_jobs(self, schedule_id: Optional[str] = None) -> List[Dict]:
+        with self._get_connection() as conn:
+            if schedule_id:
+                cursor = conn.execute(
+                    "SELECT * FROM automation_jobs WHERE schedule_id = ? ORDER BY timestamp DESC",
+                    (schedule_id,),
+                )
+            else:
+                cursor = conn.execute(
+                    "SELECT * FROM automation_jobs ORDER BY timestamp DESC"
+                )
+            return [dict(row) for row in cursor.fetchall()]
 
 
 schedule_manager = ScheduleManager()

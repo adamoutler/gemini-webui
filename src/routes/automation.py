@@ -24,8 +24,10 @@ def add_schedule():
 
     # We will simply store recurrence in cron_expr field for now
     cron_expr = recurrence if recurrence else "once"
+    name = data.get("name", "Unnamed Task")
 
     schedule_id = schedule_manager.add_schedule(
+        name=name,
         target_host_id=target,
         task_prompt=prompt,
         cron_expr=cron_expr,
