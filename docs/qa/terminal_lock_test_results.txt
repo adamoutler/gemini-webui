@@ -11,4 +11,4 @@ timeout func_only: False
 
 tests/e2e/test_terminal_lock_ui.py::test_terminal_lock_ui [32mPASSED[0m[32m         [100%][0m
 
-[32m============================== [32m[1m1 passed[0m[32m in 4.49s[0m[32m ===============================[0m
+[32m============================== [32m[1m1 passed[0m[32m in 6.48s[0m[32m ===============================[0m

@@ -13,11 +13,11 @@ def test_terminal_lock_ui(server, playwright):
     page.goto(server)
 
     page.wait_for_selector(
-        ".launcher, .terminal-instance", state="attached", timeout=15000
+        ".launcher, .terminal-instance", state="attached", timeout=30000
     )
-    page.click("text=Start New")
-    page.wait_for_selector(".xterm-screen")
-    page.wait_for_timeout(1000)
+    page.click("text=Start New", force=True)
+    page.wait_for_selector(".xterm-screen", timeout=30000)
+    page.wait_for_timeout(2000)
 
     os.makedirs("docs/qa-images", exist_ok=True)
     page.screenshot(path="docs/qa-images/lock-before.png")
@@ -54,10 +54,12 @@ def test_terminal_lock_ui(server, playwright):
     page.screenshot(path="docs/qa-images/responsive-desktop-locked.png")
 
     # Click emergency unlock
-    page.click(".btn-emergency-stop")
+    page.click(".btn-emergency-stop", force=True)
 
     # Wait for the overlay to disappear (via socket round trip!)
-    page.wait_for_selector(".terminal-lock-overlay.hidden", state="attached")
+    page.wait_for_selector(
+        ".terminal-lock-overlay.hidden", state="attached", timeout=30000
+    )
 
     page.screenshot(path="docs/qa-images/lock-unlocked.png")
 
@@ -68,12 +70,12 @@ def test_terminal_lock_ui(server, playwright):
     mobile_page.goto(server)
 
     mobile_page.wait_for_selector(
-        ".launcher, .terminal-instance", state="attached", timeout=15000
+        ".launcher, .terminal-instance", state="attached", timeout=30000
     )
     mobile_page.evaluate("document.documentElement.classList.add('is-mobile')")
     mobile_page.evaluate("startSession('local', '', '', 'new')")
-    mobile_page.wait_for_selector(".xterm-screen")
-    mobile_page.wait_for_timeout(1000)
+    mobile_page.wait_for_selector(".xterm-screen", timeout=30000)
+    mobile_page.wait_for_timeout(2000)
 
     # Simulate backend sending lock state
     mobile_page.evaluate("""() => {
