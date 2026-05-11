@@ -120,51 +120,6 @@ export function startSession(
 
   globalThis.switchTab(tabId);
 
-  if (!document.documentElement.classList.contains("is-mobile")) {
-    termDiv.addEventListener(
-      "contextmenu",
-      (e) => {
-        e.preventDefault();
-        if (typeof initDesktopContextMenu === "function") {
-          initDesktopContextMenu();
-        }
-        const desktopContextMenu = document.getElementById(
-          "desktop-context-menu",
-        );
-        if (desktopContextMenu) {
-          if (tab.term && tab.term.hasSelection()) {
-            desktopContextMenu.querySelector("#ctx-copy").style.display =
-              "block";
-          } else {
-            desktopContextMenu.querySelector("#ctx-copy").style.display =
-              "none";
-          }
-
-          desktopContextMenu.style.display = "block";
-
-          let x = e.pageX;
-          let y = e.pageY;
-
-          // Render off-screen initially or just set and fix
-          desktopContextMenu.style.left = x + "px";
-          desktopContextMenu.style.top = y + "px";
-
-          // Adjust if it goes off screen
-          const rect = desktopContextMenu.getBoundingClientRect();
-          if (x + rect.width > globalThis.innerWidth) {
-            desktopContextMenu.style.left =
-              globalThis.innerWidth - rect.width - 5 + "px";
-          }
-          if (y + rect.height > globalThis.innerHeight) {
-            desktopContextMenu.style.top =
-              globalThis.innerHeight - rect.height - 5 + "px";
-          }
-        }
-      },
-      true,
-    );
-  }
-
   tab.term = new Terminal({
     cursorBlink: true,
     cursorStyle: "block",
@@ -179,6 +134,13 @@ export function startSession(
   });
   tab.fitAddon = new FitAddon.FitAddon();
   tab.term.loadAddon(tab.fitAddon);
+
+  import("./pipeline/TerminalPipeline.js").then(({ TerminalPipeline }) => {
+    tab.pipeline = new TerminalPipeline(tab.term, tab);
+    import("./plugins/index.js").then(({ registerDefaultPlugins }) => {
+      registerDefaultPlugins(tab.pipeline);
+    });
+  });
 
   tab.term.onScroll((newViewportY) => {
     // GEMWEBUI-407, 408, 409: Track if user scrolled away from the bottom to toggle auto-scroll
