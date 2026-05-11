@@ -12,4 +12,4 @@ timeout func_only: False
 tests/e2e/test_responsive_ui.py::test_responsive_ui_desktop[chromium] [32mPASSED[0m[32m [ 50%][0m
 tests/e2e/test_responsive_ui.py::test_responsive_ui_mobile [32mPASSED[0m[32m        [100%][0m
 
-[32m============================== [32m[1m2 passed[0m[32m in 6.73s[0m[32m ===============================[0m
+[32m============================== [32m[1m2 passed[0m[32m in 4.84s[0m[32m ===============================[0m
