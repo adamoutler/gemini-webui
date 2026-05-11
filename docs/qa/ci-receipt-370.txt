@@ -1,0 +1,5 @@
+status: ✅  Pass
+repo: adamoutler/gemini-webui
+started: 2026-05-11T02:21:53Z 475s
+commit: test: implement mobile lifecycle restore test and QA screenshots for GEMWEBUI-370
+log: http://dash.hackedyour.info/api/logs?provider=github&owner=adamoutler&repo=gemini-webui&workflow_id=247584841
