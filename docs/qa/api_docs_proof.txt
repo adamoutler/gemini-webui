@@ -9,32 +9,7 @@ timeout method: signal
 timeout func_only: False
 [1mcollecting ... [0mcollected 2 items
 
-tests/e2e/test_api_contract.py::test_api_contract_terminate_all [31mFAILED[0m[31m   [ 50%][0m
-tests/e2e/test_api_contract.py::test_api_contract_external_v1 [32mPASSED[0m[31m     [100%][0m
+tests/e2e/test_api_contract.py::test_api_contract_terminate_all [32mPASSED[0m[32m   [ 50%][0m
+tests/e2e/test_api_contract.py::test_api_contract_external_v1 [32mPASSED[0m[32m     [100%][0m
 
-=================================== FAILURES ===================================
-[31m[1m_______________________ test_api_contract_terminate_all ________________________[0m
-
-server = 'http://127.0.0.1:47949'
-playwright = <playwright._impl._playwright.Playwright object at 0xea6ee56937a0>
-
-    [0m[94mdef[39;49;00m[90m [39;49;00m[92mtest_api_contract_terminate_all[39;49;00m(server, playwright):[90m[39;49;00m
-    [90m    [39;49;00m[33m"""Verify that terminate_all successfully clears all sessions from the backend API."""[39;49;00m[90m[39;49;00m
-        browser = playwright.chromium.launch(headless=[94mTrue[39;49;00m)[90m[39;49;00m
-        context = browser.new_context()[90m[39;49;00m
-        page = context.new_page()[90m[39;49;00m
-        page.goto(server)[90m[39;49;00m
-    [90m[39;49;00m
-        [90m# 1. Start a session[39;49;00m[90m[39;49;00m
-        page.wait_for_selector([33m"[39;49;00m[33m.launcher, .terminal-instance[39;49;00m[33m"[39;49;00m, state=[33m"[39;49;00m[33mattached[39;49;00m[33m"[39;49;00m, timeout=[94m15000[39;49;00m)[90m[39;49;00m
-        page.click([33m"[39;49;00m[33mtext=Start New[39;49;00m[33m"[39;49;00m, force=[94mTrue[39;49;00m)[90m[39;49;00m
-        page.wait_for_selector([33m"[39;49;00m[33m.xterm-screen[39;49;00m[33m"[39;49;00m, timeout=[94m15000[39;49;00m)[90m[39;49;00m
-        page.wait_for_timeout([94m1000[39;49;00m)[90m[39;49;00m
->       os.makedirs([33m"[39;49;00m[33mdocs/qa-images[39;49;00m[33m"[39;49;00m, exist_ok=[94mTrue[39;49;00m)[90m[39;49;00m
-        ^^[90m[39;49;00m
-[1m[31mE       NameError: name 'os' is not defined. Did you forget to import 'os'[0m
-
-[1m[31mtests/e2e/test_api_contract.py[0m:16: NameError
-[36m[1m=========================== short test summary info ============================[0m
-[31mFAILED[0m tests/e2e/test_api_contract.py::[1mtest_api_contract_terminate_all[0m - NameError: name 'os' is not defined. Did you forget to import 'os'
-[31m========================= [31m[1m1 failed[0m, [32m1 passed[0m[31m in 2.73s[0m[31m ==========================[0m
+[32m============================== [32m[1m2 passed[0m[32m in 3.98s[0m[32m ===============================[0m
