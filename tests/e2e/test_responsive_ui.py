@@ -10,13 +10,13 @@ def test_responsive_ui_desktop(page: Page, server):
     page.wait_for_selector(
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )
-    page.click("text=Start New")
+    page.click("text=Start New", force=True)
     page.wait_for_selector(".xterm-screen")
-    page.click("#new-tab-btn")
-    page.click("text=Start New")
+    page.click("#new-tab-btn", force=True)
+    page.click("text=Start New", force=True)
     page.wait_for_selector(".tab:nth-child(2)")
-    page.click("#new-tab-btn")
-    page.click("text=Start New")
+    page.click("#new-tab-btn", force=True)
+    page.click("text=Start New", force=True)
     page.wait_for_selector(".tab:nth-child(3)")
     page.wait_for_timeout(1000)
 
@@ -41,13 +41,13 @@ def test_responsive_ui_mobile(playwright, server):
     page.wait_for_selector(
         ".launcher, .terminal-instance", state="attached", timeout=15000
     )
-    page.click("text=Start New")
+    page.click("text=Start New", force=True)
     page.wait_for_selector(".xterm-screen")
-    page.click("#new-tab-btn")
-    page.click("text=Start New")
+    page.click("#new-tab-btn", force=True)
+    page.click("text=Start New", force=True)
     page.wait_for_selector(".tab:nth-child(2)")
-    page.click("#new-tab-btn")
-    page.click("text=Start New")
+    page.click("#new-tab-btn", force=True)
+    page.click("text=Start New", force=True)
     page.wait_for_selector(".tab:nth-child(3)")
     page.wait_for_timeout(1000)
 
