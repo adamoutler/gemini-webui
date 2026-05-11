@@ -135,7 +135,14 @@ export async function refreshSchedules() {
       const nextRun = sched.next_run_at
         ? new Date(sched.next_run_at * 1000).toLocaleString()
         : "Manual/Pending";
-      const isActive = sched.is_active ? "Active" : "Inactive";
+      let isActive = sched.is_active ? "Active" : "Inactive";
+      if (
+        sched.is_active &&
+        sched.next_run_at &&
+        Date.now() / 1000 >= sched.next_run_at
+      ) {
+        isActive = "Queued (Waiting for Idle)";
+      }
       const mode = sched.wait_for_idle ? "Wait for Idle" : "Strict";
 
       item.innerHTML = `
