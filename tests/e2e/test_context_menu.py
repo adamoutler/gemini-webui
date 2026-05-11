@@ -4,6 +4,8 @@ from playwright.sync_api import expect
 
 @pytest.mark.timeout(60)
 def test_desktop_context_menu(page, server, playwright):
+    page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"BROWSER ERROR: {err.message}"))
     # 1. Load the page
     page.goto(f"{server}/")
     expect(page.get_by_text("Select a Connection").first).to_be_visible(timeout=10000)
