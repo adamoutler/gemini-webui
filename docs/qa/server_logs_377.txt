@@ -1,165 +1,285 @@
-[1m============================= test session starts ==============================[0m
-platform linux -- Python 3.12.3, pytest-9.0.3, pluggy-1.6.0 -- /home/adamoutler/gemini-webui/.venv/bin/python3
-cachedir: .pytest_cache
-rootdir: /home/adamoutler/gemini-webui
-configfile: pytest.ini
-plugins: split-0.11.0, playwright-0.7.2, cov-7.1.0, timeout-2.4.0, base-url-2.1.0
-timeout: 60.0s
-timeout method: signal
-timeout func_only: False
-[1mcollecting ... [0mcollected 4 items
-
-tests/e2e/test_e2e_resume_regression.py::test_new_session_no_resume Generating public/private ed25519 key pair.
-Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_new_session_no_resume0/.ssh/id_ed25519
-Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_new_session_no_resume0/.ssh/id_ed25519.pub
-The key fingerprint is:
-SHA256:Nn1oQR1/Gp7YBIhEwerl9tTmrs4BTPeJrvDeUQdz4j4 gemini-webui-inferrence1-20260510
-The key's randomart image is:
-+--[ED25519 256]--+
-|       ++o.oo.   |
-|        o.. .o   |
-|       .. o + = .|
-|      .o.o * @ = |
-|     . oS =.B *  |
-|      ..o=.+o.   |
-|      .. o+oE    |
-|       o +.o..   |
-|       .+.=o.    |
-+----[SHA256]-----+
-CONSOLE: SESSIONS:  [mock-uuid-1]
-CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
-CONSOLE: ACTIVE TAB: undefined
-CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
-  1. Mock Session (Just now) [mock-uuid-1]
-, error: null, timestamp: 1778461376.815567}
-CONSOLE: SESSIONS:  [mock-uuid-1]
-CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
-CONSOLE: ACTIVE TAB: undefined
-CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
-  1. Mock Session (Just now) [mock-uuid-1]
-, error: null, timestamp: 1778461376.815567}
-CONSOLE: SESSIONS:  [mock-uuid-1]
-CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
-CONSOLE: ACTIVE TAB: undefined
-CONSOLE: ACTION EXECUTED: startSession [tab_1778461377933, local, , , new]
-CONSOLE: handleConnect called for tab tab_1778461377933
-CONSOLE: Calling globalThis.updateStatus for tab tab_1778461377933
-CONSOLE: ACTION EXECUTED: syncTabs [Object]
-[32mPASSED[0m
-tests/e2e/test_e2e_resume_regression.py::test_auto_resume_after_server_restart Generating public/private ed25519 key pair.
-Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_auto_resume_after_server_0/.ssh/id_ed25519
-Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_auto_resume_after_server_0/.ssh/id_ed25519.pub
-The key fingerprint is:
-SHA256:QAhUfnsFU4ukANSz22IaZpgK8RbQb02ZAf/27gyXyds gemini-webui-inferrence1-20260510
-The key's randomart image is:
-+--[ED25519 256]--+
-| +==+oo++..      |
-|. ..+++o + .     |
-| . ..== . o      |
-|. . +..+ .       |
-| = o o. S        |
-|+ * + .o o o     |
-|o+ + .  . *      |
-|. .      = o     |
-|         .= E    |
-+----[SHA256]-----+
-Reclaim failed for session tab_1778461384423. Creating a fresh session.
-CONSOLE: SESSIONS:  [mock-uuid-1]
-CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
-CONSOLE: ACTIVE TAB: undefined
-CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
-  1. Mock Session (Just now) [mock-uuid-1]
-, error: null, timestamp: 1778461382.5518785}
-CONSOLE: SESSIONS:  [mock-uuid-1]
-CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
-CONSOLE: ACTIVE TAB: undefined
-CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
-  1. Mock Session (Just now) [mock-uuid-1]
-, error: null, timestamp: 1778461382.5518785}
-CONSOLE: SESSIONS:  [mock-uuid-1]
-CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
-CONSOLE: ACTIVE TAB: undefined
-CONSOLE: ACTION EXECUTED: startSession [tab_1778461384423, local, , , new]
-CONSOLE: handleConnect called for tab tab_1778461384423
-CONSOLE: Calling globalThis.updateStatus for tab tab_1778461384423
-CONSOLE: ACTION EXECUTED: syncTabs [Object]
-CONSOLE: Sessions updated payload: {host: Object, cache_key: local:local:, data: Object}
-CONSOLE: Checking tab: tab_1778461384423 terminal {type: local, mode: local, ssh_target: , ssh_dir: , resume: new}
-CONSOLE: Found match for tab: {id: 2, name: Mock Session, meta: Just now, uuid: tab_1778461384423}
-CONSOLE: ACTION EXECUTED: saveTabsToStorage []
-CONSOLE: Set geminiResume to: tab_1778461384423
-CONSOLE: [SOCKET_FLAP] Connection dropped (transport close). Reconnect count: 1
-CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
-CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
-CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
-CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
-CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
-CONSOLE: WebSocket connection to 'ws://127.0.0.1:55127/socket.io/?EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED
-CONSOLE: handleConnect called for tab tab_1778461384423
-CONSOLE: Calling globalThis.updateStatus for tab tab_1778461384423
-[32mPASSED[0m
-tests/e2e/test_e2e_resume_regression.py::test_no_terminal_clear_on_stolen_session Generating public/private ed25519 key pair.
-Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_no_terminal_clear_on_stol0/.ssh/id_ed25519
-Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_no_terminal_clear_on_stol0/.ssh/id_ed25519.pub
-The key fingerprint is:
-SHA256:+Xo5mV2STbBzou7/OmmhCy+yWzysXG14wAzQuooeLIw gemini-webui-inferrence1-20260510
-The key's randomart image is:
-+--[ED25519 256]--+
-|    ..           |
-|     ..     .    |
-|     ..      o   |
-|    .  + .  + o  |
-|     .  S  . B   |
-|+   .  o =. + o  |
-|E= .    O.=* =   |
-|o o  ..+.BO =    |
-|..    =+.++=o+.  |
-+----[SHA256]-----+
-[32mPASSED[0m
-tests/e2e/test_e2e_resume_regression.py::test_clear_command_preservation_on_reconnect Generating public/private ed25519 key pair.
-Your identification has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_clear_command_preservatio0/.ssh/id_ed25519
-Your public key has been saved in /tmp/pytest-of-adamoutler/pytest-44/test_clear_command_preservatio0/.ssh/id_ed25519.pub
-The key fingerprint is:
-SHA256:VTUjuL2A1K7WsLcfxmgqLPdX5EcCy8sFon3UO0MCzEI gemini-webui-inferrence1-20260510
-The key's randomart image is:
-+--[ED25519 256]--+
-|     .Eo.o oo.+  |
-|      . = B.o. o |
-|       = *.O .   |
-|      . +.B O .  |
-|        SB * *   |
-|        + =o+ .  |
-|     . . .oo+.   |
-|    . +  oo. .   |
-|     o oo. ..    |
-+----[SHA256]-----+
-CONSOLE: SESSIONS:  [mock-uuid-1]
-CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
-CONSOLE: ACTIVE TAB: undefined
-CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
-  1. Mock Session (Just now) [mock-uuid-1]
-, error: null, timestamp: 1778461414.4253893}
-CONSOLE: SESSIONS:  [mock-uuid-1]
-CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
-CONSOLE: ACTIVE TAB: undefined
-CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
-  1. Mock Session (Just now) [mock-uuid-1]
-, error: null, timestamp: 1778461414.4253893}
-CONSOLE: SESSIONS:  [mock-uuid-1]
-CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
-CONSOLE: ACTIVE TAB: undefined
-CONSOLE: ACTION EXECUTED: startSession [tab_1778461415736, local, , , new]
-CONSOLE: handleConnect called for tab tab_1778461415736
-CONSOLE: Calling globalThis.updateStatus for tab tab_1778461415736
-CONSOLE: ACTION EXECUTED: syncTabs [Object]
-CONSOLE: handleConnect called for tab tab_1778461415736
-CONSOLE: Calling globalThis.updateStatus for tab tab_1778461415736
-CONSOLE: ACTION EXECUTED: syncTabs [Object]
-CONSOLE: Sessions updated payload: {host: Object, cache_key: local:local:, data: Object}
-CONSOLE: Checking tab: tab_1778461415736 terminal {type: local, mode: local, ssh_target: , ssh_dir: , resume: new}
-CONSOLE: Found match for tab: {id: 2, name: Mock Session, meta: Just now, uuid: tab_1778461415736}
-CONSOLE: ACTION EXECUTED: saveTabsToStorage []
-CONSOLE: Set geminiResume to: tab_1778461415736
-[32mPASSED[0m
-
-[32m============================== [32m[1m4 passed[0m[32m in 49.89s[0m[32m ==============================[0m
+(2085807) wsgi starting up on http://0.0.0.0:5555
+(2085807) accepted ('127.0.0.1', 36598)
+127.0.0.1 - - [10/May/2026 21:16:16] "GET / HTTP/1.1" 200 25725 0.006417
+(2085807) accepted ('127.0.0.1', 36600)
+(2085807) accepted ('127.0.0.1', 36608)
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/base.css?v=0.1 HTTP/1.1" 200 1091 0.001932
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/mobile.css?v=0.1 HTTP/1.1" 200 8079 0.000424
+(2085807) accepted ('127.0.0.1', 36616)
+(2085807) accepted ('127.0.0.1', 36628)
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/pwa.css?v=0.1 HTTP/1.1" 200 1257 0.000358
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/mobile/index.js?v=0.1 HTTP/1.1" 200 7898 0.000290
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/main.js HTTP/1.1" 200 12592 0.000278
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/design-system.css HTTP/1.1" 200 3354 0.000461
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/components.css HTTP/1.1" 200 18935 0.000301
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/layout.css HTTP/1.1" 200 7549 0.000261
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/mobile/state.js HTTP/1.1" 200 6182 0.000692
+(2085807) accepted ('127.0.0.1', 36642)
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/mobile/rules.js HTTP/1.1" 200 8711 0.000363
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/mobile/ui.js HTTP/1.1" 200 17739 0.000288
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/ui/tabs.js HTTP/1.1" 200 15634 0.000352
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/ui/theme.js HTTP/1.1" 200 5186 0.000252
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/ui/settings.js HTTP/1.1" 200 20016 0.000267
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/ui/modals.js HTTP/1.1" 200 18372 0.000246
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/terminal/ui.js HTTP/1.1" 200 38913 0.000240
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/core/state.js HTTP/1.1" 200 5300 0.000230
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/terminal/pty.js HTTP/1.1" 200 2563 0.000219
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/core/event-bus.js HTTP/1.1" 200 1479 0.000215
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/core/api.js HTTP/1.1" 200 6277 0.000209
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/core/pwa-system.js HTTP/1.1" 200 5919 0.000341
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/ui/launcher.js HTTP/1.1" 200 4788 0.000239
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/core/socket.js HTTP/1.1" 200 5348 0.000220
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/ui/quick-connect.js HTTP/1.1" 200 5083 0.000222
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/mobile/mobile-input-extra.js HTTP/1.1" 200 22457 0.000314
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/ui/automation.js HTTP/1.1" 200 4662 0.000243
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/js/core/session-manager.js HTTP/1.1" 200 28770 0.000240
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /api/csrf-token HTTP/1.1" 200 1011 0.000650
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /api/sessions/persisted HTTP/1.1" 200 9758 0.000942
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /api/prompts HTTP/1.1" 200 805 0.000529
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /api/config HTTP/1.1" 200 2045 0.000339
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /sw.js HTTP/1.1" 200 3554 0.000522
+127.0.0.1 - - [10/May/2026 21:16:16] "GET / HTTP/1.1" 200 25725 0.000653
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/icon-192.png HTTP/1.1" 200 25179 0.000378
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/favicon.svg HTTP/1.1" 200 1318 0.000269
+127.0.0.1 - - [10/May/2026 21:16:16] "GET /static/icon-512.png HTTP/1.1" 200 143281 0.000660
+(2085807) accepted ('127.0.0.1', 36656)
+(2085807) accepted ('127.0.0.1', 36670)
+(2085807) accepted ('127.0.0.1', 36682)
+(2085807) accepted ('127.0.0.1', 36696)
+(2085807) accepted ('127.0.0.1', 36710)
+(2085807) accepted ('127.0.0.1', 36716)
+(2085807) accepted ('127.0.0.1', 36728)
+(2085807) accepted ('127.0.0.1', 36742)
+(2085807) accepted ('127.0.0.1', 36754)
+(2085807) accepted ('127.0.0.1', 36758)
+(2085807) accepted ('127.0.0.1', 36762)
+(2085807) accepted ('127.0.0.1', 36778)
+(2085807) accepted ('127.0.0.1', 36784)
+(2085807) accepted ('127.0.0.1', 36788)
+(2085807) accepted ('127.0.0.1', 36790)
+(2085807) accepted ('127.0.0.1', 36800)
+(2085807) accepted ('127.0.0.1', 36814)
+(2085807) accepted ('127.0.0.1', 36830)
+(2085807) accepted ('127.0.0.1', 36832)
+(2085807) accepted ('127.0.0.1', 36848)
+(2085807) accepted ('127.0.0.1', 36858)
+(2085807) accepted ('127.0.0.1', 36860)
+(2085807) accepted ('127.0.0.1', 36864)
+(2085807) accepted ('127.0.0.1', 36866)
+[2026-05-10 21:16:17,433] DEBUG in terminal_socket: CSRF validation passed
+127.0.0.1 - - [10/May/2026 21:16:17] "GET /api/hosts HTTP/1.1" 200 1034 0.000548
+[2026-05-10 21:16:17,435] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,435] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,435] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,435] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,436] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,436] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,436] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,436] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,437] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,437] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,437] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,437] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,437] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,438] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,438] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,438] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,438] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,438] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,448] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,449] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,449] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,449] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:17,450] DEBUG in terminal_socket: CSRF validation passed
+(2085807) accepted ('127.0.0.1', 36874)
+Reclaim failed for session active. Creating a fresh session.
+Reclaim failed for session tab_1. Creating a fresh session.
+Reclaim failed for session tab_0. Creating a fresh session.
+Reclaim failed for session tab1. Creating a fresh session.
+Reclaim failed for session tab_11. Creating a fresh session.
+Reclaim failed for session new_orphan. Creating a fresh session.
+[2026-05-10 21:16:17,533] DEBUG in terminal_socket: CSRF validation passed
+(2085807) accepted ('127.0.0.1', 36884)
+Reclaim failed for session tab_15. Creating a fresh session.
+Reclaim failed for session tab_14. Creating a fresh session.
+Reclaim failed for session tab_16. Creating a fresh session.
+Reclaim failed for session tab_22. Creating a fresh session.
+Reclaim failed for session tab_10. Creating a fresh session.
+Reclaim failed for session tab_18. Creating a fresh session.
+Reclaim failed for session tab_1778107046759. Creating a fresh session.
+Reclaim failed for session tab_17. Creating a fresh session.
+Reclaim failed for session tab_13. Creating a fresh session.
+Reclaim failed for session tab_21. Creating a fresh session.
+Reclaim failed for session tab_20. Creating a fresh session.
+Reclaim failed for session tab_19. Creating a fresh session.
+Reclaim failed for session tab_2. Creating a fresh session.
+Reclaim failed for session tab_1778102581336. Creating a fresh session.
+Reclaim failed for session tab_1778108060372. Creating a fresh session.
+Reclaim failed for session tab_1778104054623. Creating a fresh session.
+Reclaim failed for session tab_12. Creating a fresh session.
+Reclaim failed for session tab_1778107974097. Creating a fresh session.
+Reclaim failed for session tab_23. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 36886)
+[2026-05-10 21:16:17,804] DEBUG in terminal_socket: CSRF validation passed
+(2085807) accepted ('127.0.0.1', 36900)
+(2085807) accepted ('127.0.0.1', 36908)
+[2026-05-10 21:16:17,865] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_25. Creating a fresh session.
+[2026-05-10 21:16:17,984] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:18,041] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_27. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 36924)
+Reclaim failed for session tab_28. Creating a fresh session.
+Reclaim failed for session tab_24. Creating a fresh session.
+[2026-05-10 21:16:18,185] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_26. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 36928)
+[2026-05-10 21:16:18,534] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_32. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 36942)
+[2026-05-10 21:16:18,816] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_3. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 36954)
+[2026-05-10 21:16:18,934] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_36. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 36956)
+[2026-05-10 21:16:18,982] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_41. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 36970)
+[2026-05-10 21:16:19,039] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_7. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 36976)
+[2026-05-10 21:16:19,194] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_30. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 36988)
+[2026-05-10 21:16:19,342] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_33. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 36990)
+[2026-05-10 21:16:19,374] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_37. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37000)
+[2026-05-10 21:16:19,472] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_29. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37008)
+[2026-05-10 21:16:19,501] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_40. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37012)
+[2026-05-10 21:16:19,612] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_9. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37018)
+[2026-05-10 21:16:19,641] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_46. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37022)
+[2026-05-10 21:16:19,832] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_6. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37024)
+[2026-05-10 21:16:19,909] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_4. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37032)
+[2026-05-10 21:16:19,950] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_31. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37048)
+[2026-05-10 21:16:20,160] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_47. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37054)
+[2026-05-10 21:16:20,253] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_44. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37070)
+[2026-05-10 21:16:20,307] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_39. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37076)
+[2026-05-10 21:16:20,378] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_42. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37090)
+[2026-05-10 21:16:20,475] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_45. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37092)
+[2026-05-10 21:16:20,666] DEBUG in terminal_socket: CSRF validation passed
+(2085807) accepted ('127.0.0.1', 37104)
+Reclaim failed for session tab_5. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37108)
+[2026-05-10 21:16:20,763] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:20,796] DEBUG in terminal_socket: CSRF validation passed
+(2085807) accepted ('127.0.0.1', 37110)
+Reclaim failed for session tab_new. Creating a fresh session.
+Reclaim failed for session tab_43. Creating a fresh session.
+[2026-05-10 21:16:20,947] DEBUG in terminal_socket: CSRF validation passed
+(2085807) accepted ('127.0.0.1', 37122)
+Reclaim failed for session tab_34. Creating a fresh session.
+[2026-05-10 21:16:21,100] DEBUG in terminal_socket: CSRF validation passed
+(2085807) accepted ('127.0.0.1', 37128)
+(2085807) accepted ('127.0.0.1', 37144)
+(2085807) accepted ('127.0.0.1', 37150)
+[2026-05-10 21:16:21,248] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:21,317] DEBUG in terminal_socket: CSRF validation passed
+[2026-05-10 21:16:21,342] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_8. Creating a fresh session.
+Reclaim failed for session tab_49. Creating a fresh session.
+Reclaim failed for session tab_35. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37158)
+[2026-05-10 21:16:21,985] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_38. Creating a fresh session.
+(2085807) accepted ('127.0.0.1', 37168)
+[2026-05-10 21:16:22,118] DEBUG in terminal_socket: CSRF validation passed
+Reclaim failed for session tab_48. Creating a fresh session.
+Fatal error in global reaper: Trying to re-reset() a fresh event.
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.791925
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.904338
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.972260
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.961250
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.850031
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.816704
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.894346
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.940218
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.872870
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.861953
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.737875
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.783836
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.531326
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.188109
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.830587
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.841631
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.343607
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.954204
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.808614
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.886801
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.920439
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.932027
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 28.457193
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.159451
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 28.057860
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 27.612472
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 28.867357
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 27.039890
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 26.611245
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.754179
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.777327
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 26.686311
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.172402
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 25.934915
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.722324
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 27.645985
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.767487
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 26.179948
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 27.492771
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 28.172230
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 27.516175
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 25.761854
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 29.733901
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 27.795340
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 24.913957
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 26.349089
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 25.783951
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 27.951135
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 27.081071
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 26.833133
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 27.380068
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 26.748671
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 27.351423
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 25.850663
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 25.014703
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 26.519533
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 26.227618
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 27.159327
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 26.313709
+127.0.0.1 - - [10/May/2026 21:16:46] "GET /socket.io/?EIO=4&transport=websocket HTTP/1.1" 200 0 28.010086
