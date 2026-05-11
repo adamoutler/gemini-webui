@@ -12,8 +12,14 @@ def test_responsive_ui_desktop(page: Page, server):
     )
     page.click("text=Start New")
     page.wait_for_selector(".xterm-screen")
-
+    page.wait_for_timeout(500)
+    page.click("#new-tab-btn")
+    page.click("text=Start New")
+    page.wait_for_timeout(500)
+    page.click("#new-tab-btn")
+    page.click("text=Start New")
     page.wait_for_timeout(1000)
+
     mobile_controls = page.locator("#mobile-controls")
 
     # Take screenshot
@@ -37,8 +43,14 @@ def test_responsive_ui_mobile(playwright, server):
     )
     page.click("text=Start New")
     page.wait_for_selector(".xterm-screen")
-
+    page.wait_for_timeout(500)
+    page.click("#new-tab-btn")
+    page.click("text=Start New")
+    page.wait_for_timeout(500)
+    page.click("#new-tab-btn")
+    page.click("text=Start New")
     page.wait_for_timeout(1000)
+
     mobile_controls = page.locator("#mobile-controls")
 
     # Take screenshot
