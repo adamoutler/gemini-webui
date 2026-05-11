@@ -66,8 +66,16 @@ def zombie_reaper_task(sleep_interval=5.0):
     while True:
         try:
             # Block efficiently until SIGCHLD sets the event (or timeout as fallback)
-            reaper_event.wait(timeout=sleep_interval)
-            reaper_event.reset()
+            try:
+                # eventlet.Event.wait might not support timeout directly, but if it does, handle it
+                # Using eventlet.Timeout is safer for older versions
+                with eventlet.Timeout(sleep_interval, False):
+                    reaper_event.wait()
+            except Exception:
+                pass
+
+            if reaper_event.ready():
+                reaper_event.reset()
 
             while True:
                 try:
