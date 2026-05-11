@@ -73,11 +73,29 @@ export async function saveAutomationSchedule() {
     mode: waitIdle ? "heuristic" : "strict",
   };
 
-  console.log("Saving schedule:", scheduleData);
-  alert("Schedule saved (Mocked). Backend integration pending.");
-
-  document.getElementById("automation-prompt").value = "";
-  refreshSchedules();
+  try {
+    const csrfToken = document
+      .querySelector('meta[name="csrf-token"]')
+      ?.getAttribute("content");
+    const res = await fetch("/api/v1/schedules", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": csrfToken || "",
+      },
+      body: JSON.stringify(scheduleData),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Failed to save schedule");
+    }
+    console.log("Schedule saved successfully");
+    document.getElementById("automation-prompt").value = "";
+    refreshSchedules();
+  } catch (err) {
+    console.error("Error saving schedule:", err);
+    alert("Error: " + err.message);
+  }
 }
 
 export function refreshSchedules() {

@@ -207,6 +207,11 @@ if __name__ == "__main__":
             from src.services.session_poller import session_poller_manager
 
             session_poller_manager.start()
+
+            from src.services.automation_scheduler import automation_scheduler
+
+            automation_scheduler.start()
+
             if not env_config.SKIP_PRELOADER:
                 import src.gateways.terminal_socket
 

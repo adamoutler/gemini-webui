@@ -1,0 +1,15 @@
+from dataclasses import dataclass
+from typing import Optional
+
+
+@dataclass
+class Schedule:
+    id: str
+    target_host_id: str
+    prompt_context: str
+    task_prompt: str
+    cron_expr: str
+    wait_for_idle: bool
+    last_run_at: Optional[float]
+    next_run_at: Optional[float]
+    is_active: bool
