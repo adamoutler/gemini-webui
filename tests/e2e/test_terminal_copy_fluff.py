@@ -6,6 +6,9 @@ import time
 
 @pytest.mark.timeout(60)
 def test_terminal_copy_fluff(page: Page, server):
+    # Grant clipboard permissions for reading
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
+
     # Navigate to the app
     page.goto(f"{server}/")
 
@@ -27,12 +30,29 @@ def test_terminal_copy_fluff(page: Page, server):
 
     time.sleep(1)
 
-    # Perform the copy by invoking the global filterTerminalFluff manually to get the exact output
-    cleaned_fluff_text = fluff_text.replace("\\r", "").replace("\\n", "\\n")
-    clipboard_text = page.evaluate(f"""() => {{
-        const rawText = '{cleaned_fluff_text}';
-        return filterTerminalFluff(rawText);
-    }}""")
+    # Simulate a user selecting all text in the terminal using the xterm API
+    page.evaluate("""() => {
+        const tab = tabs.find(t => t.id === activeTabId);
+        if (tab && tab.term) {
+            tab.term.selectAll();
+        }
+    }""")
+
+    time.sleep(0.5)
+
+    # Take a screenshot of the selection state to satisfy the QA agent
+    os.makedirs("docs/qa-images", exist_ok=True)
+    page.screenshot(path="docs/qa-images/terminal_copy_fluff_selection_desktop.png")
+
+    # Trigger native copy action
+    # We must use document.execCommand('copy') because Playwright's keyboard.press doesn't always
+    # trigger native copy across all headless browser contexts.
+    page.evaluate("document.execCommand('copy')")
+
+    time.sleep(0.5)
+
+    # Read the actual system clipboard contents
+    clipboard_text = page.evaluate("navigator.clipboard.readText()")
 
     # Render the clipboard text into an alert or a div so we can take a screenshot of the "paste"
     page.evaluate(
@@ -59,7 +79,6 @@ def test_terminal_copy_fluff(page: Page, server):
 
     time.sleep(1)
 
-    os.makedirs("docs/qa-images", exist_ok=True)
     page.screenshot(path="docs/qa-images/terminal_copy_fluff_proof.png")
 
     assert "workspace (" not in clipboard_text
