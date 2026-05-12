@@ -820,8 +820,13 @@ export function startSession(
       }
       const newToken = await refreshCsrfToken();
       tab.socket.auth = { csrf_token: newToken };
-      tab.socket.disconnect();
-      tab.socket.connect();
+      if (tab.socket.io) {
+        tab.socket.io.disconnect();
+        tab.socket.io.connect();
+      } else {
+        tab.socket.disconnect();
+        tab.socket.connect();
+      }
     }
   });
 

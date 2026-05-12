@@ -41,8 +41,13 @@ export function getGlobalSocket() {
             };
             // Adding a small delay to avoid tight looping
             setTimeout(() => {
-              globalSocket.disconnect();
-              globalSocket.connect();
+              if (globalSocket.io) {
+                globalSocket.io.disconnect();
+                globalSocket.io.connect();
+              } else {
+                globalSocket.disconnect();
+                globalSocket.connect();
+              }
             }, 1000);
           }
         } catch (err) {
