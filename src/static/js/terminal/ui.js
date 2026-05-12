@@ -823,6 +823,7 @@ export function startSession(
       if (tab.socket.io) {
         tab.socket.io.disconnect();
         tab.socket.io.connect();
+        tab.socket.connect();
       } else {
         tab.socket.disconnect();
         tab.socket.connect();

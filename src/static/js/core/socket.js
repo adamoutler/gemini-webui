@@ -44,6 +44,7 @@ export function getGlobalSocket() {
               if (globalSocket.io) {
                 globalSocket.io.disconnect();
                 globalSocket.io.connect();
+                globalSocket.connect();
               } else {
                 globalSocket.disconnect();
                 globalSocket.connect();

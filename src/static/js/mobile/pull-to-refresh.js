@@ -1,13 +1,28 @@
 export class PullToRefresh {
-  constructor(zones, indicatorId) {
+  constructor(zones, indicatorId, options = {}) {
     this.zones = zones;
     this.indicatorId = indicatorId;
+    this.options = {
+      onRefresh:
+        options.onRefresh ||
+        (() =>
+          new Promise(() => {
+            setTimeout(() => {
+              globalThis.location.reload();
+            }, 300);
+          })),
+      isAtTop:
+        options.isAtTop ||
+        (() =>
+          document.documentElement.scrollTop === 0 &&
+          document.body.scrollTop === 0),
+      threshold: options.threshold || 60,
+      maxVisualY: options.maxVisualY || 80,
+    };
     this.startX = 0;
     this.startY = 0;
     this.isPulling = false;
     this.visualY = 0;
-    this.THRESHOLD = 60;
-    this.MAX_VISUAL_Y = 80;
 
     this.init();
   }
@@ -37,15 +52,12 @@ export class PullToRefresh {
       zone.addEventListener(
         "touchstart",
         (e) => {
-          if (
-            e.touches.length === 1 &&
-            document.documentElement.scrollTop === 0
-          ) {
-            this.startX = e.touches[0].clientX;
-            this.startY = e.touches[0].clientY;
-            this.isPulling = false; // Determine on touchmove
-            this.visualY = 0;
-          }
+          if (e.touches.length !== 1) return;
+
+          this.startX = e.touches[0].clientX;
+          this.startY = e.touches[0].clientY;
+          this.isPulling = false; // Determine on touchmove
+          this.visualY = 0;
         },
         { passive: true },
       );
@@ -53,50 +65,48 @@ export class PullToRefresh {
       zone.addEventListener(
         "touchmove",
         (e) => {
-          if (document.documentElement.scrollTop !== 0) return;
+          if (!this.options.isAtTop()) return;
 
           const y = e.touches[0].clientY;
           const x = e.touches[0].clientX;
           const dy = y - this.startY;
           const dx = x - this.startX;
 
-          // Ignore horizontal swipes (tab scrolling) or upward scrolls
-          if (Math.abs(dx) > Math.abs(dy) || dy < 0) {
+          // Ignore horizontal swipes or upward scrolls
+          if (Math.abs(dx) > Math.abs(dy) || dy <= 0) {
             this.isPulling = false;
             return;
           }
 
-          if (dy > 0) {
-            this.isPulling = true;
-            // Prevent default only for the vertical pull so native pull to refresh isn't triggered simultaneously
-            if (e.cancelable) {
-              e.preventDefault();
-            }
-
-            // Exponential resistance
-            this.visualY = Math.min(dy * 0.4, this.MAX_VISUAL_Y);
-
-            indicator.classList.remove("is-resetting");
-            indicator.classList.add("is-pulling");
-
-            // Mid-pull state
-            if (this.visualY >= this.THRESHOLD) {
-              indicator.classList.add("is-ready");
-            } else {
-              indicator.classList.remove("is-ready");
-            }
-
-            indicator.style.transform = `translateY(${this.visualY}px)`;
-            indicator.style.opacity = Math.min(
-              this.visualY / this.THRESHOLD,
-              1,
-            );
+          this.isPulling = true;
+          // Prevent default only for the vertical pull so native pull to refresh isn't triggered simultaneously
+          if (e.cancelable) {
+            e.preventDefault();
           }
+
+          // Exponential resistance
+          this.visualY = Math.min(dy * 0.4, this.options.maxVisualY);
+
+          indicator.classList.remove("is-resetting");
+          indicator.classList.add("is-pulling");
+
+          // Mid-pull state
+          if (this.visualY >= this.options.threshold) {
+            indicator.classList.add("is-ready");
+          } else {
+            indicator.classList.remove("is-ready");
+          }
+
+          indicator.style.transform = `translateY(${this.visualY}px)`;
+          indicator.style.opacity = Math.min(
+            this.visualY / this.options.threshold,
+            1,
+          );
         },
         { passive: false },
       );
 
-      zone.addEventListener("touchend", () => {
+      zone.addEventListener("touchend", async () => {
         if (!this.isPulling) return;
         this.isPulling = false;
 
@@ -104,14 +114,16 @@ export class PullToRefresh {
         indicator.style.opacity = "";
         indicator.classList.remove("is-pulling");
 
-        if (this.visualY >= this.THRESHOLD) {
+        if (this.visualY >= this.options.threshold) {
           indicator.classList.remove("is-ready");
           indicator.classList.add("is-loading");
 
-          // Trigger refresh after a tiny delay for animation
-          setTimeout(() => {
-            globalThis.location.reload();
-          }, 300);
+          try {
+            await this.options.onRefresh();
+          } finally {
+            indicator.classList.remove("is-loading");
+            indicator.classList.add("is-resetting");
+          }
         } else {
           indicator.classList.remove("is-ready");
           indicator.classList.add("is-resetting");
