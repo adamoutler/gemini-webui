@@ -1,0 +1,47 @@
+# QA Evidence-Based Report: GEMWEBUI-330 Terminal Copy Fluff
+
+## 🔍 Reality Check Results
+**Commands Executed**:
+- `source .venv/bin/activate && pytest tests/e2e/test_terminal_copy_fluff.py tests/e2e/test_terminal_copy_fluff_mobile.py -v` (Result: 2 passed)
+- Code review of `src/static/js/core/api.js` and `src/static/js/terminal/ui.js`
+
+**Screenshot Evidence**:
+- `docs/qa-images/terminal_copy_fluff_selection_desktop.png` (Desktop terminal selection)
+- `docs/qa-images/terminal_copy_fluff_proof.png` (Desktop native clipboard verification)
+- `docs/qa-images/terminal_copy_fluff_selection_mobile.png` (Mobile terminal selection)
+- `docs/qa-images/terminal_copy_fluff_proof_mobile.png` (Mobile native clipboard verification)
+
+**Specification Quote**:
+"Remove fluff when users copy from the terminal. Strip lines with 'workspace (', 'branch: main', 'Shift+Tab to accept edits', and terminal block characters, trailing whitespace, and empty trailing lines."
+
+## 📸 Visual Evidence Analysis
+**What I Actually See**:
+- **Code implementation**: `src/static/js/core/api.js` implements `filterTerminalFluff` which explicitly checks and removes lines containing `"workspace ("` and `"branch:"`, `"Shift+Tab to accept edits"`, and filters block characters (`\u2500-\u259F`). It also trims trailing whitespaces and empty lines.
+- **Event hooking**: `src/static/js/terminal/ui.js` has added an event listener directly on `termDiv` (`termDiv.addEventListener("copy", ...)`), which overrides the default clipboard data with `filterTerminalFluff(selection)`.
+- **Test execution**: Both desktop and mobile tests explicitly execute a native copy action `document.execCommand('copy')`, extract the clipboard via `navigator.clipboard.readText()`, and visually assert that the fluff is missing in the browser while keeping the real terminal text.
+- **Screenshot captures**: The visual proof images demonstrate the clipboard text correctly rendered in an isolated test div, without the fluff.
+
+**Specification Compliance**:
+- ✅ Spec says: "Remove fluff when users copy from the terminal." → Screenshot and Test Assertion shows: "Fluff elements are filtered when pasting/reading from clipboard."
+- ✅ Fluff like "workspace (" is absent in clipboard payload.
+- ✅ Fluff like block characters are absent in clipboard payload.
+
+## 🧪 Interactive Testing Results
+**Copy Hook Testing**:
+- Desktop: `tests/e2e/test_terminal_copy_fluff.py` (Passed)
+- Mobile: `tests/e2e/test_terminal_copy_fluff_mobile.py` (Passed)
+The tests correctly assert the expected text is preserved while asserting that `workspace (`, `Shift+Tab`, and unicode block characters are absent.
+
+## 📊 Issues Found
+None.
+
+## 🎯 Honest Quality Assessment
+**Realistic Rating**: B+
+**Design Level**: Good
+**Production Readiness**: READY
+
+## 🔄 Required Next Steps
+**Status**: PASSED
+**Issues to Fix**: None
+**Timeline**: Immediate approval
+**Re-test Required**: NO
