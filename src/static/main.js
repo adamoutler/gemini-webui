@@ -145,8 +145,8 @@ import {
   updatePageTitle,
   checkInstallationStatus,
   dismissInstallBanner,
-  initDesktopContextMenu,
 } from "./js/core/pwa-system.js";
+import { initDesktopContextMenu } from "./js/ui/contextMenu.js";
 import { getGlobalSocket } from "./js/core/socket.js";
 import { HostStateManager, updateStatus } from "./js/ui/launcher.js";
 import {
@@ -452,3 +452,8 @@ document.addEventListener("change", function (e) {
     executeDataAction(target.dataset.onchange, e);
   }
 });
+
+// Initialize desktop features
+if (typeof globalThis.window !== "undefined") {
+  initDesktopContextMenu();
+}
