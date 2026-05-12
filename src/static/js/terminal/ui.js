@@ -158,7 +158,7 @@ export function startSession(
   tab.term.open(termDiv);
   fitTerminal(tab);
 
-  tab.term.element.addEventListener("copy", (e) => {
+  termDiv.addEventListener("copy", (e) => {
     const selection = tab.term.getSelection();
     if (selection) {
       e.clipboardData.setData("text/plain", filterTerminalFluff(selection));
