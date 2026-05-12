@@ -8,6 +8,7 @@ import {
   WordBoundaryRule,
 } from "./rules.js";
 import { MobileInputBuffer, MobileInputUI } from "./ui.js";
+import { PullToRefresh } from "./pull-to-refresh.js";
 
 export {
   MobileModifierState,
@@ -19,7 +20,11 @@ export {
   WordBoundaryRule,
   MobileInputBuffer,
   MobileInputUI,
+  PullToRefresh,
 };
+
+// Initialize the pull-to-refresh module
+new PullToRefresh(["toolbar", "tab-bar"], "ptr-indicator");
 
 export class MobileTerminalController {
   constructor(tab) {
