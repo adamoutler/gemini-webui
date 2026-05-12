@@ -47,36 +47,11 @@ def kill_and_reap(pid):
         pass
 
 
-reaper_event = eventlet.Event()
-
-
-def sigchld_handler(signum, frame):
-    if not reaper_event.ready():
-        reaper_event.send()
-
-
-def zombie_reaper_task(sleep_interval=5.0):
-    """Event-driven, non-blocking global reaper for all dead children."""
-    global reaper_event
-    try:
-        signal.signal(signal.SIGCHLD, sigchld_handler)
-    except Exception as e:
-        logger.warning(f"Could not register SIGCHLD handler: {e}")
-
+def zombie_reaper_task(sleep_interval=2.0):
+    """Periodic, non-blocking global reaper for all dead children."""
     while True:
         try:
-            # Block efficiently until SIGCHLD sets the event (or timeout as fallback)
-            try:
-                # eventlet.Event.wait might not support timeout directly, but if it does, handle it
-                # Using eventlet.Timeout is safer for older versions
-                with eventlet.Timeout(sleep_interval, False):
-                    reaper_event.wait()
-            except Exception:
-                pass
-
-            if reaper_event.ready():
-                reaper_event.reset()
-
+            eventlet.sleep(sleep_interval)
             while True:
                 try:
                     # -1 means any child process. WNOHANG makes it non-blocking.
