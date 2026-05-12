@@ -95,5 +95,7 @@ def test_terminal_copy_fluff_mobile(mobile_page: Page, server):
 
     assert "workspace (" not in clipboard_text
     assert "Shift+Tab" not in clipboard_text
+    assert "\\u2584" not in clipboard_text
     assert "Some real terminal text" in clipboard_text
     assert "Another real line" in clipboard_text
+    assert "Another real line   " not in clipboard_text
