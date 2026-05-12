@@ -2,7 +2,7 @@
   "LDAP_SERVER": null,
   "LDAP_BASE_DN": null,
   "LDAP_BIND_USER_DN": null,
-  "LDAP_BIND_PASS": null,
+  "LDAP_BIND_SECRET": null,
   "LDAP_AUTHORIZED_GROUP": null,
   "LDAP_FALLBACK_DOMAIN": "example.com",
   "ALLOWED_ORIGINS": "*",
@@ -15,5 +15,5 @@
     }
   ],
   "host_id": "d0c9",
-  "SECRET_KEY": "dummy_test_key_not_a_real_secret"
+  "SECRET_KEY": "284ddd51fd90dd9594d1cc6372395cfb133e89508607c0eeaa93d29d2a39de11"
 }

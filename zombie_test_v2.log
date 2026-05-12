@@ -1,0 +1,242 @@
+--- Starting Zombie Reproduction Test V2 ---
+Initial zombie count: 0
+Starting Gemini WebUI...
+Path 1: Testing Ctrl-Z + Restart
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1]
+BROWSER CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: undefined
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
+  1. Mock Session (Just now) [mock-uuid-1]
+, error: null, timestamp: 1778566208.6744664}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1]
+BROWSER CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: undefined
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (1):
+  1. Mock Session (Just now) [mock-uuid-1]
+, error: null, timestamp: 1778566208.6744664}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1]
+BROWSER CONSOLE: TABS:  [Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: undefined
+BROWSER CONSOLE: ACTION EXECUTED: startSession [tab_1778566214088, local, , , new]
+BROWSER CONSOLE: handleConnect called for tab tab_1778566214088
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566214088
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+Terminal Output Snapshot: '[Connected to server]'
+Terminal Output Snapshot: "[Connected to server]                                                                                                                                 Loading Context...                                                                                                                                    DEBUG MOCK ARGV: ['/home/adamoutler/gemini-webui/tests/mock/gemini'], is_new=True, SESSIONS=[1]                                                       DEBUG MOCK ARGV: ['/home/adamoutler/gemini-webui/tests/mock/gemini'], is_new=True, SESSIONS=[1]                                                       DEBUG MOCK HARNESS: harness_id='tab_1778566214088'                                                                                                    Welcome to Fake Gemini"
+Terminal is ready.
+BROWSER CONSOLE: ACTION EXECUTED: restartActiveTab []
+Clicked Restart button.
+Zombies after Path 1: 0
+Path 2: Testing Ctrl-C
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER CONSOLE: Sessions updated payload: {host: Object, cache_key: local:local:, data: Object}
+BROWSER CONSOLE: Checking tab: tab_1778566214088 terminal {type: local, mode: local, ssh_target: , ssh_dir: , resume: new}
+BROWSER CONSOLE: Found match for tab: {id: 2, name: Mock Session, meta: Just now, uuid: tab_1778566214088}
+BROWSER CONSOLE: ACTION EXECUTED: saveTabsToStorage []
+BROWSER CONSOLE: Set geminiResume to: tab_1778566214088
+Zombies after Path 2: 0
+Path 3: Testing Rapid-fire '+ New' -> 'Start New'
+Rapid-fire attempt 1
+BROWSER CONSOLE: ACTION EXECUTED: addNewTab []
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (3):
+  1. Mock…  3. Mock Session (Just now) [tab_1778566214088]
+, error: null, timestamp: 1778566223.7297964}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (3):
+  1. Mock…  3. Mock Session (Just now) [tab_1778566214088]
+, error: null, timestamp: 1778566223.7297964}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: ACTION EXECUTED: startSession [tab_1778566226261, local, , , new]
+Rapid-fire attempt 2
+BROWSER CONSOLE: handleConnect called for tab tab_1778566226261
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566226261
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER ERROR: Cannot read properties of undefined (reading 'dimensions')
+BROWSER CONSOLE: handleConnect called for tab tab_1778566226261
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566226261
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER CONSOLE: ACTION EXECUTED: addNewTab []
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (3):
+  1. Mock…  3. Mock Session (Just now) [tab_1778566214088]
+, error: null, timestamp: 1778566223.7297964}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (3):
+  1. Mock…  3. Mock Session (Just now) [tab_1778566214088]
+, error: null, timestamp: 1778566223.7297964}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: ACTION EXECUTED: startSession [tab_1778566226872, local, , , new]
+Rapid-fire attempt 3
+BROWSER CONSOLE: handleConnect called for tab tab_1778566226872
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566226872
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER ERROR: Cannot read properties of undefined (reading 'dimensions')
+BROWSER CONSOLE: handleConnect called for tab tab_1778566226872
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566226872
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER CONSOLE: ACTION EXECUTED: addNewTab []
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (3):
+  1. Mock…  3. Mock Session (Just now) [tab_1778566214088]
+, error: null, timestamp: 1778566223.7297964}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (3):
+  1. Mock…  3. Mock Session (Just now) [tab_1778566214088]
+, error: null, timestamp: 1778566223.7297964}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: ACTION EXECUTED: startSession [tab_1778566227768, local, , , new]
+Rapid-fire attempt 4
+BROWSER CONSOLE: handleConnect called for tab tab_1778566227768
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566227768
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER ERROR: Cannot read properties of undefined (reading 'dimensions')
+BROWSER CONSOLE: handleConnect called for tab tab_1778566227768
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566227768
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER CONSOLE: ACTION EXECUTED: addNewTab []
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (3):
+  1. Mock…  3. Mock Session (Just now) [tab_1778566214088]
+, error: null, timestamp: 1778566223.7297964}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (3):
+  1. Mock…  3. Mock Session (Just now) [tab_1778566214088]
+, error: null, timestamp: 1778566223.7297964}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: ACTION EXECUTED: startSession [tab_1778566228389, local, , , new]
+Rapid-fire attempt 5
+BROWSER CONSOLE: handleConnect called for tab tab_1778566228389
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566228389
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER ERROR: Cannot read properties of undefined (reading 'dimensions')
+BROWSER CONSOLE: handleConnect called for tab tab_1778566228389
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566228389
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER CONSOLE: ACTION EXECUTED: addNewTab []
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object, Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (3):
+  1. Mock…  3. Mock Session (Just now) [tab_1778566214088]
+, error: null, timestamp: 1778566223.7297964}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object, Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: GET_SESSIONS_RESPONSE: {output: Available sessions for this project (3):
+  1. Mock…  3. Mock Session (Just now) [tab_1778566214088]
+, error: null, timestamp: 1778566223.7297964}
+BROWSER CONSOLE: SESSIONS:  [mock-uuid-1, tab_1778566214088, tab_1778566214088]
+BROWSER CONSOLE: TABS:  [Object, Object, Object, Object, Object, Object] CONN: {label: local, type: local}
+BROWSER CONSOLE: ACTIVE TAB: {id: tab_1778566214088, term: d, fitAddon: t.FitAddon, socket: Socket, session: Object}
+BROWSER CONSOLE: ACTION EXECUTED: startSession [tab_1778566228886, local, , , new]
+Zombies after Path 3: 0
+Path 4: Testing Rapid Page Reload (Lockup test)
+BROWSER CONSOLE: handleConnect called for tab tab_1778566228886
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566228886
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER ERROR: Cannot read properties of undefined (reading 'dimensions')
+BROWSER CONSOLE: handleConnect called for tab tab_1778566228886
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566228886
+BROWSER CONSOLE: ACTION EXECUTED: syncTabs [Object]
+BROWSER CONSOLE: Sessions updated payload: {host: Object, cache_key: local:local:, data: Object}
+BROWSER CONSOLE: Checking tab: tab_1778566214088 terminal {type: local, mode: local, ssh_target: , ssh_dir: , resume: tab_1778566214088}
+BROWSER CONSOLE: Checking tab: tab_1778566226261 terminal {type: undefined, mode: undefined, ssh_target: , ssh_dir: , resume: new}
+BROWSER CONSOLE: Found match for tab: {id: 4, name: Mock Session, meta: Just now, uuid: tab_1778566226261}
+BROWSER CONSOLE: ACTION EXECUTED: saveTabsToStorage []
+BROWSER CONSOLE: Set geminiResume to: tab_1778566226261
+BROWSER CONSOLE: Checking tab: tab_1778566226872 terminal {type: undefined, mode: undefined, ssh_target: , ssh_dir: , resume: new}
+BROWSER CONSOLE: Found match for tab: {id: 5, name: Mock Session, meta: Just now, uuid: tab_1778566226872}
+BROWSER CONSOLE: ACTION EXECUTED: saveTabsToStorage []
+BROWSER CONSOLE: Set geminiResume to: tab_1778566226872
+BROWSER CONSOLE: Checking tab: tab_1778566227768 terminal {type: undefined, mode: undefined, ssh_target: , ssh_dir: , resume: new}
+BROWSER CONSOLE: Found match for tab: {id: 6, name: Mock Session, meta: Just now, uuid: tab_1778566227768}
+BROWSER CONSOLE: ACTION EXECUTED: saveTabsToStorage []
+BROWSER CONSOLE: Set geminiResume to: tab_1778566227768
+BROWSER CONSOLE: Checking tab: tab_1778566228389 terminal {type: undefined, mode: undefined, ssh_target: , ssh_dir: , resume: new}
+BROWSER CONSOLE: Found match for tab: {id: 7, name: Mock Session, meta: Just now, uuid: tab_1778566228389}
+BROWSER CONSOLE: ACTION EXECUTED: saveTabsToStorage []
+BROWSER CONSOLE: Set geminiResume to: tab_1778566228389
+BROWSER CONSOLE: Checking tab: tab_1778566228886 terminal {type: undefined, mode: undefined, ssh_target: , ssh_dir: , resume: new}
+BROWSER CONSOLE: Found match for tab: {id: 8, name: Mock Session, meta: Just now, uuid: tab_1778566228886}
+BROWSER CONSOLE: ACTION EXECUTED: saveTabsToStorage []
+BROWSER CONSOLE: Set geminiResume to: tab_1778566228886
+BROWSER CONSOLE: Failed to load prompts from server: TypeError: Failed to fetch
+    at customFetch (http://127.0.0.1:5009/static/js/core/api.js:136:24)
+    at loadPromptsFromServer (http://127.0.0.1:5009/static/js/core/state.js:42:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/js/ui/quick-connect.js:145:9)
+BROWSER CONSOLE: Failed to load prompts from server: TypeError: Failed to fetch
+    at customFetch (http://127.0.0.1:5009/static/js/core/api.js:136:24)
+    at loadPromptsFromServer (http://127.0.0.1:5009/static/js/core/state.js:42:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/js/ui/quick-connect.js:145:9)
+BROWSER CONSOLE: Failed to load prompts from server: TypeError: Failed to fetch
+    at customFetch (http://127.0.0.1:5009/static/js/core/api.js:136:24)
+    at loadPromptsFromServer (http://127.0.0.1:5009/static/js/core/state.js:42:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/js/ui/quick-connect.js:145:9)
+BROWSER CONSOLE: Failed to load prompts from server: TypeError: Failed to fetch
+    at customFetch (http://127.0.0.1:5009/static/js/core/api.js:136:24)
+    at loadPromptsFromServer (http://127.0.0.1:5009/static/js/core/state.js:42:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/js/ui/quick-connect.js:145:9)
+BROWSER CONSOLE: Failed to load prompts from server: TypeError: Failed to fetch
+    at customFetch (http://127.0.0.1:5009/static/js/core/api.js:136:24)
+    at loadPromptsFromServer (http://127.0.0.1:5009/static/js/core/state.js:42:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/js/ui/quick-connect.js:145:9)
+BROWSER CONSOLE: Failed to load prompts from server: TypeError: Failed to fetch
+    at customFetch (http://127.0.0.1:5009/static/js/core/api.js:136:24)
+    at loadPromptsFromServer (http://127.0.0.1:5009/static/js/core/state.js:42:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/js/ui/quick-connect.js:145:9)
+BROWSER CONSOLE: Failed to load prompts from server: TypeError: Failed to fetch
+    at customFetch (http://127.0.0.1:5009/static/js/core/api.js:136:24)
+    at loadPromptsFromServer (http://127.0.0.1:5009/static/js/core/state.js:42:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/js/ui/quick-connect.js:145:9)
+BROWSER CONSOLE: Failed to load prompts from server: TypeError: Failed to fetch
+    at customFetch (http://127.0.0.1:5009/static/js/core/api.js:136:24)
+    at loadPromptsFromServer (http://127.0.0.1:5009/static/js/core/state.js:42:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/js/ui/quick-connect.js:145:9)
+BROWSER CONSOLE: Failed to load prompts from server: TypeError: Failed to fetch
+    at customFetch (http://127.0.0.1:5009/static/js/core/api.js:136:24)
+    at loadPromptsFromServer (http://127.0.0.1:5009/static/js/core/state.js:42:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/js/ui/quick-connect.js:145:9)
+Reloads finished. Checking if UI is still responsive...
+BROWSER CONSOLE: Failed to load prompts from server: TypeError: Failed to fetch
+    at customFetch (http://127.0.0.1:5009/static/js/core/api.js:136:24)
+    at loadPromptsFromServer (http://127.0.0.1:5009/static/js/core/state.js:42:28)
+    at HTMLDocument.<anonymous> (http://127.0.0.1:5009/static/js/ui/quick-connect.js:145:9)
+BROWSER CONSOLE: handleConnect called for tab tab_1778566214088
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566214088
+UI is still responsive: PASS
+BROWSER CONSOLE: handleConnect called for tab tab_1778566226872
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566226872
+BROWSER CONSOLE: handleConnect called for tab tab_1778566226261
+BROWSER CONSOLE: Calling globalThis.updateStatus for tab tab_1778566226261
+Final zombie count: 0
+SUCCESS: No new zombies detected.

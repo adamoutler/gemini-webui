@@ -1,18 +1,50 @@
 {
-  "tab_1777235115933": {
-    "tab_id": "tab_1777235115933",
+  "tab_1778566214088": {
+    "tab_id": "tab_1778566214088",
     "title": "",
     "ssh_target": "",
     "ssh_dir": "",
     "user_id": "admin",
-    "resume": "new"
+    "resume": "tab_1778566214088"
   },
-  "tab_123456789": {
-    "tab_id": "tab_123456789",
+  "tab_1778566226261": {
+    "tab_id": "tab_1778566226261",
     "title": "",
-    "ssh_target": "localhost",
+    "ssh_target": "",
     "ssh_dir": "",
     "user_id": "admin",
-    "resume": "new"
+    "resume": "tab_1778566226261"
+  },
+  "tab_1778566226872": {
+    "tab_id": "tab_1778566226872",
+    "title": "",
+    "ssh_target": "",
+    "ssh_dir": "",
+    "user_id": "admin",
+    "resume": "tab_1778566226872"
+  },
+  "tab_1778566227768": {
+    "tab_id": "tab_1778566227768",
+    "title": "",
+    "ssh_target": "",
+    "ssh_dir": "",
+    "user_id": "admin",
+    "resume": "tab_1778566227768"
+  },
+  "tab_1778566228389": {
+    "tab_id": "tab_1778566228389",
+    "title": "",
+    "ssh_target": "",
+    "ssh_dir": "",
+    "user_id": "admin",
+    "resume": "tab_1778566228389"
+  },
+  "tab_1778566228886": {
+    "tab_id": "tab_1778566228886",
+    "title": "",
+    "ssh_target": "",
+    "ssh_dir": "",
+    "user_id": "admin",
+    "resume": "tab_1778566228886"
   }
 }
