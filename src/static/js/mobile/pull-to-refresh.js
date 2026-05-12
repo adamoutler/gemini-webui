@@ -6,16 +6,18 @@ export class PullToRefresh {
       onRefresh:
         options.onRefresh ||
         (() =>
-          new Promise(() => {
+          new Promise((resolve) => {
             setTimeout(() => {
               globalThis.location.reload();
+              resolve();
             }, 300);
           })),
       isAtTop:
         options.isAtTop ||
         (() =>
-          document.documentElement.scrollTop === 0 &&
-          document.body.scrollTop === 0),
+          window.scrollY === 0 ||
+          (document.documentElement.scrollTop === 0 &&
+            document.body.scrollTop === 0)),
       threshold: options.threshold || 60,
       maxVisualY: options.maxVisualY || 80,
     };
