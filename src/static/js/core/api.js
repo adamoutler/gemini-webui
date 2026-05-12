@@ -11,18 +11,28 @@ export function escapeHtml(str) {
 export function filterTerminalFluff(text) {
   if (!text) return "";
   let lines = text.split("\n");
-  lines = lines.map((line) => {
-    if (line.includes("workspace (") && line.includes("branch:"))
-      return " ".repeat(line.length);
-    if (line.includes("Shift+Tab to accept edits"))
-      return " ".repeat(line.length);
-    if (/^[\u2500-\u259F \t\r]+$/.test(line) && /[\u2500-\u259F]/.test(line)) {
-      return " ".repeat(line.length);
-    }
+  let filteredLines = [];
+
+  for (let line of lines) {
+    if (line.includes("workspace (") && line.includes("branch:")) continue;
+    if (line.includes("Shift+Tab to accept edits")) continue;
+    if (/^[\u2500-\u259F \t\r]+$/.test(line) && /[\u2500-\u259F]/.test(line))
+      continue;
+
     let cleaned = line.replaceAll(/[\u2500-\u259F]/g, " ");
-    return cleaned;
-  });
-  return lines.join("\n");
+    cleaned = cleaned.trimEnd(); // Remove trailing whitespace
+    filteredLines.push(cleaned);
+  }
+
+  // Remove trailing empty lines from the overall text block
+  while (
+    filteredLines.length > 0 &&
+    filteredLines[filteredLines.length - 1] === ""
+  ) {
+    filteredLines.pop();
+  }
+
+  return filteredLines.join("\n");
 }
 
 let ENABLE_DEBUG = false;
