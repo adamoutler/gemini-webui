@@ -523,9 +523,12 @@ export function startSession(
               clientX: e.changedTouches[0].clientX,
               clientY: e.changedTouches[0].clientY,
             };
-            underlying.dispatchEvent(new MouseEvent("mousedown", eventInit));
-            underlying.dispatchEvent(new MouseEvent("mouseup", eventInit));
-            underlying.dispatchEvent(new MouseEvent("click", eventInit));
+            underlying.dispatchEvent(new MouseEvent("mousemove", eventInit));
+            setTimeout(() => {
+              underlying.dispatchEvent(new MouseEvent("mousedown", eventInit));
+              underlying.dispatchEvent(new MouseEvent("mouseup", eventInit));
+              underlying.dispatchEvent(new MouseEvent("click", eventInit));
+            }, 100);
           }
 
           // 2. Focus the terminal with a tiny delay to allow link handling

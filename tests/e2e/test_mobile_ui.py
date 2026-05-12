@@ -297,9 +297,8 @@ def test_mobile_link_tapping(page, server):
     page.screenshot(path="docs/qa-images/test_mobile_link_tapping_before.png")
 
     page.evaluate(
-        "window.openedUrl = null; window.open = (url) => { window.openedUrl = url; return null; };"
+        "window.openedUrl = null; window.open = (url) => { window.openedUrl = url; return { opener: null }; };"
     )
-
     coords = page.evaluate("""() => {
         const tab = tabs.find(t => t.id === activeTabId);
         if (tab && tab.term) {
