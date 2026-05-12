@@ -28,8 +28,9 @@ def test_terminal_copy_fluff(page: Page, server):
     time.sleep(1)
 
     # Perform the copy by invoking the global filterTerminalFluff manually to get the exact output
+    cleaned_fluff_text = fluff_text.replace("\\r", "").replace("\\n", "\\n")
     clipboard_text = page.evaluate(f"""() => {{
-        const rawText = '{fluff_text.replace("\\r", "").replace("\\n", "\\n")}';
+        const rawText = '{cleaned_fluff_text}';
         return filterTerminalFluff(rawText);
     }}""")
 
