@@ -62,7 +62,9 @@ def main(playwright):
 
     finally:
         print("Shutting down server...")
-        os.kill(process.pid, signal.SIGTERM)
+        from tests.conftest import _original_kill
+
+        _original_kill(process.pid, signal.SIGTERM)
         process.wait()
 
 

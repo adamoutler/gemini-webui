@@ -206,12 +206,14 @@ def csrf_enabled_server_csrf(tmp_path, playwright):
     url = f"http://127.0.0.1:{port}"
     yield url
 
+    from tests.conftest import _original_killpg, _original_getpgid, _original_kill
+
     try:
         try:
-            if os.getpgid(proc.pid) != os.getpgrp():
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            if _original_getpgid(proc.pid) != os.getpgrp():
+                _original_killpg(_original_getpgid(proc.pid), signal.SIGKILL)
             else:
-                os.kill(proc.pid, signal.SIGKILL)
+                _original_kill(proc.pid, signal.SIGKILL)
         except OSError:
             pass
         proc.wait(timeout=5)

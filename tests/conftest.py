@@ -9,6 +9,10 @@ import requests
 os.environ["SKIP_MONKEY_PATCH"] = "true"
 os.environ["SKIP_MULTIPLEXER"] = "true"
 
+_original_killpg = os.killpg
+_original_kill = os.kill
+_original_getpgid = os.getpgid
+
 
 @pytest.fixture(autouse=True)
 def clear_server_sessions(request, test_data_dir):
@@ -120,10 +124,10 @@ def server(test_data_dir):
 
     try:
         try:
-            if os.getpgid(process.pid) != os.getpgrp():
-                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+            if _original_getpgid(process.pid) != os.getpgrp():
+                _original_killpg(_original_getpgid(process.pid), signal.SIGKILL)
             else:
-                os.kill(process.pid, signal.SIGKILL)
+                _original_kill(process.pid, signal.SIGKILL)
         except OSError:
             pass
     except Exception:

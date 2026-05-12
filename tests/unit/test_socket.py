@@ -20,6 +20,7 @@ def setup_teardown():
     session_manager.tabid_to_sids.clear()
     os.environ["BYPASS_AUTH_FOR_TESTING"] = "true"
     app.config["TESTING"] = True
+    app.config["WTF_CSRF_ENABLED"] = False
     app.config["SECRET_KEY"] = "test-secret-key"
     yield
     session_manager.sessions.clear()

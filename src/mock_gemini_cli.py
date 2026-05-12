@@ -126,6 +126,9 @@ def run_fake_gemini():
         if select.select([sys.stdin], [], [], 0.1)[0]:
             char = get_char()
 
+            if not char:
+                break
+
             # Handle Backspace
             if char in ("\x7f", "\x08"):
                 if len(input_buffer) > 0:
