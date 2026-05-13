@@ -84,12 +84,10 @@ export function initDesktopContextMenu() {
     document.addEventListener("contextmenu", (e) => {
       if (document.documentElement.classList.contains("is-mobile")) return;
 
-      const isTextSelected = globalThis.getSelection().toString().length > 0;
       const isInput =
         e.target.tagName === "INPUT" ||
         e.target.tagName === "TEXTAREA" ||
         e.target.isContentEditable;
-      if (isTextSelected || isInput) return;
 
       let el = e.target;
       let allowMenu = false;
@@ -109,6 +107,10 @@ export function initDesktopContextMenu() {
         }
         el = el.parentElement;
       }
+
+      const isTextSelected = globalThis.getSelection().toString().length > 0;
+      // Allow native menu only if we are outside the custom menu areas
+      if (!allowMenu && (isTextSelected || isInput)) return;
 
       // If right-clicked on terminal container or body, show custom menu
       if (
