@@ -22,13 +22,12 @@ export class ContextMenuPlugin extends TerminalModule {
     const e = event.originalEvent;
 
     // Prevent default right-click menu
-    const isTextSelected = globalThis.getSelection().toString().length > 0;
     const isInput =
       e.target.tagName === "INPUT" ||
       e.target.tagName === "TEXTAREA" ||
       e.target.isContentEditable;
 
-    if (isTextSelected || isInput) return false;
+    if (isInput) return false;
 
     let el = e.target;
     let allowMenu = false;
