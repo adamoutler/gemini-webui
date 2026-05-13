@@ -30,6 +30,7 @@ def test_desktop_context_menu(page, server, playwright):
 
 @pytest.mark.timeout(60)
 def test_desktop_context_menu_with_selection(page, server, playwright):
+    page.context.grant_permissions(["clipboard-read", "clipboard-write"])
     page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
     page.on("pageerror", lambda err: print(f"BROWSER ERROR: {err.message}"))
     # 1. Load the page
@@ -50,7 +51,7 @@ def test_desktop_context_menu_with_selection(page, server, playwright):
     )
     page.wait_for_timeout(500)
     page.evaluate(
-        "() => { if (globalThis.globalState && globalThis.globalState.tabs && globalThis.globalState.tabs[0]) { globalThis.globalState.tabs[0].term.select(0, 0, 5); } }"
+        "() => { if (globalThis.globalState && globalThis.globalState.tabs && globalThis.globalState.tabs[0]) { globalThis.globalState.tabs[0].term.selectAll(); } }"
     )
     page.wait_for_timeout(500)
 
@@ -60,5 +61,18 @@ def test_desktop_context_menu_with_selection(page, server, playwright):
     # 5. Expect context menu
     context_menu = page.locator("#desktop-context-menu")
     expect(context_menu).to_be_visible(timeout=10000)
+
+    # Check terminal selection before copy
+    term_selection = page.evaluate(
+        "() => globalThis.globalState.tabs[0].term.getSelection()"
+    )
+    print(f"TERMINAL SELECTION: '{term_selection}'")
+
+    # 6. Click Copy and verify clipboard
+    page.locator("#ctx-copy").click()
+    page.wait_for_timeout(500)
+
+    clipboard_text = page.evaluate("navigator.clipboard.readText()")
+    assert "Hello" in clipboard_text
 
     page.screenshot(path="docs/qa-images/desktop_context_menu_selection_proof.png")
