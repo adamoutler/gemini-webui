@@ -114,18 +114,36 @@ class AutomationBridge:
             if target_host_id == sess_host_id or target_host_id == sess_target:
                 title = session.title.lower() if session.title else ""
                 if "working" in title or "✋" in title:
+                    logger.info(
+                        f"Host {target_host_id} is NOT idle: Session {session.tab_id} title indicates working state."
+                    )
                     return False
 
                 # Check for silence (no output for 500ms)
                 if session.last_seen and (now - session.last_seen < 0.5):
+                    logger.info(
+                        f"Host {target_host_id} is NOT idle: Session {session.tab_id} had output recently (less than 500ms ago)."
+                    )
                     return False
 
                 # Check for shell prompt patterns at the end of the buffer
                 if session.buffer:
                     last_line = session.buffer[-1].strip()
-                    if not re.search(r"[$#>%]\s*$", last_line):
+                    # Strip ANSI codes for regex matching
+                    ansi_escape = re.compile(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])")
+                    clean_line = ansi_escape.sub("", last_line)
+                    if not re.search(r"[$#>%]\s*$", clean_line):
+                        logger.info(
+                            f"Host {target_host_id} is NOT idle: Session {session.tab_id} is not at a shell prompt. Last line: '{clean_line}'"
+                        )
                         return False
+                else:
+                    # If buffer is empty, it's effectively a fresh session, which is idle
+                    pass
 
+                logger.info(
+                    f"Host {target_host_id} IS idle: Session {session.tab_id} meets all idle heuristics."
+                )
         return True
 
     @staticmethod

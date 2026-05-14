@@ -1,14 +1,136 @@
 INFO:__main__:Starting Automation Integration Test...
-INFO:__main__:Added schedule 0fdd71d0-1148-4aa9-87d5-c9748718872b
-INFO:__main__:Triggering scheduler...
-INFO:src.services.automation_scheduler:Executing schedule 0fdd71d0-1148-4aa9-87d5-c9748718872b on local
+An exception was thrown while monkey_patching for eventlet. to fix this error make sure you run eventlet.monkey_patch() before importing any other modules.
+Traceback (most recent call last):
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 633, in _upgrade_instances
+    new = upgrade_or_traverse(v)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 610, in upgrade_or_traverse
+    _upgrade_instances(obj, klass, upgrade, visited, old_to_new)
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 624, in _upgrade_instances
+    container_vars = vars(container)
+                     ^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+An exception was thrown while monkey_patching for eventlet. to fix this error make sure you run eventlet.monkey_patch() before importing any other modules.
+Traceback (most recent call last):
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 633, in _upgrade_instances
+    new = upgrade_or_traverse(v)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 610, in upgrade_or_traverse
+    _upgrade_instances(obj, klass, upgrade, visited, old_to_new)
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 624, in _upgrade_instances
+    container_vars = vars(container)
+                     ^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+An exception was thrown while monkey_patching for eventlet. to fix this error make sure you run eventlet.monkey_patch() before importing any other modules.
+Traceback (most recent call last):
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 633, in _upgrade_instances
+    new = upgrade_or_traverse(v)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 610, in upgrade_or_traverse
+    _upgrade_instances(obj, klass, upgrade, visited, old_to_new)
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 624, in _upgrade_instances
+    container_vars = vars(container)
+                     ^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+An exception was thrown while monkey_patching for eventlet. to fix this error make sure you run eventlet.monkey_patch() before importing any other modules.
+Traceback (most recent call last):
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 633, in _upgrade_instances
+    new = upgrade_or_traverse(v)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 610, in upgrade_or_traverse
+    _upgrade_instances(obj, klass, upgrade, visited, old_to_new)
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 624, in _upgrade_instances
+    container_vars = vars(container)
+                     ^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
+An exception was thrown while monkey_patching for eventlet. to fix this error make sure you run eventlet.monkey_patch() before importing any other modules.
+Traceback (most recent call last):
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 633, in _upgrade_instances
+    new = upgrade_or_traverse(v)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 610, in upgrade_or_traverse
+    _upgrade_instances(obj, klass, upgrade, visited, old_to_new)
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 624, in _upgrade_instances
+    container_vars = vars(container)
+                     ^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of application context.
+
+This typically means that you attempted to use functionality that needed
+the current application. To solve this, set up an application context
+with app.app_context(). See the documentation for more information.
+An exception was thrown while monkey_patching for eventlet. to fix this error make sure you run eventlet.monkey_patch() before importing any other modules.
+Traceback (most recent call last):
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 633, in _upgrade_instances
+    new = upgrade_or_traverse(v)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 610, in upgrade_or_traverse
+    _upgrade_instances(obj, klass, upgrade, visited, old_to_new)
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/eventlet/patcher.py", line 624, in _upgrade_instances
+    container_vars = vars(container)
+                     ^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 318, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/adamoutler/gemini-webui/.venv/lib/python3.12/site-packages/werkzeug/local.py", line 519, in _get_current_object
+    raise RuntimeError(unbound_message) from None
+RuntimeError: Working outside of request context.
+
+This typically means that you attempted to use functionality that needed
+an active HTTP request. Consult the documentation on testing for
+information about how to avoid this problem.
 INFO:src.app:Initializing app with DATA_DIR: /data
-INFO:src.services.automation_bridge:Automation executed task on local in tab bb8a2a77-0b4f-4473-82ff-435c1f84d214
+INFO:__main__:Added schedule 3125548a-b842-49d4-9673-b86c34c948fb
+INFO:__main__:Triggering scheduler...
+INFO:src.services.automation_bridge:Host local IS idle: Session dummy_tab meets all idle heuristics.
+INFO:src.services.automation_scheduler:Executing schedule 3125548a-b842-49d4-9673-b86c34c948fb on local
+INFO:src.services.automation_bridge:Injecting automation task into existing session dummy_tab
+INFO:src.services.automation_bridge:Automation executed task on local in tab dummy_tab
 INFO:__main__:Waiting for execution to complete...
-INFO:src.services.automation_bridge:Automation reader for bb8a2a77-0b4f-4473-82ff-435c1f84d214 finished
-INFO:src.gateways.terminal_socket:Session reader for bb8a2a77-0b4f-4473-82ff-435c1f84d214 exiting, cleaning up
+INFO:src.services.automation_bridge:Automation reader for dummy_tab finished
+INFO:src.gateways.terminal_socket:Session reader for dummy_tab exiting, cleaning up
 INFO:__main__:Job Status: completed
 INFO:__main__:Job Exit Code: 0
-INFO:__main__:Job Output: It is currently Wed May 13 09:22:00 PM EDT 2026 and you have been summoned on a timer. Be respectful of the environment. The user has requested you perform the following task:
+INFO:__main__:Job Output: It is currently Wed May 13 10:20:06 PM EDT 2026 and you have been summoned on a timer. Be respectful of the environment. The user has requested you perform the following task:
 Hello Integration Test
 INFO:__main__:Integration Test PASSED!
