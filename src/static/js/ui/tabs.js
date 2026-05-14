@@ -457,6 +457,37 @@ export function showTabContextMenu(id, x, y) {
   });
   document.body.appendChild(menu);
 
+  if (tab.state === "terminal") {
+    fetch("/api/hosts")
+      .then((res) => res.json())
+      .then((hosts) => {
+        if (!document.getElementById("tab-context-menu")) return; // Menu closed already
+        const matchedHost = hosts.find(
+          (h) =>
+            (h.target || "") === (tab.session.ssh_target || "") &&
+            (h.dir || "") === (tab.session.ssh_dir || ""),
+        );
+        if (matchedHost && matchedHost.links && matchedHost.links.length > 0) {
+          const header = document.createElement("div");
+          header.className = "context-menu-section-header";
+          header.innerText = "External Links";
+          menu.appendChild(header);
+
+          matchedHost.links.forEach((link) => {
+            const item = document.createElement("div");
+            item.className = "context-menu-item";
+            item.innerText = link.label;
+            item.onclick = () => {
+              window.open(link.url, "_blank");
+              menu.remove();
+            };
+            menu.appendChild(item);
+          });
+        }
+      })
+      .catch((e) => console.error("Failed to fetch hosts for context menu", e));
+  }
+
   // Close menu on click outside
   const closeMenu = (e) => {
     if (!menu.contains(e.target)) {

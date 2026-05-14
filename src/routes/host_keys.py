@@ -65,6 +65,40 @@ def add_host():
                     }
                 ), 400
 
+    links = new_host.get("links")
+    if links is not None:
+        if not isinstance(links, list):
+            return jsonify({"status": "error", "message": "links must be a list"}), 400
+        if len(links) > 20:
+            return jsonify({"status": "error", "message": "Too many links"}), 400
+        for link in links:
+            if not isinstance(link, dict):
+                return jsonify(
+                    {"status": "error", "message": "Each link must be an object"}
+                ), 400
+            if "label" not in link or "url" not in link:
+                return jsonify(
+                    {
+                        "status": "error",
+                        "message": "Each link must have a label and a url",
+                    }
+                ), 400
+            if not isinstance(link["label"], str) or not isinstance(link["url"], str):
+                return jsonify(
+                    {"status": "error", "message": "Link label and url must be strings"}
+                ), 400
+            if len(link["label"]) > 255 or len(link["url"]) > 2048:
+                return jsonify(
+                    {"status": "error", "message": "Link label or url too long"}
+                ), 400
+            if not link["url"].startswith(("http://", "https://")):
+                return jsonify(
+                    {
+                        "status": "error",
+                        "message": "Link url must start with http:// or https://",
+                    }
+                ), 400
+
     curr_conf = get_config()
     hosts = curr_conf.get("HOSTS", [])
 

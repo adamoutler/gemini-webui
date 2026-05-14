@@ -64,10 +64,74 @@ class EnvVarManager {
   }
 }
 
+class LinkManager {
+  constructor() {
+    this.container = document.getElementById("links-list");
+    this.addBtn = document.getElementById("add-link-btn");
+    this.addBtn.addEventListener("click", () => this.addLink());
+    this.links = [];
+  }
+  addLink(label = "", url = "") {
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.gap = "5px";
+    const labelInput = document.createElement("input");
+    labelInput.type = "text";
+    labelInput.placeholder = "Label (e.g. Wiki)";
+    labelInput.value = label;
+    labelInput.style.flex = "1";
+    const urlInput = document.createElement("input");
+    urlInput.type = "text";
+    urlInput.placeholder = "URL (e.g. https://...)";
+    urlInput.value = url;
+    urlInput.style.flex = "2";
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "danger small";
+    removeBtn.innerText = "X";
+    removeBtn.onclick = () => {
+      this.container.removeChild(row);
+    };
+    row.appendChild(labelInput);
+    row.appendChild(urlInput);
+    row.appendChild(removeBtn);
+    this.container.appendChild(row);
+  }
+  clear() {
+    this.container.innerHTML = "";
+  }
+  load(links) {
+    this.clear();
+    if (links && Array.isArray(links)) {
+      links.forEach((link) => {
+        if (link.label && link.url) {
+          this.addLink(link.label, link.url);
+        }
+      });
+    }
+  }
+  get() {
+    const links = [];
+    for (let i = 0; i < this.container.children.length; i++) {
+      const row = this.container.children[i];
+      const label = row.children[0].value.trim();
+      const url = row.children[1].value.trim();
+      if (label && url) {
+        links.push({ label, url });
+      }
+    }
+    return links;
+  }
+}
+
 export let envVarManager = null;
+export let linkManager = null;
 document.addEventListener("DOMContentLoaded", () => {
   if (document.getElementById("env-vars-list")) {
     envVarManager = new EnvVarManager();
+  }
+  if (document.getElementById("links-list")) {
+    linkManager = new LinkManager();
   }
 });
 
@@ -293,6 +357,7 @@ export function clearHostForm() {
   document.getElementById("new-host-target").value = "";
   document.getElementById("new-host-dir").value = "";
   if (envVarManager) envVarManager.clear();
+  if (linkManager) linkManager.clear();
   editingHostLabel = null;
   setHostMode("add");
 }
@@ -311,6 +376,7 @@ export async function submitHostForm() {
     target,
     dir,
     env_vars: envVarManager ? envVarManager.get() : {},
+    links: linkManager ? linkManager.get() : [],
     old_label: editingHostLabel, // Pass to server for in-place update
   };
   const response = await fetch("/api/hosts", {
@@ -559,3 +625,4 @@ globalThis.exportSettings = exportSettings;
 globalThis.importSettings = importSettings;
 globalThis.savePastedKey = savePastedKey;
 globalThis.uploadKeyFile = uploadKeyFile;
+File;
