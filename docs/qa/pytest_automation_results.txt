@@ -6,8 +6,8 @@ plugins: split-0.11.0, playwright-0.7.2, cov-7.1.0, timeout-2.4.0, base-url-2.1.
 timeout: 60.0s
 timeout method: signal
 timeout func_only: False
-collected 3 items
+collected 215 items / 211 deselected / 4 selected
 
-tests/unit/test_automation.py [32m.[0m[32m.[0m[32m.[0m[32m                                        [100%][0m
+tests/unit/test_automation.py [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m                                       [100%][0m
 
-[32m============================== [32m[1m3 passed[0m[32m in 0.12s[0m[32m ===============================[0m
+[32m====================== [32m[1m4 passed[0m, [33m211 deselected[0m[32m in 0.37s[0m[32m =======================[0m
