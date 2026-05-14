@@ -6,8 +6,8 @@ plugins: split-0.11.0, playwright-0.7.2, cov-7.1.0, timeout-2.4.0, base-url-2.1.
 timeout: 60.0s
 timeout method: signal
 timeout func_only: False
-collected 3 items
+collected 1 item
 
-tests/e2e/test_context_menu.py [32m.[0m[32m.[0m[32m.[0m[32m                                       [100%][0m
+tests/e2e/test_mobile_input_buffer.py [32m.[0m[32m                                  [100%][0m
 
-[32m============================== [32m[1m3 passed[0m[32m in 5.64s[0m[32m ===============================[0m
+[32m============================== [32m[1m1 passed[0m[32m in 2.97s[0m[32m ===============================[0m
