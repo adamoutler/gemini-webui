@@ -169,7 +169,16 @@ jobs:
         env:
           DATA_DIR: /tmp/data
         run: |
-          PYTHONPATH=. timeout 15m .venv/bin/pytest -v -s tests/unit/ --splits 2 --group ${{ matrix.shard }}
+          PYTHONPATH=. timeout 15m .venv/bin/pytest -v -s tests/unit/ --splits 2 --group ${{ matrix.shard }} | tee test_unit_shard_${{ matrix.shard }}.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-unit-${{ matrix.shard }}
+          path: test_unit_shard_${{ matrix.shard }}.log
+          retention-days: 1
 
   test-e2e:
     name: E2E Tests (Shard ${{ matrix.shard }}/4)
@@ -226,7 +235,16 @@ jobs:
           TEST_SKIP_DOCKER_BUILD: "1"
           TEST_DOCKER_IMAGE: "gemini-webui:test-native"
         run: |
-          PYTHONPATH=. timeout 15m .venv/bin/pytest -v -s tests/e2e/ --splits 4 --group ${{ matrix.shard }}
+          PYTHONPATH=. timeout 15m .venv/bin/pytest -v -s tests/e2e/ --splits 4 --group ${{ matrix.shard }} | tee test_e2e_shard_${{ matrix.shard }}.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-e2e-${{ matrix.shard }}
+          path: test_e2e_shard_${{ matrix.shard }}.log
+          retention-days: 1
 
   test-npm-lint:
     name: Lint & NPM Tests
