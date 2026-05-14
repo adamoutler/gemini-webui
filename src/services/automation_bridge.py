@@ -116,7 +116,7 @@ class AutomationBridge:
 
         sessions = session_manager.get_all_sessions()
 
-        for tab_id, session in sessions.items():
+        for session in sessions:
             sess_target = session.ssh_target if session.ssh_target else "local"
             sess_dir = session.ssh_dir if session.ssh_dir else "~"
             sess_host_id = f"{sess_target}:{sess_dir}"
