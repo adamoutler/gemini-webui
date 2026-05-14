@@ -301,22 +301,6 @@ jobs:
           pip install pre-commit
           pre-commit run --all-files
 
-  0_Test_Results:
-    name: 0_Test Results
-    needs: [test-unit, test-e2e]
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Download Test Results
-        uses: actions/download-artifact@v4
-        with:
-          pattern: test-results-*
-          path: test-results
-      - name: Print Test Results for QA Gate
-        run: |
-          echo "============================= test session starts =============================="
-          cat test-results/*/*.log || true
-          echo "============================= test session ends ================================"
-
   publish:
     name: Publish and Deploy
     needs: [test-unit, test-e2e, test-npm-lint, build-cross]
