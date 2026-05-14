@@ -42,6 +42,12 @@ def test_connection_health_indicators(page, playwright):
         'div[data-label="local"] .connection-title div[id$="_pulse_local"]'
     )
 
+    # Remove sessions_updated listener to prevent server broadcasts from resetting the health indicator
+    page.evaluate("""() => {
+        const socket = getGlobalSocket();
+        socket.off('sessions_updated_local::');
+    }""")
+
     # Mock socket emit to return error
     page.evaluate("""() => {
         const socket = getGlobalSocket();
@@ -69,6 +75,11 @@ def test_connection_health_indicators(page, playwright):
     # 1 failure -> Yellow 🟡
     expect(local_health).to_have_text("🟡", timeout=15000)
     expect(local_health).to_have_attribute("data-status", "degraded", timeout=15000)
+
+    # Wait for the JS event loop to release isFetchingSessions lock
+    import time
+
+    time.sleep(0.5)
 
     # Trigger again
     page.evaluate("""() => {
