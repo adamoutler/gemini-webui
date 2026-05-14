@@ -133,15 +133,7 @@ def test_execution_engine_and_reaper(temp_schedule_manager, monkeypatch):
         def __init__(self):
             self.active = True
             self.pid = 99999
-
-            class DummyDecoder:
-                def decode(self, data):
-                    return data.decode("utf-8")
-
-            self.decoder = DummyDecoder()
-
-        def append_buffer(self, output):
-            pass
+            self.buffer = []
 
     dummy_session = DummySession()
     monkeypatch.setattr(
@@ -156,33 +148,32 @@ def test_execution_engine_and_reaper(temp_schedule_manager, monkeypatch):
         "src.services.automation_bridge.kill_and_reap", lambda pid: None
     )
 
-    # Mock select and os.read to simulate PTY output
-    call_count = 0
-
-    def mock_select(*args, **kwargs):
-        return ([1], [], [])
-
-    def mock_read(fd, max_bytes):
-        nonlocal call_count
-        call_count += 1
-        if call_count == 1:
-            return b"___GAB_START___\nsome output here\n"
-        elif call_count == 2:
-            return b"___GAB_END___ 42\n"
-        else:
-            dummy_session.active = False  # Stop the loop
-            return b""
-
-    monkeypatch.setattr("src.services.automation_bridge.select.select", mock_select)
-    monkeypatch.setattr("src.services.automation_bridge.os.read", mock_read)
-
     # We also need to mock socketio.emit and sleep to prevent errors
     mock_socketio = MagicMock()
-    monkeypatch.setattr("src.app.socketio", mock_socketio)
 
     new_job_id = temp_schedule_manager.add_job("sched_2", "queued")
 
-    automation_output_reader("dummy_tab", new_job_id, 1)
+    # Provide a side effect for sleep that simulates buffer filling over time
+    def mock_sleep(seconds):
+        start_marker = f"___GAB_START_{new_job_id}___"
+        end_marker = f"___GAB_END_{new_job_id}___"
+        if len(dummy_session.buffer) == 0:
+            dummy_session.buffer.append(
+                f"echo {start_marker}; echo 'some output here'; echo {end_marker} $?\\n"
+            )
+            dummy_session.buffer.append(f"{start_marker}\\n")
+            dummy_session.buffer.append("some output here\\n")
+        elif len(dummy_session.buffer) == 3:
+            dummy_session.buffer.append(f"{end_marker} 42\\n")
+            dummy_session.buffer.append("local$ ")
+        else:
+            dummy_session.active = False
+
+    mock_socketio.sleep.side_effect = mock_sleep
+    monkeypatch.setattr("src.services.automation_bridge.eventlet.sleep", mock_sleep)
+    monkeypatch.setattr("src.app.socketio", mock_socketio)
+
+    automation_output_reader("dummy_tab", new_job_id, 0)
 
     # Verify the job was updated correctly
     with temp_schedule_manager._get_connection() as conn:
@@ -194,3 +185,4 @@ def test_execution_engine_and_reaper(temp_schedule_manager, monkeypatch):
     assert job["status"] == "completed"
     assert job["exit_code"] == 42
     assert "some output here" in job["output"]
+    assert "echo" not in job["output"]

@@ -84,7 +84,7 @@ class ScheduleManager:
         now = time.time()
 
         if not prompt_context:
-            prompt_context = "It is currently $(time) and you have been summoned on a timer. Be respectful of the environment. The user has requested you perform the following task: "
+            prompt_context = "It is currently $(date) and you have been summoned on a timer. Be respectful of the environment. The user has requested you perform the following task: "
 
         with self._get_connection() as conn:
             conn.execute(

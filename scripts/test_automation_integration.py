@@ -50,7 +50,11 @@ def run_integration_test():
     logger.info(f"Job Exit Code: {job['exit_code']}")
     logger.info(f"Job Output: {job['output']}")
 
-    if "Hello Integration Test" in job["output"]:
+    if (
+        job["exit_code"] == 0
+        and "Hello Integration Test" in job["output"]
+        and "___GAB_START___" not in job["output"]
+    ):
         logger.info("Integration Test PASSED!")
     else:
         logger.error("Integration Test FAILED!")

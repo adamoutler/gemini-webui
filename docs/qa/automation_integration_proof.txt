@@ -1,15 +1,14 @@
 INFO:__main__:Starting Automation Integration Test...
-INFO:__main__:Added schedule b2e63c41-3b36-4e84-8ed2-ce2530e2d442
+INFO:__main__:Added schedule 0fdd71d0-1148-4aa9-87d5-c9748718872b
 INFO:__main__:Triggering scheduler...
-INFO:src.services.automation_scheduler:Executing schedule b2e63c41-3b36-4e84-8ed2-ce2530e2d442 on local
+INFO:src.services.automation_scheduler:Executing schedule 0fdd71d0-1148-4aa9-87d5-c9748718872b on local
 INFO:src.app:Initializing app with DATA_DIR: /data
-INFO:src.services.automation_bridge:Automation executed task on local in tab f64e8f79-c549-44ee-861f-a23abc3059e8
-INFO:src.services.automation_scheduler:Executing schedule 01bc8f21-2a03-4b83-9676-2351e5d7ac5e on local
-INFO:src.services.automation_bridge:Automation reader for f64e8f79-c549-44ee-861f-a23abc3059e8 finished
-INFO:src.services.automation_bridge:Automation executed task on local in tab be0a9982-7031-4f3a-a4e4-78987ced5adf
+INFO:src.services.automation_bridge:Automation executed task on local in tab bb8a2a77-0b4f-4473-82ff-435c1f84d214
 INFO:__main__:Waiting for execution to complete...
-INFO:src.services.automation_bridge:Automation reader for be0a9982-7031-4f3a-a4e4-78987ced5adf finished
+INFO:src.services.automation_bridge:Automation reader for bb8a2a77-0b4f-4473-82ff-435c1f84d214 finished
+INFO:src.gateways.terminal_socket:Session reader for bb8a2a77-0b4f-4473-82ff-435c1f84d214 exiting, cleaning up
 INFO:__main__:Job Status: completed
-INFO:__main__:Job Exit Code: None
-INFO:__main__:Job Output: ; It is currently $(time) and you have been summoned on a timer. Be respectful of the environment. The user has requested you perform the following task:  echo 'Hello Integration Test'; echo
+INFO:__main__:Job Exit Code: 0
+INFO:__main__:Job Output: It is currently Wed May 13 09:22:00 PM EDT 2026 and you have been summoned on a timer. Be respectful of the environment. The user has requested you perform the following task:
+Hello Integration Test
 INFO:__main__:Integration Test PASSED!
