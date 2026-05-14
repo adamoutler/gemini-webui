@@ -90,3 +90,107 @@ def test_crud_automation_jobs(temp_schedule_manager):
     # List jobs by wrong schedule
     jobs = temp_schedule_manager.list_jobs(schedule_id="wrong_id")
     assert len(jobs) == 0
+
+
+def test_execution_engine_and_reaper(temp_schedule_manager, monkeypatch):
+    import time
+    from unittest.mock import MagicMock
+    from src.services.automation_bridge import automation_output_reader
+    from src.services.automation_scheduler import automation_scheduler
+
+    # Override the singleton schedule_manager with our temp one for the test
+    monkeypatch.setattr(
+        "src.services.automation_bridge.schedule_manager", temp_schedule_manager
+    )
+    monkeypatch.setattr(
+        "src.services.automation_scheduler.schedule_manager", temp_schedule_manager
+    )
+
+    # Add a job that is old and running to test reaper
+    old_job_id = temp_schedule_manager.add_job("sched_1", "running")
+    now = time.time()
+    # Mock its timestamp to be very old
+    with temp_schedule_manager._get_connection() as conn:
+        conn.execute(
+            "UPDATE automation_jobs SET timestamp = ? WHERE id = ?",
+            (now - 1000, old_job_id),
+        )
+        conn.commit()
+
+    # Run reaper
+    automation_scheduler.reap_stale_jobs()
+
+    # Verify the old job is reaped
+    jobs = temp_schedule_manager.list_jobs()
+    for j in jobs:
+        if j["id"] == old_job_id:
+            assert j["status"] == "failed"
+            assert j["exit_code"] == -1
+            assert "[Error: Reaped after timeout]" in j["output"]
+
+    # Test the automation_output_reader
+    class DummySession:
+        def __init__(self):
+            self.active = True
+            self.pid = 99999
+
+            class DummyDecoder:
+                def decode(self, data):
+                    return data.decode("utf-8")
+
+            self.decoder = DummyDecoder()
+
+        def append_buffer(self, output):
+            pass
+
+    dummy_session = DummySession()
+    monkeypatch.setattr(
+        "src.services.automation_bridge.session_manager.get_session",
+        lambda tid: dummy_session,
+    )
+    monkeypatch.setattr(
+        "src.services.automation_bridge.session_manager.remove_session",
+        lambda tid: None,
+    )
+    monkeypatch.setattr(
+        "src.services.automation_bridge.kill_and_reap", lambda pid: None
+    )
+
+    # Mock select and os.read to simulate PTY output
+    call_count = 0
+
+    def mock_select(*args, **kwargs):
+        return ([1], [], [])
+
+    def mock_read(fd, max_bytes):
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            return b"___GAB_START___\nsome output here\n"
+        elif call_count == 2:
+            return b"___GAB_END___ 42\n"
+        else:
+            dummy_session.active = False  # Stop the loop
+            return b""
+
+    monkeypatch.setattr("src.services.automation_bridge.select.select", mock_select)
+    monkeypatch.setattr("src.services.automation_bridge.os.read", mock_read)
+
+    # We also need to mock socketio.emit and sleep to prevent errors
+    mock_socketio = MagicMock()
+    monkeypatch.setattr("src.app.socketio", mock_socketio)
+
+    new_job_id = temp_schedule_manager.add_job("sched_2", "queued")
+
+    automation_output_reader("dummy_tab", new_job_id, 1)
+
+    # Verify the job was updated correctly
+    with temp_schedule_manager._get_connection() as conn:
+        cursor = conn.execute(
+            "SELECT * FROM automation_jobs WHERE id = ?", (new_job_id,)
+        )
+        job = dict(cursor.fetchone())
+
+    assert job["status"] == "completed"
+    assert job["exit_code"] == 42
+    assert "some output here" in job["output"]
