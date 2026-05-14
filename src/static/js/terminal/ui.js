@@ -356,15 +356,12 @@ export function startSession(
             }
 
             if (tab.term.buffer.active.type === "alternate") {
-              const seq = deltaLines < 0 ? "\x1b[A" : "\x1b[B";
-              const count = Math.abs(deltaLines);
-              for (let i = 0; i < count; i++) {
-                if (globalThis.emitPtyInput) {
-                  globalThis.emitPtyInput(tab, seq);
-                } else if (tab.socket) {
-                  tab.socket.emit("pty-input", { tabId: tab.id, input: seq });
-                }
-              }
+              const wheelEvent = new WheelEvent("wheel", {
+                deltaY: deltaLines * 20,
+                bubbles: true,
+                cancelable: true,
+              });
+              tab.term.element.dispatchEvent(wheelEvent);
               proxy.scrollTop = currentViewportY * rowHeight;
               thrashingViolations++;
             } else {
@@ -1038,8 +1035,12 @@ export function startSession(
   });
   tab.term.attachCustomKeyEventHandler((e) => {
     if (e.type === "keydown" && (e.ctrlKey || e.altKey) && e.key === "Enter") {
+      const useBracketedPaste =
+        tab.term && tab.term.modes && tab.term.modes.bracketedPasteMode;
+      const payload = useBracketedPaste ? "\x1b[200~\r\x1b[201~" : "\x1b\r";
+
       if (tab.mobileProxy && tab.mobileProxy.ui) {
-        tab.mobileProxy.ui.proxyInput.value += "\x1b\r";
+        tab.mobileProxy.ui.proxyInput.value += payload;
         tab.mobileProxy.ui.proxyInput.dispatchEvent(
           new Event("input", { bubbles: true }),
         );
@@ -1047,9 +1048,9 @@ export function startSession(
         // Fallback for non-mobile if proxy isn't active
         if (tab.socket) {
           if (globalThis.emitPtyInput) {
-            globalThis.emitPtyInput(tab, "\x1b\r");
+            globalThis.emitPtyInput(tab, payload);
           } else {
-            tab.socket.emit("pty-input", { input: "\x1b\r" });
+            tab.socket.emit("pty-input", { input: payload });
           }
         }
       }

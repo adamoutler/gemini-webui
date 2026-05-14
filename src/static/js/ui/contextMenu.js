@@ -92,7 +92,12 @@ export function initDesktopContextMenu() {
       let el = e.target;
       let allowMenu = false;
       while (el) {
-        if (el.classList && el.classList.contains("xterm-cursor-layer")) {
+        if (
+          el.classList &&
+          (el.classList.contains("xterm") ||
+            el.classList.contains("xterm-screen") ||
+            el.classList.contains("xterm-cursor-layer"))
+        ) {
           allowMenu = true;
           break;
         }
@@ -108,13 +113,19 @@ export function initDesktopContextMenu() {
         el = el.parentElement;
       }
 
-      const isTextSelected = globalThis.getSelection().toString().length > 0;
+      const isNativeSelected = globalThis.getSelection().toString().length > 0;
+      const tab = globalState.tabs.find(
+        (t) => t.id === globalState.activeTabId,
+      );
+      const hasXtermSelection = tab && tab.term && tab.term.hasSelection();
+
       // Allow native menu only if we are outside the custom menu areas
-      if (!allowMenu && (isTextSelected || isInput)) return;
+      if (!allowMenu && (isNativeSelected || isInput)) return;
 
       // If right-clicked on terminal container or body, show custom menu
       if (
         allowMenu ||
+        hasXtermSelection ||
         el === document.body ||
         el === document.documentElement
       ) {

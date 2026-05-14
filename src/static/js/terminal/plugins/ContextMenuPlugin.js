@@ -32,7 +32,12 @@ export class ContextMenuPlugin extends TerminalModule {
     let el = e.target;
     let allowMenu = false;
     while (el) {
-      if (el.classList && el.classList.contains("xterm-cursor-layer")) {
+      if (
+        el.classList &&
+        (el.classList.contains("xterm") ||
+          el.classList.contains("xterm-screen") ||
+          el.classList.contains("xterm-cursor-layer"))
+      ) {
         allowMenu = true;
         break;
       }

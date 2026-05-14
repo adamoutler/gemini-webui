@@ -146,9 +146,31 @@ export class ModifierRule extends InputRule {
         } else if (event.key === "Enter" && (event.altKey || event.ctrlKey)) {
           event.preventDefault();
           if (input) {
-            input.value += "\n";
-            // Trigger input event to update any observers/proxies
-            input.dispatchEvent(new Event("input", { bubbles: true }));
+            // Find tab manually to check bracketed paste support if context.tab isn't available
+            let useBracketedPaste = false;
+            try {
+              // Hacky but safe fallback to find active terminal modes
+              const tab = window.globalState
+                ? window.globalState.tabs.find(
+                    (t) => t.id === window.globalState.activeTabId,
+                  )
+                : null;
+              useBracketedPaste =
+                tab &&
+                tab.term &&
+                tab.term.modes &&
+                tab.term.modes.bracketedPasteMode;
+            } catch (e) {}
+
+            const payload = useBracketedPaste
+              ? "\x1b[200~\r\x1b[201~"
+              : "\x1b\r";
+
+            if (input.value.length > 0) {
+              context.emitToTerminal(input.value);
+              input.value = "";
+            }
+            context.emitToTerminal(payload);
           }
           return true;
         }

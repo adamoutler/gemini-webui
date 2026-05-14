@@ -44,8 +44,14 @@ export class HotkeyPlugin extends TerminalModule {
       (event.ctrlKey || event.altKey) &&
       (event.key === "Enter" || event.code === "Enter")
     ) {
+      const useBracketedPaste =
+        this.tab.term &&
+        this.tab.term.modes &&
+        this.tab.term.modes.bracketedPasteMode;
+      const payload = useBracketedPaste ? "\x1b[200~\r\x1b[201~" : "\x1b\r";
+
       if (this.tab.mobileProxy && this.tab.mobileProxy.ui) {
-        this.tab.mobileProxy.ui.proxyInput.value += "\x1b\r";
+        this.tab.mobileProxy.ui.proxyInput.value += payload;
         this.tab.mobileProxy.ui.proxyInput.dispatchEvent(
           new Event("input", { bubbles: true }),
         );
@@ -53,9 +59,9 @@ export class HotkeyPlugin extends TerminalModule {
         // Fallback for non-mobile if proxy isn't active
         if (this.tab.socket) {
           if (globalThis.emitPtyInput) {
-            globalThis.emitPtyInput(this.tab, "\x1b\r");
+            globalThis.emitPtyInput(this.tab, payload);
           } else {
-            this.tab.socket.emit("pty-input", { input: "\x1b\r" });
+            this.tab.socket.emit("pty-input", { input: payload });
           }
         }
       }
