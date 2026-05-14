@@ -371,3 +371,17 @@ jobs:
             fi
             docker manifest push $TAG
           done
+
+      - name: Download Test Results
+        if: always()
+        uses: actions/download-artifact@v4
+        with:
+          pattern: test-results-*
+          path: test-results
+
+      - name: Display Test Results for QA Gate
+        if: always()
+        run: |
+          echo "=== QA GATE EVIDENCE: TEST RESULTS ==="
+          cat test-results/*/*.log || true
+          echo "=== END QA GATE EVIDENCE ==="
