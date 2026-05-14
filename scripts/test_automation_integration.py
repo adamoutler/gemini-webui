@@ -19,40 +19,44 @@ logger = logging.getLogger(__name__)
 def run_integration_test():
     logger.info("Starting Automation Integration Test...")
 
-    # 1. Add a dummy session to prove idle logic
-    import pty
+    # 1. Add a real session to prove idle logic
+    from src.services.terminal_service import TerminalService
+    import uuid
 
-    pid, fd = pty.fork()
-    if pid == 0:
-        os.execvpe("bash", ["bash", "--noprofile", "--norc"], os.environ)
+    tab_id = str(uuid.uuid4())
+    session_obj, err = TerminalService.start_session(
+        tab_id=tab_id,
+        user_id="testuser",
+        ssh_target="",
+        ssh_dir="~",
+        resume=False,
+        cols=80,
+        rows=24,
+        env_vars={},
+        title="Integration Test Session",
+        executable_override="bash --noprofile --norc",
+    )
+    if err or not session_obj:
+        logger.error(f"Failed to create real session: {err}")
+        sys.exit(1)
 
-    class MockSession:
-        def __init__(self):
-            self.tab_id = "dummy_tab"
-            self.ssh_target = "local"
-            self.ssh_dir = "~"
-            self.title = "Test Session"
-            self.last_seen = time.time() - 10
-            self.buffer = ["user@host:~$ "]
-            self.active = True
-            self.fd = fd
-            self.pid = pid
-            self.user_id = "automation"
-            import codecs
+    session_manager.reclaim_session(tab_id, None, "testuser")
 
-            self.decoder = codecs.getincrementaldecoder("utf-8")()
-
-        def append_buffer(self, data):
-            self.buffer.append(data)
-
-    dummy_session = MockSession()
-    session_manager.sessions["dummy_tab"] = dummy_session
-
-    # Start the reader
+    # Start the reader so it populates the buffer and last_seen
     from src.gateways.terminal_socket import session_output_reader
     from src.app import socketio
 
-    socketio.start_background_task(session_output_reader, "dummy_tab")
+    socketio.start_background_task(session_output_reader, tab_id)
+
+    # Wait for the bash prompt to appear and become idle
+    logger.info("Waiting for session to become idle...")
+    time.sleep(2)
+
+    # Make sure we have a prompt in the buffer
+    os.write(session_obj.fd, b"PS1='test_prompt$ '\n")
+    time.sleep(1)
+    os.write(session_obj.fd, b"echo ready\n")
+    time.sleep(2)
 
     # 2. Add a schedule
     sched_id = schedule_manager.add_schedule(

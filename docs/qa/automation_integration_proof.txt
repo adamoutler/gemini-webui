@@ -120,17 +120,21 @@ This typically means that you attempted to use functionality that needed
 an active HTTP request. Consult the documentation on testing for
 information about how to avoid this problem.
 INFO:src.app:Initializing app with DATA_DIR: /data
-INFO:__main__:Added schedule 3125548a-b842-49d4-9673-b86c34c948fb
+INFO:__main__:Waiting for session to become idle...
+INFO:__main__:Added schedule 9a80bd2f-610a-4d83-ab36-ee2efb4c231b
 INFO:__main__:Triggering scheduler...
-INFO:src.services.automation_bridge:Host local IS idle: Session dummy_tab meets all idle heuristics.
-INFO:src.services.automation_scheduler:Executing schedule 3125548a-b842-49d4-9673-b86c34c948fb on local
-INFO:src.services.automation_bridge:Injecting automation task into existing session dummy_tab
-INFO:src.services.automation_bridge:Automation executed task on local in tab dummy_tab
+INFO:src.services.automation_bridge:Silence check passed for Session f08c1fdb-dbc0-4489-91cb-357e5ad7afea: last seen 5204.504013061523 ms ago.
+INFO:src.services.automation_bridge:Regex check passed for Session f08c1fdb-dbc0-4489-91cb-357e5ad7afea: matched shell prompt 'echo ready
+ready
+test_prompt$'
+INFO:src.services.automation_bridge:Host local IS idle: Session f08c1fdb-dbc0-4489-91cb-357e5ad7afea meets all idle heuristics.
+INFO:src.services.automation_scheduler:Executing schedule 9a80bd2f-610a-4d83-ab36-ee2efb4c231b on local
+INFO:src.services.automation_bridge:Injecting automation task into existing session f08c1fdb-dbc0-4489-91cb-357e5ad7afea
+INFO:src.services.automation_bridge:Automation executed task on local in tab f08c1fdb-dbc0-4489-91cb-357e5ad7afea
 INFO:__main__:Waiting for execution to complete...
-INFO:src.services.automation_bridge:Automation reader for dummy_tab finished
-INFO:src.gateways.terminal_socket:Session reader for dummy_tab exiting, cleaning up
+INFO:src.services.automation_bridge:Automation reader for f08c1fdb-dbc0-4489-91cb-357e5ad7afea finished
 INFO:__main__:Job Status: completed
 INFO:__main__:Job Exit Code: 0
-INFO:__main__:Job Output: It is currently Wed May 13 10:20:06 PM EDT 2026 and you have been summoned on a timer. Be respectful of the environment. The user has requested you perform the following task:
+INFO:__main__:Job Output: It is currently Wed May 13 10:35:42 PM EDT 2026 and you have been summoned on a timer. Be respectful of the environment. The user has requested you perform the following task:
 Hello Integration Test
 INFO:__main__:Integration Test PASSED!

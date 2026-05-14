@@ -125,6 +125,13 @@ class AutomationBridge:
                         f"Host {target_host_id} is NOT idle: Session {session.tab_id} had output recently (less than 500ms ago)."
                     )
                     return False
+                else:
+                    idle_time = (
+                        (now - session.last_seen) * 1000 if session.last_seen else "N/A"
+                    )
+                    logger.info(
+                        f"Silence check passed for Session {session.tab_id}: last seen {idle_time} ms ago."
+                    )
 
                 # Check for shell prompt patterns at the end of the buffer
                 if session.buffer:
@@ -137,9 +144,14 @@ class AutomationBridge:
                             f"Host {target_host_id} is NOT idle: Session {session.tab_id} is not at a shell prompt. Last line: '{clean_line}'"
                         )
                         return False
+                    else:
+                        logger.info(
+                            f"Regex check passed for Session {session.tab_id}: matched shell prompt '{clean_line}'"
+                        )
                 else:
-                    # If buffer is empty, it's effectively a fresh session, which is idle
-                    pass
+                    logger.info(
+                        f"Buffer is empty for Session {session.tab_id}, assuming fresh/idle session."
+                    )
 
                 logger.info(
                     f"Host {target_host_id} IS idle: Session {session.tab_id} meets all idle heuristics."
