@@ -1,3 +1,6 @@
+Project retired - May 2026 - `gemini` is no longer consumer/open source friendly due to an abrupt change in policy.  `agy` is now the tool to be used and google has provided a somewhat restricted webui to go with it in the form of `agy remote-control start`
+
+
 # Gemini WebUI
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=adamoutler_gemini-webui&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=adamoutler_gemini-webui)
