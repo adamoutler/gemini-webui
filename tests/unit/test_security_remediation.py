@@ -44,6 +44,27 @@ def test_get_file_stack_trace_exposure(mock_isfile, client):
     assert "An internal error occurred" in data["message"]
 
 
+@patch("src.services.remote_fs.download_from_remote")
+def test_get_remote_file_stack_trace_exposure(mock_download_remote, client):
+    """
+    Test that exceptions during remote file download are caught
+    and do not leak internal stack traces or exact exception texts.
+    """
+    mock_download_remote.side_effect = Exception("Remote Secret Error Details 456")
+
+    with client.session_transaction() as sess:
+        sess["username"] = "testuser"
+        sess["authenticated"] = True
+
+    response = client.get("/api/download/some_file.txt?ssh_target=user@host")
+
+    assert response.status_code == 500
+    data = response.get_json()
+    assert data["status"] == "error"
+    assert "Remote Secret Error Details 456" not in data["message"]
+    assert "An internal error occurred" in data["message"]
+
+
 @patch("src.routes.api.get_descendant_processes")
 @patch("src.routes.api.os.killpg")
 @patch("src.routes.api.os.kill")

@@ -300,11 +300,9 @@ def download_file(filename):
             return send_file(
                 local_path, as_attachment=True, download_name=os.path.basename(filename)
             )
-        except Exception as e:
-            import traceback
-
-            traceback.print_exc()
-            return jsonify({"status": "error", "message": str(e)}), 500
+        except Exception:
+            logger.exception("Failed to download file from remote")
+            return jsonify({"status": "error", "message": INTERNAL_ERR_MSG}), 500
 
     workspace_dir = os.path.join(env_config.DATA_DIR, "workspace")
     try:
